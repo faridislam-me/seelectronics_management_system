@@ -213,8 +213,8 @@ export default function GetServiceForm({
   }
   return (
     <div className="mx-auto max-w-[1000px] text-center p-2 sm:p-4">
-      {/* 1. Top Hero Banner Section */}
-      <div className="mb-8 rounded-lg overflow-hidden bg-brand relative shadow-lg text-left">
+       {/* 1. Top Hero Banner Section */}
+      <div className="mb-2 rounded-lg overflow-hidden bg-brand relative shadow-lg text-left">
         {/* Background Overlay for design */}
         <div className="absolute inset-0 bg-black/10 mix-blend-multiply" />
         <div className="absolute inset-0 bg-gradient-to-r from-brand to-transparent opacity-90" />
@@ -240,7 +240,7 @@ export default function GetServiceForm({
       </div>
 
       {/* 2. Contact Cards Hero Section */}
-      <div className="mb-8">
+      <div className="mb-2">
         <div className="text-center mb-8">
           <h2 className="text-xl sm:text-2xl font-black text-gray-800">
             যে কোন সহযোগীতা ও তথ্যের জন্য আমাদের সাথে আলাপ করুন
@@ -335,7 +335,7 @@ export default function GetServiceForm({
               defaultValue={customerData?.address || ""}
             />
             <div className="flex-1 text-start">
-              <label className="flex flex-col gap-1.5">
+              <label className="flex flex-col gap-1">
                 <span className="text-sm font-medium text-gray-700">
                   জেলা <span className="text-red-500 text-lg">*</span>
                 </span>
@@ -359,7 +359,7 @@ export default function GetServiceForm({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="flex-1 text-start">
-              <label className="flex flex-col gap-1.5">
+              <label className="flex flex-col gap-1">
                 <span className="text-sm font-medium text-gray-700">
                   থানা <span className="text-red-500 text-lg">*</span>
                 </span>
@@ -388,7 +388,7 @@ export default function GetServiceForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <InputField label="মেমো নং" name="memoNumber" />
             <div className="flex-1 text-start">
-              <label className="flex flex-col gap-1.5">
+              <label className="flex flex-col gap-1">
                 <span className="text-sm font-medium text-gray-700">
                   পণ্যের ধরণ <span className="text-red-500 text-lg">*</span>
                 </span>
@@ -413,7 +413,7 @@ export default function GetServiceForm({
             selectedProductType === "battery") && (
             <div className="grid grid-cols-1">
               <div className="flex-1 text-start">
-                <label className="flex flex-col gap-1.5">
+                <label className="flex flex-col gap-1">
                   <span className="text-sm font-medium text-gray-700">
                     আইপিএস ব্র্যান্ড{" "}
                     <span className="text-red-500 text-lg">*</span>
@@ -444,7 +444,7 @@ export default function GetServiceForm({
                     required
                   />
                 ) : (
-                  <label className="flex flex-col gap-1.5">
+                  <label className="flex flex-col gap-1">
                     <span className="text-sm font-medium text-gray-700">
                       পণ্যের মডেল{" "}
                       <span className="text-red-500 text-lg">*</span>
@@ -475,7 +475,7 @@ export default function GetServiceForm({
                     required
                   />
                 ) : (
-                  <label className="flex flex-col gap-1.5">
+                  <label className="flex flex-col gap-1">
                     <span className="text-sm font-medium text-gray-700">
                       পণ্যের ওয়াট/ভিএ{" "}
                       <span className="text-red-500 text-lg">*</span>
@@ -501,7 +501,7 @@ export default function GetServiceForm({
           )}
           <div className="grid grid-cols-1">
             <div className="flex-1 text-start">
-              <label className="flex flex-col gap-1.5">
+              <label className="flex flex-col gap-1">
                 <span className="text-sm font-medium text-gray-700">
                   পণ্যেের সমস্যা <span className="text-red-500 text-lg">*</span>
                 </span>

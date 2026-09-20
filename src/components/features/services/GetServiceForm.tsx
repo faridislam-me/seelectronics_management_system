@@ -213,58 +213,98 @@ export default function GetServiceForm({
   }
   return (
     <div className="mx-auto max-w-[1000px] text-center p-2 sm:p-4">
-      <div className="font-bold mb-4 flex flex-col gap-1 bg-white p-4 sm:p-8 rounded-md border border-gray-100 shadow-sm">
-        <div className="text-xl text-brand font-black">
-          এস ই ইলেকট্রনিকস প্রডাক্ট অনলাইন সার্ভিসিং সেন্টার
-        </div>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-8  text-base sm:text-lg text-gray-600">
-          <span className="font-bold">
-            হেল্পলাইন:{" "}
-            <span className="text-brand">{contactDetails.customerCare}</span>
-          </span>
-          <span className="hidden sm:inline text-gray-300">|</span>
-          <span className="font-bold">
-            Email: <span className="text-brand">{contactDetails.email}</span>
-          </span>
-        </div>
-        <div className="text-sm sm:text-base text-gray-400 font-medium">
-          হেড অফিস : {contactDetails.headOffice}
-        </div>
-
-        <div className="border-2 border-brand/20 bg-brand/5 p-2 sm:p-6 rounded-md mt-3">
-          <p className="font-black text-gray-700 mb-4 text-base sm:text-lg">
-            যে কোন সহযোগীতা ও তথ্যের জন্য আমাদের সাথে আলাপ করুন
-          </p>
-          <div className="grid grid-cols-4 md:grid-cols-4 gap-3 sm:gap-4">
-            <Link
-              className="flex flex-col items-center justify-center p-1 sm:p-4 bg-white border-2 border-brand/20 text-brand rounded-md hover:bg-brand hover:text-white transition-all text-xs sm:text-sm font-black gap-2 text-center"
-              href={`sms:${contactDetails.sms}`}
-            >
-              <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8" />
-              <span>এস এম এস</span>
-            </Link>
-            <Link
-              className="flex flex-col items-center justify-center p-1 sm:p-4 bg-white border-2 border-brand/20 text-brand rounded-md hover:bg-brand hover:text-white transition-all text-xs sm:text-sm font-black gap-2 text-center"
-              href={`tel:${contactDetails.phone}`}
-            >
-              <Phone className="w-6 h-6 sm:w-8 sm:h-8" />
-              <span>ফোন কল</span>
-            </Link>
-            <Link
-              className="flex flex-col items-center justify-center p-1 sm:p-4 bg-white border-2 border-brand/20 text-brand rounded-md hover:bg-brand hover:text-white transition-all text-xs sm:text-sm font-black gap-2 text-center"
-              href={`tel:${contactDetails.customerCare}`}
-            >
-              <Headset className="w-6 h-6 sm:w-8 sm:h-8" />
-              <span>কাস্টমার কেয়ার</span>
-            </Link>
-            <Link
-              className="flex flex-col items-center justify-center p-1 sm:p-4 bg-white border-2 border-brand/20 text-brand rounded-md hover:bg-brand hover:text-white transition-all text-xs sm:text-sm font-black gap-2 text-center"
-              href={`https://wa.me/${contactDetails.whatsApp}`}
-            >
-              <MessageCircle className="w-6 h-6 sm:w-8 sm:h-8" />
-              <span>ওয়াসআপ</span>
-            </Link>
+      {/* 1. Top Hero Banner Section */}
+      <div className="mb-8 rounded-2xl overflow-hidden bg-brand relative shadow-lg text-left">
+        {/* Background Overlay for design */}
+        <div className="absolute inset-0 bg-black/10 mix-blend-multiply" />
+        <div className="absolute inset-0 bg-gradient-to-r from-brand to-transparent opacity-90" />
+        
+        <div className="relative p-6 sm:p-12 z-10 flex flex-col gap-4">
+          {/* Breadcrumb */}
+          <div className="text-white/80 text-sm font-medium flex items-center gap-2 mb-2">
+            হোম <span className="text-white/50">{">"}</span> সার্ভিস ফরম
           </div>
+          
+          <h1 className="text-2xl sm:text-4xl text-white font-black leading-tight">
+            এস ই ইলেকট্রনিকস প্রডাক্ট <br className="hidden sm:block" /> অনলাইন সার্ভিসিং সেন্টার
+          </h1>
+          
+          <div className="flex flex-col gap-2 text-sm sm:text-base text-white/90 mt-4 max-w-2xl">
+            <p>
+              <span className="font-bold">হেল্পলাইন:</span> {contactDetails.customerCare}
+              <span className="hidden sm:inline mx-3 text-white/40">|</span>
+              <span className="block sm:inline mt-1 sm:mt-0"><span className="font-bold">Email:</span> {contactDetails.email}</span>
+            </p>
+            <p>
+              <span className="font-bold">হেড অফিস:</span> {contactDetails.headOffice}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Contact Cards Hero Section */}
+      <div className="mb-8">
+        <div className="text-center mb-8">
+          <h2 className="text-xl sm:text-2xl font-black text-gray-800">
+            যে কোন সহযোগীতা ও তথ্যের জন্য আমাদের সাথে আলাপ করুন
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+          {/* Card 1 */}
+          <Link
+            href={`sms:${contactDetails.sms}`}
+            className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-5 group"
+          >
+            <div className="w-16 h-16 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
+              <MessageSquare className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="font-black text-gray-800 text-lg">এস এম এস</h3>
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">এস এম এস এর মাধ্যমে যোগাযোগ করুন</p>
+            </div>
+          </Link>
+
+          {/* Card 2 */}
+          <Link
+            href={`tel:${contactDetails.phone}`}
+            className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-5 group"
+          >
+            <div className="w-16 h-16 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
+              <Phone className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="font-black text-gray-800 text-lg">ফোন কল</h3>
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">সরাসরি কল করে কথা বলুন</p>
+            </div>
+          </Link>
+
+          {/* Card 3 */}
+          <Link
+            href={`tel:${contactDetails.customerCare}`}
+            className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-5 group"
+          >
+            <div className="w-16 h-16 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
+              <Headset className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="font-black text-gray-800 text-lg">কাস্টমার কেয়ার</h3>
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">হেল্পলাইন থেকে সহায়তা নিন</p>
+            </div>
+          </Link>
+
+          {/* Card 4 */}
+          <Link
+            href={`https://wa.me/${contactDetails.whatsApp}`}
+            className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-5 group"
+          >
+            <div className="w-16 h-16 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
+              <MessageCircle className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="font-black text-gray-800 text-lg">ওয়াসআপ</h3>
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">হোয়াটসঅ্যাপে মেসেজ দিন</p>
+            </div>
+          </Link>
         </div>
       </div>
       <div className="flex flex-col gap-6 bg-white p-4 sm:p-10 rounded-md border border-gray-100 shadow-sm">

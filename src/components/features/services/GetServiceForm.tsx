@@ -222,7 +222,7 @@ export default function GetServiceForm({
           src={heroBg} 
           alt="Hero Background" 
           fill 
-          className="object-cover opacity-40 mix-blend-screen"
+          className="object-cover opacity-70 mix-blend-screen"
           priority 
         />
         <div className="absolute inset-0 bg-gradient-to-r from-brand to-brand/40 opacity-90" />

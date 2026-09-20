@@ -214,16 +214,13 @@ export default function GetServiceForm({
   return (
     <div className="mx-auto max-w-[1000px] text-center p-2 sm:p-4">
       {/* 1. Top Hero Banner Section */}
-      <div className="mb-8 rounded-2xl overflow-hidden bg-brand relative shadow-lg text-left">
+      <div className="mb-8 rounded-lg overflow-hidden bg-brand relative shadow-lg text-left">
         {/* Background Overlay for design */}
         <div className="absolute inset-0 bg-black/10 mix-blend-multiply" />
         <div className="absolute inset-0 bg-gradient-to-r from-brand to-transparent opacity-90" />
         
         <div className="relative p-6 sm:p-12 z-10 flex flex-col gap-4">
-          {/* Breadcrumb */}
-          <div className="text-white/80 text-sm font-medium flex items-center gap-2 mb-2">
-            হোম <span className="text-white/50">{">"}</span> সার্ভিস ফরম
-          </div>
+          
           
           <h1 className="text-2xl sm:text-4xl text-white font-black leading-tight">
             এস ই ইলেকট্রনিকস প্রডাক্ট <br className="hidden sm:block" /> অনলাইন সার্ভিসিং সেন্টার
@@ -249,60 +246,60 @@ export default function GetServiceForm({
             যে কোন সহযোগীতা ও তথ্যের জন্য আমাদের সাথে আলাপ করুন
           </h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
           {/* Card 1 */}
           <Link
             href={`sms:${contactDetails.sms}`}
-            className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-5 group"
+            className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-3 sm:gap-5 group"
           >
-            <div className="w-16 h-16 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
-              <MessageSquare className="w-8 h-8" />
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
+              <MessageSquare className="w-3 h-3" />
             </div>
             <div>
-              <h3 className="font-black text-gray-800 text-lg">এস এম এস</h3>
-              <p className="text-sm text-gray-500 mt-2 leading-relaxed">এস এম এস এর মাধ্যমে যোগাযোগ করুন</p>
+              <h3 className="font-black text-gray-800 text-[13px] sm:text-lg">এস এম এস</h3>
+              <p className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2 leading-relaxed">এস এম এস এর মাধ্যমে যোগাযোগ করুন</p>
             </div>
           </Link>
 
           {/* Card 2 */}
           <Link
             href={`tel:${contactDetails.phone}`}
-            className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-5 group"
+            className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-3 sm:gap-5 group"
           >
-            <div className="w-16 h-16 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
-              <Phone className="w-8 h-8" />
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
+              <Phone className="w-3 h-3" />
             </div>
             <div>
-              <h3 className="font-black text-gray-800 text-lg">ফোন কল</h3>
-              <p className="text-sm text-gray-500 mt-2 leading-relaxed">সরাসরি কল করে কথা বলুন</p>
+              <h3 className="font-black text-gray-800 text-[13px] sm:text-lg">ফোন কল</h3>
+              <p className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2 leading-relaxed">সরাসরি কল করে কথা বলুন</p>
             </div>
           </Link>
 
           {/* Card 3 */}
           <Link
             href={`tel:${contactDetails.customerCare}`}
-            className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-5 group"
+            className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-3 sm:gap-5 group"
           >
-            <div className="w-16 h-16 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
-              <Headset className="w-8 h-8" />
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
+              <Headset className="w-3 h-3" />
             </div>
             <div>
-              <h3 className="font-black text-gray-800 text-lg">কাস্টমার কেয়ার</h3>
-              <p className="text-sm text-gray-500 mt-2 leading-relaxed">হেল্পলাইন থেকে সহায়তা নিন</p>
+              <h3 className="font-black text-gray-800 text-[13px] sm:text-lg">কাস্টমার কেয়ার</h3>
+              <p className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2 leading-relaxed">হেল্পলাইন থেকে সহায়তা নিন</p>
             </div>
           </Link>
 
           {/* Card 4 */}
           <Link
             href={`https://wa.me/${contactDetails.whatsApp}`}
-            className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-5 group"
+            className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-3 sm:gap-5 group"
           >
-            <div className="w-16 h-16 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
-              <MessageCircle className="w-8 h-8" />
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
+              <MessageCircle className="w-3 h-3" />
             </div>
             <div>
-              <h3 className="font-black text-gray-800 text-lg">ওয়াসআপ</h3>
-              <p className="text-sm text-gray-500 mt-2 leading-relaxed">হোয়াটসঅ্যাপে মেসেজ দিন</p>
+              <h3 className="font-black text-gray-800 text-[13px] sm:text-lg">ওয়াসআপ</h3>
+              <p className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2 leading-relaxed">হোয়াটসঅ্যাপে মেসেজ দিন</p>
             </div>
           </Link>
         </div>

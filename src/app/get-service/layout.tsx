@@ -9,7 +9,7 @@ export default function ServiceFormLayout({
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col overflow-x-hidden">
       <header className="bg-white shadow-sm border-b border-gray-100 py-4 px-4 sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5">
+        <div className="max-w-5xl mx-auto flex flex-row items-center justify-center gap-3 sm:gap-5">
           <div className="flex-shrink-0">
             <Image 
               src="/logo.jpg" 

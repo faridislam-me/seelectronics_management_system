@@ -58,20 +58,7 @@ export default async function VipCardPage() {
   return (
     <CustomerLayout>
       <div className="max-w-2xl mx-auto pb-20">
-        <div className="flex items-center gap-4 mb-6 pt-5 px-2">
-          <Link
-            href="/customer/profile"
-            className="p-1 bg-white rounded-xl shadow-sm border border-gray-100 hover:bg-gray-50 hover:shadow-md transition-all active:scale-95"
-          >
-            <ArrowLeft size={24} className="text-gray-600" />
-          </Link>
-          <h1 className="text-3xl font-extrabold text-gray-900 flex items-center gap-3">
-            <div className="p-1 bg-blue-100 rounded-lg">
-              <Crown className="text-blue-600" size={24} />
-            </div>
-            VIP Membership
-          </h1>
-        </div>
+        
         {vipStatus === "approved" ? (
           <div className="relative my-8">
             <VipFlipCard 
@@ -83,7 +70,7 @@ export default async function VipCardPage() {
           </div>
         ) : (
           /* Normal/Pending State */
-          <div className="bg-slate-900 rounded-md p-3 sm:p-12 text-white shadow-xl border border-white/5 relative overflow-hidden group">
+          <div className="bg-slate-900 rounded-md p-4 sm:p-12 text-white shadow-xl border border-white/5 relative overflow-hidden group mx-2">
             {/* Dark theme background accents */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none group-hover:bg-blue-600/20 transition-all duration-700"></div>
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-slate-800/50 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none"></div>

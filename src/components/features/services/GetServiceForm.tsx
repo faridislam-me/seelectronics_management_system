@@ -2,7 +2,7 @@
 
 import { createService } from "@/actions";
 import Image from "next/image";
-import heroBg from "@/assets/images/hero-bg.jpeg";
+import heroBack from "@/assets/images/hero-back.jpeg";
 import geoData from "@/assets/data/geo-data.json";
 import { InputField } from "@/components";
 import {
@@ -217,15 +217,14 @@ export default function GetServiceForm({
     <div className="mx-auto max-w-[1000px] text-center p-2 sm:p-4">
        {/* 1. Top Hero Banner Section */}
       <div className="mb-2 rounded-lg overflow-hidden bg-brand relative shadow-lg text-left">
-        {/* Background Overlay Image */}
+        {/* Background Overlay Image with Gradient Opacity */}
         <Image 
-          src={heroBg} 
+          src={heroBack} 
           alt="Hero Background" 
           fill 
-          className="object-cover opacity-70 mix-blend-screen"
+          className="object-cover mix-blend-screen [mask-image:linear-gradient(to_right,rgba(0,0,0,0.1)_0%,rgba(0,0,0,0.8)_100%)]"
           priority 
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-brand to-brand/40 opacity-90" />
         
         <div className="relative p-6 sm:p-12 z-10 flex flex-col gap-4">
           

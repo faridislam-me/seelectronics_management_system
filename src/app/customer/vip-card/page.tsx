@@ -134,7 +134,7 @@ export default async function VipCardPage() {
           </div>
         )}
 
-        <div className="mt-12 bg-white rounded-md p-3 sm:p-12 shadow-sm border border-gray-100">
+        <div className="mt-5 bg-white rounded-md p-3 sm:p-12 shadow-sm border border-gray-100">
           <div className="text-center mb-12">
             {vipStatus !== "approved" ? (
               <div className="inline-block mb-4 px-4 py-2 rounded-md bg-emerald-100 text-emerald-700 font-bold text-sm shadow-sm">

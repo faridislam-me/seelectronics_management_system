@@ -70,7 +70,7 @@ export default async function VipCardPage() {
           </div>
         ) : (
           /* Normal/Pending State */
-          <div className="bg-slate-900 rounded-md p-4 sm:p-12 text-white shadow-xl border border-white/5 relative overflow-hidden group mx-2">
+          <div className="bg-slate-900 rounded-md p-4 sm:p-12 text-white shadow-xl border border-white/5 relative overflow-hidden group mx-2 my-3">
             {/* Dark theme background accents */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none group-hover:bg-blue-600/20 transition-all duration-700"></div>
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-slate-800/50 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none"></div>

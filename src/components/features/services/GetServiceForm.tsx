@@ -257,7 +257,7 @@ export default function GetServiceForm({
           {/* Card 1 */}
           <Link
             href={`sms:${contactDetails.sms}`}
-            className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-3 sm:gap-5 group"
+            className="bg-white p-3 rounded-lg border-2 border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-3 sm:gap-5 group"
           >
             <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
               <MessageSquare className="w-3 h-3" />
@@ -271,7 +271,7 @@ export default function GetServiceForm({
           {/* Card 2 */}
           <Link
             href={`tel:${contactDetails.phone}`}
-            className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-3 sm:gap-5 group"
+            className="bg-white p-3 rounded-lg border-2 border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-3 sm:gap-5 group"
           >
             <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
               <Phone className="w-3 h-3" />
@@ -285,7 +285,7 @@ export default function GetServiceForm({
           {/* Card 3 */}
           <Link
             href={`tel:${contactDetails.customerCare}`}
-            className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-3 sm:gap-5 group"
+            className="bg-white p-3 rounded-lg border-2 border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-3 sm:gap-5 group"
           >
             <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
               <Headset className="w-3 h-3" />
@@ -299,7 +299,7 @@ export default function GetServiceForm({
           {/* Card 4 */}
           <Link
             href={`https://wa.me/${contactDetails.whatsApp}`}
-            className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-3 sm:gap-5 group"
+            className="bg-white p-3 rounded-lg border-2 border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand/20 transition-all duration-300 flex flex-col items-center text-center gap-3 sm:gap-5 group"
           >
             <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-brand/5 flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300">
               <MessageCircle className="w-3 h-3" />

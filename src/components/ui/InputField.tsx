@@ -52,7 +52,7 @@ export default function InputField({
           <div className="relative group">
             <div
               className={clsx(
-                "w-full h-[220px] sm:h-[280px] lg:h-[350px] rounded-xl overflow-hidden border-2 border-dashed transition-all duration-300",
+                "w-full h-[220px] sm:h-[280px] lg:h-[350px] rounded-lg overflow-hidden border-2 border-dashed transition-all duration-300",
                 previewImage
                   ? "border-brand shadow-md"
                   : "border-gray-300 hover:border-brand/50 bg-gray-50/50",
@@ -148,7 +148,7 @@ export default function InputField({
             {...restProps}
             required={required}
             className={clsx(
-              "w-full bg-white border-2 border-gray-100 rounded-sm transition-all focus:ring-4 focus:ring-brand/10 focus:border-brand outline-none font-medium placeholder:text-gray-400",
+              "w-full bg-white border-2 border-gray-100 rounded-md transition-all focus:ring-4 focus:ring-brand/10 focus:border-brand outline-none font-medium placeholder:text-gray-400",
               variant === "sm" ? "px-3 py-2 text-sm h-10" : "px-5 py-3.5 text-base",
               restProps.className,
             )}

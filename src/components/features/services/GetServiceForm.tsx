@@ -222,7 +222,7 @@ export default function GetServiceForm({
           src={heroBack} 
           alt="Hero Background" 
           fill 
-          className="object-cover mix-blend-screen [mask-image:linear-gradient(to_right,rgba(0,0,0,0)_0%,rgba(0,0,0,0.59)_100%)]"
+          className="object-cover mix-blend-screen [mask-image:linear-gradient(90deg,rgba(0,0,0,0)_11rem,rgba(0,0,0,.59))]"
           priority 
         />
         

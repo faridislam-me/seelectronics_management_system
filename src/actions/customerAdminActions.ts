@@ -209,6 +209,7 @@ export const createCustomer = async (data: any, sendLink = false) => {
       phone: data.phone,
       address: data.address,
       referredByVipCard: data.referralVipCard || null,
+      sellerId: data.sellerId || null,
     });
 
     // 2. Create invoice
@@ -417,6 +418,7 @@ export const updateCustomer = async (
         name: data.name,
         phone: data.phone,
         address: data.address,
+        ...(data.sellerId !== undefined && { sellerId: data.sellerId || null }),
       })
       .where(eq(customers.customerId, customerId));
 

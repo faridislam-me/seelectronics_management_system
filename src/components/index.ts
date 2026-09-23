@@ -4,6 +4,7 @@ export * from "./features/customers";
 export * from "./features/invoices";
 export * from "./features/notices";
 export * from "./features/payments";
+export * from "./features/sellers";
 export * from "./features/services";
 export * from "./features/staff";
 export * from "./features/subscriptions";

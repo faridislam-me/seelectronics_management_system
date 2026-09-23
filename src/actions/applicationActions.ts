@@ -1,8 +1,8 @@
 'use server'
 
-import { ApplicationMessages } from "@/constants/messages"
+import { ApplicationMessages, SellerMessages } from "@/constants/messages"
 import { db } from "@/db/drizzle"
-import { agreements, applications, customers, services, staffs, subscriptions } from "@/db/schema"
+import { agreements, applications, customers, sellers, services, staffs, subscriptions } from "@/db/schema"
 import { sendSMS, verifySession } from "@/lib"
 import { getObjectUrl } from "@/lib/s3"
 import { ApplicationTypes, SearchParams } from "@/types"
@@ -30,7 +30,10 @@ export const getApplications = async ({ query, type, page = '1', limit = '20' }:
                 ilike(services.customerAddressDistrict, q),
                 ilike(subscriptions.name, q),
                 ilike(subscriptions.phone, q),
-                ilike(subscriptions.district, q)
+                ilike(subscriptions.district, q),
+                ilike(sellers.shopName, q),
+                ilike(sellers.ownerName, q),
+                ilike(sellers.phone, q)
             ) : undefined
         )
 
@@ -40,13 +43,14 @@ export const getApplications = async ({ query, type, page = '1', limit = '20' }:
         const applicationsData = await db
             .select({
                 ...applicationColumns,
-                applicantName: sql<string>`coalesce(${staffs.name}, ${services.customerName}, ${subscriptions.name}, ${customers.name})`.as('applicantName'),
-                applicantPhone: sql<string>`coalesce(${staffs.phone}, ${services.customerPhone}, ${subscriptions.phone}, ${customers.phone})`.as('applicantPhone'),
+                applicantName: sql<string>`coalesce(${staffs.name}, ${services.customerName}, ${subscriptions.name}, ${customers.name}, ${sellers.shopName})`.as('applicantName'),
+                applicantPhone: sql<string>`coalesce(${staffs.phone}, ${services.customerPhone}, ${subscriptions.phone}, ${customers.phone}, ${sellers.phone})`.as('applicantPhone'),
                 applicantDistrict: sql<string>`coalesce(
                     ${staffs.currentDistrict}, 
                     ${services.customerAddressDistrict}, 
                     ${subscriptions.district},
-                    ${customers.address}
+                    ${customers.address},
+                    ${sellers.shopDistrict}
                     )`.as('applicantDistrict'),
             })
             .from(applications)
@@ -54,6 +58,7 @@ export const getApplications = async ({ query, type, page = '1', limit = '20' }:
             .leftJoin(services, eq(services.serviceId, applications.applicantId))
             .leftJoin(subscriptions, eq(subscriptions.subscriptionId, applications.applicantId))
             .leftJoin(customers, eq(customers.customerId, applications.applicantId))
+            .leftJoin(sellers, eq(sellers.sellerId, applications.applicantId))
             .where(filters)
             .limit(Number(limit))
             .offset(offset)
@@ -81,7 +86,10 @@ export const getApplicationsMetadata = async ({ query, type, page = '1', limit =
             ilike(services.customerAddressDistrict, q),
             ilike(subscriptions.name, q),
             ilike(subscriptions.phone, q),
-            ilike(subscriptions.district, q)
+            ilike(subscriptions.district, q),
+            ilike(sellers.shopName, q),
+            ilike(sellers.ownerName, q),
+            ilike(sellers.phone, q)
         ) : undefined
     )
     const totalRecords = (await db
@@ -91,6 +99,7 @@ export const getApplicationsMetadata = async ({ query, type, page = '1', limit =
         .leftJoin(services, eq(services.serviceId, applications.applicantId))
         .leftJoin(subscriptions, eq(subscriptions.subscriptionId, applications.applicantId))
         .leftJoin(customers, eq(customers.customerId, applications.applicantId))
+        .leftJoin(sellers, eq(sellers.sellerId, applications.applicantId))
         .where(filters))[0].count
 
     const totalPages = limit ? Math.ceil(totalRecords / Number(limit)) : 1;
@@ -138,10 +147,23 @@ export const getApplicationById = async (applicationId: string) => {
                         name: true,
                         phone: true,
                     }
+                },
+                seller: {
+                    columns: {
+                        shopName: true,
+                        ownerName: true,
+                        phone: true,
+                        ownerPhotoKey: true,
+                    }
                 }
             }
         })
         if (!applicationData) return { success: false, message: 'Application not found' }
+
+        if (applicationData.type === 'seller_application' && applicationData.seller) {
+            const photoUrl = await getObjectUrl(applicationData.seller.ownerPhotoKey)
+            return { success: true, data: { ...applicationData, seller: { ...applicationData.seller, photoUrl } } }
+        }
 
         if (applicationData.type === 'staff_application') {
             const photoUrl = await getObjectUrl(applicationData.staff.photoKey)
@@ -229,6 +251,16 @@ export const updateApplicationStatus = async (applicationId: string, updates: { 
                     }
                     break
                 }
+                case 'seller_application': {
+                    await db.update(sellers)
+                        .set({ isVerified: status === 'approved' })
+                        .where(eq(sellers.sellerId, applicationData[0].applicantId))
+
+                    messageContent = status === 'approved'
+                        ? SellerMessages.APPROVAL
+                        : SellerMessages.REJECTION
+                    break
+                }
                 case 'vip_card_application': {
                     const customer = await db.query.customers.findFirst({
                         where: eq(customers.customerId, applicationData[0].applicantId)
@@ -264,19 +296,21 @@ export const updateApplicationStatus = async (applicationId: string, updates: { 
 
             const applicantData = await db
                 .select({
-                    name: sql<string>`coalesce(${staffs.name}, ${services.customerName}, ${subscriptions.name})`.as('name'),
-                    phone: sql<string>`coalesce(${staffs.phone}, ${services.customerPhone}, ${subscriptions.phone})`.as('phone'),
+                    name: sql<string>`coalesce(${staffs.name}, ${services.customerName}, ${subscriptions.name}, ${sellers.ownerName})`.as('name'),
+                    phone: sql<string>`coalesce(${staffs.phone}, ${services.customerPhone}, ${subscriptions.phone}, ${sellers.phone})`.as('phone'),
                 })
                 .from(applications)
                 .leftJoin(staffs, eq(staffs.staffId, applications.applicantId))
                 .leftJoin(services, eq(services.serviceId, applications.applicantId))
                 .leftJoin(subscriptions, eq(subscriptions.subscriptionId, applications.applicantId))
+                .leftJoin(sellers, eq(sellers.sellerId, applications.applicantId))
                 .where(eq(applications.applicationId, applicationId))
 
             const fullMessage = renderText(
                 messageContent,
                 {
                     applicant_name: applicantData[0].name,
+                    seller_id: applicationData[0].applicantId,
                     service_id: serviceId,
                     card_number: (status === 'approved' && applicationData[0].type === 'vip_card_application') ? (await db.query.customers.findFirst({ where: eq(customers.customerId, applicationData[0].applicantId), columns: { vipCardNumber: true } }))?.vipCardNumber : '',
                     tracking_link: generateUrl(
@@ -288,7 +322,9 @@ export const updateApplicationStatus = async (applicationId: string, updates: { 
 
             const { notifyCustomer, notifyStaff } = await import("./notificationActions");
 
-            if (applicationData[0].type === 'staff_application') {
+            if (applicationData[0].type === 'seller_application') {
+                await sendSMS(applicantData[0].phone, fullMessage);
+            } else if (applicationData[0].type === 'staff_application') {
                 await notifyStaff({
                     staffId: applicationData[0].applicantId,
                     phoneNumber: applicantData[0].phone,
@@ -367,6 +403,12 @@ export const deleteApplication = async (applicationId: string) => {
                 const { deleteSubscriber } = await import("./subscriptionActions");
                 await deleteSubscriber(applicationData[0].applicantId)
                 revalidatePath('/subscriptions')
+                break;
+            }
+            case 'seller_application': {
+                const { deleteSeller } = await import("./sellerActions");
+                await deleteSeller(applicationData[0].applicantId)
+                revalidatePath('/sellers')
                 break;
             }
         }

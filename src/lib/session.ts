@@ -1,37 +1,16 @@
 import { db } from '@/db/drizzle';
-import { staffs } from '@/db/schema';
+import { sellers, staffs } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import 'server-only'
-import { JWTPayload, jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from 'react';
 
-const secretKey = process.env.SESSION_SECRET
-const encodedKey = new TextEncoder().encode(secretKey)
+export { encrypt, decrypt } from "./session-core";
+import { encrypt } from "./session-core";
+import { decrypt } from "./session-core";
 
-export async function encrypt(payload: JWTPayload) {
-    return await new SignJWT(payload)
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setExpirationTime(`${process.env.SESSION_EXPIRY_DAY!}d`)
-        .sign(encodedKey);
-
-}
-
-export async function decrypt(session: string | undefined = '') {
-    try {
-        if (!session) return null
-        const { payload } = await jwtVerify(session, encodedKey, {
-            algorithms: ['HS256']
-        })
-        return payload
-    } catch (error) {
-        return null
-    }
-}
-
-export async function createSession({ username, userId, role = 'admin' }: { username: string, userId: string, role?: 'admin' | 'staff' | 'customer' }) {
+export async function createSession({ username, userId, role = 'admin' }: { username: string, userId: string, role?: 'admin' | 'staff' | 'customer' | 'seller' }) {
     const expiresAt = new Date(Date.now() + parseInt(process.env.SESSION_EXPIRY_DAY!) * 24 * 60 * 60 * 1000)
     const session = await encrypt({ userId, username, role, expiresAt })
     const cookieStore = await cookies()
@@ -45,7 +24,7 @@ export async function createSession({ username, userId, role = 'admin' }: { user
     })
 }
 
-export const verifySession = cache(async (shouldRedirect = true, expectedRole?: 'admin' | 'staff' | 'customer') => {
+export const verifySession = cache(async (shouldRedirect = true, expectedRole?: 'admin' | 'staff' | 'customer' | 'seller') => {
     const cookie = (await cookies()).get('session')?.value
     const session = await decrypt(cookie)
 
@@ -60,6 +39,7 @@ export const verifySession = cache(async (shouldRedirect = true, expectedRole?: 
         if (shouldRedirect) {
             if (session.role === 'staff') redirect('/staff/profile')
             else if (session.role === 'customer') redirect('/customer/profile')
+            else if (session.role === 'seller') redirect('/seller/profile')
             else redirect('/')
         }
         return null
@@ -78,6 +58,23 @@ export const verifySession = cache(async (shouldRedirect = true, expectedRole?: 
             cookieStore.delete('session');
             if (shouldRedirect) {
                 redirect('/staff/login');
+            }
+            return null;
+        }
+    }
+
+    // Active check for blocked sellers
+    if (session.role === 'seller') {
+        const [seller] = await db.select({ isActiveSeller: sellers.isActiveSeller })
+            .from(sellers)
+            .where(eq(sellers.sellerId, session.userId as string))
+            .limit(1);
+
+        if (!seller || !seller.isActiveSeller) {
+            const cookieStore = await cookies();
+            cookieStore.delete('session');
+            if (shouldRedirect) {
+                redirect('/seller/login');
             }
             return null;
         }

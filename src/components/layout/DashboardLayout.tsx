@@ -19,6 +19,7 @@ import {
   Image as ImageIcon,
   MessageSquare,
   Star,
+  Store,
   UserCog,
   Users,
   Wrench,
@@ -101,6 +102,12 @@ const links = [
     href: "/staffs/electricians",
     icon: UserCog,
     sectionTitle: "Electrician",
+  },
+  {
+    name: "Sellers",
+    href: "/sellers",
+    icon: Store,
+    sectionTitle: "Sellers / Dealers",
   },
   {
     name: "VIP Cards",

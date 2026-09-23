@@ -7,6 +7,7 @@ import {
   serviceStatusEnum,
   serviceTypeEnum,
   staffRoleEnum,
+  sellerBusinessTypeEnum,
   statusTypesEnum,
   subscriptionTypesEnum,
 } from "@/db/schema";
@@ -422,4 +423,77 @@ export const ServiceReportDataSchema = z.object({
       customerPhone: z.string().min(1),
     })
     .optional(),
+});
+
+
+// ============================================
+// SELLERS
+// ============================================
+
+const BaseSellerDataSchema = z.object({
+  shopName: z.string().min(1),
+  businessType: z.enum(sellerBusinessTypeEnum.enumValues),
+  tradeLicenseNumber: z.string().min(1),
+  businessYears: z.coerce.number().optional(),
+  shopStreetAddress: z.string().min(1),
+  shopDistrict: z.string().min(1),
+  shopPoliceStation: z.string().optional(),
+  shopPostOffice: z.string().optional(),
+  ownerName: z.string().min(1),
+  phone: z.string().min(1),
+  nidNumber: z.string().min(1),
+
+  ownerPhoto: z.any(),
+  tradeLicensePhoto: z.any(),
+  shopFrontPhoto: z.any(),
+  shopInsidePhoto: z.any().optional(),
+  nidFrontPhoto: z.any(),
+  nidBackPhoto: z.any(),
+
+  paymentPreference: z.enum(paymentTypesEnum.enumValues),
+  walletNumber: z.string().optional(),
+  bankName: z.string().optional(),
+  accountHolderName: z.string().optional(),
+  accountNumber: z.string().optional(),
+  branchName: z.string().optional(),
+});
+
+const withSellerBankInfo = <T extends { paymentPreference: string; bankName?: string; accountHolderName?: string; accountNumber?: string; branchName?: string }>(data: T) => {
+  const { bankName, accountHolderName, accountNumber, branchName, ...restData } = data;
+  return {
+    ...restData,
+    ...(restData.paymentPreference === "bank" && {
+      bankInfo: {
+        bankName: bankName || "",
+        accountHolderName: accountHolderName || "",
+        accountNumber: accountNumber || "",
+        branchName: branchName || "",
+      },
+    }),
+  };
+};
+
+export const SellerDataSchema = BaseSellerDataSchema.extend({
+  sendConfirmationSMS: formBool().optional(),
+  agreed: formBool().optional(),
+  token: z.string().optional(),
+}).transform(withSellerBankInfo);
+
+export const UpdateSellerDataSchema = BaseSellerDataSchema.extend({
+  ownerPhoto: z.any().optional(),
+  tradeLicensePhoto: z.any().optional(),
+  shopFrontPhoto: z.any().optional(),
+  shopInsidePhoto: z.any().optional(),
+  nidFrontPhoto: z.any().optional(),
+  nidBackPhoto: z.any().optional(),
+}).transform(withSellerBankInfo);
+
+export const SellerPurchaseDataSchema = z.object({
+  productType: z.enum(productTypeEnum.enumValues),
+  productModel: z.string().min(1),
+  quantity: z.coerce.number().int().min(1),
+  unitPrice: z.coerce.number().min(0),
+  paidAmount: z.coerce.number().min(0).optional(),
+  note: z.string().optional(),
+  date: z.coerce.date(),
 });

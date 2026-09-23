@@ -6,6 +6,7 @@ import {
   validateReferralVipCard,
 } from "@/actions";
 import { getProducts } from "@/actions/productActions";
+import { SellerSelect } from "@/components/features/sellers";
 import { InputField, Modal, Spinner } from "@/components/ui";
 import { paymentTypes, productTypes, warrantyMonths } from "@/constants";
 import { CustomerData, Product } from "@/types";
@@ -22,6 +23,7 @@ export default function CustomerForm({
     CustomerData,
     "customerId" | "name" | "phone" | "address" | "referredByVipCard"
   > & {
+    sellerId?: string | null;
     invoice: Pick<
       CustomerData["invoice"],
       | "id"
@@ -41,6 +43,7 @@ export default function CustomerForm({
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [sendInvoiceLink, setSendInvoiceLink] = useState(false);
   const [referralVipCard, setReferralVipCard] = useState("");
+  const [sellerId, setSellerId] = useState(customerData?.sellerId || "");
   const [isVipValidating, setIsVipValidating] = useState(false);
   const [vipValidationResult, setVipValidationResult] = useState<{
     success: boolean;
@@ -183,6 +186,7 @@ export default function CustomerForm({
 
     const customerDataPayload = {
       ...customerInfo,
+      sellerId,
       referralVipCard:
         mode === "create" && vipValidationResult?.success
           ? referralVipCard
@@ -323,6 +327,7 @@ export default function CustomerForm({
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <SellerSelect value={sellerId} onChange={setSellerId} />
           <div className="flex-1 text-start">
             <label className="text-sm">
               Payment Type <span className="text-red-500 text-lg">*</span>

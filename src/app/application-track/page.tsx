@@ -39,6 +39,17 @@ const applicationContents = {
             expired: 'দুঃখিত, আপনার আবেদনের মেয়াদ শেষ হয়ে গেছে। বিস্তারিত জানতে যোগাযোগ করুন।',
         },
     },
+    seller_application: {
+        title: 'SE ELECTRONICS অথরাইজড সেলার আবেদন',
+        subtitle: 'আপনার সেলার/ডিলার আবেদনের বর্তমান অবস্থা এখানে দেখুন।',
+        statusMessages: {
+            pending: '{name}, আপনার সেলার আবেদনটি সফলভাবে জমা হয়েছে। আমরা আপনার ট্রেড লাইসেন্স ও NID যাচাই করে জানাবো, সেই পর্যন্ত আমাদের সাথে থাকুন।',
+            processing: `{name}, আপনার ট্রেড লাইসেন্স ও NID যাচাই সম্পন্ন হয়েছে। বাকি যাচাই শেষে কনফার্ম করা হবে। যেকোনো তথ্যের জন্য ${contactDetails.customerCare}`,
+            approved: `অভিনন্দন! আপনার সেলার আবেদনটি যাচাই করা হয়েছে এবং SE ELECTRONICS অথরাইজড সেলার হিসেবে অনুমোদিত হয়েছে। সেলার আইডি ও লগইন তথ্য আপনার মোবাইলে SMS করা হয়েছে। যেকোনো তথ্যের জন্য ${contactDetails.customerCare}`,
+            rejected: 'দুঃখিত, ডকুমেন্ট যাচাই সংক্রান্ত সমস্যার কারণে আপনার সেলার আবেদনটি বাতিল করা হয়েছে।\nঅনুগ্রহ করে সঠিক তথ্য দিয়ে পুনরায় আবেদন করুন।',
+            expired: 'দুঃখিত, আপনার আবেদনের মেয়াদ শেষ হয়ে গেছে। বিস্তারিত জানতে যোগাযোগ করুন।',
+        },
+    },
     vip_card_application: {
         title: 'ভিআইপি কার্ড আবেদন স্ট্যাটাস ট্র্যাকিং',
         subtitle: 'আপনার ভিআইপি কার্ড আবেদনের বর্তমান অবস্থা এখানে দেখুন।',
@@ -76,11 +87,12 @@ export default async function ApplicationTrack({ searchParams }: { searchParams:
                 <p className="text-sm font-normal mt-2 text-gray-500">{applicationContents[application.type].subtitle}</p>
             </div>
             <div className="bg-white shadow-sm rounded-md border-2 border-gray-200">
-                {application.staff &&
+                {(application.staff || application.seller) &&
                     <div className="bg-gradient-to-b from-gray-50 to-white py-6 px-4">
                         <div className="size-36 lg:size-44 rounded-full overflow-hidden border-4 border-white shadow-md mx-auto">
-                            <ImageWithLightbox src={(application?.staff as { photoUrl?: string })?.photoUrl ?? ''} alt="" className="w-full h-full object-cover" />
+                            <ImageWithLightbox src={(application?.staff as { photoUrl?: string })?.photoUrl ?? (application?.seller as { photoUrl?: string })?.photoUrl ?? ''} alt="" className="w-full h-full object-cover" />
                         </div>
+                        {application.seller && <p className="mt-3 font-black text-lg">{application.seller.shopName}</p>}
                     </div>
                 }
 
@@ -89,13 +101,13 @@ export default async function ApplicationTrack({ searchParams }: { searchParams:
                         <div className="flex justify-between items-center py-3 border-b border-gray-200">
                             <span className="text-primary md:text-base">Applicant Name</span>
                             <span className="font-medium md:text-base">
-                                {application.staff?.name || application.subscriber?.name || application.service?.customerName}
+                                {application.staff?.name || application.subscriber?.name || application.service?.customerName || application.seller?.ownerName}
                             </span>
                         </div>
                         <div className="flex justify-between items-center py-3 border-b border-gray-200">
                             <span className="text-primary md:text-base">Phone Number</span>
                             <span className="font-medium md:text-base">
-                                {application.staff?.phone || application.subscriber?.phone || application.service?.customerPhone}
+                                {application.staff?.phone || application.subscriber?.phone || application.service?.customerPhone || application.seller?.phone}
                             </span>
                         </div>
                         <div className="flex justify-between items-center py-3 border-b border-gray-200">
@@ -111,7 +123,7 @@ export default async function ApplicationTrack({ searchParams }: { searchParams:
                     <div className="bg-blue-50 border border-blue-100 rounded-md p-4 mt-4">
                         <p className="text-gray-700 md:text-base leading-relaxed">
                             {renderText(applicationContents[application.type].statusMessages[application.status], {
-                                name: application.staff?.name,
+                                name: application.staff?.name || application.seller?.ownerName,
                                 customer_name: application.service?.customerName
                             })}
                         </p>

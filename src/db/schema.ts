@@ -55,6 +55,14 @@ export const applicationTypesEnum = pgEnum("applicationTypes", [
   "staff_application",
   "subscription_application",
   "vip_card_application",
+  "seller_application",
+]);
+
+export const sellerBusinessTypeEnum = pgEnum("sellerBusinessType", [
+  "retail",
+  "wholesale",
+  "showroom",
+  "other",
 ]);
 
 export const staffRoleEnum = pgEnum("staffRole", ["technician", "electrician"]);
@@ -162,6 +170,9 @@ export const customers = pgTable(
     }).default(0),
     isWarrantyStopped: boolean().default(false).notNull(),
     warrantyStoppedAt: timestamp({ withTimezone: true }),
+    sellerId: varchar({ length: 255 }).references(() => sellers.sellerId, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp({ withTimezone: true })
       .defaultNow()
@@ -172,6 +183,7 @@ export const customers = pgTable(
     index("customer_id_idx").on(table.customerId),
     index("customer_phone_idx").on(table.phone),
     index("invoice_number_fk_idx").on(table.invoiceNumber),
+    index("customer_seller_id_idx").on(table.sellerId),
   ],
 );
 
@@ -266,6 +278,10 @@ export const customersRelations = relations(customers, ({ many, one }) => ({
   invoice: one(invoices, {
     fields: [customers.invoiceNumber],
     references: [invoices.invoiceNumber],
+  }),
+  seller: one(sellers, {
+    fields: [customers.sellerId],
+    references: [sellers.sellerId],
   }),
   services: many(services),
   feedbacks: many(feedbacks),
@@ -696,6 +712,10 @@ export const applicationsRelations = relations(applications, ({ one }) => ({
     fields: [applications.applicantId],
     references: [customers.customerId],
   }),
+  seller: one(sellers, {
+    fields: [applications.applicantId],
+    references: [sellers.sellerId],
+  }),
 }));
 
 export const agreements = pgTable("agreements", {
@@ -1034,3 +1054,105 @@ export const banners = pgTable("banners", {
     .$onUpdate(() => new Date())
     .notNull(),
 });
+
+// ============================================
+// SELLERS / DEALERS
+// ============================================
+
+export const sellers = pgTable(
+  "sellers",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    sellerId: varchar({ length: 255 }).unique().notNull(),
+    username: varchar({ length: 255 }).unique(),
+    password: text(),
+    shopName: varchar({ length: 255 }).notNull(),
+    businessType: sellerBusinessTypeEnum().default("retail").notNull(),
+    tradeLicenseNumber: varchar({ length: 255 }).notNull(),
+    businessYears: integer().default(0),
+    shopStreetAddress: text().notNull(),
+    shopDistrict: varchar({ length: 100 }).notNull(),
+    shopPoliceStation: varchar({ length: 100 }),
+    shopPostOffice: varchar({ length: 100 }),
+    ownerName: varchar({ length: 255 }).notNull(),
+    phone: varchar({ length: 255 }).notNull(),
+    nidNumber: varchar({ length: 50 }).notNull(),
+    ownerPhotoKey: varchar({ length: 255 }).notNull(),
+    tradeLicensePhotoKey: varchar({ length: 255 }).notNull(),
+    shopFrontPhotoKey: varchar({ length: 255 }).notNull(),
+    shopInsidePhotoKey: varchar({ length: 255 }),
+    nidFrontPhotoKey: varchar({ length: 255 }).notNull(),
+    nidBackPhotoKey: varchar({ length: 255 }).notNull(),
+    paymentPreference: paymentTypesEnum().default("bank").notNull(),
+    walletNumber: varchar({ length: 255 }),
+    bankInfo: json().$type<BankInfo>(),
+    isVerified: boolean().default(false).notNull(),
+    isActiveSeller: boolean().default(true).notNull(),
+    profileCompleted: boolean().default(false).notNull(),
+    createdFrom: createdFromTypesEnum().notNull(),
+    ipAddress: varchar({ length: 255 }),
+    userAgent: text(),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp({ withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("seller_id_idx").on(table.sellerId),
+    index("seller_username_idx").on(table.username),
+    index("seller_phone_idx").on(table.phone),
+    index("seller_is_verified_idx").on(table.isVerified),
+    index("seller_active_idx").on(table.isActiveSeller),
+  ],
+);
+
+export const sellerPurchases = pgTable(
+  "sellerPurchases",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    purchaseId: varchar({ length: 255 }).unique().notNull(),
+    invoiceNumber: varchar({ length: 255 }).unique().notNull(),
+    sellerId: varchar({ length: 255 })
+      .references(() => sellers.sellerId, { onDelete: "cascade" })
+      .notNull(),
+    productType: productTypeEnum().notNull(),
+    productModel: varchar({ length: 255 }).notNull(),
+    quantity: integer().default(1).notNull(),
+    unitPrice: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
+    totalAmount: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
+    paidAmount: numeric({ precision: 12, scale: 2, mode: "number" })
+      .default(0)
+      .notNull(),
+    note: text(),
+    date: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp({ withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("seller_purchase_seller_id_idx").on(table.sellerId),
+    index("seller_purchase_date_idx").on(table.date),
+  ],
+);
+
+export const sellersRelations = relations(sellers, ({ many, one }) => ({
+  customers: many(customers),
+  purchases: many(sellerPurchases),
+  application: one(applications, {
+    fields: [sellers.sellerId],
+    references: [applications.applicantId],
+  }),
+}));
+
+export const sellerPurchasesRelations = relations(
+  sellerPurchases,
+  ({ one }) => ({
+    seller: one(sellers, {
+      fields: [sellerPurchases.sellerId],
+      references: [sellers.sellerId],
+    }),
+  }),
+);

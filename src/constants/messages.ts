@@ -32,6 +32,16 @@ export const ApplicationMessages = {
   },
 };
 
+export const SellerMessages = {
+  REG_INVITE: `এস ই ইলেকট্রনিকস এর অথরাইজড সেলার/ডিলার হিসেবে যুক্ত হতে অনলাইন ফর্মটি পূরণ করুন। এই লিংকটি {registration_link_expiry} ঘন্টা পর অকার্যকর হয়ে যাবে {registration_link}`,
+  SUBMISSION: `প্রিয় {applicant_name},\nআপনার সেলার আবেদনটি SE ELECTRONICS এ সফলভাবে জমা হয়েছে। আমরা আপনার তথ্য ও ডকুমেন্ট যাচাই করছি।\nআবেদনটির স্ট্যাটাস ট্র্যাক করতে ভিজিট করুন\n{tracking_link}`,
+  APPROVAL: `প্রিয় {applicant_name},\nঅভিনন্দন! আপনার সেলার আবেদনটি যাচাই করা হয়েছে এবং SE ELECTRONICS অথরাইজড সেলার হিসেবে অনুমোদিত হয়েছে।\nসেলার আইডি: {seller_id}\nলগইন তথ্য শীঘ্রই পাঠানো হবে। যেকোনো তথ্যের জন্য ${contactDetails.customerCare}`,
+  REJECTION: `প্রিয় {applicant_name},\nদুঃখিত, ডকুমেন্ট যাচাই সংক্রান্ত সমস্যার কারণে আপনার সেলার আবেদনটি বাতিল করা হয়েছে।\nঅনুগ্রহ করে সঠিক তথ্য দিয়ে পুনরায় আবেদন করুন। ${contactDetails.customerCare}`,
+  CREDENTIALS: `প্রিয় {seller_name},\nআপনার সেলার পোর্টালের লগইন তথ্য:\nসেলার আইডি: {seller_id}\nইউজারনেম: {username}\nপাসওয়ার্ড: {password}\nলগইন করতে ভিজিট করুন: {login_url}`,
+  ACCOUNT_BLOCKED: `প্রিয় {seller_name},\nআপনার সেলার অ্যাকাউন্টটি সাময়িকভাবে বন্ধ (Blocked) করা হয়েছে। বিস্তারিত জানতে এডমিনের সাথে যোগাযোগ করুন। ${contactDetails.customerCare}`,
+  ACCOUNT_ACTIVATED: `প্রিয় {seller_name},\nআপনার সেলার অ্যাকাউন্টটি পুনরায় সক্রিয় (Activated) করা হয়েছে। ${contactDetails.customerCare}`,
+};
+
 export const MediaDownloadMessages = {
   CUSTOMER_INVOICE: `স্বাগতম প্রিয় গ্রাহক {name},
 এস ই ইলেকট্রনিকস থেকে পন্য ক্রয় করার জন্য আপনাকে ধন্যবাদ। আপনার একটি প্রোফাইল তৈরি হয়েছে।

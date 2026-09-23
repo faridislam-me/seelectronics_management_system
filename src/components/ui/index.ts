@@ -12,3 +12,4 @@ export { default as Spinner } from "./Spinner";
 export { default as StarRating } from "./StarRating";
 export { default as StatusBadge } from "./StatusBadge";
 export { default as Timestamp } from "./Timestamp";
+export * from "./BlueDashboard";

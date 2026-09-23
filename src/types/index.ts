@@ -1,5 +1,7 @@
 export type UrlConfig =
   | { type: "registration"; params: { token: string } }
+  | { type: "seller-registration"; params: { token: string } }
+  | { type: "seller-login"; params?: {} }
   | { type: "feedback"; params: { serviceId: string } }
   | { type: "application-tracking"; params: { trackingId: string } }
   | { type: "service-tracking"; params: { trackingId: string } }
@@ -13,7 +15,9 @@ export type ProductTypes = "ips" | "battery" | "stabilizer" | "others";
 export type ApplicationTypes =
   | "service_application"
   | "staff_application"
-  | "subscription_application";
+  | "subscription_application"
+  | "vip_card_application"
+  | "seller_application";
 export type DocType =
   | "invoice"
   | "payment"
@@ -420,3 +424,61 @@ export type StaffNotificationType = {
 export type CombinedNotificationType =
   | (NoticeRecipientType & { itemType: "notice" })
   | (StaffNotificationType & { itemType: "action" });
+
+export type SellerBusinessType = "retail" | "wholesale" | "showroom" | "other";
+
+export type SellersType = {
+  id: string;
+  sellerId: string;
+  username?: string | null;
+  shopName: string;
+  businessType: SellerBusinessType;
+  tradeLicenseNumber: string;
+  businessYears: number | null;
+  shopStreetAddress: string;
+  shopDistrict: string;
+  shopPoliceStation: string | null;
+  shopPostOffice: string | null;
+  ownerName: string;
+  phone: string;
+  nidNumber: string;
+  ownerPhotoKey: string;
+  ownerPhotoUrl?: string | null;
+  tradeLicensePhotoKey: string;
+  shopFrontPhotoKey: string;
+  shopFrontPhotoUrl?: string | null;
+  shopInsidePhotoKey: string | null;
+  nidFrontPhotoKey: string;
+  nidBackPhotoKey: string;
+  paymentPreference: PaymentTypes;
+  walletNumber: string | null;
+  bankInfo: BankInfo | null;
+  isVerified: boolean;
+  isActiveSeller: boolean;
+  profileCompleted: boolean;
+  createdFrom: "public_form" | "dashboard";
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  customersCount?: number;
+  purchasedUnits?: number;
+  dueAmount?: number;
+};
+
+export type SellerPurchaseType = {
+  id: string;
+  purchaseId: string;
+  invoiceNumber: string;
+  sellerId: string;
+  productType: ProductTypes;
+  productModel: string;
+  quantity: number;
+  unitPrice: number;
+  totalAmount: number;
+  paidAmount: number;
+  note: string | null;
+  date: Date;
+  createdAt: Date;
+  updatedAt: Date;
+};

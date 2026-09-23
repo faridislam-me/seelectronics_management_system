@@ -64,6 +64,15 @@ export const generateUrl = <T extends UrlConfig["type"]>(
       }
       return `${baseUrl}/register?token=${p.token}`;
 
+    case "seller-registration":
+      if (!p.token) {
+        throw new Error("token is required");
+      }
+      return `${baseUrl}/seller/register?token=${p.token}`;
+
+    case "seller-login":
+      return `${baseUrl}/seller/login`;
+
     case "application-tracking":
       if (!p.trackingId) {
         throw new Error("trackingId is required");

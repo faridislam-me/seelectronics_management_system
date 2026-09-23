@@ -43,6 +43,13 @@
       "when": 1788557425780,
       "tag": "0005_marvelous_dracula",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790197121852,
+      "tag": "0006_seller_module",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { decrypt } from "./lib/session";
+import { decrypt } from "./lib/session-core";
 
 const adminProtectedRoutes = [
     '/',
@@ -13,6 +13,16 @@ const adminProtectedRoutes = [
     '/invoices',
     '/applications',
     '/referral-payments',
+    '/sellers',
+];
+
+const sellerProtectedRoutes = [
+    '/seller/profile',
+    '/seller/purchases',
+    '/seller/customers',
+    '/seller/services',
+    '/seller/details',
+    '/seller/settings',
 ];
 
 const staffProtectedRoutes = [
@@ -68,6 +78,9 @@ export async function middleware(request: NextRequest) {
         if (session?.role === 'customer') {
             return NextResponse.redirect(new URL('/customer/profile', request.nextUrl));
         }
+        if (session?.role === 'seller') {
+            return NextResponse.redirect(new URL('/seller/profile', request.nextUrl));
+        }
         // Otherwise redirect to login
         return NextResponse.redirect(new URL('/login', request.nextUrl));
     }
@@ -84,12 +97,20 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/customer/login', request.nextUrl));
     }
 
+    // Check if trying to access seller routes without seller session
+    const isSellerRoute = sellerProtectedRoutes.some(route => path === route || path.startsWith(route + '/'));
+    if (isSellerRoute && (!session?.userId || session.role !== 'seller')) {
+        return NextResponse.redirect(new URL('/seller/login', request.nextUrl));
+    }
+
     // Redirect logged-in users away from login pages
-    if ((path === '/login' || path === '/staff/login' || path === '/customer/login') && session?.userId) {
+    if ((path === '/login' || path === '/staff/login' || path === '/customer/login' || path === '/seller/login') && session?.userId) {
         if (session.role === 'staff') {
             return NextResponse.redirect(new URL('/staff/profile', request.nextUrl));
         } else if (session.role === 'customer') {
             return NextResponse.redirect(new URL('/customer/profile', request.nextUrl));
+        } else if (session.role === 'seller') {
+            return NextResponse.redirect(new URL('/seller/profile', request.nextUrl));
         } else {
             return NextResponse.redirect(new URL('/', request.nextUrl));
         }

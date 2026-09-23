@@ -4,6 +4,7 @@ import { deleteApplication, updateApplicationStatus } from "@/actions";
 import { CustomerViewModal } from "@/components/features/customers";
 import { ServiceViewModal } from "@/components/features/services";
 import { StaffProfileModal } from "@/components/features/staff";
+import { SellerProfileModal } from "@/components/features/sellers";
 import { SubscriberViewModal } from "@/components/features/subscriptions";
 import { Modal, StatusBadge } from "@/components/ui";
 import { useRef, useState } from "react";
@@ -20,7 +21,8 @@ export default function ApplicationActionButtons({
       | "service_application"
       | "staff_application"
       | "subscription_application"
-      | "vip_card_application";
+      | "vip_card_application"
+      | "seller_application";
     rejectReason: string | null;
   };
 }) {
@@ -154,6 +156,11 @@ export default function ApplicationActionButtons({
             ) : applicationData.type === "subscription_application" ? (
               <SubscriberViewModal
                 subscriberId={applicationData.applicantId}
+                onClose={() => setShowViewModal(false)}
+              />
+            ) : applicationData.type === "seller_application" ? (
+              <SellerProfileModal
+                sellerId={applicationData.applicantId}
                 onClose={() => setShowViewModal(false)}
               />
             ) : (

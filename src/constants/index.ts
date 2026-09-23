@@ -39,7 +39,21 @@ export const ApplicationTypes = {
     service_application: 'Service Application',
     subscription_application: 'Subscription Application',
     vip_card_application: 'VIP Card Application',
+    seller_application: 'Seller Application',
 }
+
+export const sellerBusinessTypes = [
+    { value: 'retail', label: 'রিটেইল শপ' },
+    { value: 'wholesale', label: 'হোলসেল' },
+    { value: 'showroom', label: 'শোরুম' },
+    { value: 'other', label: 'অন্যান্য' },
+] as const
+
+export const sellerRegistrationLinkMessagePreview = 'এস ই ইলেকট্রনিকস অথরাইজড সেলার/ডিলার আবেদন লিংক: {{registration_link}}\nলিংকটি {{registration_link_expiry}} ঘণ্টা পর অকার্যকর হয়ে যাবে।'
+
+export const sellerAgreementText = `
+আমি ঘোষণা করিতেছি যে, উপরোক্ত সকল তথ্য ও ডকুমেন্ট সঠিক। SE ELECTRONICS এর সেলার নীতিমালা, মূল্য তালিকা ও ওয়ারেন্টি শর্ত মানিয়া চলিব। ভুল তথ্য প্রদান করিলে সেলারশিপ বাতিল হইতে পারে।
+`
 
 export const serviceCancelationReasons = [
     'সার্কিট পুরে গেছে হোম সার্ভিস সম্ভব না',

@@ -26,6 +26,7 @@ export default function ApplicationFilter() {
             <option value="service">Service</option>
             <option value="subscription">Subscription</option>
             <option value="vip_card">VIP Card</option>
+            <option value="seller">Seller</option>
         </select>
     </div>
 }

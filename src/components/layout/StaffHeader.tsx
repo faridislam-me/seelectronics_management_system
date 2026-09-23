@@ -1,5 +1,6 @@
 "use client";
 
+import { Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { StaffNotificationBell } from "../features/notices";
@@ -81,7 +82,7 @@ export function StaffHeader({ balance }: StaffHeaderProps) {
     pathname === "/staff/profile" || pathname === "/staff/details";
 
   return (
-    <header className="sticky top-0 z-50 bg-[#0A1A3A] text-white shadow-lg overflow-hidden w-full">
+    <header className={`sticky top-0 z-50 text-white shadow-lg overflow-hidden w-full ${isNoTitlePage ? "bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)]" : "bg-[#0A1A3A]"}`}>
       <div className="max-w-4xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between gap-3">
         {!isNoTitlePage ? (
           <>
@@ -113,14 +114,17 @@ export function StaffHeader({ balance }: StaffHeaderProps) {
           </>
         ) : (
           <>
-            {/* NO TITLE PAGE: BALANCE BAR & NOTIFICATIONS ONLY */}
-            {showBalance && (
-              <div className="min-w-0 max-w-[140px] xs:max-w-none">
-                <StaffBalanceBar amount={balance} />
-              </div>
-            )}
-            <div className="ml-auto">
+            {/* NO TITLE PAGE: BRAND BLOCK, NOTIFICATIONS & SETTINGS */}
+            <Link href="/staff/profile" className="flex items-center gap-2.5 min-w-0">
+              <span className="size-11 rounded-2xl bg-[#1f7cf0] text-white text-lg font-extrabold flex items-center justify-center shadow-[0_6px_16px_rgba(0,40,120,0.35)] shrink-0">SE</span>
+              <span className="flex flex-col leading-tight min-w-0">
+                <span className="text-lg font-extrabold text-white truncate">SE Electronics</span>
+                <span className="text-[11px] text-white/85 font-medium">Smart Solution &nbsp;Better Life</span>
+              </span>
+            </Link>
+            <div className="ml-auto flex items-center gap-1">
               <StaffNotificationBell />
+              <Link href="/staff/settings" aria-label="Settings" className="size-11 flex items-center justify-center text-white"><Settings size={26} strokeWidth={2} /></Link>
             </div>
           </>
         )}

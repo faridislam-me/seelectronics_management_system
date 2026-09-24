@@ -16,8 +16,6 @@ type SellerDetail = SellersType & {
   customers: { customerId: string; name: string; phone: string; address: string; createdAt: Date; invoiceNumber: string }[];
 };
 
-const paymentLabels: Record<string, string> = { bank: "ব্যাংক", bkash: "বিকাশ", nagad: "নগদ", rocket: "রকেট", cash: "ক্যাশ" };
-
 export default function SellerProfileModal({ sellerId, onClose }: { sellerId: string; onClose: () => void }) {
   const [seller, setSeller] = useState<SellerDetail | null>(null);
   const [docs, setDocs] = useState<string[] | null>(null);
@@ -88,19 +86,10 @@ export default function SellerProfileModal({ sellerId, onClose }: { sellerId: st
               <Row label="Source" value={seller.createdFrom} />
             </div>
             <div>
-              <div className="font-semibold mb-2 p-1 bg-blue-100">Payment preferences</div>
-              <Row label="মাধ্যম" value={paymentLabels[seller.paymentPreference]} />
-              {seller.paymentPreference === "bank" ? (
-                <>
-                  <Row label="ব্যাংক নাম" value={seller.bankInfo?.bankName} />
-                  <Row label="একাউন্ট নাম" value={seller.bankInfo?.accountHolderName} />
-                  <Row label="একাউন্ট নাম্বার" value={seller.bankInfo?.accountNumber} />
-                  <Row label="শাখা" value={seller.bankInfo?.branchName} />
-                </>
-              ) : (
-                <Row label="ওয়ালেট নাম্বার" value={seller.walletNumber || "N/A"} />
-              )}
+              <div className="font-semibold mb-2 p-1 bg-blue-100">Account</div>
               <Row label="Login" value={seller.username ? `@${seller.username}` : "Not set"} />
+              <Row label="Status" value={seller.isActiveSeller ? "Active" : "Blocked"} />
+              <Row label="Verified" value={seller.isVerified ? "Yes" : "Pending"} />
             </div>
           </div>
 

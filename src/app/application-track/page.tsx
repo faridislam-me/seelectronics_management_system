@@ -1,8 +1,8 @@
 import { getApplicationById } from "@/actions"
-import { ImageWithLightbox } from "@/components"
-import StatusBadge from "@/components/ui/StatusBadge"
+import { ApplicationTrackView } from "@/components/features/applications"
 import { contactDetails } from "@/constants"
-import { AppError, formatDate, renderText } from "@/utils"
+import { AppError, renderText } from "@/utils"
+import { Package } from "lucide-react"
 import { notFound } from "next/navigation"
 
 const applicationContents = {
@@ -71,65 +71,35 @@ export default async function ApplicationTrack({ searchParams }: { searchParams:
     const res = await getApplicationById(trackingId)
 
     if (!res.success) {
-        throw new AppError("অ্যাপ্লিকেশন আইডিটি সঠিক নয়।")
+        throw new AppError("অ্যাপ্লিকেশন আইডিটি সঠিক নয়।")
     }
     const application = res.data!
+    const content = applicationContents[application.type]
+    const staff = application.staff as { name: string; phone: string; photoUrl?: string } | null
+    const seller = application.seller as { shopName: string; ownerName: string; phone: string; photoUrl?: string } | null
+    const service = application.service
+    const subscriber = application.subscriber
+
+    const applicantName = staff?.name || subscriber?.name || service?.customerName || seller?.ownerName || "—"
+    const phone = staff?.phone || subscriber?.phone || service?.customerPhone || seller?.phone || "—"
+    const extraRows = service
+        ? [{ label: "পণ্য", value: `${service.productType.toUpperCase()} ${service.productModel}`, icon: Package }]
+        : []
 
     return (
-        <div className="mx-auto max-w-[1000px] text-center p-3">
-            <div className="h-full font-bold mb-3 flex flex-col gap-0.5 p-6 rounded-md border-[2px]">
-                <div className="text-xl">
-                    {applicationContents[application.type].title}
-                </div>
-                <div className="text-md">হেল্পলাইন : {contactDetails.customerCare}</div>
-                <div className="text-md">Email : {contactDetails.email}</div>
-                <div className="text-sm">হেড অফিস : {contactDetails.headOffice}</div>
-                <p className="text-sm font-normal mt-2 text-gray-500">{applicationContents[application.type].subtitle}</p>
-            </div>
-            <div className="bg-white shadow-sm rounded-md border-2 border-gray-200">
-                {(application.staff || application.seller) &&
-                    <div className="bg-gradient-to-b from-gray-50 to-white py-6 px-4">
-                        <div className="size-36 lg:size-44 rounded-full overflow-hidden border-4 border-white shadow-md mx-auto">
-                            <ImageWithLightbox src={(application?.staff as { photoUrl?: string })?.photoUrl ?? (application?.seller as { photoUrl?: string })?.photoUrl ?? ''} alt="" className="w-full h-full object-cover" />
-                        </div>
-                        {application.seller && <p className="mt-3 font-black text-lg">{application.seller.shopName}</p>}
-                    </div>
-                }
-
-                <div className="px-4 py-6 pt-0 space-y-4">
-                    <div className="bg-gray-50 rounded-md p-4">
-                        <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                            <span className="text-primary md:text-base">Applicant Name</span>
-                            <span className="font-medium md:text-base">
-                                {application.staff?.name || application.subscriber?.name || application.service?.customerName || application.seller?.ownerName}
-                            </span>
-                        </div>
-                        <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                            <span className="text-primary md:text-base">Phone Number</span>
-                            <span className="font-medium md:text-base">
-                                {application.staff?.phone || application.subscriber?.phone || application.service?.customerPhone || application.seller?.phone}
-                            </span>
-                        </div>
-                        <div className="flex justify-between items-center py-3 border-b border-gray-200">
-                            <span className="text-primary md:text-base">Status</span>
-                            <StatusBadge status={application.status} />
-                        </div>
-                        <div className="flex justify-between items-center py-3">
-                            <span className="text-primary md:text-base">Applied Date</span>
-                            <span className="font-medium md:text-base">{formatDate(application.createdAt!)}</span>
-                        </div>
-                    </div>
-
-                    <div className="bg-blue-50 border border-blue-100 rounded-md p-4 mt-4">
-                        <p className="text-gray-700 md:text-base leading-relaxed">
-                            {renderText(applicationContents[application.type].statusMessages[application.status], {
-                                name: application.staff?.name || application.seller?.ownerName,
-                                customer_name: application.service?.customerName
-                            })}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <ApplicationTrackView
+            type={application.type}
+            status={application.status}
+            applicantName={applicantName}
+            phone={phone}
+            appliedAt={application.createdAt!}
+            photoUrl={staff?.photoUrl ?? seller?.photoUrl ?? null}
+            headline={seller?.shopName ?? null}
+            extraRows={extraRows}
+            message={renderText(content.statusMessages[application.status], {
+                name: staff?.name || seller?.ownerName,
+                customer_name: service?.customerName,
+            })}
+        />
     )
 }

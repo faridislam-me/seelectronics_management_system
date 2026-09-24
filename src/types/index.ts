@@ -450,9 +450,6 @@ export type SellersType = {
   shopInsidePhotoKey: string | null;
   nidFrontPhotoKey: string;
   nidBackPhotoKey: string;
-  paymentPreference: PaymentTypes;
-  walletNumber: string | null;
-  bankInfo: BankInfo | null;
   isVerified: boolean;
   isActiveSeller: boolean;
   profileCompleted: boolean;

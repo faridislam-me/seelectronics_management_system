@@ -295,7 +295,7 @@ export const createSeller = async (_prevState: any, formData: FormData) => {
 
     const {
       ownerPhoto, tradeLicensePhoto, shopFrontPhoto, shopInsidePhoto, nidFrontPhoto, nidBackPhoto,
-      agreed, token, sendConfirmationSMS, bankInfo, ...rest
+      agreed, token, sendConfirmationSMS, ...rest
     } = parsed.data;
 
     const originSource = token ? "public_form" : "dashboard";
@@ -339,8 +339,6 @@ export const createSeller = async (_prevState: any, formData: FormData) => {
       ...rest,
       sellerId,
       ...keys,
-      bankInfo: bankInfo || null,
-      walletNumber: rest.walletNumber || null,
       shopPoliceStation: rest.shopPoliceStation || null,
       shopPostOffice: rest.shopPostOffice || null,
       businessYears: rest.businessYears ?? 0,
@@ -395,14 +393,12 @@ export const updateSeller = async (sellerId: string, formData: FormData) => {
     const session = await verifySession(false, "admin");
     if (!session) return { success: false, message: "Unauthorized" };
 
-    const { ownerPhoto, tradeLicensePhoto, shopFrontPhoto, shopInsidePhoto, nidFrontPhoto, nidBackPhoto, bankInfo, ...rest } =
+    const { ownerPhoto, tradeLicensePhoto, shopFrontPhoto, shopInsidePhoto, nidFrontPhoto, nidBackPhoto, ...rest } =
       UpdateSellerDataSchema.parse(Object.fromEntries(formData));
 
     const base = `media/seller/${sellerId}`;
     const payload: Partial<typeof sellers.$inferInsert> = {
       ...rest,
-      bankInfo: rest.paymentPreference === "bank" ? bankInfo || null : null,
-      walletNumber: rest.paymentPreference === "bank" ? null : rest.walletNumber || null,
       shopPoliceStation: rest.shopPoliceStation || null,
       shopPostOffice: rest.shopPostOffice || null,
     };

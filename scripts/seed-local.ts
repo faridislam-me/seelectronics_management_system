@@ -28,13 +28,12 @@ async function main() {
     sellerId: "SESELL0001", username: "bismillah", password: hash, shopName: "Bismillah Electronics", businessType: "retail", tradeLicenseNumber: "TL-778899", businessYears: 6,
     shopStreetAddress: "Zindabazar", shopDistrict: "sylhet", shopPoliceStation: "kotwali", shopPostOffice: "Sylhet", ownerName: "Abdul Karim", phone: "01722222222", nidNumber: "1234567890123",
     ownerPhotoKey: "media/seller/x/owner.webp", tradeLicensePhotoKey: "media/seller/x/tl.webp", shopFrontPhotoKey: "media/seller/x/shop.webp", nidFrontPhotoKey: "media/seller/x/nf.webp", nidBackPhotoKey: "media/seller/x/nb.webp",
-    paymentPreference: "bank", bankInfo: { bankName: "Islami Bank", accountHolderName: "Abdul Karim", accountNumber: "20501234567", branchName: "Zindabazar" },
     isVerified: true, isActiveSeller: true, profileCompleted: true, createdFrom: "dashboard",
   }).onConflictDoNothing();
   await db.insert(schema.sellers).values({
     sellerId: "SESELL0002", shopName: "Karim Traders", businessType: "wholesale", tradeLicenseNumber: "TL-112233", shopStreetAddress: "Bandar Bazar", shopDistrict: "sylhet", ownerName: "Rahim Uddin", phone: "01733333333", nidNumber: "9876543210123",
     ownerPhotoKey: "media/seller/y/owner.webp", tradeLicensePhotoKey: "media/seller/y/tl.webp", shopFrontPhotoKey: "media/seller/y/shop.webp", nidFrontPhotoKey: "media/seller/y/nf.webp", nidBackPhotoKey: "media/seller/y/nb.webp",
-    paymentPreference: "bkash", walletNumber: "01733333333", isVerified: false, createdFrom: "public_form",
+    isVerified: false, createdFrom: "public_form",
   }).onConflictDoNothing();
   await db.insert(schema.applications).values({ applicationId: "SEAPPSELL1", applicantId: "SESELL0002", type: "seller_application", status: "pending" }).onConflictDoNothing();
 

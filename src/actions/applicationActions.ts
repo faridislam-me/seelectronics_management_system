@@ -138,8 +138,11 @@ export const getApplicationById = async (applicationId: string) => {
                 },
                 service: {
                     columns: {
+                        serviceId: true,
                         customerName: true,
                         customerPhone: true,
+                        productType: true,
+                        productModel: true,
                     }
                 },
                 subscriber: {

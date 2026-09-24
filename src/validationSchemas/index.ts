@@ -449,35 +449,13 @@ const BaseSellerDataSchema = z.object({
   shopInsidePhoto: z.any().optional(),
   nidFrontPhoto: z.any(),
   nidBackPhoto: z.any(),
-
-  paymentPreference: z.enum(paymentTypesEnum.enumValues),
-  walletNumber: z.string().optional(),
-  bankName: z.string().optional(),
-  accountHolderName: z.string().optional(),
-  accountNumber: z.string().optional(),
-  branchName: z.string().optional(),
 });
-
-const withSellerBankInfo = <T extends { paymentPreference: string; bankName?: string; accountHolderName?: string; accountNumber?: string; branchName?: string }>(data: T) => {
-  const { bankName, accountHolderName, accountNumber, branchName, ...restData } = data;
-  return {
-    ...restData,
-    ...(restData.paymentPreference === "bank" && {
-      bankInfo: {
-        bankName: bankName || "",
-        accountHolderName: accountHolderName || "",
-        accountNumber: accountNumber || "",
-        branchName: branchName || "",
-      },
-    }),
-  };
-};
 
 export const SellerDataSchema = BaseSellerDataSchema.extend({
   sendConfirmationSMS: formBool().optional(),
   agreed: formBool().optional(),
   token: z.string().optional(),
-}).transform(withSellerBankInfo);
+});
 
 export const UpdateSellerDataSchema = BaseSellerDataSchema.extend({
   ownerPhoto: z.any().optional(),
@@ -486,7 +464,7 @@ export const UpdateSellerDataSchema = BaseSellerDataSchema.extend({
   shopInsidePhoto: z.any().optional(),
   nidFrontPhoto: z.any().optional(),
   nidBackPhoto: z.any().optional(),
-}).transform(withSellerBankInfo);
+});
 
 export const SellerPurchaseDataSchema = z.object({
   productType: z.enum(productTypeEnum.enumValues),

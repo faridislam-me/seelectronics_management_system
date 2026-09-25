@@ -85,7 +85,7 @@ export default async function StaffDetailsPage() {
           ]}
         />
 
-        <div className="max-w-6xl mx-auto px-3.5 -mt-4 relative pb-5 flex flex-col gap-3.5">
+        <div className="max-w-6xl mx-auto px-2 -mt-4 relative pb-4 flex flex-col gap-2.5">
           <BlueBalanceCard
             label="AVAILABLE BALANCE"
             value={`৳ ${Number(stats?.availableBalance || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
@@ -115,7 +115,7 @@ export default async function StaffDetailsPage() {
           {/* INFO GRID */}
           <div id="experience" className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* EXPERIENCE */}
-            <div className="bg-white p-5 rounded-lg border border-slate-100 shadow-sm space-y-4">
+            <div className="bg-white p-5 rounded-md border border-slate-100 shadow-sm space-y-4">
               <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2">
                 Experience
               </h3>
@@ -157,7 +157,7 @@ export default async function StaffDetailsPage() {
             </div>
 
             {/* ADDRESSES */}
-            <div className="bg-white p-5 rounded-lg border border-slate-100 shadow-sm flex items-center gap-3">
+            <div className="bg-white p-5 rounded-md border border-slate-100 shadow-sm flex items-center gap-3">
               <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 shrink-0 shadow-sm border border-slate-200/50 mt-1">
                 <MapPin size={18} />
               </div>
@@ -171,7 +171,7 @@ export default async function StaffDetailsPage() {
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-lg border border-slate-100 shadow-sm flex items-center gap-3">
+            <div className="bg-white p-5 rounded-md border border-slate-100 shadow-sm flex items-center gap-3">
               <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 shrink-0 shadow-sm border border-slate-200/50 mt-1">
                 <Home size={18} />
               </div>
@@ -188,7 +188,7 @@ export default async function StaffDetailsPage() {
           </div>
 
           {/* PAYMENT */}
-          <div className="bg-white p-5 rounded-lg border border-slate-100 shadow-sm flex items-center justify-between">
+          <div className="bg-white p-5 rounded-md border border-slate-100 shadow-sm flex items-center justify-between">
             <div className="space-y-1.5">
               <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2">
                 Payment Method Preference
@@ -217,7 +217,7 @@ export default async function StaffDetailsPage() {
             {/* Icon */}
             <div className="shrink-0 ml-4">
               {staffData.paymentPreference === "bkash" && (
-                <div className="w-12 h-12 rounded-lg bg-white shadow-sm flex items-center justify-center border border-slate-100">
+                <div className="w-12 h-12 rounded-md bg-white shadow-sm flex items-center justify-center border border-slate-100">
                   <svg
                     className="w-8 h-8"
                     xmlns="http://www.w3.org/2000/svg"
@@ -257,17 +257,17 @@ export default async function StaffDetailsPage() {
                 </div>
               )}
               {staffData.paymentPreference === "nagad" && (
-                <div className="w-12 h-12 rounded-lg bg-[#F15A22] flex items-center justify-center shadow-sm text-white font-extrabold text-xl select-none">
+                <div className="w-12 h-12 rounded-md bg-[#F15A22] flex items-center justify-center shadow-sm text-white font-extrabold text-xl select-none">
                   ন
                 </div>
               )}
               {staffData.paymentPreference === "rocket" && (
-                <div className="w-12 h-12 rounded-lg bg-[#8C3494] flex items-center justify-center shadow-sm text-white font-extrabold text-lg select-none">
+                <div className="w-12 h-12 rounded-md bg-[#8C3494] flex items-center justify-center shadow-sm text-white font-extrabold text-lg select-none">
                   🚀
                 </div>
               )}
               {staffData.paymentPreference === "bank" && (
-                <div className="w-12 h-12 rounded-lg bg-blue-600 flex items-center justify-center shadow-sm text-white">
+                <div className="w-12 h-12 rounded-md bg-blue-600 flex items-center justify-center shadow-sm text-white">
                   <svg
                     className="w-6 h-6"
                     fill="none"
@@ -284,7 +284,7 @@ export default async function StaffDetailsPage() {
                 </div>
               )}
               {staffData.paymentPreference === "cash" && (
-                <div className="w-12 h-12 rounded-lg bg-emerald-600 flex items-center justify-center shadow-sm text-white">
+                <div className="w-12 h-12 rounded-md bg-emerald-600 flex items-center justify-center shadow-sm text-white">
                   <svg
                     className="w-6 h-6"
                     fill="none"
@@ -306,13 +306,13 @@ export default async function StaffDetailsPage() {
           </div>
 
           {/* NID DOCUMENTS */}
-          <div className="bg-white p-5 rounded-lg border border-slate-100 shadow-sm space-y-4">
+          <div className="bg-white p-5 rounded-md border border-slate-100 shadow-sm space-y-4">
             <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2">
               NID Documents front & back
             </h3>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg overflow-hidden border border-slate-100 shadow-sm bg-slate-50">
+              <div className="rounded-md overflow-hidden border border-slate-100 shadow-sm bg-slate-50">
                 <Image
                   src={nidFrontUrl || "/placeholder.jpg"}
                   alt="NID Front"
@@ -322,7 +322,7 @@ export default async function StaffDetailsPage() {
                 />
               </div>
 
-              <div className="rounded-lg overflow-hidden border border-slate-100 shadow-sm bg-slate-50">
+              <div className="rounded-md overflow-hidden border border-slate-100 shadow-sm bg-slate-50">
                 <Image
                   src={nidBackUrl || "/placeholder.jpg"}
                   alt="NID Back"
@@ -339,7 +339,7 @@ export default async function StaffDetailsPage() {
             <form action={staffLogout}>
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-red-500 hover:bg-red-600 active:scale-95 transition-all text-white text-sm font-bold shadow-sm"
+                className="flex w-full items-center justify-center gap-2 px-5 py-2.5 rounded-md bg-red-500 hover:bg-red-600 active:scale-95 transition-all text-white text-sm font-bold shadow-sm"
               >
                 <LogOut size={18} />
                 Logout

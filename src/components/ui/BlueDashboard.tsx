@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export const blueBg = "bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)]";
 /** Shared corner radii (kept small on purpose, per client feedback). */
-export const R = { card: "rounded-[12px]", hero: "rounded-b-[26px]", btn: "rounded-lg", chip: "rounded-md", tile: "rounded-[10px]" };
+export const R = { card: "rounded-md", hero: "rounded-b-[16px]", btn: "rounded-md", chip: "rounded", tile: "rounded-md" };
 
 const chipColors = { navy: "bg-[#0a2f70]", green: "bg-[#1a9c4b]", blue: "bg-[#1f7cf0]", red: "bg-[#e0243f]", amber: "bg-[#e0a11b]" };
 export type ChipColor = keyof typeof chipColors;
@@ -139,7 +139,7 @@ export function BlueContactCard({ title = "Contact Details", editHref, rows, com
 export function BlueFooterBand({ quote = <>“সততা ও দক্ষতাই<br />আমাদের শক্তি”</> }: { quote?: React.ReactNode }) {
   return (
     <div className="relative mt-2 h-[110px] overflow-hidden">
-      <div className="absolute inset-y-0 right-0 w-[62%] bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_90%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] rounded-tl-[48px] flex items-center justify-center pl-6">
+      <div className="absolute inset-y-0 right-0 w-[62%] bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_90%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] rounded-tl-[28px] flex items-center justify-center pl-6">
         <span className="pl-3 border-l border-white/40 flex items-center gap-2">
           <span className="size-9 rounded-lg bg-[#1f7cf0] text-white font-extrabold flex items-center justify-center">SE</span>
           <span className="flex flex-col leading-tight"><span className="text-[13px] font-extrabold text-white">SE Electronics</span><span className="text-[9px] text-white/85">Smart Solution &nbsp;Better Life</span></span>
@@ -164,7 +164,7 @@ export function BlueCard({ children, className }: { children: React.ReactNode; c
 /** Floating bottom navigation shared by the staff and seller portals. */
 export function BlueBottomNav({ items, pathname, homeHref }: { items: { label: string; icon: LucideIcon; href: string }[]; pathname: string; homeHref: string }) {
   return (
-    <nav className="fixed bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[414px] h-[72px] bg-white rounded-[14px] shadow-[0_-4px_24px_rgba(11,61,145,0.15)] grid grid-cols-4 items-center px-1 z-50">
+    <nav className="fixed bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[414px] h-[72px] bg-white rounded-md shadow-[0_-4px_24px_rgba(11,61,145,0.15)] grid grid-cols-4 items-center px-1 z-50">
       {items.map((item) => {
         const active = item.href === homeHref ? pathname === item.href : pathname.startsWith(item.href);
         return (

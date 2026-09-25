@@ -74,7 +74,7 @@ export default function StaffDashboardClient({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 px-2 text-gray-800 pb-2 bg-[#eef3fb] pt-2">
+      <div className="flex flex-col gap-2.5 px-2 text-gray-800 pb-2 bg-[#eef3fb] pt-2">
         {/* Banner (admin slides, falls back to default slides) */}
         <div className="w-full overflow-hidden shadow-sm rounded-md">
           <Banner slides={banners && banners.length > 0 ? banners : undefined} />
@@ -164,7 +164,7 @@ export default function StaffDashboardClient({
         </div>
 
         {/* Action Grid */}
-        <div className="bg-white rounded-lg shadow-sm p-3 sm:p-6">
+        <div className="bg-white rounded-md shadow-sm p-3 sm:p-6">
           <div className="grid grid-cols-4 md:grid-cols-8 gap-x-2 gap-y-4 sm:gap-6">
             {[
               {
@@ -269,7 +269,7 @@ export default function StaffDashboardClient({
                 className="flex flex-col items-center gap-2 group"
               >
                 <div
-                  className={`${action.bg} ${action.color} size-14 sm:size-20 rounded-lg shadow-sm flex items-center justify-center transition-all group-hover:scale-105 group-active:scale-95 animate-in zoom-in-90 duration-300`}
+                  className={`${action.bg} ${action.color} size-14 sm:size-20 rounded-md shadow-sm flex items-center justify-center transition-all group-hover:scale-105 group-active:scale-95 animate-in zoom-in-90 duration-300`}
                   style={{
                     animationDelay: `${i * 50}ms`,
                     animationFillMode: "both",

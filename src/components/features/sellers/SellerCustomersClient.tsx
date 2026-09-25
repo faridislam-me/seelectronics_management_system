@@ -68,7 +68,7 @@ export default function SellerCustomersClient({ customers, inWarranty }: { custo
   const close = () => { setShowAdd(false); setEditing(null); router.refresh(); };
 
   return (
-    <div className="flex flex-col gap-3.5 p-3.5">
+    <div className="flex flex-col gap-2.5 p-2">
       {showAdd && <CustomerForm mode="create" role="seller" onClose={close} />}
       {editing && <CustomerForm mode="update" role="seller" customerData={toFormData(editing)} onClose={close} />}
 
@@ -77,12 +77,12 @@ export default function SellerCustomersClient({ customers, inWarranty }: { custo
           <span className="text-lg font-extrabold text-[#16213a]">My customers</span>
           <span className="text-xs font-semibold text-[#6b7690]">{customers.length} customers · {inWarranty} in warranty</span>
         </div>
-        <button onClick={() => setShowAdd(true)} className="h-11 px-4 rounded-lg bg-[#1f7cf0] text-white font-bold text-sm inline-flex items-center gap-1.5 shadow-[0_6px_16px_rgba(31,124,240,0.35)] active:scale-[0.98] transition-all">
+        <button onClick={() => setShowAdd(true)} className="h-11 px-4 rounded-md bg-[#1f7cf0] text-white font-bold text-sm inline-flex items-center gap-1.5 shadow-[0_6px_16px_rgba(31,124,240,0.35)] active:scale-[0.98] transition-all">
           <Plus size={18} strokeWidth={2.6} />পণ্য বিক্রি / কাস্টমার এড
         </button>
       </div>
 
-      <label className="flex items-center gap-2 h-11 px-3.5 rounded-lg bg-white border border-[#e3e8f1] text-sm">
+      <label className="flex items-center gap-2 h-11 px-3.5 rounded-md bg-white border border-[#e3e8f1] text-sm">
         <Search size={16} className="text-[#9aa4b8]" />
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="নাম, ফোন, আইডি বা ইনভয়েস দিয়ে খুঁজুন" className="flex-1 outline-none bg-transparent" />
       </label>
@@ -97,7 +97,7 @@ export default function SellerCustomersClient({ customers, inWarranty }: { custo
           const warranty = !c.isWarrantyStopped && products.some((p) => { const e = new Date(p.warrantyStartDate); e.setMonth(e.getMonth() + p.warrantyDurationMonths); return e > now; });
           const active = c.services.some((s) => !["completed", "canceled"].includes(s.status));
           return (
-            <details key={c.customerId} className="p-3 rounded-[10px] bg-[#f5f7fb]">
+            <details key={c.customerId} className="p-3 rounded-md bg-[#f5f7fb]">
               <summary className="list-none cursor-pointer flex items-center gap-3">
                 <span className="size-10 rounded-full bg-[#fff3d6] text-[#b8620b] flex items-center justify-center text-sm font-extrabold shrink-0">{c.name.slice(0, 2).toUpperCase()}</span>
                 <span className="flex flex-col flex-1 min-w-0">
@@ -120,8 +120,8 @@ export default function SellerCustomersClient({ customers, inWarranty }: { custo
                   </Link>
                 ))}
                 <div className="flex gap-2 mt-2">
-                  <button onClick={() => setEditing(c)} className="h-9 px-3 rounded-lg border-2 border-[#bcd4fb] text-[#1f7cf0] text-xs font-bold inline-flex items-center gap-1.5"><Pencil size={14} />এডিট</button>
-                  <Link href="/get-service" className="h-9 px-3 rounded-lg border-2 border-[#bfe8cd] text-[#178a42] text-xs font-bold inline-flex items-center gap-1.5"><Wrench size={14} />সার্ভিস রিকোয়েস্ট</Link>
+                  <button onClick={() => setEditing(c)} className="h-9 px-3 rounded-md border-2 border-[#bcd4fb] text-[#1f7cf0] text-xs font-bold inline-flex items-center gap-1.5"><Pencil size={14} />এডিট</button>
+                  <Link href="/get-service" className="h-9 px-3 rounded-md border-2 border-[#bfe8cd] text-[#178a42] text-xs font-bold inline-flex items-center gap-1.5"><Wrench size={14} />সার্ভিস রিকোয়েস্ট</Link>
                 </div>
               </div>
             </details>

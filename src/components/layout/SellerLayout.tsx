@@ -27,7 +27,7 @@ const navItems = [
 export function SELogo({ size = "md" }: { size?: "sm" | "md" }) {
   return (
     <span className="flex items-center gap-2.5">
-      <span className={clsx("rounded-lg bg-[#1f7cf0] text-white font-extrabold flex items-center justify-center shadow-[0_6px_16px_rgba(0,40,120,0.35)]", size === "sm" ? "size-10 text-base" : "size-11 text-lg")}>SE</span>
+      <span className={clsx("rounded-md bg-[#1f7cf0] text-white font-extrabold flex items-center justify-center shadow-[0_6px_16px_rgba(0,40,120,0.35)]", size === "sm" ? "size-10 text-base" : "size-11 text-lg")}>SE</span>
       <span className="flex flex-col leading-tight">
         <span className={clsx("font-extrabold text-white", size === "sm" ? "text-sm" : "text-xl")}>SE Electronics</span>
         <span className={clsx("text-white/85 font-medium", size === "sm" ? "text-[9px]" : "text-[11px]")}>Smart Solution &nbsp;Better Life</span>
@@ -48,7 +48,7 @@ export function SellerLayout({ children, badge = 0 }: { children: React.ReactNod
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
           {isHome ? <Link href="/seller/profile"><SELogo /></Link> : (
             <div className="flex items-center gap-3 min-w-0">
-              <Link href="/seller/profile" className="size-10 rounded-lg bg-[#1f7cf0] text-white font-extrabold flex items-center justify-center shrink-0">SE</Link>
+              <Link href="/seller/profile" className="size-10 rounded-md bg-[#1f7cf0] text-white font-extrabold flex items-center justify-center shrink-0">SE</Link>
               <h1 className="font-bold text-base sm:text-lg truncate">{title}</h1>
             </div>
           )}

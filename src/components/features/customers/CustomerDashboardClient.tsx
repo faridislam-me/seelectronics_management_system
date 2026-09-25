@@ -197,7 +197,7 @@ export default function CustomerDashboardClient({
 
   return (
     <CustomerLayout>
-      <div className="flex flex-col gap-3.5 px-3 text-gray-800 pb-24 pt-3 bg-[#eef3fb]">
+      <div className="flex flex-col gap-2.5 px-2 text-gray-800 pb-24 pt-2 bg-[#eef3fb]">
         {/* Welcome banner (admin managed slides) */}
         <div className="w-full overflow-hidden rounded-md shadow-sm">
           <Banner slides={banners && banners.length > 0 ? banners : undefined} />
@@ -223,7 +223,7 @@ export default function CustomerDashboardClient({
         )}
 
         {/* Profile card */}
-        <div className={clsx("rounded-lg p-3 sm:p-4 shadow-[0_4px_18px_rgba(11,61,145,0.06)] flex flex-col gap-3", statusOk ? "bg-white" : "bg-red-50 border border-red-200")}>
+        <div className={clsx("rounded-md p-3 sm:p-4 shadow-[0_4px_18px_rgba(11,61,145,0.06)] flex flex-col gap-3", statusOk ? "bg-white" : "bg-red-50 border border-red-200")}>
           <div className="flex items-center gap-3">
             <span className="size-[52px] rounded-full bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><User size={28} strokeWidth={2.2} /></span>
             <div className="flex flex-col min-w-0 flex-1">
@@ -286,7 +286,7 @@ export default function CustomerDashboardClient({
         </div>
 
         {/* Secondary Grid */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 sm:p-8">
+        <div className="bg-white rounded-md shadow-sm border border-gray-100 p-4 sm:p-8">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-[16px] font-extrabold text-[#16213a]">
               Quick Actions
@@ -304,7 +304,7 @@ export default function CustomerDashboardClient({
                     className="flex flex-col items-center gap-2 group opacity-50 cursor-not-allowed"
                   >
                     <div
-                      className={`${action.bg || "bg-gray-50"} ${action.color} size-14 sm:size-20 rounded-lg shadow-sm flex items-center justify-center transition-all group-active:scale-95 animate-in zoom-in-90 duration-300`}
+                      className={`${action.bg || "bg-gray-50"} ${action.color} size-14 sm:size-20 rounded-md shadow-sm flex items-center justify-center transition-all group-active:scale-95 animate-in zoom-in-90 duration-300`}
                       style={{
                         animationDelay: `${i * 50}ms`,
                         animationFillMode: "both",
@@ -327,7 +327,7 @@ export default function CustomerDashboardClient({
                     className="flex flex-col items-center gap-2 group"
                   >
                     <div
-                      className={`${action.bg || "bg-gray-50"} ${action.color} size-14 sm:size-20 rounded-lg shadow-sm flex items-center justify-center transition-all group-hover:scale-105 group-active:scale-95 animate-in zoom-in-90 duration-300`}
+                      className={`${action.bg || "bg-gray-50"} ${action.color} size-14 sm:size-20 rounded-md shadow-sm flex items-center justify-center transition-all group-hover:scale-105 group-active:scale-95 animate-in zoom-in-90 duration-300`}
                       style={{
                         animationDelay: `${i * 50}ms`,
                         animationFillMode: "both",
@@ -349,7 +349,7 @@ export default function CustomerDashboardClient({
                   className="flex flex-col items-center gap-2 group"
                 >
                   <div
-                    className={`${action.bg || "bg-gray-50"} ${action.color} size-14 sm:size-20 rounded-lg shadow-sm flex items-center justify-center transition-all group-hover:scale-105 group-active:scale-95 animate-in zoom-in-90 duration-300`}
+                    className={`${action.bg || "bg-gray-50"} ${action.color} size-14 sm:size-20 rounded-md shadow-sm flex items-center justify-center transition-all group-hover:scale-105 group-active:scale-95 animate-in zoom-in-90 duration-300`}
                     style={{
                       animationDelay: `${i * 50}ms`,
                       animationFillMode: "both",
@@ -396,7 +396,7 @@ export default function CustomerDashboardClient({
             </p>
             <button
               onClick={() => setShowPopup(false)}
-              className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg transition-colors"
+              className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-md transition-colors"
             >
               বন্ধ করুন
             </button>

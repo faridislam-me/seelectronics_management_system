@@ -7,7 +7,7 @@ import { Briefcase, CalendarDays, FileBadge, IdCard, LucideIcon, MapPin, Phone, 
 
 const Row = ({ label, value, icon: Icon }: { label: string; value: React.ReactNode; icon: LucideIcon }) => (
   <div className="flex items-center gap-3.5 py-3 border-t border-[#eef1f6] first-of-type:border-0">
-    <span className="size-11 rounded-lg bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><Icon size={20} /></span>
+    <span className="size-11 rounded-md bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><Icon size={20} /></span>
     <span className="flex flex-col flex-1 min-w-0">
       <span className="text-xs font-semibold text-[#6b7690]">{label}</span>
       <span className="text-[15px] font-extrabold text-[#16213a] break-words">{value}</span>
@@ -20,7 +20,7 @@ export default async function SellerDetailsPage() {
   const businessType = sellerBusinessTypes.find((b) => b.value === seller.businessType)?.label ?? seller.businessType;
   return (
     <SellerLayout badge={stats.inService}>
-      <div className="flex flex-col gap-3.5 p-3.5">
+      <div className="flex flex-col gap-2.5 p-2">
         <BlueCard className="relative overflow-hidden flex flex-col items-center gap-2 text-center pt-0 px-0">
           {seller.shopFrontPhotoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element

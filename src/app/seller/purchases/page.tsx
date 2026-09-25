@@ -8,7 +8,7 @@ export default async function SellerPurchasesPage() {
   const { seller, stats, due } = await loadSellerPortal();
   return (
     <SellerLayout badge={stats.inService}>
-      <div className="flex flex-col gap-3.5 p-3.5">
+      <div className="flex flex-col gap-2.5 p-2">
         <div className="flex flex-col"><span className="text-lg font-extrabold text-[#16213a]">Purchases from SE Electronics</span><span className="text-xs font-semibold text-[#6b7690]">{seller.purchases.length} orders · {stats.purchasedUnits} units</span></div>
         <div className="grid grid-cols-2 gap-3">
           <BlueStatGrid cards={[{ value: `৳${Math.round(stats.paidAmount).toLocaleString()}`, label: "পরিশোধিত", icon: CheckCircle2, tone: "green", href: "#" }]} />
@@ -19,7 +19,7 @@ export default async function SellerPurchasesPage() {
           {seller.purchases.map((p) => {
             const dueAmt = p.totalAmount - p.paidAmount;
             return (
-              <div key={p.purchaseId} className="flex flex-col gap-1.5 p-3 rounded-[10px] bg-[#f5f7fb]">
+              <div key={p.purchaseId} className="flex flex-col gap-1.5 p-3 rounded-md bg-[#f5f7fb]">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[13px] font-extrabold text-[#16213a]">{p.productType.toUpperCase()} {p.productModel} × {p.quantity}</span>
                   {dueAmt <= 0 ? <BlueChip tone="green">PAID</BlueChip> : p.paidAmount > 0 ? <BlueChip tone="amber">PARTIAL</BlueChip> : <BlueChip tone="red">DUE</BlueChip>}

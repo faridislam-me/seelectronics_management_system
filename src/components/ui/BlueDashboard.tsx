@@ -15,7 +15,7 @@ export function BlueHero({ avatar, initials, name, idLabel, id, chips, tagline =
 }) {
   const fallback = (initials || name).trim().slice(0, 2).toUpperCase();
   return (
-    <section className={clsx(blueBg, R.hero, "text-white px-4 pt-2 pb-9 relative overflow-hidden")}>
+    <section className={clsx(blueBg, R.hero, "text-white px-4 pt-3 pb-8 relative overflow-hidden")}>
       <span className="absolute -right-10 -top-16 size-64 rounded-full bg-white/10" />
       {/* Tagline sits on its own row so it never collides with the name */}
       <div className="relative flex justify-end min-h-[34px]">
@@ -25,9 +25,9 @@ export function BlueHero({ avatar, initials, name, idLabel, id, chips, tagline =
         <div className="relative shrink-0">
           {avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatar} alt="" className="size-[clamp(76px,22vw,100px)] rounded-full object-cover border-[3px] border-white shadow-[0_0_0_3px_#1f7cf0] bg-[#1f7cf0]" />
+            <img src={avatar} alt="" className="size-[clamp(72px,20vw,92px)] rounded-full object-cover border-[3px] border-white shadow-[0_0_0_3px_#1f7cf0] bg-[#1f7cf0]" />
           ) : (
-            <span className="size-[clamp(76px,22vw,100px)] rounded-full bg-[#1f7cf0] border-[3px] border-white shadow-[0_0_0_3px_#1f7cf0] flex items-center justify-center text-2xl font-extrabold">{fallback}</span>
+            <span className="size-[clamp(72px,20vw,92px)] rounded-full bg-[#1f7cf0] border-[3px] border-white shadow-[0_0_0_3px_#1f7cf0] flex items-center justify-center text-2xl font-extrabold">{fallback}</span>
           )}
           <span className="absolute bottom-0 right-0 size-7 rounded-full bg-[#1f7cf0] border-[3px] border-white text-white flex items-center justify-center"><ShieldCheck size={14} strokeWidth={3} /></span>
         </div>

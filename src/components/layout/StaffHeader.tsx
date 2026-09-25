@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreVertical, User } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -84,7 +84,7 @@ export function StaffHeader({ balance }: StaffHeaderProps) {
 
   return (
     <header className={`sticky top-0 z-50 text-white shadow-lg overflow-hidden w-full ${isBrandPage || isNoTitlePage ? "bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)]" : "bg-[#0A1A3A]"}`}>
-      <div className={`max-w-4xl mx-auto px-4 flex items-center justify-between gap-3 ${isNoTitlePage ? "h-[68px]" : "h-14 md:h-16"}`}>
+      <div className={`max-w-4xl mx-auto px-4 flex items-center justify-between gap-3 ${isNoTitlePage ? "h-[60px]" : "h-14 md:h-16"}`}>
         {isBrandPage ? (
           <>
             {/* PROFILE PAGE: BRAND BLOCK, NOTIFICATIONS & SETTINGS */}
@@ -132,17 +132,16 @@ export function StaffHeader({ balance }: StaffHeaderProps) {
           <>
             {/* STAFF HOME: BRAND BLOCK, NOTIFICATIONS, PROFILE & MENU */}
             <Link href="/staff/profile" className="flex items-center gap-2.5 min-w-0">
-              <Image src="/logo.jpg" alt="SE" width={44} height={44} className="size-11 rounded-lg object-cover shrink-0 bg-white" />
+              <Image src="/logo.jpg" alt="SE" width={40} height={40} className="size-10 rounded-lg object-cover shrink-0 bg-white" />
               <span className="flex flex-col leading-tight min-w-0">
-                <span className="text-[17px] font-extrabold text-white truncate">SE Electronics</span>
-                <span className="text-[11px] text-white/90 font-bold">Staff Portal</span>
-                <span className="text-[10px] text-white/80 font-medium truncate">একটি শক্তিশালী টিম, আরো ভালো সেবা</span>
+                <span className="text-[15px] font-extrabold text-white leading-tight whitespace-nowrap">SE Electronics</span>
+                <span className="text-[10.5px] text-white/90 font-bold leading-tight">Staff Portal</span>
+                <span className="text-[9.5px] text-white/80 font-medium truncate hidden min-[400px]:block">একটি শক্তিশালী টিম, আরো ভালো সেবা</span>
               </span>
             </Link>
-            <div className="ml-auto flex items-center gap-0.5 shrink-0">
+            <div className="ml-auto flex items-center gap-1 shrink-0">
+              <div className="min-w-0 max-w-[140px] scale-[0.8] origin-right -mr-1"><StaffBalanceBar amount={balance} /></div>
               <StaffNotificationBell />
-              <Link href="/staff/details" aria-label="Profile" className="size-10 rounded-full bg-white text-[#1f7cf0] flex items-center justify-center shadow-sm"><User size={20} strokeWidth={2.4} /></Link>
-              <Link href="/staff/settings" aria-label="Menu" className="size-9 flex items-center justify-center text-white"><MoreVertical size={22} /></Link>
             </div>
           </>
         )}

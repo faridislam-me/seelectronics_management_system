@@ -199,11 +199,9 @@ export default function CustomerDashboardClient({
     <CustomerLayout>
       <div className="flex flex-col gap-3.5 px-3 text-gray-800 pb-24 pt-3 bg-[#eef3fb]">
         {/* Welcome banner (admin managed slides) */}
-        {banners && banners.length > 0 && (
-          <div className="w-full overflow-hidden rounded-[12px] shadow-[0_6px_18px_rgba(11,61,145,0.15)]">
-            <Banner slides={banners} />
-          </div>
-        )}
+        <div className="w-full overflow-hidden rounded-md shadow-sm">
+          <Banner slides={banners && banners.length > 0 ? banners : undefined} />
+        </div>
 
         {/* Warranty Notice Marquee */}
         {(isWarrantyExpired || isDashboardDisabled) && (
@@ -225,7 +223,7 @@ export default function CustomerDashboardClient({
         )}
 
         {/* Profile card */}
-        <div className={clsx("rounded-[12px] p-3.5 sm:p-4 shadow-[0_4px_18px_rgba(11,61,145,0.06)] flex flex-col gap-3", statusOk ? "bg-white" : "bg-red-50 border border-red-200")}>
+        <div className={clsx("rounded-lg p-3 sm:p-4 shadow-[0_4px_18px_rgba(11,61,145,0.06)] flex flex-col gap-3", statusOk ? "bg-white" : "bg-red-50 border border-red-200")}>
           <div className="flex items-center gap-3">
             <span className="size-[52px] rounded-full bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><User size={28} strokeWidth={2.2} /></span>
             <div className="flex flex-col min-w-0 flex-1">
@@ -238,14 +236,14 @@ export default function CustomerDashboardClient({
           </div>
 
           <div className="grid grid-cols-2 gap-2.5">
-            <a href={`tel:${customer.phone}`} className="flex items-center gap-2.5 p-2.5 rounded-[10px] border border-[#e3e8f1] bg-white min-w-0">
+            <a href={`tel:${customer.phone}`} className="flex items-center gap-2.5 p-2.5 rounded-md border border-[#e3e8f1] bg-white min-w-0">
               <span className="size-10 rounded-full bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><PhoneCall size={18} /></span>
               <span className="flex flex-col min-w-0">
                 <span className="text-[11px] font-semibold text-[#6b7690]">Phone</span>
                 <span className="text-[clamp(13px,3.8vw,15px)] font-extrabold text-[#16213a] truncate">{customer.phone}</span>
               </span>
             </a>
-            <Link href="/customer/invoice" className={clsx("flex items-center gap-2.5 p-2.5 rounded-[10px] border min-w-0", dueAmount > 0 ? (stats?.dueType === "installment" ? "bg-[#fff6e3] border-[#f5dfa0]" : "bg-[#ffe9ec] border-[#f7c3ca]") : "bg-[#e9f9ef] border-[#bfe8cd]")}>
+            <Link href="/customer/invoice" className={clsx("flex items-center gap-2.5 p-2.5 rounded-md border min-w-0", dueAmount > 0 ? (stats?.dueType === "installment" ? "bg-[#fff6e3] border-[#f5dfa0]" : "bg-[#ffe9ec] border-[#f7c3ca]") : "bg-[#e9f9ef] border-[#bfe8cd]")}>
               <span className={clsx("size-10 rounded-full flex items-center justify-center shrink-0 text-white", dueAmount > 0 ? (stats?.dueType === "installment" ? "bg-[#e0a11b]" : "bg-[#e0243f]") : "bg-[#1a9c4b]")}><Banknote size={18} /></span>
               <span className="flex flex-col min-w-0 flex-1">
                 <span className={clsx("text-[clamp(13px,3.8vw,15px)] font-extrabold truncate", dueAmount > 0 ? (stats?.dueType === "installment" ? "text-[#b8620b]" : "text-[#c81f38]") : "text-[#178a42]")}>৳{dueAmount.toLocaleString()}</span>
@@ -256,56 +254,57 @@ export default function CustomerDashboardClient({
           </div>
 
           {/* VIP band */}
-          <Link href="/customer/vip-card" className="rounded-[12px] bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2f70_0%,#0d3f96_60%,#0a2f70_100%)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(10,47,112,0.3)] relative overflow-hidden">
+          <Link href="/customer/vip-card" className="rounded-md bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2f70_0%,#0d3f96_60%,#0a2f70_100%)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(10,47,112,0.3)] relative overflow-hidden">
             <span className="absolute -right-6 -bottom-10 size-32 rounded-full border-[12px] border-white/5" />
-            <span className="size-11 rounded-[10px] bg-[#f5c542] text-[#0a2f70] flex items-center justify-center shrink-0"><Crown size={22} strokeWidth={2.4} /></span>
+            <span className="size-10 rounded-md bg-[#f5c542] text-[#0a2f70] flex items-center justify-center shrink-0"><Crown size={22} strokeWidth={2.4} /></span>
             <span className="flex flex-col min-w-0 flex-1">
               <span className="text-[15px] font-extrabold tracking-wide text-[#f5c542]">{isVipCustomer ? "VIP MEMBER" : "VIP CARD"}</span>
               <span className="text-[12px] font-semibold text-white/90 truncate">{isVipCustomer ? `Premium Access Enabled · Balance ৳${referralBalance.toLocaleString()}` : "প্রিমিয়াম সুবিধা পেতে ভিআইপি কার্ডের জন্য আবেদন করুন"}</span>
             </span>
-            <span className="shrink-0 inline-flex items-center gap-1 px-3 h-9 rounded-lg bg-[#f5c542] text-[#0a2f70] text-[12px] font-extrabold">{isVipCustomer ? "View Benefits" : "Apply"} ›</span>
+            <span className="shrink-0 inline-flex items-center gap-1 px-3 h-9 rounded-md bg-[#f5c542] text-[#0a2f70] text-[12px] font-extrabold">{isVipCustomer ? "View Benefits" : "Apply"} ›</span>
           </Link>
         </div>
 
-        {/* Quick stat cards */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
-          <Link href="/customer/services" className="rounded-[10px] border border-[#bfe8cd] bg-[#e9f9ef] p-2.5 flex flex-col gap-1.5 min-h-[92px]">
-            <span className="size-9 rounded-full bg-[#1a9c4b] text-white flex items-center justify-center"><Boxes size={17} strokeWidth={2.4} /></span>
-            <span className="text-[clamp(18px,5.5vw,24px)] font-extrabold text-[#16213a] leading-none">{stats?.totalServices || 0}</span>
-            <span className="text-[clamp(10px,3vw,12px)] font-extrabold text-[#178a42] uppercase tracking-wide leading-tight">Services<br /><span className="font-semibold normal-case tracking-normal text-[#6b7690]">View Details →</span></span>
+        {/* Services / Subscription cards */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <Link href="/customer/services" className="rounded-md border border-[#bfe8cd] bg-[#e9f9ef] p-3 flex items-center gap-3 min-h-[72px]">
+            <span className="size-11 rounded-full bg-[#d4f3e0] text-[#1a9c4b] flex items-center justify-center shrink-0"><Boxes size={22} strokeWidth={2.2} /></span>
+            <span className="flex flex-col min-w-0 flex-1">
+              <span className="text-[clamp(18px,5vw,22px)] font-extrabold text-[#178a42] leading-none">{stats?.totalServices || 0}</span>
+              <span className="text-[clamp(10px,3vw,12px)] font-extrabold text-[#178a42] uppercase tracking-wide">Services</span>
+            </span>
+            <span className="text-[#178a42]">›</span>
           </Link>
-          <Link href="/customer/plans" className="rounded-[10px] border border-[#dcc6fb] bg-[#f3e9ff] p-2.5 flex flex-col gap-1.5 min-h-[92px]">
-            <span className="size-9 rounded-full bg-[#8b3fe8] text-white flex items-center justify-center"><Zap size={17} strokeWidth={2.4} /></span>
-            <span className="text-[clamp(18px,5.5vw,24px)] font-extrabold text-[#16213a] leading-none">{stats?.activeSubscriptions || 0}</span>
-            <span className="text-[clamp(10px,3vw,12px)] font-extrabold text-[#7a35d2] uppercase tracking-wide leading-tight">Subscription<br /><span className="font-semibold normal-case tracking-normal text-[#6b7690]">View Details →</span></span>
-          </Link>
-          <Link href="/customer/referral" className="rounded-[10px] border border-[#bcd4fb] bg-[#e8f1ff] p-2.5 flex flex-col gap-1.5 min-h-[92px]">
-            <span className="size-9 rounded-full bg-[#e0243f] text-white flex items-center justify-center"><Star size={17} strokeWidth={2.4} /></span>
-            <span className="text-[clamp(12px,3.6vw,14px)] font-extrabold text-[#16213a] leading-tight">বিশেষ সুবিধা</span>
-            <span className="text-[clamp(10px,3vw,12px)] font-semibold text-[#1b6fd6] leading-tight">রেফার করে জিতুন →</span>
+          <Link href="/customer/plans" className="rounded-md border border-[#dcc6fb] bg-[#f3e9ff] p-3 flex items-center gap-3 min-h-[72px]">
+            <span className="size-11 rounded-full bg-[#e6d6fb] text-[#8b3fe8] flex items-center justify-center shrink-0"><Zap size={22} strokeWidth={2.2} /></span>
+            <span className="flex flex-col min-w-0 flex-1">
+              <span className="text-[clamp(18px,5vw,22px)] font-extrabold text-[#7a35d2] leading-none">{stats?.activeSubscriptions || 0}</span>
+              <span className="text-[clamp(10px,3vw,12px)] font-extrabold text-[#7a35d2] uppercase tracking-wide">Subscription</span>
+            </span>
+            <span className="text-[#7a35d2]">›</span>
           </Link>
         </div>
 
         {/* Secondary Grid */}
-        <div className="bg-white rounded-md shadow-sm border border-gray-100 p-6 sm:p-10">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 sm:p-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[16px] font-extrabold text-[#16213a]">
               Quick Actions
             </h3>
-            <div className="h-px flex-1 bg-gray-50 ml-4"></div>
+            <Link href="/customer/services" className="text-[12px] font-bold text-[#1f7cf0]">সবগুলো দেখুন ›</Link>
           </div>
 
-          <div className="grid grid-cols-4 md:grid-cols-8 gap-6 sm:gap-10">
+          <div className="grid grid-cols-4 md:grid-cols-8 gap-x-2 gap-y-4 sm:gap-8">
             {Actions.map((action, i) => {
               if (isDashboardDisabled) {
                 return (
                   <button
                     key={i}
                     onClick={() => setShowPopup(true)}
-                    className="flex flex-col items-center gap-3 group opacity-50 cursor-not-allowed"
+                    className="flex flex-col items-center gap-2 group opacity-50 cursor-not-allowed"
                   >
                     <div
-                      className={`${action.bg || "bg-gray-50"} ${action.color} size-14 sm:size-20 rounded-2xl sm:rounded-3xl shadow-sm flex items-center justify-center transition-all group-active:scale-95 animate-in zoom-in-90 duration-300`}
+                      className={`${action.bg || "bg-gray-50"} ${action.color} size-14 sm:size-20 rounded-lg shadow-sm flex items-center justify-center transition-all group-active:scale-95 animate-in zoom-in-90 duration-300`}
                       style={{
                         animationDelay: `${i * 50}ms`,
                         animationFillMode: "both",
@@ -313,7 +312,7 @@ export default function CustomerDashboardClient({
                     >
                       <action.icon className="size-6 sm:size-8" />
                     </div>
-                    <span className="text-[10px] sm:text-xs font-black text-gray-700 uppercase tracking-tighter sm:tracking-normal text-center">
+                    <span className="text-[10px] sm:text-xs font-bold text-gray-700 text-center leading-tight">
                       {action.label}
                     </span>
                   </button>
@@ -325,10 +324,10 @@ export default function CustomerDashboardClient({
                   <button
                     key={i}
                     onClick={() => setShowSeIpsModal(true)}
-                    className="flex flex-col items-center gap-3 group"
+                    className="flex flex-col items-center gap-2 group"
                   >
                     <div
-                      className={`${action.bg || "bg-gray-50"} ${action.color} size-14 sm:size-20 rounded-2xl sm:rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:scale-105 group-active:scale-95 animate-in zoom-in-90 duration-300`}
+                      className={`${action.bg || "bg-gray-50"} ${action.color} size-14 sm:size-20 rounded-lg shadow-sm flex items-center justify-center transition-all group-hover:scale-105 group-active:scale-95 animate-in zoom-in-90 duration-300`}
                       style={{
                         animationDelay: `${i * 50}ms`,
                         animationFillMode: "both",
@@ -336,7 +335,7 @@ export default function CustomerDashboardClient({
                     >
                       <action.icon className="size-6 sm:size-8" />
                     </div>
-                    <span className="text-[10px] sm:text-xs font-black text-gray-700 uppercase tracking-tighter sm:tracking-normal text-center">
+                    <span className="text-[10px] sm:text-xs font-bold text-gray-700 text-center leading-tight">
                       {action.label}
                     </span>
                   </button>
@@ -347,10 +346,10 @@ export default function CustomerDashboardClient({
                 <Link
                   key={i}
                   href={action.href || "#"}
-                  className="flex flex-col items-center gap-3 group"
+                  className="flex flex-col items-center gap-2 group"
                 >
                   <div
-                    className={`${action.bg || "bg-gray-50"} ${action.color} size-14 sm:size-20 rounded-2xl sm:rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:scale-105 group-active:scale-95 animate-in zoom-in-90 duration-300`}
+                    className={`${action.bg || "bg-gray-50"} ${action.color} size-14 sm:size-20 rounded-lg shadow-sm flex items-center justify-center transition-all group-hover:scale-105 group-active:scale-95 animate-in zoom-in-90 duration-300`}
                     style={{
                       animationDelay: `${i * 50}ms`,
                       animationFillMode: "both",
@@ -358,7 +357,7 @@ export default function CustomerDashboardClient({
                   >
                     <action.icon className="size-6 sm:size-8" />
                   </div>
-                  <span className="text-[10px] sm:text-xs font-black text-gray-700 uppercase tracking-tighter sm:tracking-normal text-center">
+                  <span className="text-[10px] sm:text-xs font-bold text-gray-700 text-center leading-tight">
                     {action.label}
                   </span>
                 </Link>

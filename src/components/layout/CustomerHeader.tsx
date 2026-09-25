@@ -1,6 +1,7 @@
 "use client";
 
 import { User } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import CustomerNotificationBell from "../features/customers/CustomerNotificationBell";
@@ -29,7 +30,7 @@ export function CustomerHeader() {
       <div className="max-w-4xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between gap-3">
         {isHome ? (
           <Link href="/customer/profile" className="flex items-center gap-2.5 min-w-0">
-            <span className="size-11 rounded-lg bg-[#1f7cf0] text-white text-lg font-extrabold flex items-center justify-center shadow-[0_6px_16px_rgba(0,40,120,0.35)] shrink-0">SE</span>
+            <Image src="/logo.jpg" alt="SE" width={40} height={40} className="size-10 rounded-md object-cover shrink-0 bg-white" />
             <span className="flex flex-col leading-tight min-w-0">
               <span className="text-lg font-extrabold text-white truncate">SE Electronics</span>
               <span className="text-[11px] text-white/85 font-medium truncate">Smart Power &nbsp;|&nbsp; Better Tomorrow</span>

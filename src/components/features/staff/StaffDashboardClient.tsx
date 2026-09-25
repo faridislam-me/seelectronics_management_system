@@ -20,8 +20,7 @@ import PrayerTimes from "../shared/PrayerTimes";
 
 import { StaffLayout } from "@/components/layout";
 import Banner from "@/components/ui/Banner";
-import { StaffBalanceBar } from "./StaffBalanceBar";
-import { Building2, CheckCircle2, ChevronRight, Clock3, Users, XCircle } from "lucide-react";
+import { Building2, CheckCircle2, Clock3, Users, XCircle } from "lucide-react";
 
 interface StaffDashboardClientProps {
   staffData: any;
@@ -45,43 +44,41 @@ export default function StaffDashboardClient({
   banners,
 }: StaffDashboardClientProps) {
   const unreadNotices = activeNotices.filter((n) => !n.isRead);
+  const roleLabel = staffData.role === "electrician" ? "Electrician" : "Service Technician";
   const showMarquee =
     activeComplaints.length > 0 ||
     unreadNotices.length > 0 ||
     (stats?.pendingServices || 0) > 0;
 
-  const roleLabel = staffData.role === "electrician" ? "Electrician" : "Service Technician";
 
   return (
     <StaffLayout balance={stats?.availableBalance || 0}>
-      {/* Welcome block */}
-      <div className="relative overflow-hidden bg-[#eef3fb] px-3 pt-3 pb-1">
-        <span className="absolute -top-10 left-0 right-0 h-14 bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] rounded-b-[60%_100%]" />
-        <span className="absolute right-3 top-4 font-script text-[clamp(20px,6vw,30px)] leading-[0.95] text-right text-[#0b3d91] rotate-[-8deg] hidden min-[380px]:block">Service<br />Today<br />Better<br />Tomorrow</span>
-        <div className="relative flex items-center gap-3 min-[380px]:pr-20 mt-2">
+      {/* Welcome strip (compact) */}
+      <div className="relative overflow-hidden bg-[#eef3fb] px-3 pt-2 pb-0">
+        <span className="absolute -top-10 left-0 right-0 h-12 bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] rounded-b-[60%_100%]" />
+        <div className="relative flex items-center gap-2.5">
           {staffData.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={staffData.photoUrl} alt="" className="size-[clamp(72px,22vw,100px)] rounded-full object-cover border-[3px] border-white shadow-[0_0_0_3px_#1f7cf0] shrink-0" />
+            <img src={staffData.photoUrl} alt="" className="size-9 rounded-full object-cover border-2 border-white shadow-[0_0_0_1.5px_#1f7cf0] shrink-0" />
           ) : (
-            <span className="size-[clamp(72px,22vw,100px)] rounded-full bg-[#1f7cf0] border-[3px] border-white shadow-[0_0_0_3px_#1f7cf0] flex items-center justify-center text-2xl font-extrabold text-white shrink-0"><User size={36} /></span>
+            <span className="size-9 rounded-full bg-[#1f7cf0] border-2 border-white shadow-[0_0_0_1.5px_#1f7cf0] flex items-center justify-center text-white shrink-0"><User size={18} /></span>
           )}
-          <div className="flex flex-col gap-0.5 min-w-0">
-            <span className="text-[13px] font-semibold text-[#3d4a63]">Welcome Back,</span>
-            <span className="text-[clamp(17px,5vw,22px)] font-extrabold text-[#16213a] leading-tight">{staffData.name}</span>
-            <span className="text-[13px] font-semibold text-[#6b7690]">{roleLabel}</span>
-            <span className="mt-1 self-start inline-flex items-center gap-1.5 px-2.5 h-7 rounded-md bg-[#0b3d91] text-white text-[11px] font-extrabold"><Users size={13} />SE Service Team</span>
+          <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+            <span className="text-[clamp(14px,4vw,17px)] font-extrabold text-[#16213a] leading-tight truncate"><span className="text-[10px] font-semibold text-[#3d4a63] mr-1">Welcome Back,</span>{staffData.name}</span>
+            <span className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10.5px] font-semibold text-[#6b7690] leading-none">{roleLabel}</span>
+              <span className="inline-flex items-center gap-1 px-1.5 h-[18px] rounded bg-[#0b3d91] text-white text-[9px] font-extrabold"><Users size={10} />SE Service Team</span>
+            </span>
           </div>
+          <span className="font-script text-[clamp(12px,3.2vw,15px)] leading-[0.9] text-right text-[#0b3d91] rotate-[-8deg] shrink-0 hidden min-[360px]:block">Service Today<br />Better Tomorrow</span>
         </div>
-        <div className="relative mt-3 flex justify-center"><StaffBalanceBar amount={stats?.availableBalance || 0} /></div>
       </div>
 
-      <div className="flex flex-col gap-4 px-2 text-gray-800 pb-24 bg-[#eef3fb]">
-        {/* Banner */}
-        {banners && banners.length > 0 && (
-          <div className="mt-1 w-full overflow-hidden shadow-md rounded-[12px]">
-            <Banner slides={banners} />
-          </div>
-        )}
+      <div className="flex flex-col gap-3 px-2 text-gray-800 pb-2 bg-[#eef3fb] pt-2">
+        {/* Banner (admin slides, falls back to default slides) */}
+        <div className="w-full overflow-hidden shadow-sm rounded-md">
+          <Banner slides={banners && banners.length > 0 ? banners : undefined} />
+        </div>
 
         {showMarquee && (
           <Marquee
@@ -158,18 +155,17 @@ export default function StaffDashboardClient({
             { value: staffData.canceledServices || 0, label: "Canceled", icon: XCircle, bg: "bg-[#ffe9ec] border-[#f7c3ca]", iconBg: "bg-[#e0243f]", text: "text-[#c81f38]", href: "/staff/tracking" },
             { value: staffData.serviceCenterServices || 0, label: "Service Center", icon: Building2, bg: "bg-[#e8f1ff] border-[#bcd4fb]", iconBg: "bg-[#1f7cf0]", text: "text-[#1b6fd6]", href: "/staff/tracking" },
           ].map((c) => (
-            <Link key={c.label} href={c.href} className={`${c.bg} border rounded-[10px] p-2 flex flex-col gap-1.5 relative min-h-[96px]`}>
-              <span className="absolute right-1.5 top-2 text-[#9aa4b8]"><ChevronRight size={14} strokeWidth={2.5} /></span>
-              <span className={`${c.iconBg} size-8 rounded-full text-white flex items-center justify-center`}><c.icon size={15} strokeWidth={2.4} /></span>
-              <span className="text-[clamp(16px,5vw,22px)] font-extrabold text-[#16213a] leading-none">{c.value}</span>
-              <span className={`${c.text} text-[clamp(9px,2.7vw,11px)] font-bold leading-tight`}>{c.label}</span>
+            <Link key={c.label} href={c.href} className={`${c.bg} border rounded-md p-1.5 flex flex-col items-center justify-center text-center gap-1 min-h-[72px]`}>
+              <span className={`${c.iconBg} size-6 rounded-full text-white flex items-center justify-center`}><c.icon size={12} strokeWidth={2.4} /></span>
+              <span className="text-[clamp(15px,4.5vw,20px)] font-extrabold text-[#16213a] leading-none">{c.value}</span>
+              <span className={`${c.text} text-[clamp(9px,2.6vw,11px)] font-bold leading-tight`}>{c.label}</span>
             </Link>
           ))}
         </div>
 
         {/* Action Grid */}
-        <div className="bg-white rounded-[12px] shadow-sm p-3 sm:p-6">
-          <div className="grid grid-cols-5 md:grid-cols-8 gap-x-1.5 gap-y-4 sm:gap-6">
+        <div className="bg-white rounded-lg shadow-sm p-3 sm:p-6">
+          <div className="grid grid-cols-4 md:grid-cols-8 gap-x-2 gap-y-4 sm:gap-6">
             {[
               {
                 label: "Services",
@@ -273,16 +269,16 @@ export default function StaffDashboardClient({
                 className="flex flex-col items-center gap-2 group"
               >
                 <div
-                  className={`${action.bg} ${action.color} size-12 sm:size-20 rounded-[12px] sm:rounded-[14px] shadow-sm flex items-center justify-center transition-all group-hover:scale-105 group-active:scale-95 animate-in zoom-in-90 duration-300`}
+                  className={`${action.bg} ${action.color} size-14 sm:size-20 rounded-lg shadow-sm flex items-center justify-center transition-all group-hover:scale-105 group-active:scale-95 animate-in zoom-in-90 duration-300`}
                   style={{
                     animationDelay: `${i * 50}ms`,
                     animationFillMode: "both",
                   }}
                 >
-                  <action.icon className="size-5 sm:size-8" />
+                  <action.icon className="size-6 sm:size-8" />
                 </div>
 
-                <span className="text-[9px] sm:text-xs font-black text-gray-700 uppercase tracking-tighter sm:tracking-normal text-center leading-tight">
+                <span className="text-[10px] sm:text-xs font-black text-gray-700 uppercase tracking-tighter sm:tracking-normal text-center leading-tight">
                   {action.label}
                 </span>
               </Link>

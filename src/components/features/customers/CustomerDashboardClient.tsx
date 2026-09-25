@@ -244,7 +244,7 @@ export default function CustomerDashboardClient({
               </span>
             </a>
             <Link href="/customer/invoice" className={clsx("flex items-center gap-2.5 p-2.5 rounded-md border min-w-0", dueAmount > 0 ? (stats?.dueType === "installment" ? "bg-[#fff6e3] border-[#f5dfa0]" : "bg-[#ffe9ec] border-[#f7c3ca]") : "bg-[#e9f9ef] border-[#bfe8cd]")}>
-              <span className={clsx("size-10 rounded-full flex items-center justify-center shrink-0 text-white", dueAmount > 0 ? (stats?.dueType === "installment" ? "bg-[#e0a11b]" : "bg-[#e0243f]") : "bg-[#1a9c4b]")}><Banknote size={18} /></span>
+              <span className={clsx("size-10 rounded-full flex items-center justify-center shrink-0 text-white", dueAmount > 0 ? (stats?.dueType === "installment" ? "bg-[#e0a11b] animate-pulse shadow-[0_0_0_4px_rgba(224,161,27,0.25)]" : "bg-[#e0243f] animate-pulse shadow-[0_0_0_4px_rgba(224,36,63,0.25)]") : "bg-[#1a9c4b]")}><Banknote size={18} /></span>
               <span className="flex flex-col min-w-0 flex-1">
                 <span className={clsx("text-[clamp(13px,3.8vw,15px)] font-extrabold truncate", dueAmount > 0 ? (stats?.dueType === "installment" ? "text-[#b8620b]" : "text-[#c81f38]") : "text-[#178a42]")}>৳{dueAmount.toLocaleString()}</span>
                 <span className="text-[11px] font-bold tracking-wide text-[#6b7690] uppercase">{dueAmount > 0 ? (stats?.dueType === "installment" ? "Installment" : "Due") : "No due"}</span>

@@ -1,10 +1,13 @@
 "use client";
 
+import { sellerRequestService } from "@/actions/sellerActions";
 import { BlueCard, BlueChip } from "@/components/ui/BlueDashboard";
+import { Modal } from "@/components/ui";
+import { toast } from "react-toastify";
 import CustomerForm from "@/components/features/customers/CustomerForm";
 import { PaymentTypes } from "@/types";
 import { formatDate } from "@/utils";
-import { Pencil, Plus, Search, Wrench } from "lucide-react";
+import { Pencil, Plus, Search, Send, Wrench } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -37,7 +40,26 @@ export default function SellerCustomersClient({ customers, inWarranty }: { custo
   const router = useRouter();
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<SellerCustomer | null>(null);
+  const [requesting, setRequesting] = useState<SellerCustomer | null>(null);
+  const [reqProduct, setReqProduct] = useState(0);
+  const [reqIssue, setReqIssue] = useState("");
+  const [reqBusy, setReqBusy] = useState(false);
   const [query, setQuery] = useState("");
+
+  const submitRequest = async () => {
+    if (!requesting) return;
+    const p = requesting.invoice?.products?.[reqProduct];
+    setReqBusy(true);
+    const res = await sellerRequestService({
+      customerId: requesting.customerId,
+      productType: p?.type || "ips",
+      productModel: p?.model || "",
+      reportedIssue: reqIssue,
+    });
+    setReqBusy(false);
+    toast(res.message, { type: res.success ? "success" : "error" });
+    if (res.success) { setRequesting(null); setReqIssue(""); setReqProduct(0); router.refresh(); }
+  };
   const now = new Date();
 
   const filtered = useMemo(() => {
@@ -71,6 +93,29 @@ export default function SellerCustomersClient({ customers, inWarranty }: { custo
     <div className="flex flex-col gap-2.5 p-2">
       {showAdd && <CustomerForm mode="create" role="seller" onClose={close} />}
       {editing && <CustomerForm mode="update" role="seller" customerData={toFormData(editing)} onClose={close} />}
+      {requesting && (
+        <Modal isVisible title="সার্ভিস রিকোয়েস্ট" width="500" onClose={() => setRequesting(null)}>
+          <div className="flex flex-col gap-3">
+            <div className="rounded-md bg-[#f5f7fb] p-3 text-sm">
+              <div className="font-extrabold text-[#16213a]">{requesting.name} · {requesting.phone}</div>
+              <div className="text-xs text-[#6b7690]">ID {requesting.customerId} · {requesting.address}</div>
+            </div>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-semibold text-gray-700">কোন পণ্যের সার্ভিস?</span>
+              <select value={reqProduct} onChange={(e) => setReqProduct(Number(e.target.value))} className="__input">
+                {(requesting.invoice?.products ?? []).map((p, i) => <option key={i} value={i}>{p.type.toUpperCase()} {p.model} × {p.quantity}</option>)}
+                {(requesting.invoice?.products ?? []).length === 0 && <option value={0}>পণ্যের তথ্য নেই</option>}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-semibold text-gray-700">সমস্যা (ঐচ্ছিক)</span>
+              <textarea value={reqIssue} onChange={(e) => setReqIssue(e.target.value)} rows={3} placeholder="কাস্টমার কী সমস্যার কথা বলেছে লিখুন" className="w-full rounded-md px-3 py-2 border border-gray-200 bg-gray-50 text-sm outline-none focus:border-brand" />
+            </label>
+            <p className="text-xs text-[#6b7690]">রিকোয়েস্ট পাঠালে সরাসরি SE Electronics এর সার্ভিস লিস্টে যাবে, অফিস থেকে টেকনিশিয়ান পাঠানো হবে।</p>
+            <button onClick={submitRequest} disabled={reqBusy} className="h-11 rounded-md bg-[#1a9c4b] text-white font-bold text-sm inline-flex items-center justify-center gap-2 disabled:opacity-50"><Send size={16} />{reqBusy ? "পাঠানো হচ্ছে..." : "রিকোয়েস্ট পাঠান"}</button>
+          </div>
+        </Modal>
+      )}
 
       <div className="flex items-center gap-3">
         <div className="flex flex-col flex-1 min-w-0">
@@ -121,7 +166,7 @@ export default function SellerCustomersClient({ customers, inWarranty }: { custo
                 ))}
                 <div className="flex gap-2 mt-2">
                   <button onClick={() => setEditing(c)} className="h-9 px-3 rounded-md border-2 border-[#bcd4fb] text-[#1f7cf0] text-xs font-bold inline-flex items-center gap-1.5"><Pencil size={14} />এডিট</button>
-                  <Link href="/get-service" className="h-9 px-3 rounded-md border-2 border-[#bfe8cd] text-[#178a42] text-xs font-bold inline-flex items-center gap-1.5"><Wrench size={14} />সার্ভিস রিকোয়েস্ট</Link>
+                  <button onClick={() => { setRequesting(c); setReqProduct(0); setReqIssue(""); }} className="h-9 px-3 rounded-md border-2 border-[#bfe8cd] text-[#178a42] text-xs font-bold inline-flex items-center gap-1.5"><Wrench size={14} />সার্ভিস রিকোয়েস্ট</button>
                 </div>
               </div>
             </details>

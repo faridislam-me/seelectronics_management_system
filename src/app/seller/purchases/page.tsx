@@ -10,16 +10,16 @@ export default async function SellerPurchasesPage() {
     <SellerLayout badge={stats.inService}>
       <div className="flex flex-col gap-2.5 p-2">
         <div className="flex flex-col"><span className="text-lg font-extrabold text-[#16213a]">Purchases from SE Electronics</span><span className="text-xs font-semibold text-[#6b7690]">{seller.purchases.length} orders · {stats.purchasedUnits} units</span></div>
-        <div className="grid grid-cols-2 gap-3">
-          <BlueStatGrid cards={[{ value: `৳${Math.round(stats.paidAmount).toLocaleString()}`, label: "পরিশোধিত", icon: CheckCircle2, tone: "green", href: "#" }]} />
-          <BlueStatGrid cards={[{ value: `৳${Math.round(due).toLocaleString()}`, label: "বকেয়া", icon: Banknote, tone: "amber", href: "#" }]} />
-        </div>
-        <BlueCard className="flex flex-col gap-2.5">
+        <BlueStatGrid compact cols={2} cards={[
+          { value: `৳${Math.round(stats.paidAmount).toLocaleString()}`, label: "পরিশোধিত", icon: CheckCircle2, tone: "green", href: "#" },
+          { value: `৳${Math.round(due).toLocaleString()}`, label: "বকেয়া", icon: Banknote, tone: "amber", href: "#" },
+        ]} />
+        <BlueCard className="flex flex-col gap-2 !p-3">
           {seller.purchases.length === 0 && <div className="text-center text-sm text-gray-400 py-6">No purchase yet</div>}
           {seller.purchases.map((p) => {
             const dueAmt = p.totalAmount - p.paidAmount;
             return (
-              <div key={p.purchaseId} className="flex flex-col gap-1.5 p-3 rounded-md bg-[#f5f7fb]">
+              <div key={p.purchaseId} className="flex flex-col gap-1 p-2.5 rounded-md bg-[#f5f7fb]">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[13px] font-extrabold text-[#16213a]">{p.productType.toUpperCase()} {p.productModel} × {p.quantity}</span>
                   {dueAmt <= 0 ? <BlueChip tone="green">PAID</BlueChip> : p.paidAmount > 0 ? <BlueChip tone="amber">PARTIAL</BlueChip> : <BlueChip tone="red">DUE</BlueChip>}

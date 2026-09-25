@@ -9,6 +9,7 @@ import {
   sellerPurchases,
   sellers,
   services,
+  serviceStatusHistory,
 } from "@/db/schema";
 import {
   SMSError,
@@ -687,3 +688,100 @@ export async function getSellerPortalData(sellerId: string) {
     return { success: false, message: "Could not load seller data" };
   }
 }
+
+
+// ============================================
+// SELLER → SERVICE REQUEST (goes straight to admin service list)
+// ============================================
+
+/**
+ * A seller requests a repair service for one of their own customers.
+ * Creates a pending service (no staff assigned) that shows up in the
+ * admin Service List; admin then assigns a technician.
+ */
+export const sellerRequestService = async (input: {
+  customerId: string;
+  productType: string;
+  productModel: string;
+  reportedIssue?: string;
+}) => {
+  try {
+    const session = await verifySession(false, "seller");
+    if (!session) return { success: false, message: "Unauthorized" };
+
+    const seller = await db.query.sellers.findFirst({
+      where: eq(sellers.sellerId, session.userId as string),
+      columns: { sellerId: true, shopName: true, ownerName: true, phone: true, isActiveSeller: true },
+    });
+    if (!seller || !seller.isActiveSeller) return { success: false, message: "Seller account is not active" };
+
+    const customer = await db.query.customers.findFirst({
+      where: and(eq(customers.customerId, input.customerId), eq(customers.sellerId, seller.sellerId)),
+      with: { invoice: { with: { products: true } } },
+    });
+    if (!customer) return { success: false, message: "এই কাস্টমার আপনার তালিকায় নেই" };
+
+    const productType = (input.productType || customer.invoice?.products?.[0]?.type || "ips") as typeof services.$inferInsert.productType;
+    const productModel = input.productModel || customer.invoice?.products?.[0]?.model || "N/A";
+    if (!productModel) return { success: false, message: "পণ্যের মডেল পাওয়া যায়নি" };
+
+    // Avoid duplicate open requests for the same customer + product
+    const openStatuses = ["pending", "in_progress", "appointment_retry", "staff_departed", "staff_arrived", "service_center", "service_center_received"] as const;
+    const existing = await db.query.services.findFirst({
+      where: and(
+        eq(services.customerId, customer.customerId),
+        eq(services.productModel, productModel),
+        inArray(services.status, [...openStatuses]),
+      ),
+      columns: { serviceId: true },
+    });
+    if (existing) return { success: false, message: `এই পণ্যের একটি সার্ভিস (${existing.serviceId}) ইতিমধ্যে চলমান আছে` };
+
+    const serviceId = generateRandomId();
+    const issue = (input.reportedIssue || "").trim();
+    const reportedIssue = `${issue ? issue + "\n" : ""}[সেলার রিকোয়েস্ট: ${seller.shopName} (${seller.sellerId}), মালিক ${seller.ownerName}, ${seller.phone}]`;
+
+    await db.insert(services).values({
+      serviceId,
+      customerId: customer.customerId,
+      customerName: customer.name,
+      customerPhone: customer.phone,
+      customerAddress: customer.address,
+      type: "repair",
+      productType,
+      productModel,
+      reportedIssue,
+      status: "pending",
+      createdFrom: "dashboard",
+      isActive: true,
+    });
+    await db.insert(serviceStatusHistory).values({ serviceId, status: "pending" });
+
+    // Tell the admin
+    try {
+      const { notifyAdmin } = await import("./notificationActions");
+      await notifyAdmin({
+        type: "seller_service_request",
+        message: `সেলার ${seller.shopName} (${seller.sellerId}) কাস্টমার ${customer.name} (${customer.customerId}) এর জন্য সার্ভিস রিকোয়েস্ট করেছে। Service ID: ${serviceId}`,
+        link: `/services/repairs?query=${serviceId}`,
+      });
+    } catch (e) {
+      console.error("notifyAdmin failed:", e);
+    }
+    if (process.env.ADMIN_PHONE_NUMBER) {
+      sendSMS(
+        process.env.ADMIN_PHONE_NUMBER,
+        `সেলার ${seller.shopName} কাস্টমার ${customer.name} (${customer.phone}) এর ${productType.toUpperCase()} ${productModel} এর জন্য সার্ভিস রিকোয়েস্ট করেছে। Service ID: ${serviceId}`,
+      ).catch((e) => console.error("admin SMS failed:", e));
+    }
+
+    revalidatePath("/services/repairs");
+    revalidatePath("/seller/customers");
+    revalidatePath("/seller/services");
+    revalidatePath("/seller/profile");
+    return { success: true, message: `সার্ভিস রিকোয়েস্ট পাঠানো হয়েছে (ID: ${serviceId})`, data: { serviceId } };
+  } catch (error) {
+    console.error("sellerRequestService error:", error);
+    return { success: false, message: "সার্ভিস রিকোয়েস্ট পাঠানো যায়নি" };
+  }
+};

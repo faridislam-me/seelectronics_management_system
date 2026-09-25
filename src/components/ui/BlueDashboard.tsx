@@ -78,10 +78,10 @@ const tones = {
 };
 export type StatTone = keyof typeof tones;
 
-export function BlueStatGrid({ cards, compact = false }: { cards: { value: string | number; label: string; icon: LucideIcon; tone: StatTone; href: string }[]; compact?: boolean }) {
+export function BlueStatGrid({ cards, compact = false, cols = 3 }: { cards: { value: string | number; label: string; icon: LucideIcon; tone: StatTone; href: string }[]; compact?: boolean; cols?: 2 | 3 | 4 }) {
   if (compact) {
     return (
-      <div className="grid grid-cols-3 gap-2">
+      <div className={clsx("grid gap-2", cols === 2 ? "grid-cols-2" : cols === 4 ? "grid-cols-4" : "grid-cols-3")}>
         {cards.map((c) => {
           const t = tones[c.tone];
           return (

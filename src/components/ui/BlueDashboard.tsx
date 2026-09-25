@@ -47,21 +47,23 @@ export function BlueHero({ avatar, initials, name, idLabel, id, chips, tagline =
   );
 }
 
-export function BlueBalanceCard({ label, value, icon: Icon, button, buttonHref, chevronHref, buttonIcon: ButtonIcon }: {
-  label: string; value: string; icon: LucideIcon; button: string; buttonHref: string; chevronHref: string; buttonIcon?: LucideIcon;
+export function BlueBalanceCard({ label, value, icon: Icon, button, buttonHref, chevronHref, buttonIcon: ButtonIcon, compact = false }: {
+  label: string; value: string; icon: LucideIcon; button: string; buttonHref: string; chevronHref: string; buttonIcon?: LucideIcon; compact?: boolean;
 }) {
   return (
-    <div className={clsx(R.card, "bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2f70_0%,#0d3f96_60%,#0a2f70_100%)] text-white p-3.5 sm:p-4 flex items-center gap-3 sm:gap-4 shadow-[0_10px_30px_rgba(10,47,112,0.35)] relative overflow-hidden")}>
+    <div className={clsx(compact ? "rounded-md p-2.5 gap-2.5" : clsx(R.card, "p-3.5 sm:p-4 gap-3 sm:gap-4"), "bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2f70_0%,#0d3f96_60%,#0a2f70_100%)] text-white flex items-center shadow-[0_10px_30px_rgba(10,47,112,0.35)] relative overflow-hidden")}>
       <span className="absolute -right-6 -bottom-10 size-40 rounded-full border-[14px] border-white/5" />
-      <span className="size-[clamp(48px,14vw,64px)] rounded-full bg-[#1f7cf0] flex items-center justify-center shrink-0"><Icon size={26} strokeWidth={2} /></span>
-      <div className="flex flex-col gap-0.5 flex-1 min-w-0 pr-6">
-        <span className="text-[clamp(11px,3vw,13px)] font-semibold tracking-[1px] text-white/90">{label}</span>
-        <span className="text-[clamp(20px,6.5vw,28px)] font-extrabold leading-tight truncate">{value}</span>
-        <Link href={buttonHref} className={clsx(R.btn, "mt-1.5 self-start sm:self-end inline-flex items-center gap-1.5 px-3.5 h-9 border-2 border-[#4c9bff] bg-[#0d3f96] text-[13px] font-bold")}>
-          {ButtonIcon && <ButtonIcon size={15} strokeWidth={2.2} />}{button}
+      <span className={clsx("rounded-full bg-[#1f7cf0] flex items-center justify-center shrink-0", compact ? "size-10" : "size-[clamp(48px,14vw,64px)]")}><Icon size={compact ? 20 : 26} strokeWidth={2} /></span>
+      <div className={clsx("flex flex-1 min-w-0", compact ? "flex-row items-center gap-3" : "flex-col gap-0.5 pr-6")}>
+        <div className="flex flex-col min-w-0 flex-1">
+          <span className={clsx("font-semibold tracking-[1px] text-white/90", compact ? "text-[10px]" : "text-[clamp(11px,3vw,13px)]")}>{label}</span>
+          <span className={clsx("font-extrabold leading-tight truncate", compact ? "text-[clamp(17px,5vw,22px)]" : "text-[clamp(20px,6.5vw,28px)]")}>{value}</span>
+        </div>
+        <Link href={buttonHref} className={clsx("inline-flex items-center gap-1.5 border-2 border-[#4c9bff] bg-[#0d3f96] font-bold shrink-0", compact ? "rounded-md px-2.5 h-8 text-[12px]" : clsx(R.btn, "mt-1.5 self-start sm:self-end px-3.5 h-9 text-[13px]"))}>
+          {ButtonIcon && <ButtonIcon size={14} strokeWidth={2.2} />}{button}
         </Link>
       </div>
-      <Link href={chevronHref} aria-label="More" className="absolute right-3 top-4 text-white/90"><ChevronRight size={20} strokeWidth={2.5} /></Link>
+      {!compact && <Link href={chevronHref} aria-label="More" className="absolute right-3 top-4 text-white/90"><ChevronRight size={20} strokeWidth={2.5} /></Link>}
     </div>
   );
 }
@@ -76,7 +78,23 @@ const tones = {
 };
 export type StatTone = keyof typeof tones;
 
-export function BlueStatGrid({ cards }: { cards: { value: string | number; label: string; icon: LucideIcon; tone: StatTone; href: string }[] }) {
+export function BlueStatGrid({ cards, compact = false }: { cards: { value: string | number; label: string; icon: LucideIcon; tone: StatTone; href: string }[]; compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="grid grid-cols-3 gap-2">
+        {cards.map((c) => {
+          const t = tones[c.tone];
+          return (
+            <Link key={c.label} href={c.href} className={clsx("rounded-md border p-1.5 flex flex-col items-center justify-center text-center gap-1 min-h-[72px]", t.bg, t.border)}>
+              <span className={clsx("size-6 rounded-full text-white flex items-center justify-center", t.iconBg)}><c.icon size={12} strokeWidth={2.4} /></span>
+              <span className="text-[clamp(14px,4.2vw,18px)] font-extrabold text-[#16213a] leading-none truncate max-w-full">{c.value}</span>
+              <span className={clsx("text-[clamp(9px,2.6vw,11px)] font-bold leading-tight", t.text)}>{c.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    );
+  }
   return (
     <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
       {cards.map((c) => {
@@ -94,22 +112,22 @@ export function BlueStatGrid({ cards }: { cards: { value: string | number; label
   );
 }
 
-export function BlueContactCard({ title = "Contact Details", editHref, rows }: { title?: string; editHref: string; rows: { label: string; value: React.ReactNode; icon: LucideIcon; href?: string }[] }) {
+export function BlueContactCard({ title = "Contact Details", editHref, rows, compact = false }: { title?: string; editHref: string; rows: { label: string; value: React.ReactNode; icon: LucideIcon; href?: string }[]; compact?: boolean }) {
   return (
-    <div className={clsx(R.card, "bg-white p-3.5 sm:p-4 shadow-[0_4px_18px_rgba(11,61,145,0.06)] flex flex-col gap-2")}>
+    <div className={clsx(compact ? "rounded-md p-3 gap-1" : clsx(R.card, "p-3.5 sm:p-4 gap-2"), "bg-white shadow-[0_4px_18px_rgba(11,61,145,0.06)] flex flex-col")}>
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2.5 min-w-0">
-          <span className="size-9 rounded-full bg-[#1f7cf0] text-white flex items-center justify-center shrink-0"><User size={18} strokeWidth={2.2} /></span>
-          <span className="text-[clamp(16px,4.6vw,20px)] font-extrabold text-[#16213a] truncate">{title}</span>
+          <span className={clsx("rounded-full bg-[#1f7cf0] text-white flex items-center justify-center shrink-0", compact ? "size-7" : "size-9")}><User size={compact ? 15 : 18} strokeWidth={2.2} /></span>
+          <span className={clsx("font-extrabold text-[#16213a] truncate", compact ? "text-[15px]" : "text-[clamp(16px,4.6vw,20px)]")}>{title}</span>
         </span>
-        <Link href={editHref} className={clsx(R.btn, "inline-flex items-center gap-1.5 px-3 h-9 border-2 border-[#bcd4fb] text-[#1f7cf0] text-sm font-bold shrink-0")}><Pencil size={15} strokeWidth={2.2} />Edit</Link>
+        <Link href={editHref} className={clsx("inline-flex items-center gap-1.5 border-2 border-[#bcd4fb] text-[#1f7cf0] font-bold shrink-0", compact ? "rounded-md px-2.5 h-7 text-xs" : clsx(R.btn, "px-3 h-9 text-sm"))}><Pencil size={compact ? 13 : 15} strokeWidth={2.2} />Edit</Link>
       </div>
       {rows.map((row) => (
-        <Link key={row.label} href={row.href ?? editHref} className="flex items-center gap-3 py-2.5 border-t border-[#eef1f6] first:border-0">
-          <span className={clsx(R.tile, "size-11 sm:size-[52px] bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0")}><row.icon size={22} strokeWidth={2} /></span>
+        <Link key={row.label} href={row.href ?? editHref} className={clsx("flex items-center gap-3 border-t border-[#eef1f6] first:border-0", compact ? "py-1.5" : "py-2.5")}>
+          <span className={clsx("bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0", compact ? "size-8 rounded-md" : clsx(R.tile, "size-11 sm:size-[52px]"))}><row.icon size={compact ? 16 : 22} strokeWidth={2} /></span>
           <span className="flex flex-col flex-1 min-w-0">
-            <span className="text-[12px] sm:text-[13px] font-semibold text-[#6b7690]">{row.label}</span>
-            <span className="text-[clamp(14px,4.2vw,17px)] font-extrabold text-[#16213a] truncate">{row.value}</span>
+            <span className={clsx("font-semibold text-[#6b7690]", compact ? "text-[10.5px] leading-none" : "text-[12px] sm:text-[13px]")}>{row.label}</span>
+            <span className={clsx("font-extrabold text-[#16213a] truncate", compact ? "text-[13.5px]" : "text-[clamp(14px,4.2vw,17px)]")}>{row.value}</span>
           </span>
           <span className="text-[#9aa4b8]"><ChevronRight size={18} strokeWidth={2.5} /></span>
         </Link>

@@ -19,7 +19,7 @@ export default async function SellerProfilePage() {
         chips={[
           { label: "SELLER", color: "navy", icon: Store },
           { label: "VERIFIED", color: "green", icon: ShieldCheck },
-          due > 0 ? { label: "DUE PENDING", color: "amber", dot: true } : { label: "CLEAR", color: "blue", dot: true },
+          due > 0 ? { label: "DUE", color: "amber", dot: true } : { label: "CLEAR", color: "blue", dot: true },
         ]}
       />
       <div className="flex flex-col gap-3.5 px-3.5 -mt-4 relative">

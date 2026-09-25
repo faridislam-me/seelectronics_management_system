@@ -1,7 +1,6 @@
 "use client";
 
 import { MoreVertical } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { StaffNotificationBell } from "../features/notices";
@@ -77,74 +76,24 @@ function getHeaderConfig(pathname: string): {
 
 export function StaffHeader({ balance }: StaffHeaderProps) {
   const pathname = usePathname();
-  const { title, showBalance } = getHeaderConfig(pathname);
-
-  const isNoTitlePage = pathname === "/staff/profile";
-  const isBrandPage = pathname === "/staff/details";
+  const isHome = pathname === "/staff/profile";
 
   return (
-    <header className={`sticky top-0 z-50 text-white shadow-lg overflow-hidden w-full ${isBrandPage || isNoTitlePage ? "bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)]" : "bg-[#0A1A3A]"}`}>
-      <div className={`max-w-4xl mx-auto px-4 flex items-center justify-between gap-3 ${isNoTitlePage ? "h-[60px]" : "h-14 md:h-16"}`}>
-        {isBrandPage ? (
-          <>
-            {/* PROFILE PAGE: BRAND BLOCK, NOTIFICATIONS & SETTINGS */}
-            <Link href="/staff/profile" className="flex items-center gap-2.5 min-w-0">
-              <span className="size-11 rounded-lg bg-[#1f7cf0] text-white text-lg font-extrabold flex items-center justify-center shadow-[0_6px_16px_rgba(0,40,120,0.35)] shrink-0">SE</span>
-              <span className="flex flex-col leading-tight min-w-0">
-                <span className="text-lg font-extrabold text-white truncate">SE Electronics</span>
-                <span className="text-[11px] text-white/85 font-medium">Smart Solution &nbsp;Better Life</span>
-              </span>
-            </Link>
-            <div className="ml-auto flex items-center gap-1">
-              <StaffNotificationBell />
-              <Link href="/staff/settings" aria-label="Settings" className="size-11 flex items-center justify-center text-white"><MoreVertical size={24} strokeWidth={2} /></Link>
-            </div>
-          </>
-        ) : !isNoTitlePage ? (
-          <>
-            {/* LEFT BRAND LOGO */}
-            <Link
-              href="/staff/profile"
-              className="flex items-center shrink-0 gap-2 hover:bg-white/10 p-1 rounded-md transition-colors"
-              title="Staff Dashboard"
-            >
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-md flex items-center justify-center border border-white/20 overflow-hidden shrink-0">
-                <span className="text-sm sm:text-base font-bold">SE</span>
-              </div>
-            </Link>
-
-            {/* PAGE TITLE */}
-            <h1 className="font-bold text-base sm:text-lg flex-1 min-w-0 truncate">
-              {title || "Dashboard"}
-            </h1>
-
-            {/* RIGHT ACTIONS: BALANCE & NOTIFICATIONS */}
-            <div className="flex items-center gap-2 shrink-0">
-              {showBalance && (
-                <div className="min-w-0 max-w-[140px] xs:max-w-none">
-                  <StaffBalanceBar amount={balance} />
-                </div>
-              )}
-              <StaffNotificationBell />
-            </div>
-          </>
-        ) : (
-          <>
-            {/* STAFF HOME: BRAND BLOCK, NOTIFICATIONS, PROFILE & MENU */}
-            <Link href="/staff/profile" className="flex items-center gap-2.5 min-w-0">
-              <Image src="/logo.jpg" alt="SE" width={40} height={40} className="size-10 rounded-lg object-cover shrink-0 bg-white" />
-              <span className="flex flex-col leading-tight min-w-0">
-                <span className="text-[15px] font-extrabold text-white leading-tight whitespace-nowrap">SE Electronics</span>
-                <span className="text-[10.5px] text-white/90 font-bold leading-tight">Staff Portal</span>
-                <span className="text-[9.5px] text-white/80 font-medium truncate hidden min-[400px]:block">একটি শক্তিশালী টিম, আরো ভালো সেবা</span>
-              </span>
-            </Link>
-            <div className="ml-auto flex items-center gap-1 shrink-0">
-              <div className="min-w-0 max-w-[140px] scale-[0.8] origin-right -mr-1"><StaffBalanceBar amount={balance} /></div>
-              <StaffNotificationBell />
-            </div>
-          </>
-        )}
+    <header className="sticky top-0 z-50 text-white shadow-lg overflow-hidden w-full bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)]">
+      <div className="max-w-4xl mx-auto px-3 h-[60px] flex items-center justify-between gap-2">
+        {/* Brand block (same on every staff page) */}
+        <Link href="/staff/profile" className="flex items-center gap-2 min-w-0 flex-1">
+          <span className="size-10 rounded-md bg-[#1f7cf0] text-white text-[17px] font-extrabold flex items-center justify-center shadow-[0_6px_16px_rgba(0,40,120,0.35)] shrink-0">SE</span>
+          <span className="flex flex-col leading-tight min-w-0">
+            <span className="text-[15px] font-extrabold text-white leading-tight truncate">SE Electronics</span>
+            <span className="text-[10.5px] text-white/85 font-medium truncate">Smart Solution &nbsp;Better Life</span>
+          </span>
+        </Link>
+        <div className="ml-auto flex items-center gap-1 shrink-0">
+          {isHome && <StaffBalanceBar amount={balance} compact />}
+          <StaffNotificationBell />
+          <Link href="/staff/settings" aria-label="Menu" className="size-8 flex items-center justify-center text-white"><MoreVertical size={20} strokeWidth={2.2} /></Link>
+        </div>
       </div>
     </header>
   );

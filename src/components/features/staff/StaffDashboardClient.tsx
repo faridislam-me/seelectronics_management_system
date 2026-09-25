@@ -44,7 +44,7 @@ export default function StaffDashboardClient({
   banners,
 }: StaffDashboardClientProps) {
   const unreadNotices = activeNotices.filter((n) => !n.isRead);
-  const roleLabel = staffData.role === "electrician" ? "Electrician" : "Service Technician";
+  const roleLabel = staffData.role === "electrician" ? "Electrician" : "Technician";
   const showMarquee =
     activeComplaints.length > 0 ||
     unreadNotices.length > 0 ||
@@ -63,11 +63,11 @@ export default function StaffDashboardClient({
           ) : (
             <span className="size-9 rounded-full bg-[#1f7cf0] border-2 border-white shadow-[0_0_0_1.5px_#1f7cf0] flex items-center justify-center text-white shrink-0"><User size={18} /></span>
           )}
-          <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-            <span className="text-[clamp(14px,4vw,17px)] font-extrabold text-[#16213a] leading-tight truncate"><span className="text-[10px] font-semibold text-[#3d4a63] mr-1">Welcome Back,</span>{staffData.name}</span>
-            <span className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10.5px] font-semibold text-[#6b7690] leading-none">{roleLabel}</span>
-              <span className="inline-flex items-center gap-1 px-1.5 h-[18px] rounded bg-[#0b3d91] text-white text-[9px] font-extrabold"><Users size={10} />SE Service Team</span>
+          <div className="flex flex-col gap-1 min-w-0 flex-1">
+            <span className="text-[clamp(15px,4.4vw,19px)] font-extrabold text-[#16213a] leading-tight truncate">{staffData.name}</span>
+            <span className="flex items-center gap-1.5 flex-wrap">
+              <span className="inline-flex items-center gap-1 px-1.5 h-[20px] rounded bg-[#e8f1ff] text-[#1b6fd6] text-[9.5px] font-extrabold uppercase"><Wrench size={10} />{roleLabel}</span>
+              <span className="inline-flex items-center gap-1 px-2 h-[20px] rounded bg-[#0b3d91] text-white text-[9.5px] font-extrabold"><Users size={10} />SE Service Team</span>
             </span>
           </div>
           <span className="font-script text-[clamp(12px,3.2vw,15px)] leading-[0.9] text-right text-[#0b3d91] rotate-[-8deg] shrink-0 hidden min-[360px]:block">Service Today<br />Better Tomorrow</span>

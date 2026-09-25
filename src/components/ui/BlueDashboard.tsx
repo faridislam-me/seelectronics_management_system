@@ -136,17 +136,33 @@ export function BlueContactCard({ title = "Contact Details", editHref, rows, com
   );
 }
 
-export function BlueFooterBand({ quote = <>“সততা ও দক্ষতাই<br />আমাদের শক্তি”</> }: { quote?: React.ReactNode }) {
+export function BlueFooterBand({ quote = <>সততা ও দক্ষতাই<br />আমাদের শক্তি</> }: { quote?: React.ReactNode }) {
   return (
-    <div className="relative mt-2 h-[110px] overflow-hidden">
-      <div className="absolute inset-y-0 right-0 w-[62%] bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_90%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] rounded-tl-[28px] flex items-center justify-center pl-6">
-        <span className="pl-3 border-l border-white/40 flex items-center gap-2">
-          <span className="size-9 rounded-lg bg-[#1f7cf0] text-white font-extrabold flex items-center justify-center">SE</span>
-          <span className="flex flex-col leading-tight"><span className="text-[13px] font-extrabold text-white">SE Electronics</span><span className="text-[9px] text-white/85">Smart Solution &nbsp;Better Life</span></span>
+    <div className="relative mt-1 h-[104px] overflow-hidden">
+      {/* soft light wash behind the quote */}
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,#f3f7ff_0%,#e6eefc_60%,#dbe7fb_100%)]" />
+      {/* blue panel */}
+      <div className="absolute inset-y-0 right-0 w-[60%] bg-[#0b3d91] bg-[radial-gradient(120%_120%_at_100%_0%,#2f7ff0_0%,#0b3d91_45%,#072a66_100%)] rounded-tl-[36px] shadow-[-8px_0_24px_rgba(11,61,145,0.18)] flex items-center pl-7 pr-3">
+        <span className="absolute -right-6 -top-10 size-28 rounded-full bg-white/10" />
+        <span className="absolute right-6 bottom-2 size-10 rounded-full bg-white/5" />
+        <span className="relative pl-3 border-l-2 border-white/40 flex items-center gap-2.5">
+          <span className="size-10 rounded-md bg-[#1f7cf0] text-white font-extrabold text-[15px] flex items-center justify-center shadow-[0_6px_14px_rgba(0,40,120,0.45)]">SE</span>
+          <span className="flex flex-col leading-tight"><span className="text-[14px] font-extrabold text-white">SE Electronics</span><span className="text-[9.5px] text-white/85 font-medium">Smart Solution &nbsp;Better Life</span></span>
         </span>
+        {/* leaf accent */}
+        <svg className="absolute right-1 bottom-0 w-9 h-12 text-[#2ecc71] opacity-90" viewBox="0 0 40 52" fill="none" aria-hidden="true">
+          <path d="M20 50C20 30 26 14 38 2c2 14-2 34-18 48Z" fill="currentColor" />
+          <path d="M20 50C12 38 6 30 2 20c12 4 18 14 18 30Z" fill="#1a9c4b" />
+          <path d="M20 50c1-14 6-26 16-42" stroke="#0f6f33" strokeWidth="1.2" strokeLinecap="round" />
+        </svg>
       </div>
-      <div className="absolute inset-y-0 left-0 w-[40%] flex items-center justify-center px-2">
-        <span className="text-[clamp(13px,4vw,17px)] font-bold text-[#0a2f70] text-center leading-snug">{quote}</span>
+      {/* quote */}
+      <div className="absolute inset-y-0 left-0 w-[42%] flex items-center justify-center px-3">
+        <span className="relative text-center">
+          <span className="absolute -left-3 -top-3 text-[26px] leading-none font-serif text-[#1f7cf0]/60">“</span>
+          <span className="text-[clamp(13px,4vw,17px)] font-extrabold text-[#0a2f70] leading-snug">{quote}</span>
+          <span className="absolute -right-3 -bottom-4 text-[26px] leading-none font-serif text-[#1f7cf0]/60">”</span>
+        </span>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-export function StaffBalanceBar({ amount }: { amount: number }) {
+export function StaffBalanceBar({ amount, compact = false }: { amount: number; compact?: boolean }) {
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
@@ -25,9 +25,9 @@ export function StaffBalanceBar({ amount }: { amount: number }) {
 
   return (
     <div className="flex items-center">
-      <div className="bg-white rounded-full h-8 px-1 shadow-md border border-brand/10 overflow-hidden relative min-w-[170px] sm:min-w-[170px]">
+      <div className={`bg-white rounded-full px-1 shadow-md border border-brand/10 overflow-hidden relative ${compact ? "h-7 min-w-[118px]" : "h-8 min-w-[170px] sm:min-w-[170px]"}`}>
         
-        <div className="flex items-start h-full w-full relative overflow-hidden px-8 py-2">
+        <div className={`flex items-start h-full w-full relative overflow-hidden ${compact ? "px-4 py-1" : "px-8 py-2"}`}>
 
           {/* 🔹 Tap For Balance (ALWAYS mounted) */}
           <button
@@ -42,7 +42,7 @@ export function StaffBalanceBar({ amount }: { amount: number }) {
                 ৳
               </div>
             </div>
-            <span className="text-sm font-black text-brand whitespace-nowrap">
+            <span className={`${compact ? "text-[10.5px]" : "text-sm"} font-black text-brand whitespace-nowrap`}>
               Tap For Balance
             </span>
           </button>

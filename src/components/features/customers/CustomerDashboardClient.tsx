@@ -26,8 +26,6 @@ import Link from "next/link";
 import { useState } from "react";
 import Marquee from "react-fast-marquee";
 import PrayerTimes from "../shared/PrayerTimes";
-import CustomerBalanceBar from "./CustomerBalanceBar";
-import CustomerNotificationBell from "./CustomerNotificationBell";
 
 interface CustomerDashboardClientProps {
   customer: {
@@ -192,263 +190,100 @@ export default function CustomerDashboardClient({
 
   const isVipCustomer = customer?.vipStatus === "approved";
 
+  const dueAmount = Number(stats?.dueAmount || 0);
+  const referralBalance = Number(customer?.referralBalance || 0);
+  const statusLabel = isDashboardDisabled ? "Warranty Canceled" : isWarrantyExpired ? "Warranty Expired" : "Active";
+  const statusOk = !isDashboardDisabled && !isWarrantyExpired;
+
   return (
     <CustomerLayout>
-      {/* Dashboard Welcome Header */}
-      <div className="bg-[#0A1A3A] text-white w-full py-2 flex items-center justify-center z-10 relative mb-2">
-        {isVipCustomer ? (
-          <CustomerBalanceBar amount={customer?.referralBalance || 0} />
-        ) : (
-          <h1 className="font-bold text-[13px] sm:text-base md:text-lg tracking-[0.2em] uppercase text-center w-full">
-            Welcome to SE ELECTRONICS
-          </h1>
+      <div className="flex flex-col gap-3.5 px-3 text-gray-800 pb-24 pt-3 bg-[#eef3fb]">
+        {/* Welcome banner (admin managed slides) */}
+        {banners && banners.length > 0 && (
+          <div className="w-full overflow-hidden rounded-[12px] shadow-[0_6px_18px_rgba(11,61,145,0.15)]">
+            <Banner slides={banners} />
+          </div>
         )}
-      </div>
 
-      <div className="flex flex-col gap-4 px-2 text-gray-800 pb-24">
-        {/* Warranty Marquee */}
-        <div className="mt-1 w-full overflow-hidden shadow-md">
-          <Banner slides={banners} />
-        </div>
         {/* Warranty Notice Marquee */}
         {(isWarrantyExpired || isDashboardDisabled) && (
-          <div className="mt-2 bg-red-50 border border-red-200 rounded-sm overflow-hidden">
+          <div className="bg-red-50 border border-red-200 rounded-[10px] overflow-hidden">
             <Marquee speed={45} pauseOnHover={true} gradient={false}>
               {isDashboardDisabled ? (
                 <div className="flex items-center gap-2 text-red-600 font-semibold text-sm px-6 py-2">
                   <AlertTriangle size={18} />
-                  {`প্রিয়  গ্রাহক ${customer?.name} (${customer.customerId}) আপনার পন্যের বকেয়া টাকা পরিশোধের জন্য বিভিন্ন সময় কল ও এসএমএস, ভয়েস এস এম এস দিয়েও আপনার সারা পাওয়া যায়নি দীর্ঘ সময় টাকা ও পরিশোধ করেননি তাই সেইলার কোম্পানির কাছে কাস্টমার আই ডি তে অভিযোগ জমা করায় আপনার ওয়ারেন্টি বাতিল  করেছে পুনরায় ওয়ারেন্টি বহাল রাখতে সেইলারের সাথে যোগাযোগ করুন অথবা কোম্পানিতে সরাসরি টাকা পরিশোধ করে ওয়ারেন্টি চালু করুন কাস্টমার কেয়ার ০৯৬৪৯৩৫৫৫৫৫ অথবা ০৯৬৩৯৬৭৩৬০০`}
+                  {`প্রিয়  গ্রাহক ${customer?.name} (${customer.customerId}) আপনার পন্যের বকেয়া টাকা পরিশোধের জন্য বিভিন্ন সময় কল ও এসএমএস, ভয়েস এস এম এস দিয়েও আপনার সারা পাওয়া যায়নি দীর্ঘ সময় টাকা ও পরিশোধ করেননি তাই সেইলার কোম্পানির কাছে কাস্টমার আই ডি তে অভিযোগ জমা করায় আপনার ওয়ারেন্টি বাতিল  করেছে পুনরায় ওয়ারেন্টি বহাল রাখতে সেইলারের সাথে যোগাযোগ করুন অথবা কোম্পানিতে সরাসরি টাকা পরিশোধ করে ওয়ারেন্টি চালু করুন কাস্টমার কেয়ার ০৯৬৪৯৩৫৫৫৫৫ অথবা ০৯৬৩৯৬৭৩৬০০`}
                 </div>
               ) : (
                 <div className="flex items-center gap-2 text-red-600 font-semibold text-sm px-6 py-2">
                   <ShieldCheck size={18} />
-                  প্রিয় গ্রাহক আপনার পন্যের কোম্পানির দেওয়া ওয়ারেন্টি শেষ
-                  হয়ে গেছে ।
-                </div>
-              )}
-
-              {/* repeat for smooth loop */}
-              {isDashboardDisabled ? (
-                <div className="flex items-center gap-2 text-red-600 font-semibold text-sm px-6 py-2">
-                  <AlertTriangle size={18} />
-                  {`প্রিয়  গ্রাহক ${customer?.name} (${customer.customerId}) আপনার পন্যের বকেয়া টাকা পরিশোধের জন্য বিভিন্ন সময় কল ও এসএমএস, ভয়েস এস এম এস দিয়েও আপনার সারা পাওয়া যায়নি দীর্ঘ সময় টাকা ও পরিশোধ করেননি তাই সেইলার কোম্পানির কাছে কাস্টমার আই ডি তে অভিযোগ জমা করায় আপনার ওয়ারেন্টি বাতিল  করেছে পুনরায় ওয়ারেন্টি বহাল রাখতে সেইলারের সাথে যোগাযোগ করুন অথবা কোম্পানিতে সরাসরি টাকা পরিশোধ করে ওয়ারেন্টি চালু করুন কাস্টমার কেয়ার ০৯৬৪৯৩৫৫৫৫৫ অথবা ০৯৬৩৯৬৭৩৬০০`}
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 text-red-600 font-semibold text-sm px-6 py-2">
-                  <ShieldCheck size={18} />
-                  প্রিয় গ্রাহক আপনার পন্যের কোম্পানির দেওয়া ওয়ারেন্টি শেষ
-                  হয়ে গেছে।
+                  প্রিয় গ্রাহক আপনার পন্যের কোম্পানির দেওয়া ওয়ারেন্টি শেষ হয়ে গেছে ।
                 </div>
               )}
             </Marquee>
           </div>
         )}
 
-        {/* Customer Info Card */}
-        <div
-          className={`relative rounded-md p-4 sm:p-6 border overflow-hidden transition-all duration-300 shadow-sm flex flex-col  ${
-            isWarrantyExpired || isDashboardDisabled
-              ? "bg-red-50 border-red-300"
-              : "bg-white"
-          }`}
-        >
-          {/* Top Row: Status Badge & Notifications */}
-          <div className="flex items-center  justify-between w-full">
-            <div
-              className={`inline-flex items-center text-[10px] sm:text-xs px-3 py-1.5 rounded font-extrabold uppercase tracking-wider border ${
-                isWarrantyExpired
-                  ? "bg-red-50 text-red-600 border-red-300"
-                  : "bg-green-50 text-green-600 border-green-300"
-              }`}
-            >
-              <span className="mr-2 text-lg leading-none mt-[-2px]">•</span>{" "}
-              {isDashboardDisabled
-                ? "Warranty Cancled"
-                : isWarrantyExpired
-                  ? "Warranty Expired"
-                  : "Active Customer"}
+        {/* Profile card */}
+        <div className={clsx("rounded-[12px] p-3.5 sm:p-4 shadow-[0_4px_18px_rgba(11,61,145,0.06)] flex flex-col gap-3", statusOk ? "bg-white" : "bg-red-50 border border-red-200")}>
+          <div className="flex items-center gap-3">
+            <span className="size-[52px] rounded-full bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><User size={28} strokeWidth={2.2} /></span>
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="text-[clamp(16px,4.8vw,20px)] font-extrabold text-[#16213a] leading-tight truncate">{customer.name}</span>
+              <span className="text-[13px] font-semibold text-[#6b7690] truncate">ID: {customer.customerId}</span>
             </div>
-
-            <div className="flex flex-col items-center gap-1">
-              <CustomerNotificationBell variant="card" />
-              <span
-                className={clsx(
-                  "text-[11px] font-semibold",
-                  isWarrantyExpired ? "text-red-600" : "text-green-600",
-                )}
-              >
-                {isDashboardDisabled
-                  ? "Cancled"
-                  : isWarrantyExpired
-                    ? "Expired"
-                    : "Active"}
-              </span>
-            </div>
+            <span className={clsx("inline-flex items-center gap-1.5 px-2.5 h-8 rounded-md text-[12px] font-extrabold whitespace-nowrap shrink-0", statusOk ? "bg-[#e9f9ef] text-[#178a42]" : "bg-[#ffe9ec] text-[#c81f38]")}>
+              <span className={clsx("size-1.5 rounded-full", statusOk ? "bg-[#1a9c4b]" : "bg-[#e0243f]")} />{statusLabel}
+            </span>
           </div>
 
-          {/* Second Row: User Info */}
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-md bg-gray-50 border border-gray-200 shrink-0 shadow-sm">
-              <User className="text-gray-700" size={20} />
-            </div>
-            <div className="flex flex-col">
-              <h2 className="text-lg sm:text-xl font-black text-gray-900 leading-tight">
-                {customer.name}
-              </h2>
-              <p className="text-sm font-bold text-gray-500 flex items-center gap-1.5 mt-0.5">
-                <span className="uppercase tracking-widest text-gray-400">
-                  ID:
-                </span>
-                <span className="text-gray-800">{customer.customerId}</span>
-              </p>
-            </div>
+          <div className="grid grid-cols-2 gap-2.5">
+            <a href={`tel:${customer.phone}`} className="flex items-center gap-2.5 p-2.5 rounded-[10px] border border-[#e3e8f1] bg-white min-w-0">
+              <span className="size-10 rounded-full bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><PhoneCall size={18} /></span>
+              <span className="flex flex-col min-w-0">
+                <span className="text-[11px] font-semibold text-[#6b7690]">Phone</span>
+                <span className="text-[clamp(13px,3.8vw,15px)] font-extrabold text-[#16213a] truncate">{customer.phone}</span>
+              </span>
+            </a>
+            <Link href="/customer/invoice" className={clsx("flex items-center gap-2.5 p-2.5 rounded-[10px] border min-w-0", dueAmount > 0 ? (stats?.dueType === "installment" ? "bg-[#fff6e3] border-[#f5dfa0]" : "bg-[#ffe9ec] border-[#f7c3ca]") : "bg-[#e9f9ef] border-[#bfe8cd]")}>
+              <span className={clsx("size-10 rounded-full flex items-center justify-center shrink-0 text-white", dueAmount > 0 ? (stats?.dueType === "installment" ? "bg-[#e0a11b]" : "bg-[#e0243f]") : "bg-[#1a9c4b]")}><Banknote size={18} /></span>
+              <span className="flex flex-col min-w-0 flex-1">
+                <span className={clsx("text-[clamp(13px,3.8vw,15px)] font-extrabold truncate", dueAmount > 0 ? (stats?.dueType === "installment" ? "text-[#b8620b]" : "text-[#c81f38]") : "text-[#178a42]")}>৳{dueAmount.toLocaleString()}</span>
+                <span className="text-[11px] font-bold tracking-wide text-[#6b7690] uppercase">{dueAmount > 0 ? (stats?.dueType === "installment" ? "Installment" : "Due") : "No due"}</span>
+              </span>
+              <span className="text-[#9aa4b8] shrink-0">›</span>
+            </Link>
           </div>
 
-          {/* Third Row: Phone & Due */}
-          {!!(stats?.dueAmount && stats.dueAmount > 0) ? (
-            <div className={`grid gap-2 sm:gap-3 mt-2 grid-cols-7`}>
-              {/* Phone */}
-              <div className="flex col-span-4 items-center gap-2 sm:gap-3 py-3 px-2  border-y border-gray-100 bg-white min-w-0">
-                <div className="p-2 sm:p-3 rounded-md bg-white border border-gray-200 shrink-0 shadow-sm">
-                  <PhoneCall
-                    size={18}
-                    className="text-gray-600 sm:w-5 sm:h-5"
-                  />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] uppercase text-gray-400 font-bold tracking-widest">
-                    Phone
-                  </span>
-                  <span className="text-gray-800 text-sm sm:text-sm font-black leading-tight truncate">
-                    {customer.phone}
-                  </span>
-                </div>
-              </div>
-
-              {/* Due Amount */}
-              <div
-                className={`flex items-center gap-2.5 px-3 col-span-3 rounded-sm min-w-0 border ${
-                  stats.dueType === "installment"
-                    ? "bg-[#FFF9E6] border-[#FFE5B4]"
-                    : "bg-[#FFEAEA] border-[#FFD5D5]"
-                }`}
-              >
-                <div
-                  className={`flex items-center animate-pulse justify-center p-2 rounded-lg shrink-0 ${
-                    stats.dueType === "installment"
-                      ? "bg-[#FFE5B4]"
-                      : "bg-[#faa1a1]"
-                  }`}
-                >
-                  <Banknote
-                    className={`${
-                      stats.dueType === "installment"
-                        ? "text-[#F59E0B] drop-shadow-[0_0_4px_rgba(245,158,11,0.4)]"
-                        : "text-[#ff0000] drop-shadow-[0_0_4px_rgba(211,47,47,0.4)]"
-                    }`}
-                    size={22}
-                  />
-                </div>
-
-                <div className="flex flex-col min-w-0">
-                  <span
-                    className={`text-sm font-bold leading-tight truncate ${
-                      stats.dueType === "installment"
-                        ? "text-[#B45309]"
-                        : "text-[#D32F2F]"
-                    }`}
-                  >
-                    ৳{stats.dueAmount.toLocaleString()}
-                  </span>
-                  <span
-                    className={`text-[10px] uppercase font-bold tracking-wider leading-tight ${
-                      stats.dueType === "installment"
-                        ? "text-[#D97706]"
-                        : "text-[#E57373]"
-                    }`}
-                  >
-                    {stats.dueType === "installment" ? "INSTALLMENT" : "DUE"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className={`grid gap-2 sm:gap-3 mt-2 grid-cols-1`}>
-              {/* Phone */}
-              <div className="flex items-center gap-2 sm:gap-3 py-3 px-2  border-y border-gray-100 bg-white min-w-0">
-                <div className="p-2 sm:p-3 rounded-md bg-white border border-gray-200 shrink-0 shadow-sm">
-                  <PhoneCall
-                    size={18}
-                    className="text-gray-600 sm:w-5 sm:h-5"
-                  />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] uppercase text-gray-400 font-bold tracking-widest">
-                    Phone
-                  </span>
-                  <span className="text-gray-800 text-xs sm:text-sm font-black leading-tight truncate">
-                    {customer.phone}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Fourth Row: VIP */}
-          {customer.vipStatus === "approved" && (
-            <div className="mt-2 flex items-center justify-between p-4 rounded-md bg-yellow-50 border border-yellow-200 shadow-sm">
-              {" "}
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2 rounded-md bg-white border border-yellow-200 shrink-0 shadow-sm">
-                  <Crown size={18} className="text-yellow-600" />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-base font-black text-yellow-700 uppercase tracking-widest">
-                    VIP Member
-                  </span>
-                  <span className="text-sm font-bold text-gray-800 ">
-                    Premium Access Enabled
-                  </span>
-                </div>
-              </div>
-              <span className="text-sm font-black text-yellow-800 bg-yellow-200 px-3 py-1.5 rounded-full tracking-widest shrink-0 ml-2">
-                ELITE
-              </span>
-            </div>
-          )}
+          {/* VIP band */}
+          <Link href="/customer/vip-card" className="rounded-[12px] bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2f70_0%,#0d3f96_60%,#0a2f70_100%)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(10,47,112,0.3)] relative overflow-hidden">
+            <span className="absolute -right-6 -bottom-10 size-32 rounded-full border-[12px] border-white/5" />
+            <span className="size-11 rounded-[10px] bg-[#f5c542] text-[#0a2f70] flex items-center justify-center shrink-0"><Crown size={22} strokeWidth={2.4} /></span>
+            <span className="flex flex-col min-w-0 flex-1">
+              <span className="text-[15px] font-extrabold tracking-wide text-[#f5c542]">{isVipCustomer ? "VIP MEMBER" : "VIP CARD"}</span>
+              <span className="text-[12px] font-semibold text-white/90 truncate">{isVipCustomer ? `Premium Access Enabled · Balance ৳${referralBalance.toLocaleString()}` : "প্রিমিয়াম সুবিধা পেতে ভিআইপি কার্ডের জন্য আবেদন করুন"}</span>
+            </span>
+            <span className="shrink-0 inline-flex items-center gap-1 px-3 h-9 rounded-lg bg-[#f5c542] text-[#0a2f70] text-[12px] font-extrabold">{isVipCustomer ? "View Benefits" : "Apply"} ›</span>
+          </Link>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-4 sm:gap-6 px-1">
-          {/* Services */}
-          <div className="bg-emerald-50 border-emerald-200 p-3 sm:p-4 rounded-md shadow-sm border flex items-center gap-3 sm:gap-4 justify-center sm:justify-start sm:px-6">
-            <div className="p-2 sm:p-3 bg-emerald-100/50 rounded-full shrink-0">
-              <Boxes className="text-emerald-600 size-6 sm:size-8" />
-            </div>
-            <div className="flex flex-col items-center">
-              <p className="text-2xl sm:text-3xl font-black text-emerald-600 leading-none">
-                {stats?.totalServices || 0}
-              </p>
-              <p className="text-[10px] sm:text-xs uppercase font-black text-emerald-600/70 tracking-tighter sm:tracking-widest mt-1">
-                Services
-              </p>
-            </div>
-          </div>
-
-          {/* Subscriptions */}
-          <div className="bg-indigo-50 border-indigo-200 p-3 sm:p-4 rounded-md shadow-sm border flex items-center gap-3 sm:gap-4 justify-center sm:justify-start sm:px-6">
-            <div className="p-2 sm:p-3 bg-indigo-100/50 rounded-full shrink-0">
-              <Zap className="text-indigo-600 size-6 sm:size-8" />
-            </div>
-            <div className="flex flex-col items-center">
-              <p className="text-2xl sm:text-3xl font-black text-indigo-600 leading-none">
-                {stats?.activeSubscriptions || 0}
-              </p>
-              <p className="text-[10px] sm:text-xs uppercase font-black text-indigo-600/70 tracking-tighter sm:tracking-widest mt-1">
-                Subscription
-              </p>
-            </div>
-          </div>
+        {/* Quick stat cards */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+          <Link href="/customer/services" className="rounded-[10px] border border-[#bfe8cd] bg-[#e9f9ef] p-2.5 flex flex-col gap-1.5 min-h-[92px]">
+            <span className="size-9 rounded-full bg-[#1a9c4b] text-white flex items-center justify-center"><Boxes size={17} strokeWidth={2.4} /></span>
+            <span className="text-[clamp(18px,5.5vw,24px)] font-extrabold text-[#16213a] leading-none">{stats?.totalServices || 0}</span>
+            <span className="text-[clamp(10px,3vw,12px)] font-extrabold text-[#178a42] uppercase tracking-wide leading-tight">Services<br /><span className="font-semibold normal-case tracking-normal text-[#6b7690]">View Details →</span></span>
+          </Link>
+          <Link href="/customer/plans" className="rounded-[10px] border border-[#dcc6fb] bg-[#f3e9ff] p-2.5 flex flex-col gap-1.5 min-h-[92px]">
+            <span className="size-9 rounded-full bg-[#8b3fe8] text-white flex items-center justify-center"><Zap size={17} strokeWidth={2.4} /></span>
+            <span className="text-[clamp(18px,5.5vw,24px)] font-extrabold text-[#16213a] leading-none">{stats?.activeSubscriptions || 0}</span>
+            <span className="text-[clamp(10px,3vw,12px)] font-extrabold text-[#7a35d2] uppercase tracking-wide leading-tight">Subscription<br /><span className="font-semibold normal-case tracking-normal text-[#6b7690]">View Details →</span></span>
+          </Link>
+          <Link href="/customer/referral" className="rounded-[10px] border border-[#bcd4fb] bg-[#e8f1ff] p-2.5 flex flex-col gap-1.5 min-h-[92px]">
+            <span className="size-9 rounded-full bg-[#e0243f] text-white flex items-center justify-center"><Star size={17} strokeWidth={2.4} /></span>
+            <span className="text-[clamp(12px,3.6vw,14px)] font-extrabold text-[#16213a] leading-tight">বিশেষ সুবিধা</span>
+            <span className="text-[clamp(10px,3vw,12px)] font-semibold text-[#1b6fd6] leading-tight">রেফার করে জিতুন →</span>
+          </Link>
         </div>
 
         {/* Secondary Grid */}

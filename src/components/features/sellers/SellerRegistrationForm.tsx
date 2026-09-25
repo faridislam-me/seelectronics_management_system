@@ -11,9 +11,9 @@ import { toast } from "react-toastify";
 
 function Section({ icon: Icon, title, hint, children }: { icon: LucideIcon; title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-[20px] border border-[#e3e8f1] bg-white overflow-hidden">
+    <section className="rounded-[12px] border border-[#e3e8f1] bg-white overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-3 bg-[#f5f8fd] border-b border-[#e3e8f1]">
-        <span className="size-9 rounded-xl bg-[#1f7cf0] text-white flex items-center justify-center shrink-0"><Icon size={18} /></span>
+        <span className="size-9 rounded-lg bg-[#1f7cf0] text-white flex items-center justify-center shrink-0"><Icon size={18} /></span>
         <span className="flex flex-col leading-tight">
           <span className="text-[15px] font-extrabold text-[#16213a]">{title}</span>
           {hint && <span className="text-[11px] font-semibold text-[#6b7690]">{hint}</span>}
@@ -168,7 +168,7 @@ export default function SellerRegistrationForm({
       </Section>
 
       {token ? (
-        <label className="text-start text-[#54595f] text-sm flex gap-3 select-none bg-[#fff6e3] border border-[#f5dfa0] rounded-[16px] p-4">
+        <label className="text-start text-[#54595f] text-sm flex gap-3 select-none bg-[#fff6e3] border border-[#f5dfa0] rounded-[10px] p-4">
           <input value="true" type="checkbox" name="agreed" className="size-4 mt-1 shrink-0 accent-[#1f7cf0]" required />
           <span className="whitespace-pre-line leading-relaxed">{sellerAgreementText.trim()}</span>
         </label>
@@ -181,7 +181,7 @@ export default function SellerRegistrationForm({
         )
       )}
 
-      <button disabled={isCreating || isUpdating} className={token ? "w-full h-14 rounded-full bg-[#0b3d91] bg-[linear-gradient(110deg,#0a2f70_0%,#1b5fd0_100%)] text-white font-extrabold text-base tracking-wide shadow-[0_10px_30px_rgba(10,47,112,0.35)] disabled:opacity-50 active:scale-[0.98] transition-all" : "__btn"}>
+      <button disabled={isCreating || isUpdating} className={token ? "w-full h-12 rounded-lg bg-[#0b3d91] bg-[linear-gradient(110deg,#0a2f70_0%,#1b5fd0_100%)] text-white font-extrabold text-base tracking-wide shadow-[0_10px_30px_rgba(10,47,112,0.35)] disabled:opacity-50 active:scale-[0.98] transition-all" : "__btn"}>
         {mode === "create" ? (isCreating ? "Submitting..." : token ? "আবেদন জমা দিন" : "Add Seller") : isUpdating ? "Updating..." : "Update"}
       </button>
     </form>

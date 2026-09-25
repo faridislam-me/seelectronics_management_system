@@ -640,9 +640,9 @@ export async function getSellerPortalData(sellerId: string) {
       with: {
         purchases: { orderBy: (p, { desc }) => [desc(p.date)] },
         customers: {
-          columns: { customerId: true, name: true, phone: true, address: true, invoiceNumber: true, isWarrantyStopped: true, createdAt: true },
+          columns: { customerId: true, name: true, phone: true, address: true, invoiceNumber: true, isWarrantyStopped: true, createdAt: true, referredByVipCard: true, sellerId: true },
           with: {
-            invoice: { columns: { total: true, dueAmount: true, date: true }, with: { products: { columns: { type: true, model: true, quantity: true, warrantyStartDate: true, warrantyDurationMonths: true } } } },
+            invoice: { columns: { id: true, total: true, subtotal: true, dueAmount: true, dueType: true, notes: true, paymentType: true, date: true }, with: { products: { columns: { type: true, model: true, quantity: true, warrantyStartDate: true, warrantyDurationMonths: true } } } },
             services: { columns: { serviceId: true, status: true, type: true, productType: true, productModel: true, staffName: true, createdAt: true }, orderBy: (s, { desc }) => [desc(s.createdAt)] },
           },
           orderBy: (c, { desc }) => [desc(c.createdAt)],

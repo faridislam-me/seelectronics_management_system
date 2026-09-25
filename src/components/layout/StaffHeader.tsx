@@ -1,6 +1,7 @@
 "use client";
 
-import { Settings } from "lucide-react";
+import { MoreVertical, User } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { StaffNotificationBell } from "../features/notices";
@@ -78,13 +79,28 @@ export function StaffHeader({ balance }: StaffHeaderProps) {
   const pathname = usePathname();
   const { title, showBalance } = getHeaderConfig(pathname);
 
-  const isNoTitlePage =
-    pathname === "/staff/profile" || pathname === "/staff/details";
+  const isNoTitlePage = pathname === "/staff/profile";
+  const isBrandPage = pathname === "/staff/details";
 
   return (
-    <header className={`sticky top-0 z-50 text-white shadow-lg overflow-hidden w-full ${isNoTitlePage ? "bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)]" : "bg-[#0A1A3A]"}`}>
-      <div className="max-w-4xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between gap-3">
-        {!isNoTitlePage ? (
+    <header className={`sticky top-0 z-50 text-white shadow-lg overflow-hidden w-full ${isBrandPage || isNoTitlePage ? "bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)]" : "bg-[#0A1A3A]"}`}>
+      <div className={`max-w-4xl mx-auto px-4 flex items-center justify-between gap-3 ${isNoTitlePage ? "h-[68px]" : "h-14 md:h-16"}`}>
+        {isBrandPage ? (
+          <>
+            {/* PROFILE PAGE: BRAND BLOCK, NOTIFICATIONS & SETTINGS */}
+            <Link href="/staff/profile" className="flex items-center gap-2.5 min-w-0">
+              <span className="size-11 rounded-lg bg-[#1f7cf0] text-white text-lg font-extrabold flex items-center justify-center shadow-[0_6px_16px_rgba(0,40,120,0.35)] shrink-0">SE</span>
+              <span className="flex flex-col leading-tight min-w-0">
+                <span className="text-lg font-extrabold text-white truncate">SE Electronics</span>
+                <span className="text-[11px] text-white/85 font-medium">Smart Solution &nbsp;Better Life</span>
+              </span>
+            </Link>
+            <div className="ml-auto flex items-center gap-1">
+              <StaffNotificationBell />
+              <Link href="/staff/settings" aria-label="Settings" className="size-11 flex items-center justify-center text-white"><MoreVertical size={24} strokeWidth={2} /></Link>
+            </div>
+          </>
+        ) : !isNoTitlePage ? (
           <>
             {/* LEFT BRAND LOGO */}
             <Link
@@ -114,17 +130,19 @@ export function StaffHeader({ balance }: StaffHeaderProps) {
           </>
         ) : (
           <>
-            {/* NO TITLE PAGE: BRAND BLOCK, NOTIFICATIONS & SETTINGS */}
+            {/* STAFF HOME: BRAND BLOCK, NOTIFICATIONS, PROFILE & MENU */}
             <Link href="/staff/profile" className="flex items-center gap-2.5 min-w-0">
-              <span className="size-11 rounded-2xl bg-[#1f7cf0] text-white text-lg font-extrabold flex items-center justify-center shadow-[0_6px_16px_rgba(0,40,120,0.35)] shrink-0">SE</span>
+              <Image src="/logo.jpg" alt="SE" width={44} height={44} className="size-11 rounded-lg object-cover shrink-0 bg-white" />
               <span className="flex flex-col leading-tight min-w-0">
-                <span className="text-lg font-extrabold text-white truncate">SE Electronics</span>
-                <span className="text-[11px] text-white/85 font-medium">Smart Solution &nbsp;Better Life</span>
+                <span className="text-[17px] font-extrabold text-white truncate">SE Electronics</span>
+                <span className="text-[11px] text-white/90 font-bold">Staff Portal</span>
+                <span className="text-[10px] text-white/80 font-medium truncate">একটি শক্তিশালী টিম, আরো ভালো সেবা</span>
               </span>
             </Link>
-            <div className="ml-auto flex items-center gap-1">
+            <div className="ml-auto flex items-center gap-0.5 shrink-0">
               <StaffNotificationBell />
-              <Link href="/staff/settings" aria-label="Settings" className="size-11 flex items-center justify-center text-white"><Settings size={26} strokeWidth={2} /></Link>
+              <Link href="/staff/details" aria-label="Profile" className="size-10 rounded-full bg-white text-[#1f7cf0] flex items-center justify-center shadow-sm"><User size={20} strokeWidth={2.4} /></Link>
+              <Link href="/staff/settings" aria-label="Menu" className="size-9 flex items-center justify-center text-white"><MoreVertical size={22} /></Link>
             </div>
           </>
         )}

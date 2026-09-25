@@ -157,8 +157,12 @@ export const getCustomerById = async (customerId: string) => {
  */
 export const createCustomer = async (data: any, sendLink = false) => {
   try {
-    const session = await verifySession(false, "admin");
-    if (!session) return { success: false, message: "Unauthorized" };
+    const session = await verifySession(false);
+    if (!session || (session.role !== "admin" && session.role !== "seller")) {
+      return { success: false, message: "Unauthorized" };
+    }
+    // A seller can only create customers linked to their own account
+    if (session.role === "seller") data = { ...data, sellerId: session.userId };
 
     const { generateRandomId, generateInvoiceNumber } = await import("@/utils");
 
@@ -285,6 +289,8 @@ export const createCustomer = async (data: any, sendLink = false) => {
     revalidatePath("/customers");
     revalidatePath("/customer/referral");
     revalidatePath("/referral-payments");
+    revalidatePath("/seller/customers");
+    revalidatePath("/seller/profile");
     const result = {
       success: true,
       message: "Customer created successfully",
@@ -335,8 +341,10 @@ export const updateCustomer = async (
   sendLink = false,
 ) => {
   try {
-    const session = await verifySession(false, "admin");
-    if (!session) return { success: false, message: "Unauthorized" };
+    const session = await verifySession(false);
+    if (!session || (session.role !== "admin" && session.role !== "seller")) {
+      return { success: false, message: "Unauthorized" };
+    }
 
     const customer = await db.query.customers.findFirst({
       where: eq(customers.customerId, customerId),
@@ -344,6 +352,11 @@ export const updateCustomer = async (
     });
 
     if (!customer) return { success: false, message: "Customer not found" };
+    // A seller may only edit their own customers and cannot re-assign them
+    if (session.role === "seller") {
+      if (customer.sellerId !== session.userId) return { success: false, message: "Unauthorized" };
+      data = { ...data, sellerId: session.userId };
+    }
 
     let discountGiven = 0;
     let bonusEarned = 0;
@@ -476,6 +489,8 @@ export const updateCustomer = async (
 
     revalidatePath("/customers");
     revalidatePath(`/staff/customers/${customerId}`);
+    revalidatePath("/seller/customers");
+    revalidatePath("/seller/profile");
     return { success: true, message: "Customer updated successfully" };
   } catch (error) {
     console.error("Error updating customer:", error);

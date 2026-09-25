@@ -19,7 +19,7 @@ export default async function SellerPurchasesPage() {
           {seller.purchases.map((p) => {
             const dueAmt = p.totalAmount - p.paidAmount;
             return (
-              <div key={p.purchaseId} className="flex flex-col gap-1.5 p-3 rounded-[14px] bg-[#f5f7fb]">
+              <div key={p.purchaseId} className="flex flex-col gap-1.5 p-3 rounded-[10px] bg-[#f5f7fb]">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[13px] font-extrabold text-[#16213a]">{p.productType.toUpperCase()} {p.productModel} × {p.quantity}</span>
                   {dueAmt <= 0 ? <BlueChip tone="green">PAID</BlueChip> : p.paidAmount > 0 ? <BlueChip tone="amber">PARTIAL</BlueChip> : <BlueChip tone="red">DUE</BlueChip>}

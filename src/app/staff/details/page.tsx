@@ -26,8 +26,11 @@ import {
   AlertTriangle,
   Star,
   BadgeCheck,
+  FileDown,
+  Wallet,
 } from "lucide-react";
 import Image from "next/image";
+import { BlueBalanceCard, BlueContactCard, BlueFooterBand, BlueHero, BlueStatGrid } from "@/components/ui/BlueDashboard";
 
 export default async function StaffDetailsPage() {
   const session = await verifyStaffSession();
@@ -69,222 +72,48 @@ export default async function StaffDetailsPage() {
         Icon={User}
       /> */}
 
-      <div className="min-h-screen bg-gray-100 ">
-        {/* HEADER (Desktop Only) */}
-        <div className="hidden md:block bg-brand text-white px-3 sm:px-3 py-5 sm:py-3 mt-5 rounded-t-md shadow-sm mx-2">
-          <div className="max-w-6xl mx-auto flex  justify-between items-center gap-2  ">
-            {/* Title */}
-            <h1 className="text-lg sm:text-xl font-bold tracking-wide">
-              Staff Profile
-            </h1>
-          </div>
-        </div>
+      <div className="min-h-screen bg-[#eef3fb] text-[#16213a]">
+        <BlueHero
+          avatar={staffData.photoUrl}
+          name={staffData.name}
+          idLabel="Staff ID"
+          id={staffData.staffId}
+          chips={[
+            { label: staffData.role === "electrician" ? "ELECTRICIAN" : "TECHNICIAN", color: "navy", icon: User },
+            { label: staffData.isVerified ? "VERIFIED" : "PENDING", color: staffData.isVerified ? "green" : "amber", icon: ShieldCheck },
+            { label: staffData.isActiveStaff ? "ACTIVE" : "BLOCKED", color: staffData.isActiveStaff ? "blue" : "red", dot: true },
+          ]}
+        />
 
-        <div className="max-w-6xl mx-auto px-3 mt-2 pb-5 space-y-2 ">
-          {/* PROFILE CARD */}
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-4 relative pb-6 flex flex-col items-center">
-            {/* Rounded Curved Background Banner */}
-            <div className="w-full h-28 sm:h-32 bg-[#eef2f6] rounded-b-[40%] absolute top-0 left-0 z-0"></div>
+        <div className="max-w-6xl mx-auto px-3.5 -mt-4 relative pb-5 flex flex-col gap-3.5">
+          <BlueBalanceCard
+            label="AVAILABLE BALANCE"
+            value={`৳ ${Number(stats?.availableBalance || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            icon={Wallet}
+            button="Download ID"
+            buttonIcon={FileDown}
+            buttonHref={`/pdf/download?type=id-card&id=${staffData.staffId}`}
+            chevronHref="/staff/payment"
+          />
 
-            {/* Content Wrapper */}
-            <div className="relative z-10 mt-8 sm:mt-12 flex flex-col items-center text-center px-4 w-full">
-              {/* Avatar with Gold Metallic Ring */}
-              <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full p-[3px] bg-gradient-to-tr from-[#c5a059] via-[#fdf0cd] to-[#d4af37] shadow-md flex items-center justify-center">
-                <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-white">
-                  <Image
-                    src={staffData.photoUrl || "/placeholder-avatar.png"}
-                    alt={staffData.name}
-                    width={128}
-                    height={128}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
+          <BlueStatGrid cards={[
+            { value: staffData.completedServices ?? 0, label: "সফল সার্ভিস", icon: CheckSquare, tone: "green", href: "/staff/services" },
+            { value: staffData.pendingServices ?? 0, label: "পেন্ডিং সার্ভিস", icon: Clock, tone: "blue", href: "/staff/tasks" },
+            { value: staffData.repairExperienceYears || staffData.installationExperienceYears || 0, label: "বছরের দক্ষতা", icon: BriefcaseBusiness, tone: "purple", href: "#experience" },
+            { value: staffData.canceledServices ?? 0, label: "রিজেক্টেড সার্ভিস", icon: XCircle, tone: "amber", href: "/staff/tracking" },
+            { value: staffData.serviceCenterServices ?? 0, label: "সার্ভিস সেন্টার", icon: Building2, tone: "red", href: "/staff/tracking" },
+            { value: staffData.rating ?? 0, label: "রেটিং", icon: Star, tone: "teal", href: "/staff/feedbacks" },
+          ]} />
 
-              {/* Name & ID */}
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0a192f] mt-4 flex items-center justify-center gap-1.5">
-                {staffData.name}
-                <BadgeCheck className="text-white  fill-blue-500 size-6 sm:size-7 mt-1" />
-              </h2>
-
-              <p className="text-base sm:text-lg font-medium text-gray-700 mt-1">
-                Staff ID: {staffData.staffId}
-              </p>
-
-              {/* Badges */}
-              <div className="flex flex-wrap justify-center gap-2 mt-3">
-                <span className="bg-[#7f8c8d] text-white text-xs sm:text-sm font-bold px-3.5 py-1.5 rounded-lg uppercase tracking-wider">
-                  {staffData.role}
-                </span>
-
-                {staffData.isVerified && (
-                  <span className="bg-[#27ae60] text-white text-xs sm:text-sm font-bold px-3.5 py-1.5 rounded-lg uppercase tracking-wider">
-                    Verified
-                  </span>
-                )}
-
-                {staffData.isActiveStaff && (
-                  <span className="bg-[#2980b9] text-white text-xs sm:text-sm font-bold px-3.5 py-1.5 rounded-lg uppercase tracking-wider">
-                    Active
-                  </span>
-                )}
-              </div>
-
-              {/* Download & Export Buttons */}
-              <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                <a
-                  target="_blank"
-                  href={`/pdf/download?type=id-card&id=${staffData.staffId}`}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-white text-[#0a192f] rounded-lg hover:bg-gray-50 transition-all border border-gray-300 text-xs sm:text-sm font-bold tracking-wider uppercase shadow-sm w-full sm:w-auto"
-                >
-                  <svg
-                    className="size-5 text-[#0a192f]"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect width="20" height="14" x="2" y="5" rx="2" />
-                    <path d="M6 14v-1a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v1" />
-                    <circle cx="8" cy="8" r="1.5" />
-                    <line x1="14" x2="18" y1="9" y2="9" />
-                    <line x1="14" x2="18" y1="13" y2="13" />
-                  </svg>
-                  Download ID
-                </a>
-
-              </div>
-            </div>
-          </div>
-
-          {/* PERFORMANCE STATS */}
-          <div className="grid grid-cols-3 gap-2.5">
-            <div className="flex flex-col items-center p-2 rounded-md bg-green-50 border border-green-200 text-center">
-              <div className="bg-green-100 rounded-md p-1 mb-2">
-                <CheckSquare className="size-5 text-green-600" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">
-                {staffData.completedServices ?? 0}
-              </span>
-              <span className="text-xs font-semibold text-green-700">
-                সফল সার্ভিস
-              </span>
-            </div>
-            <div className="flex flex-col items-center p-2 rounded-md bg-blue-50 border border-blue-200 text-center">
-              <div className="bg-blue-100 rounded-md p-1 mb-2">
-                <Clock className="size-5 text-blue-600" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">
-                {staffData.pendingServices ?? 0}
-              </span>
-              <span className="text-xs font-semibold text-blue-700">
-                পেন্ডিং সার্ভিস
-              </span>
-            </div>
-            <div className="flex flex-col items-center p-2 rounded-md bg-purple-50 border border-purple-200 text-center">
-              <div className="bg-purple-100 rounded-md p-1 mb-2">
-                <BriefcaseBusiness className="size-5 text-purple-600" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">
-                {staffData.repairExperienceYears ||
-                  staffData.installationExperienceYears}
-              </span>
-              <span className="text-xs font-semibold text-purple-700">
-                বছরের দক্ষতা
-              </span>
-            </div>
-            <div className="flex flex-col items-center p-2 rounded-md bg-amber-50 border border-amber-200 text-center">
-              <div className="bg-amber-100 rounded-md p-1 mb-2">
-                <XCircle className="size-5 text-amber-600" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">
-                {staffData.canceledServices ?? 0}
-              </span>
-              <span className="text-xs font-semibold text-amber-700">
-                বাতিল সার্ভিস
-              </span>
-            </div>
-            <div className="flex flex-col items-center p-2 rounded-md bg-rose-50 border border-rose-200 text-center">
-              <div className="bg-rose-100 rounded-md p-1 mb-2">
-                <Building2 className="size-5 text-rose-600" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">
-                {staffData.serviceCenterServices ?? 0}
-              </span>
-              <span className="text-xs font-semibold text-rose-700">
-                সার্ভিস সেন্টার
-              </span>
-            </div>
-            <div className="flex flex-col items-center p-2 rounded-md bg-red-50 border border-red-200 text-center">
-              <div className="bg-red-100 rounded-md p-1 mb-2">
-                <Star className="size-5 text-amber-600" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">
-                {staffData.rating}
-              </span>
-              <span className="text-xs font-semibold text-amber-700">
-                রেটিং
-              </span>
-            </div>
-          </div>
+          <BlueContactCard editHref="/staff/profile/edit" rows={[
+            { label: "Name", value: staffData.name, icon: User, href: "/staff/profile/edit" },
+            { label: "Father's Name", value: staffData.fatherName, icon: Users, href: "/staff/profile/edit" },
+            { label: "Phone", value: staffData.phone, icon: Phone, href: `tel:${staffData.phone}` },
+            { label: "Address", value: `${staffData.currentStreetAddress}, ${staffData.currentDistrict}`, icon: MapPin, href: "/staff/profile/edit" },
+          ]} />
 
           {/* INFO GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* CONTACT */}
-            <div className="bg-white p-5 rounded-lg border border-slate-100 shadow-sm space-y-4">
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2">
-                Contact details
-              </h3>
-              <div className="space-y-4">
-                {/* Name */}
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 shrink-0 shadow-sm border border-slate-200/50">
-                    <User size={18} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-medium text-slate-500">
-                      Name:
-                    </span>
-                    <span className="text-sm font-extrabold text-[#0a192f] mt-0.5">
-                      {staffData.name}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Father Name */}
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 shrink-0 shadow-sm border border-slate-200/50">
-                    <Users size={18} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-medium text-slate-500">
-                      Father's Name:
-                    </span>
-                    <span className="text-sm font-extrabold text-[#0a192f] mt-0.5">
-                      {staffData.fatherName}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Phone */}
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 shrink-0 shadow-sm border border-slate-200/50">
-                    <Phone size={18} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-medium text-slate-500">
-                      Phone:
-                    </span>
-                    <span className="text-sm font-extrabold text-[#0a192f] mt-0.5">
-                      {staffData.phone}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
+          <div id="experience" className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* EXPERIENCE */}
             <div className="bg-white p-5 rounded-lg border border-slate-100 shadow-sm space-y-4">
               <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2">
@@ -506,11 +335,11 @@ export default async function StaffDetailsPage() {
           </div>
 
           {/* Logout */}
-          <div className="mt-4">
+          <div className="mt-2">
             <form action={staffLogout}>
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 active:scale-95 transition-all text-white text-sm font-bold shadow-sm"
+                className="flex w-full items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-red-500 hover:bg-red-600 active:scale-95 transition-all text-white text-sm font-bold shadow-sm"
               >
                 <LogOut size={18} />
                 Logout
@@ -518,6 +347,7 @@ export default async function StaffDetailsPage() {
             </form>
           </div>
         </div>
+        <BlueFooterBand />
       </div>
     </StaffLayout>
   );

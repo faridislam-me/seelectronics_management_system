@@ -18,6 +18,7 @@ export default function CustomerForm({
   customerData,
   mode,
   onClose,
+  role = "admin",
 }: {
   customerData?: Pick<
     CustomerData,
@@ -38,6 +39,7 @@ export default function CustomerForm({
   };
   mode: "create" | "update";
   onClose: () => void;
+  role?: "admin" | "seller";
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
@@ -327,7 +329,16 @@ export default function CustomerForm({
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <SellerSelect value={sellerId} onChange={setSellerId} />
+          {role === "admin" ? (
+            <SellerSelect value={sellerId} onChange={setSellerId} />
+          ) : (
+            <div className="flex-1 text-start">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-gray-700">Purchased from</span>
+                <div className="__input flex items-center text-gray-500 bg-gray-100">আপনার দোকান (Seller)</div>
+              </label>
+            </div>
+          )}
           <div className="flex-1 text-start">
             <label className="text-sm">
               Payment Type <span className="text-red-500 text-lg">*</span>

@@ -28,7 +28,7 @@ export function CustomerLayout({ children }: CustomerLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col overflow-x-hidden">
-      {pathname !== "/customer/profile" && <CustomerHeader />}
+      <CustomerHeader />
 
       <NoticeBanner notifications={notifications} />
 

@@ -7,7 +7,7 @@ import { Briefcase, CalendarDays, FileBadge, IdCard, LucideIcon, MapPin, Phone, 
 
 const Row = ({ label, value, icon: Icon }: { label: string; value: React.ReactNode; icon: LucideIcon }) => (
   <div className="flex items-center gap-3.5 py-3 border-t border-[#eef1f6] first-of-type:border-0">
-    <span className="size-11 rounded-2xl bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><Icon size={20} /></span>
+    <span className="size-11 rounded-lg bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><Icon size={20} /></span>
     <span className="flex flex-col flex-1 min-w-0">
       <span className="text-xs font-semibold text-[#6b7690]">{label}</span>
       <span className="text-[15px] font-extrabold text-[#16213a] break-words">{value}</span>

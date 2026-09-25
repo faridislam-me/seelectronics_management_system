@@ -80,7 +80,7 @@ export default function ApplicationTrackView({ type, status, message, applicantN
       <header className="sticky top-0 z-40 bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] text-white">
         <div className="max-w-[640px] mx-auto px-4 h-16 flex items-center justify-between gap-3">
           <span className="flex items-center gap-2.5">
-            <span className="size-11 rounded-2xl bg-[#1f7cf0] text-white font-extrabold text-lg flex items-center justify-center shadow-[0_6px_16px_rgba(0,40,120,0.35)]">SE</span>
+            <span className="size-11 rounded-lg bg-[#1f7cf0] text-white font-extrabold text-lg flex items-center justify-center shadow-[0_6px_16px_rgba(0,40,120,0.35)]">SE</span>
             <span className="flex flex-col leading-tight">
               <span className="font-extrabold text-lg">SE Electronics</span>
               <span className="text-white/85 text-[11px] font-medium">Smart Solution &nbsp;Better Life</span>
@@ -98,7 +98,7 @@ export default function ApplicationTrackView({ type, status, message, applicantN
 
       <main className="flex-1 w-full max-w-[640px] mx-auto px-3.5 pt-3.5 pb-28 flex flex-col gap-3.5">
         {/* Banner */}
-        <section className="relative overflow-hidden rounded-[22px] bg-[#0a2f70] bg-[linear-gradient(100deg,#0a2f70_0%,#0d3f96_45%,#1b5fd0_70%,#0a2f70_100%)] text-white shadow-[0_10px_30px_rgba(10,47,112,0.35)]">
+        <section className="relative overflow-hidden rounded-[12px] bg-[#0a2f70] bg-[linear-gradient(100deg,#0a2f70_0%,#0d3f96_45%,#1b5fd0_70%,#0a2f70_100%)] text-white shadow-[0_10px_30px_rgba(10,47,112,0.35)]">
           <span className="absolute right-[26%] -top-10 h-[200%] w-24 bg-white/10 rotate-[18deg]" />
           <span className="absolute right-[22%] -top-10 h-[200%] w-3 bg-[#7fb4ff]/50 rotate-[18deg]" />
           <div className="relative flex items-center">
@@ -117,7 +117,7 @@ export default function ApplicationTrackView({ type, status, message, applicantN
         </section>
 
         {/* Contact strip */}
-        <section className="bg-white rounded-[22px] p-3.5 shadow-[0_4px_18px_rgba(11,61,145,0.06)] grid grid-cols-3 divide-x divide-[#eef1f6]">
+        <section className="bg-white rounded-[12px] p-3.5 shadow-[0_4px_18px_rgba(11,61,145,0.06)] grid grid-cols-3 divide-x divide-[#eef1f6]">
           {[
             { icon: Phone, label: "হেল্পলাইন", value: contactDetails.customerCare, href: `tel:${contactDetails.customerCare}` },
             { icon: Mail, label: "Email", value: contactDetails.email, href: `mailto:${contactDetails.email}` },
@@ -125,20 +125,20 @@ export default function ApplicationTrackView({ type, status, message, applicantN
           ].map((c) => {
             const inner = (
               <>
-                <span className="size-10 rounded-full bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><c.icon size={18} /></span>
+                <span className="size-8 sm:size-10 rounded-full bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><c.icon size={15} /></span>
                 <span className="flex flex-col min-w-0 leading-tight">
-                  <span className="text-[11px] font-semibold text-[#6b7690]">{c.label}</span>
-                  <span className="text-[12px] font-extrabold text-[#16213a] break-words">{c.value}</span>
+                  <span className="text-[10px] sm:text-[11px] font-semibold text-[#6b7690]">{c.label}</span>
+                  <span className="text-[10.5px] sm:text-[12px] font-extrabold text-[#16213a] break-all">{c.value}</span>
                 </span>
               </>
             );
-            const cls = "flex items-center gap-2 px-2 first:pl-0 last:pr-0";
+            const cls = "flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2 first:pl-0 last:pr-0";
             return c.href ? <a key={c.label} href={c.href} className={cls}>{inner}</a> : <div key={c.label} className={cls}>{inner}</div>;
           })}
         </section>
 
         {/* Applicant */}
-        <section className="bg-white rounded-[22px] shadow-[0_4px_18px_rgba(11,61,145,0.06)] overflow-hidden">
+        <section className="bg-white rounded-[12px] shadow-[0_4px_18px_rgba(11,61,145,0.06)] overflow-hidden">
           <div className="flex items-center gap-4 p-4 bg-[#f5f8fd]">
             {photoUrl ? (
               <div className="size-[92px] rounded-full overflow-hidden border-[3px] border-[#1f7cf0] shadow-[0_0_0_3px_#e8f1ff] shrink-0 bg-white">
@@ -164,7 +164,7 @@ export default function ApplicationTrackView({ type, status, message, applicantN
         </section>
 
         {/* Status + stepper */}
-        <section className={clsx("rounded-[22px] p-4 border shadow-[0_4px_18px_rgba(11,61,145,0.06)]", status === "approved" ? "bg-[#eafaf0] border-[#bfe8cd]" : failed ? "bg-[#fff0f2] border-[#f7c3ca]" : "bg-[#e8f1ff] border-[#cfe0fb]")}>
+        <section className={clsx("rounded-[12px] p-4 border shadow-[0_4px_18px_rgba(11,61,145,0.06)]", status === "approved" ? "bg-[#eafaf0] border-[#bfe8cd]" : failed ? "bg-[#fff0f2] border-[#f7c3ca]" : "bg-[#e8f1ff] border-[#cfe0fb]")}>
           <div className="flex gap-3.5">
             <span className={clsx("size-[68px] rounded-full border-[3px] flex items-center justify-center shrink-0", status === "approved" ? "bg-[#d4f3e0] border-[#1a9c4b] text-[#1a9c4b]" : failed ? "bg-[#ffe0e4] border-[#e0243f] text-[#e0243f]" : "bg-[#d6e7ff] border-[#1f7cf0] text-[#1f7cf0]")}>
               {failed ? <X size={30} strokeWidth={2.5} /> : status === "approved" ? <Check size={30} strokeWidth={2.5} /> : <BannerIcon size={30} strokeWidth={2} />}
@@ -202,8 +202,8 @@ export default function ApplicationTrackView({ type, status, message, applicantN
         </section>
 
         {headline && (
-          <section className="bg-white rounded-[22px] p-4 shadow-[0_4px_18px_rgba(11,61,145,0.06)] flex items-center gap-3">
-            <span className="size-11 rounded-2xl bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><FileBadge size={20} /></span>
+          <section className="bg-white rounded-[12px] p-4 shadow-[0_4px_18px_rgba(11,61,145,0.06)] flex items-center gap-3">
+            <span className="size-11 rounded-lg bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><FileBadge size={20} /></span>
             <span className="flex flex-col"><span className="text-xs font-semibold text-[#6b7690]">যাচাই করা হবে</span><span className="text-[14px] font-extrabold text-[#16213a]">ট্রেড লাইসেন্স, NID ও দোকানের ছবি</span></span>
           </section>
         )}
@@ -211,7 +211,7 @@ export default function ApplicationTrackView({ type, status, message, applicantN
       </main>
 
       {/* Bottom nav */}
-      <nav className="fixed bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[600px] h-[76px] bg-white rounded-[24px] shadow-[0_-4px_24px_rgba(11,61,145,0.15)] grid grid-cols-4 items-center px-2 z-50">
+      <nav className="fixed bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[600px] h-[76px] bg-white rounded-[12px] shadow-[0_-4px_24px_rgba(11,61,145,0.15)] grid grid-cols-4 items-center px-2 z-50">
         {nav.map((n) => (
           <Link key={n.label} href={n.href} className={clsx("relative flex flex-col items-center justify-center gap-1 min-h-11", n.current ? "text-[#1f7cf0]" : "text-[#6b7690]")}>
             <n.icon size={24} strokeWidth={2} />

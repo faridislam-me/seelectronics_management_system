@@ -75,6 +75,7 @@ export default async function StaffDetailsPage() {
       <div className="min-h-screen bg-[#eef3fb] text-[#16213a]">
         <BlueHero
           avatar={staffData.photoUrl}
+          verified={!!staffData.isVerified}
           name={staffData.name}
           idLabel="Staff ID"
           id={staffData.staffId}
@@ -96,7 +97,7 @@ export default async function StaffDetailsPage() {
             chevronHref="/staff/payment"
           />
 
-          <BlueStatGrid cards={[
+          <BlueStatGrid iconStyle="soft" cards={[
             { value: staffData.completedServices ?? 0, label: "সফল সার্ভিস", icon: CheckSquare, tone: "green", href: "/staff/services" },
             { value: staffData.pendingServices ?? 0, label: "পেন্ডিং সার্ভিস", icon: Clock, tone: "blue", href: "/staff/tasks" },
             { value: staffData.repairExperienceYears || staffData.installationExperienceYears || 0, label: "বছরের দক্ষতা", icon: BriefcaseBusiness, tone: "purple", href: "#experience" },

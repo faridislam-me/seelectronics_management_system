@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { ChevronRight, LucideIcon, Pencil, ShieldCheck, User } from "lucide-react";
+import { BadgeCheck, ChevronRight, LucideIcon, Pencil, ShieldCheck, User } from "lucide-react";
 import Link from "next/link";
 
 export const blueBg = "bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)]";
@@ -9,9 +9,9 @@ export const R = { card: "rounded-md", hero: "rounded-b-[16px]", btn: "rounded-m
 const chipColors = { navy: "bg-[#0a2f70]", green: "bg-[#1a9c4b]", blue: "bg-[#1f7cf0]", red: "bg-[#e0243f]", amber: "bg-[#e0a11b]" };
 export type ChipColor = keyof typeof chipColors;
 
-export function BlueHero({ avatar, initials, name, idLabel, id, chips, tagline = <>Together for a<br />Better Tomorrow</> }: {
+export function BlueHero({ avatar, initials, name, idLabel, id, chips, tagline = <>Together for a<br />Better Tomorrow</>, verified = false }: {
   avatar?: string | null; initials?: string; name: string; idLabel: string; id: string;
-  chips: { label: string; color: ChipColor; icon?: LucideIcon; dot?: boolean }[]; tagline?: React.ReactNode;
+  chips: { label: string; color: ChipColor; icon?: LucideIcon; dot?: boolean }[]; tagline?: React.ReactNode; verified?: boolean;
 }) {
   const fallback = (initials || name).trim().slice(0, 2).toUpperCase();
   return (
@@ -32,7 +32,7 @@ export function BlueHero({ avatar, initials, name, idLabel, id, chips, tagline =
           <span className="absolute bottom-0 right-0 size-7 rounded-full bg-[#1f7cf0] border-[3px] border-white text-white flex items-center justify-center"><ShieldCheck size={14} strokeWidth={3} /></span>
         </div>
         <div className="flex flex-col gap-1 min-w-0 flex-1">
-          <span className="text-[clamp(16px,4.8vw,22px)] font-extrabold leading-tight">{name}</span>
+          <span className="text-[clamp(16px,4.8vw,22px)] font-extrabold leading-tight inline-flex items-center gap-1.5 flex-wrap">{name}{verified && <BadgeCheck size={22} className="shrink-0" fill="#1f7cf0" stroke="#ffffff" strokeWidth={2.2} />}</span>
           <span className="text-[clamp(12px,3.4vw,14px)] text-white/90">{idLabel}: <span className="font-bold text-white">{id}</span></span>
           <div className="flex flex-wrap gap-1 mt-0.5">
             {chips.map((c) => (
@@ -78,7 +78,19 @@ const tones = {
 };
 export type StatTone = keyof typeof tones;
 
-export function BlueStatGrid({ cards, compact = false, cols = 3 }: { cards: { value: string | number; label: string; icon: LucideIcon; tone: StatTone; href: string }[]; compact?: boolean; cols?: 2 | 3 | 4 }) {
+const softTiles = {
+  green: "bg-[#d4f3e0] text-[#1a9c4b]",
+  blue: "bg-[#d6e7ff] text-[#1f7cf0]",
+  purple: "bg-[#e6d6fb] text-[#8b3fe8]",
+  amber: "bg-[#ffe9b8] text-[#e0a11b]",
+  red: "bg-[#ffd6dc] text-[#e0243f]",
+  teal: "bg-[#cdeff1] text-[#1aa5b0]",
+};
+
+export function BlueStatGrid({ cards, compact = false, cols = 3, iconStyle = "solid" }: {
+  cards: { value: string | number; label: string; icon: LucideIcon; tone: StatTone; href: string }[];
+  compact?: boolean; cols?: 2 | 3 | 4; iconStyle?: "solid" | "soft";
+}) {
   if (compact) {
     return (
       <div className={clsx("grid gap-2", cols === 2 ? "grid-cols-2" : cols === 4 ? "grid-cols-4" : "grid-cols-3")}>
@@ -86,7 +98,11 @@ export function BlueStatGrid({ cards, compact = false, cols = 3 }: { cards: { va
           const t = tones[c.tone];
           return (
             <Link key={c.label} href={c.href} className={clsx("rounded-md border p-1.5 flex flex-col items-center justify-center text-center gap-1 min-h-[72px]", t.bg, t.border)}>
-              <span className={clsx("size-6 rounded-full text-white flex items-center justify-center", t.iconBg)}><c.icon size={12} strokeWidth={2.4} /></span>
+              {iconStyle === "soft" ? (
+                <span className={clsx("size-7 rounded-md flex items-center justify-center", softTiles[c.tone])}><c.icon size={16} strokeWidth={2.2} /></span>
+              ) : (
+                <span className={clsx("size-6 rounded-full text-white flex items-center justify-center", t.iconBg)}><c.icon size={12} strokeWidth={2.4} /></span>
+              )}
               <span className="text-[clamp(14px,4.2vw,18px)] font-extrabold text-[#16213a] leading-none truncate max-w-full">{c.value}</span>
               <span className={clsx("text-[clamp(9px,2.6vw,11px)] font-bold leading-tight", t.text)}>{c.label}</span>
             </Link>
@@ -100,10 +116,14 @@ export function BlueStatGrid({ cards, compact = false, cols = 3 }: { cards: { va
       {cards.map((c) => {
         const t = tones[c.tone];
         return (
-          <Link key={c.label} href={c.href} className={clsx(R.tile, "border p-2.5 sm:p-3 flex flex-col gap-1.5 sm:gap-2 relative min-h-[104px]", t.bg, t.border)}>
+          <Link key={c.label} href={c.href} className={clsx(R.tile, "border p-2.5 sm:p-3 flex flex-col items-center text-center gap-1.5 sm:gap-2 relative min-h-[104px]", t.bg, t.border)}>
             <span className="absolute right-2 top-2.5 text-[#9aa4b8]"><ChevronRight size={15} strokeWidth={2.5} /></span>
-            <span className={clsx("size-9 sm:size-10 rounded-full text-white flex items-center justify-center shadow-[0_4px_10px_rgba(0,0,0,0.12)]", t.iconBg)}><c.icon size={17} strokeWidth={2.4} /></span>
-            <span className="text-[clamp(15px,4.6vw,24px)] font-extrabold text-[#16213a] leading-none truncate">{c.value}</span>
+            {iconStyle === "soft" ? (
+              <span className={clsx("size-9 sm:size-10 rounded-md flex items-center justify-center", softTiles[c.tone])}><c.icon size={20} strokeWidth={2.2} /></span>
+            ) : (
+              <span className={clsx("size-9 sm:size-10 rounded-full text-white flex items-center justify-center shadow-[0_4px_10px_rgba(0,0,0,0.12)]", t.iconBg)}><c.icon size={17} strokeWidth={2.4} /></span>
+            )}
+            <span className="text-[clamp(15px,4.6vw,24px)] font-extrabold text-[#16213a] leading-none truncate max-w-full">{c.value}</span>
             <span className={clsx("text-[clamp(11px,3.2vw,13px)] font-bold leading-tight", t.text)}>{c.label}</span>
           </Link>
         );

@@ -1,3 +1,4 @@
+import PageBanner from "@/components/ui/PageBanner";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { getServiceHistoryById } from "@/actions/serviceActions";
 import { CustomerLayout } from "@/components/layout/CustomerLayout";
@@ -27,17 +28,7 @@ export default async function CustomerFeedbackPage() {
     <CustomerLayout>
       <div className="flex flex-col gap-2.5 px-2 pt-2 pb-24 text-[#16213a]">
         {/* Hero */}
-        <section className="relative overflow-hidden rounded-md bg-[#0b3d91] bg-[linear-gradient(105deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-3.5 shadow-[0_10px_30px_rgba(10,47,112,0.35)]">
-          <span className="absolute -right-8 -top-10 size-44 rounded-full bg-white/10" />
-          <span className="absolute right-3 bottom-3 font-script text-[clamp(13px,3.8vw,17px)] leading-[1] text-right text-white/90 rotate-[-8deg]">Your<br />Feedback<br />Matters ♥</span>
-          <span className="absolute right-16 top-3 inline-flex gap-0.5">{[1, 2, 3, 4].map((i) => <Star key={i} size={14} className="text-[#f5c542]" fill="#f5c542" />)}</span>
-          <div className="relative flex items-center gap-3 pr-20">
-            <span className="size-12 rounded-md bg-white/15 border border-white/25 flex items-center justify-center shrink-0"><MessageSquare size={26} /></span>
-            <span className="flex flex-col leading-tight"><span className="text-[15px] font-semibold text-white/90">Customer</span><span className="text-[clamp(24px,7vw,30px)] font-extrabold leading-none">Feedback</span></span>
-          </div>
-          <p className="relative mt-2 text-[14px] font-extrabold">আপনার মতামত আমাদের জন্য গুরুত্বপূর্ণ</p>
-          <p className="relative text-[12.5px] text-white/90 leading-snug">SE ELECTRONICS সবসময় আপনার সেবা আরও উন্নত করতে চায়।</p>
-        </section>
+        <PageBanner src="/banners/feedback.jpg" alt="Customer Feedback" width={963} height={242} />
 
         {/* Tabs (static counters) */}
         <div className="flex gap-2 overflow-x-auto -mx-2 px-2 pb-1 [scrollbar-width:none]">

@@ -1,3 +1,4 @@
+import PageBanner from "@/components/ui/PageBanner";
 import { CustomerAppNav } from "@/components/ui/CustomerAppChrome";
 import { AlertCircle, Anchor, Bell, Building2, ClipboardList, Home, Leaf, LucideIcon, MapPin, Menu, Mountain, Palmtree, Search, Ship, Sprout, Truck, User } from "lucide-react";
 import Link from "next/link";
@@ -29,16 +30,7 @@ export default function CoverageAreaPage() {
 
       <main className="px-2 pt-2 flex flex-col gap-2.5 max-w-[720px] mx-auto">
         {/* Hero */}
-        <section className="relative overflow-hidden rounded-md bg-[#0b3d91] bg-[linear-gradient(105deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-3.5 shadow-[0_10px_30px_rgba(10,47,112,0.35)]">
-          <span className="absolute -right-8 -top-10 size-44 rounded-full bg-white/10" />
-          <span className="absolute right-3 bottom-3 font-script text-[clamp(13px,3.8vw,17px)] leading-[1] text-right text-white/90 rotate-[-8deg]">All Districts<br />Covered</span>
-          <span className="absolute right-6 top-10 size-14 rounded-full bg-white text-[#1f7cf0] flex items-center justify-center font-extrabold italic text-lg shadow-[0_0_0_10px_rgba(255,255,255,0.15)]">SE</span>
-          <span className="relative inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-white/15 border border-white/25 text-[12px] font-extrabold"><MapPin size={14} />Coverage Area</span>
-          <h1 className="relative mt-2 text-[clamp(22px,6.6vw,30px)] font-extrabold leading-[1.1] max-w-[70%]">We are right where <span className="text-[#7fd1ff]">you need us!</span></h1>
-          <p className="relative mt-2 text-[12.5px] leading-relaxed text-white/90">
-            <b>SE Electronics</b> proudly offers technical <b>support</b>, maintenance, and expert <b>installation</b> services across all 64 districts in Bangladesh. Although our headquarters is in Sylhet, our dedicated network of electricians and technicians ensures that no matter where you are, top-tier service is just a request away.
-          </p>
-        </section>
+        <PageBanner src="/banners/coverage.jpg" alt="Coverage Area - We are right where you need us" width={752} height={384} />
 
         {/* Explore */}
         <div className="flex items-center gap-2 px-0.5 mt-1">

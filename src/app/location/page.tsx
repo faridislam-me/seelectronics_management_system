@@ -1,3 +1,4 @@
+import PageBanner from "@/components/ui/PageBanner";
 import { CustomerAppNav } from "@/components/ui/CustomerAppChrome";
 import { contactDetails } from "@/constants";
 import { ArrowLeft, Bell, ChevronRight, Clock, ExternalLink, Headset, Home, LayoutGrid, Mail, Map, MapPin, Navigation, Phone, Store, User } from "lucide-react";
@@ -22,15 +23,7 @@ export default function LocationPage() {
 
       <main className="px-2 pt-2 flex flex-col gap-2.5 max-w-[640px] mx-auto">
         {/* Hero */}
-        <section className="relative overflow-hidden rounded-md bg-[#0b3d91] bg-[linear-gradient(105deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-3.5 shadow-[0_10px_30px_rgba(10,47,112,0.35)]">
-          <span className="absolute -right-8 -top-10 size-44 rounded-full bg-white/10" />
-          <span className="absolute right-3 bottom-3 font-script text-[clamp(14px,4vw,18px)] leading-[1] text-right text-white/90 rotate-[-8deg]">Always<br />Near You</span>
-          <MapPin size={64} className="absolute right-16 top-6 text-[#ff4d4f] drop-shadow-[0_8px_16px_rgba(0,0,0,0.4)]" fill="#ff4d4f" stroke="#fff" strokeWidth={1.5} />
-          <span className="relative inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-white/15 border border-white/25 text-[12px] font-extrabold"><MapPin size={14} />Our Location</span>
-          <h1 className="relative mt-2 text-[clamp(26px,8vw,34px)] font-extrabold leading-[1.05]">Visit Our<br /><span className="text-[#7fd1ff]">Office</span></h1>
-          <span className="relative block mt-1 h-0.5 w-10 bg-[#7fd1ff]" />
-          <p className="relative mt-2 text-[13px] leading-relaxed text-white/90 max-w-[62%]">We are always here to serve you. Find us at our office location or get directions easily.</p>
-        </section>
+        <PageBanner src="/banners/location.jpg" alt="Our Location - Visit Our Office" width={825} height={324} href={MAPS_LINK} />
 
         {/* Map */}
         <section className="relative rounded-md overflow-hidden border border-[#dfe6f2] h-[240px] bg-[#dfe6f2]">

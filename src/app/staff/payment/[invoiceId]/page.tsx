@@ -11,6 +11,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 const logos: Record<string, string> = { bkash: "/bkash.png", nagad: "/nagad.png", rocket: "/rocket.png", bank: "/bank.png" };
+/** Card theme per payout method (light watermark tint + brand accent). */
+const themes: Record<string, { card: string; border: string; chip: string; label: string; mark: string }> = {
+  bkash: { card: "bg-[linear-gradient(100deg,#ffe9f1_0%,#fff5f9_100%)]", border: "border-[#ffd6e5]", chip: "bg-[#ffd6e5] text-[#c2185b]", label: "bKash Wallet", mark: "text-[#e2136e]" },
+  nagad: { card: "bg-[linear-gradient(100deg,#fff0e6_0%,#fff8f2_100%)]", border: "border-[#ffd9bf]", chip: "bg-[#ffe0cc] text-[#d9480f]", label: "Nagad Wallet", mark: "text-[#f15a22]" },
+  rocket: { card: "bg-[linear-gradient(100deg,#f5e9fb_0%,#fbf5fe_100%)]", border: "border-[#e6cdf3]", chip: "bg-[#ecd6f7] text-[#8c3494]", label: "Rocket Wallet", mark: "text-[#8c3494]" },
+  bank: { card: "bg-[linear-gradient(100deg,#e6f0ff_0%,#f3f8ff_100%)]", border: "border-[#cfe0fb]", chip: "bg-[#d6e7ff] text-[#1b6fd6]", label: "Bank Account", mark: "text-[#1f7cf0]" },
+  cash: { card: "bg-[linear-gradient(100deg,#e9f9ef_0%,#f4fcf7_100%)]", border: "border-[#bfe8cd]", chip: "bg-[#d4f3e0] text-[#178a42]", label: "Cash", mark: "text-[#1a9c4b]" },
+  virtual: { card: "bg-[linear-gradient(100deg,#0a2f70_0%,#1259c9_100%)]", border: "border-[#0b3d91]", chip: "bg-white/20 text-white", label: "SE Virtual Account", mark: "text-white" },
+};
 
 export default async function StaffInvoiceDetailsPage({ params }: { params: Promise<{ invoiceId: string }> }) {
   const session = await verifyStaffSession();
@@ -72,19 +81,42 @@ export default async function StaffInvoiceDetailsPage({ params }: { params: Prom
         {/* Recipient */}
         <section className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-2 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
           <Head icon={User} title="Recipient Information" tone="bg-[#8b3fe8]" />
-          <div className="relative overflow-hidden rounded-md bg-[linear-gradient(100deg,#ffe9f1_0%,#fff5f9_100%)] border border-[#ffd6e5] p-3 flex items-start gap-3">
-            <span className="flex flex-col gap-1 min-w-0 flex-1 text-[12px] font-semibold text-[#5b6784] uppercase tracking-wide">
-              <span className="text-[18px] font-extrabold text-[#16213a] normal-case tracking-normal inline-flex items-center gap-1.5">{payment.receiverWalletNumber || payment.receiverBankInfo?.accountNumber || String(session.username)}<Copy size={14} className="text-[#1f7cf0]" /></span>
-              <span>Staff-member <span className="text-[#c9d3e6]">•</span> {method || "N/A"}</span>
-              <span>Wallet number <b className="text-[#16213a]">{payment.receiverWalletNumber || "N/A"}</b></span>
-              <span>Amount <b className="text-[#16213a]">৳{amount.toLocaleString()}</b></span>
-              <span>Trx ID <b className="text-[#16213a]">{payment.transactionId || "N/A"}</b></span>
-            </span>
-            <span className="flex flex-col items-center gap-1 shrink-0">
-              {logos[method] ? <Image src={logos[method]} alt={method} width={72} height={72} className="size-16 object-contain" /> : <span className="size-16 rounded-md bg-white border border-[#ffd6e5] flex items-center justify-center text-[#e0243f]"><Wallet size={28} /></span>}
-              <span className="px-2 h-6 rounded-md bg-[#ffd6e5] text-[#c81f38] text-[10px] font-extrabold inline-flex items-center uppercase">{method ? `${method} wallet` : "wallet"}</span>
-            </span>
-          </div>
+          {(() => {
+            const isVirtual = st === "credited";
+            const key = isVirtual ? "virtual" : themes[method] ? method : "bank";
+            const t = themes[key];
+            const dark = key === "virtual";
+            const idLine = isVirtual ? String(payment.staffId) : payment.receiverWalletNumber || payment.receiverBankInfo?.accountNumber || String(session.username);
+            return (
+              <div className={clsx("relative overflow-hidden rounded-md border p-3 flex items-start gap-3", t.card, t.border)}>
+                {/* watermark */}
+                <span className={clsx("absolute -right-4 -bottom-6 opacity-[0.08] pointer-events-none", t.mark)}>
+                  {logos[key] ? <Image src={logos[key]} alt="" width={140} height={140} className="size-32 object-contain" /> : <Wallet size={120} />}
+                </span>
+                <span className={clsx("relative flex flex-col gap-1 min-w-0 flex-1 text-[12px] font-semibold uppercase tracking-wide", dark ? "text-white/80" : "text-[#5b6784]")}>
+                  <span className={clsx("text-[18px] font-extrabold normal-case tracking-normal inline-flex items-center gap-1.5", dark ? "text-white" : "text-[#16213a]")}>{idLine}<Copy size={14} className={dark ? "text-[#7fb4ff]" : "text-[#1f7cf0]"} /></span>
+                  <span>Staff-member <span className="opacity-50">•</span> {isVirtual ? "Virtual Balance" : method || "N/A"}</span>
+                  {isVirtual ? (
+                    <><span>Account <b className="text-white">SE Virtual Account</b></span><span>Credited for <b className="text-white">{payment.serviceId ? `Job #${payment.serviceId}` : "Completed service"}</b></span></>
+                  ) : (
+                    <span>{key === "bank" ? "Account number" : "Wallet number"} <b className="text-[#16213a]">{payment.receiverWalletNumber || payment.receiverBankInfo?.accountNumber || "N/A"}</b></span>
+                  )}
+                  <span>Amount <b className={dark ? "text-white" : "text-[#16213a]"}>৳{amount.toLocaleString()}</b></span>
+                  <span>Trx ID <b className={dark ? "text-white" : "text-[#16213a]"}>{payment.transactionId || "N/A"}</b></span>
+                </span>
+                <span className="relative flex flex-col items-center gap-1.5 shrink-0">
+                  {isVirtual ? (
+                    <span className="size-16 rounded-md bg-white/15 border border-white/25 text-white flex flex-col items-center justify-center"><Wallet size={26} /><span className="text-[9px] font-extrabold mt-0.5">SE</span></span>
+                  ) : logos[key] ? (
+                    <span className="size-16 rounded-md bg-white border border-white flex items-center justify-center shadow-sm"><Image src={logos[key]} alt={key} width={56} height={56} className="size-12 object-contain" /></span>
+                  ) : (
+                    <span className={clsx("size-16 rounded-md bg-white flex items-center justify-center shadow-sm", t.mark)}><Wallet size={28} /></span>
+                  )}
+                  <span className={clsx("px-2 h-6 rounded-md text-[10px] font-extrabold inline-flex items-center uppercase whitespace-nowrap", t.chip)}>{t.label}</span>
+                </span>
+              </div>
+            );
+          })()}
         </section>
 
         {/* Sender */}
@@ -93,7 +125,7 @@ export default async function StaffInvoiceDetailsPage({ params }: { params: Prom
           <div className="flex items-start gap-3">
             <span className="flex flex-col gap-0.5 min-w-0 flex-1 text-[12.5px] text-[#3d4a63]">
               <span className="text-[15px] font-extrabold text-[#16213a]">SE ELECTRONICS <span className="text-[10px] font-bold text-[#5b6784] tracking-[2px] uppercase">Corporate Office</span></span>
-              {isBank ? (<><span>Bank: <b>{payment.senderBankInfo?.bankName || "Corporate Bank"}</b></span><span>Account: <b>{payment.senderBankInfo?.accountNumber || "********4590"}</b></span></>) : (<><span>Merchant: <b>{payment.senderWalletNumber || "N/A"}</b></span><span>Payment Method: <b>{payment.paymentMethod || "N/A"}</b></span><span>Trx ID: <b>{payment.transactionId || "N/A"}</b></span></>)}
+              {isBank ? (<><span>Bank: <b>{payment.senderBankInfo?.bankName || "Corporate Bank"}</b></span><span>Account: <b>{payment.senderBankInfo?.accountNumber || "********4590"}</b></span></>) : (<><span>Merchant: <b>{payment.senderWalletNumber || "N/A"}</b></span><span>Payment Method: <b>{st === "credited" ? "SE Virtual Account" : payment.paymentMethod || "N/A"}</b></span><span>Trx ID: <b>{payment.transactionId || "N/A"}</b></span></>)}
             </span>
             <span className="shrink-0 inline-flex items-center gap-1 h-7 px-2 rounded-md bg-[#e9f9ef] text-[#178a42] text-[10px] font-extrabold uppercase"><CheckCircle2 size={12} />Verified merchant</span>
           </div>

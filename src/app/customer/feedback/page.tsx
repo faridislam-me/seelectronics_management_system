@@ -1,127 +1,97 @@
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { getServiceHistoryById } from "@/actions/serviceActions";
-import { StatusBadge } from "@/components";
+import { CustomerLayout } from "@/components/layout/CustomerLayout";
+import clsx from "clsx";
+import { Calendar, CheckCircle2, ChevronRight, ClipboardList, Clock, MapPin, MessageSquare, Plus, Send, Star, User, Wrench } from "lucide-react";
 import Link from "next/link";
-import { MobilePageHeader } from "@/components/layout";
-import { CheckCircle2, Star } from "lucide-react";
 
 export default async function CustomerFeedbackPage() {
   const session = await verifyCustomerSession();
-
-  if (!session.isAuth) {
-    return null;
-  }
-
+  if (!session.isAuth) return null;
   const customer = session.customer!;
   const servicesRes = await getServiceHistoryById(customer.customerId);
-  const allServices = servicesRes.success ? servicesRes.data! : [];
+  const all = servicesRes.success ? (servicesRes.data! as any[]) : [];
+  const completed = all.filter((s) => (s.statusHistory?.[0]?.status || s.status || "pending") === "completed");
+  const done = completed.filter((s) => s.feedback?.serviceId);
+  const pending = completed.filter((s) => !s.feedback?.serviceId);
+  const fmt = (d: string | Date) => new Date(d).toLocaleString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true });
 
-  // Only completed services are eligible for feedback
-  // filter
-  const completedServices = allServices.filter((service: any) => {
-    const status =
-      service.statusHistory?.[0]?.status || service.status || "pending";
-    return status === "completed";
-  });
+  const tabs = [
+    { label: "সকল ফিডব্যাক", count: completed.length, icon: ClipboardList, active: true },
+    { label: "সমাধানকৃত", count: done.length, icon: CheckCircle2 },
+    { label: "প্রক্রিয়াধীন", count: 0, icon: Clock },
+    { label: "নতুন", count: pending.length, icon: Star },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col selection:bg-blue-200">
-      <div className="flex-1  mx-auto py-3 px-3 w-full">
-        <MobilePageHeader
-          title="ফিডব্যাক দিন"
-          backHref="/customer/profile"
-          Icon={Star}
-        />
-        {completedServices.length > 0 ? (
-          <div className="relative overflow-hidden rounded-lg border border-brand/10 px-6 py-6 mb-6 group">
-            <div className="relative z-10 flex flex-col sm:flex-row items-start gap-4">
-              <div className="space-y-1">
-                <h3 className="font-bold text-gray-900 text-sm">
-                  প্রিয় গ্রাহক {customer.name},
-                </h3>
-                <p className="text-gray-600 text-sm leading-relaxed font-medium">
-                  আপনার মূল্যবান ফিডব্যাক আমাদের জন্য অত্যন্ত গুরুত্বপূর্ণ।
-                  আপনার মতামতের ভিত্তিতে{" "}
-                  <strong className="text-brand">SE ELECTRONICS</strong> আরও
-                  উন্নত ও চমৎকার সেবা প্রদান করতে অবিরাম কাজ করে যাচ্ছে। আমাদের
-                  লক্ষ্য আপনার সন্তুষ্টি।
-                </p>
-              </div>
-            </div>
+    <CustomerLayout>
+      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-24 text-[#16213a]">
+        {/* Hero */}
+        <section className="relative overflow-hidden rounded-md bg-[#0b3d91] bg-[linear-gradient(105deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-3.5 shadow-[0_10px_30px_rgba(10,47,112,0.35)]">
+          <span className="absolute -right-8 -top-10 size-44 rounded-full bg-white/10" />
+          <span className="absolute right-3 bottom-3 font-script text-[clamp(13px,3.8vw,17px)] leading-[1] text-right text-white/90 rotate-[-8deg]">Your<br />Feedback<br />Matters ♥</span>
+          <span className="absolute right-16 top-3 inline-flex gap-0.5">{[1, 2, 3, 4].map((i) => <Star key={i} size={14} className="text-[#f5c542]" fill="#f5c542" />)}</span>
+          <div className="relative flex items-center gap-3 pr-20">
+            <span className="size-12 rounded-md bg-white/15 border border-white/25 flex items-center justify-center shrink-0"><MessageSquare size={26} /></span>
+            <span className="flex flex-col leading-tight"><span className="text-[15px] font-semibold text-white/90">Customer</span><span className="text-[clamp(24px,7vw,30px)] font-extrabold leading-none">Feedback</span></span>
           </div>
-        ) : (
-          ""
-        )}
+          <p className="relative mt-2 text-[14px] font-extrabold">আপনার মতামত আমাদের জন্য গুরুত্বপূর্ণ</p>
+          <p className="relative text-[12.5px] text-white/90 leading-snug">SE ELECTRONICS সবসময় আপনার সেবা আরও উন্নত করতে চায়।</p>
+        </section>
 
-        {completedServices.length === 0 ? (
-          <div className="bg-white border border-dashed border-gray-200 rounded-md p-10 text-center">
-            <h2 className="text-lg font-semibold text-gray-700 mb-2">
-              এখনো কোনো সম্পন্ন সার্ভিস নেই
-            </h2>
-            <p className="text-sm text-gray-500 mb-6">
-              সার্ভিস সম্পন্ন হলে এখান থেকে আপনি&apos; ফিডব্যাক দিতে পারবেন।
-            </p>
-            <Link
-              href="/customer/tracking"
-              className="inline-flex items-center justify-center bg-blue-600 text-white px-6 py-2.5 rounded-md text-sm font-semibold hover:bg-blue-700 transition-colors"
-            >
-              সার্ভিস ট্র্যাকিং দেখুন
-            </Link>
+        {/* Tabs (static counters) */}
+        <div className="flex gap-2 overflow-x-auto -mx-2 px-2 pb-1 [scrollbar-width:none]">
+          {tabs.map((t) => (
+            <span key={t.label} className={clsx("shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-[12.5px] font-bold border", t.active ? "bg-[#0b3d91] text-white border-[#0b3d91]" : "bg-white text-[#16213a] border-[#dfe6f2]")}>
+              <t.icon size={14} />{t.label}<span className={clsx("min-w-5 h-5 px-1 rounded-full text-[10px] font-extrabold inline-flex items-center justify-center", t.active ? "bg-white/20" : "bg-[#eef3fb] text-[#5b6784]")}>{t.count}</span>
+            </span>
+          ))}
+        </div>
+
+        {completed.length === 0 ? (
+          <div className="rounded-md bg-white border border-dashed border-[#c9d3e6] p-8 text-center flex flex-col items-center gap-2">
+            <span className="text-[15px] font-extrabold">এখনো কোনো সম্পন্ন সার্ভিস নেই</span>
+            <span className="text-[12px] font-medium text-[#5b6784]">সার্ভিস সম্পন্ন হলে এখান থেকে আপনি ফিডব্যাক দিতে পারবেন।</span>
+            <Link href="/customer/services" className="mt-2 h-10 px-4 rounded-md bg-[#1f7cf0] text-white text-sm font-bold inline-flex items-center">সার্ভিস ট্র্যাকিং দেখুন</Link>
           </div>
         ) : (
-          <div className="space-y-2">
-            {completedServices.map((service: any) => (
-              <div
-                key={service.serviceId}
-                className="bg-white rounded-md border border-gray-100 shadow-sm px-4 py-4 sm:px-5 sm:py-4 flex items-start justify-between gap-4 flex-col"
-              >
-                <div className="flex-1 min-w-0 text-left">
-                  <div className="flex items-center gap-2 text-sm text-gray-400 mb-1">
-                    <span className="font-mono">#{service.serviceId}</span>
-                    <span>•</span>
-                    <span className="uppercase font-semibold">
-                      {service.type}
-                    </span>
-                  </div>
-                  <div className="font-semibold text-gray-900 ">
-                    {service.productModel}
-                  </div>
-                  <div className="text-sm text-gray-500 mt-1">
-                    {new Date(service.createdAt).toLocaleString(undefined, {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
-                  </div>
-                  <div className="mt-2">
-                    <StatusBadge
-                      status={service.statusHistory?.[0]?.status || "completed"}
-                    />
-                  </div>
-                </div>
-                <div className="flex items-end gap-2">
-                  {service.feedback?.serviceId ? (
-                    <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-100 px-4 py-2 rounded-lg text-sm font-bold shadow-sm">
-                      <CheckCircle2 className="size-4 text-emerald-600" />
-                      ফিডব্যাক দিয়েছেন
-                    </div>
+          completed.map((s) => {
+            const has = !!s.feedback?.serviceId;
+            const rating = Math.round(Number(s.feedback?.rating || 0));
+            return (
+              <article key={s.serviceId} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col gap-2 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+                <div className="flex items-center gap-2.5">
+                  <span className="size-11 rounded-full bg-[#1f7cf0] text-white flex items-center justify-center shrink-0"><User size={22} /></span>
+                  <span className="flex flex-col min-w-0 flex-1 leading-tight">
+                    <span className="text-[15px] font-extrabold truncate">{customer.name},</span>
+                    <span className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[#5b6784] truncate"><MapPin size={12} />{customer.address || "বাংলাদেশ"}</span>
+                  </span>
+                  {has ? (
+                    <span className="shrink-0 inline-flex items-center gap-1 h-8 px-2.5 rounded-md bg-[#1a9c4b] text-white text-[11px] font-extrabold"><CheckCircle2 size={13} />সম্পন্ন হয়েছে</span>
                   ) : (
-                    <Link
-                      href={`/service-feedback?serviceId=${service.serviceId}`}
-                      className="inline-flex items-center justify-center bg-emerald-600 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-emerald-700 transition-colors"
-                    >
-                      ফিডব্যাক দিন
-                    </Link>
+                    <Link href={`/service-feedback?serviceId=${s.serviceId}`} className="shrink-0 inline-flex items-center gap-1 h-8 px-2.5 rounded-md bg-[#1f7cf0] text-white text-[11px] font-extrabold"><Star size={13} />ফিডব্যাক দিন</Link>
                   )}
                 </div>
-              </div>
-            ))}
-          </div>
+                <div className="flex flex-col gap-1 border-t border-[#eef1f6] pt-2 text-[12.5px] font-semibold text-[#3d4a63]">
+                  <span className="inline-flex items-center gap-2"><Wrench size={14} className="text-[#0b3d91]" /><span className="font-extrabold text-[#16213a]">{s.productModel}</span><span className="text-[#9aa4b8]">#{s.serviceId} · {s.type}</span></span>
+                  <span className="inline-flex items-center gap-2"><Calendar size={14} className="text-[#0b3d91]" />{fmt(s.createdAt)}</span>
+                </div>
+                <div className="rounded-md bg-[#e8f1ff] p-2.5 flex items-start gap-2">
+                  <p className="text-[12.5px] leading-relaxed text-[#16213a] flex-1">আপনার মূল্যবান ফিডব্যাক আমাদের জন্য অত্যন্ত গুরুত্বপূর্ণ। আপনার মতামতের ভিত্তিতে <b>SE ELECTRONICS</b> আরও উন্নত ও চমৎকার সেবা প্রদান করতে অবিরাম কাজ করে যাচ্ছে। আমাদের লক্ষ্য আপনার সন্তুষ্টি।</p>
+                  {has && <span className="inline-flex gap-0.5 shrink-0">{[1, 2, 3, 4, 5].map((i) => <Star key={i} size={14} className={i <= rating ? "text-[#f5a623]" : "text-[#d7deea]"} fill={i <= rating ? "#f5a623" : "#d7deea"} />)}</span>}
+                </div>
+              </article>
+            );
+          })
         )}
+
+        {/* CTA */}
+        <div className="rounded-md bg-[#e8f1ff] border border-[#cfe0fb] p-2.5 flex items-center gap-3">
+          <span className="size-11 rounded-full bg-[#1f7cf0] text-white flex items-center justify-center shrink-0"><Send size={20} /></span>
+          <span className="flex flex-col min-w-0 flex-1 leading-tight"><span className="text-[14px] font-extrabold">আপনারও মতামত দিন</span><span className="text-[11.5px] font-semibold text-[#3d4a63]">আপনার ফিডব্যাক আমাদের আরও ভালো হতে সাহায্য করবে।</span></span>
+          <Link href={pending[0] ? `/service-feedback?serviceId=${pending[0].serviceId}` : "/customer/services"} className="shrink-0 inline-flex items-center gap-1 h-9 px-3 rounded-md bg-[#0b3d91] text-white text-[12px] font-extrabold"><Plus size={14} strokeWidth={3} />ফিডব্যাক দিন<ChevronRight size={13} /></Link>
+        </div>
       </div>
-    </div>
+    </CustomerLayout>
   );
 }

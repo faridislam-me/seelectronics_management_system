@@ -26,7 +26,7 @@ export function CustomerHeader() {
   const { title } = current;
 
   return (
-    <header className={`sticky top-0 z-50 text-white overflow-hidden w-full ${isHome ? "bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] rounded-b-[22px]" : "bg-[#0A1A3A]"}`}>
+    <header className={`sticky top-0 z-50 text-white overflow-hidden w-full ${isHome ? "bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] pb-4" : "bg-[#0A1A3A]"}`}>
       <div className="max-w-4xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between gap-3">
         {isHome ? (
           <Link href="/customer/profile" className="flex items-center gap-2.5 min-w-0">

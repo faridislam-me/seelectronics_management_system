@@ -197,7 +197,7 @@ export default function CustomerDashboardClient({
 
   return (
     <CustomerLayout>
-      <div className="flex flex-col gap-2.5 px-2 text-gray-800 pb-24 pt-2 bg-[#eef3fb]">
+      <div className="flex flex-col gap-2.5 px-2 text-gray-800 pb-24 pt-3 bg-[#eef3fb] rounded-t-[18px] -mt-4 relative z-10">
         {/* Welcome banner (admin managed slides) */}
         <div className="w-full overflow-hidden rounded-md shadow-sm">
           <Banner slides={banners && banners.length > 0 ? banners : undefined} />

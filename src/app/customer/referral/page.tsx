@@ -1,134 +1,81 @@
 "use client";
 
-import { Wallet, User, Phone, Banknote, History } from "lucide-react";
+import { Banknote, Calendar, ChevronRight, ClipboardList, History, Phone, User, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useReferral } from "./_components/ReferralProvider";
 
 export default function CustomerReferralPage() {
   const { data } = useReferral();
+  const bonuses: any[] = data.bonuses ?? [];
 
   return (
     <>
-      {/* Balance Card */}
-      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-md p-6 text-white shadow-xl relative overflow-hidden">
-        <div className="relative z-10">
-          {/* Top Section */}
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-[13px] opacity-70 font-bold uppercase tracking-widest flex items-center gap-1">
-                <Wallet size={12} />
-                মোট ব্যালেন্স
-              </p>
-              <h2 className="text-3xl font-bold mt-1">
-                ৳ {data.balance.toLocaleString("en-IN")}
-              </h2>
-            </div>
-          </div>
-
-          {/* Customer Info */}
-          <div className="mt-5 space-y-1">
-            <div className="flex items-center gap-2">
-              <User size={16} className="opacity-80" />
-              <h3 className="text-lg font-semibold">
-                {data?.name || "Customer Name"}
-              </h3>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Phone size={14} className="opacity-80" />
-              <p className="text-sm opacity-80">
-                {data?.phone || "01XXXXXXXXX"}
-              </p>
-            </div>
-          </div>
-
-          {/* Referral Status */}
-          <div className="mt-5 flex items-center gap-2 bg-white/10 p-2 rounded border border-white/10">
-            <span className="text-[13px] font-medium leading-none">
-              আপনার রেফারেল কোড সক্রিয় আছে।
-            </span>
-          </div>
+      {/* Commission card */}
+      <section className="relative overflow-hidden rounded-md bg-[#0b3d91] bg-[linear-gradient(115deg,#0a2f70_0%,#1259c9_55%,#1f7cf0_100%)] text-white p-3.5 shadow-[0_10px_30px_rgba(10,47,112,0.35)]">
+        <span className="absolute -right-6 -top-10 size-40 rounded-full bg-white/10" />
+        {/* wallet + coins illustration */}
+        <svg className="absolute right-3 top-6 w-[120px] h-[96px]" viewBox="0 0 120 96" fill="none" aria-hidden="true">
+          <ellipse cx="66" cy="84" rx="44" ry="8" fill="#000" opacity="0.18" />
+          <rect x="36" y="22" width="70" height="52" rx="9" fill="#2f7ff0" />
+          <rect x="36" y="32" width="70" height="42" rx="9" fill="#1f5fc9" />
+          <rect x="80" y="44" width="26" height="18" rx="5" fill="#7fb4ff" />
+          <circle cx="93" cy="53" r="4" fill="#0b3d91" />
+          <text x="46" y="60" fontSize="16" fontWeight="800" fill="#fff" fontStyle="italic">SE</text>
+          <ellipse cx="22" cy="72" rx="16" ry="6" fill="#e0a11b" /><rect x="6" y="60" width="32" height="12" fill="#f5c542" /><ellipse cx="22" cy="60" rx="16" ry="6" fill="#ffd966" />
+          <ellipse cx="22" cy="52" rx="16" ry="6" fill="#e0a11b" /><rect x="6" y="46" width="32" height="6" fill="#f5c542" /><ellipse cx="22" cy="46" rx="16" ry="6" fill="#ffd966" />
+          <path d="M100 8l4 8M112 6l-2 9M108 22l8-2" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
+        <div className="relative flex flex-col gap-1.5 pr-[120px]">
+          <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white/90"><Wallet size={16} />মোট কমিশন</span>
+          <span className="text-[clamp(28px,8.5vw,38px)] font-extrabold leading-none">৳ {Number(data.balance || 0).toLocaleString("en-IN")}</span>
+          <span className="mt-1 inline-flex items-center gap-2 text-[14px] font-extrabold"><User size={15} className="text-white/85" />{data?.name || "Customer"}</span>
+          <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-white/90"><Phone size={14} className="text-white/85" />{data?.phone || ""}</span>
         </div>
-
-        {/* Decorative Blur Effects */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded -mr-16 -mt-16 blur-2xl"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-300/20 rounded -ml-12 -mb-12 blur-xl"></div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-3">
-        <Link
-          href="/customer/referral/cash-out"
-          className="bg-white rounded-md p-4 flex flex-col items-center gap-2 border border-slate-100 shadow-sm hover:bg-slate-50 active:scale-95 transition-all"
-        >
-          <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center">
-            <Banknote className="size-5" />
-          </div>
-          <span className="text-[13px] font-bold text-slate-600">
-            ক্যাশ আউট
-          </span>
+        <Link href="/customer/vip-card" className="relative mt-3 flex items-center gap-2 rounded-md bg-white/15 border border-white/25 px-3 h-11 text-[13px] font-bold">
+          <ClipboardList size={17} className="shrink-0" /><span className="flex-1 truncate">আপনার রেফারেল কোড সক্রিয় আছে</span><ChevronRight size={16} />
         </Link>
-        <Link
-          href="/customer/referral/history"
-          className="bg-white rounded-md p-4 flex flex-col items-center gap-2 border border-slate-100 shadow-sm hover:bg-slate-50 active:scale-95 transition-all"
-        >
-          <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center">
-            <History className="size-5" />
-          </div>
-          <span className="text-[13px] font-bold text-slate-600">
-            ইতিহাস
-          </span>
+      </section>
+
+      {/* Actions */}
+      <div className="grid grid-cols-2 gap-2">
+        <Link href="/customer/referral/cash-out" className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-2.5 shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.98] transition-all">
+          <span className="size-11 rounded-full bg-[#e9f9ef] text-[#1a9c4b] flex items-center justify-center shrink-0"><Banknote size={22} /></span>
+          <span className="text-[15px] font-extrabold flex-1">ক্যাশ আউট</span><ChevronRight size={16} className="text-[#9aa4b8]" />
+        </Link>
+        <Link href="/customer/referral/history" className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-2.5 shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.98] transition-all">
+          <span className="size-11 rounded-full bg-[#f3e9ff] text-[#8b3fe8] flex items-center justify-center shrink-0"><History size={22} /></span>
+          <span className="text-[15px] font-extrabold flex-1">ইতিহাস</span><ChevronRight size={16} className="text-[#9aa4b8]" />
         </Link>
       </div>
 
-      {/* Referral Earnings List */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-center px-1">
-          <h3 className="font-bold text-blue-900 text-lg">
-            রেফারেল আর্নিং
-          </h3>
-          <span className="text-[11px] font-bold text-blue-600 uppercase">
-            {data.bonuses.length} মোট
-          </span>
-        </div>
+      {/* Earnings */}
+      <div className="flex items-center justify-between mt-1">
+        <span className="flex items-center gap-2">
+          <span className="size-9 rounded-md bg-[#0b3d91] text-white flex items-center justify-center"><ClipboardList size={18} /></span>
+          <span className="text-[17px] font-extrabold">রেফারেল আর্নিং</span>
+        </span>
+        <Link href="/customer/referral/history" className="text-[13px] font-bold text-[#1f7cf0] inline-flex items-center gap-1">{bonuses.length.toLocaleString("bn-BD")} টি রেকর্ড<ChevronRight size={15} /></Link>
+      </div>
 
-        <div className="space-y-3">
-          {data.bonuses.length === 0 ? (
-            <div className="bg-blue-50 p-8 rounded-md border border-blue-100 text-center text-blue-400 text-sm">
-              এখনও কোনো রেফারেল বোনাস নেই।
+      <div className="flex flex-col gap-2">
+        {bonuses.length === 0 ? (
+          <div className="rounded-md bg-white border border-[#dfe6f2] p-6 text-center text-[13px] font-medium text-[#5b6784]">এখনও কোনো রেফারেল বোনাস নেই।</div>
+        ) : (
+          bonuses.map((bonus) => (
+            <div key={bonus.id} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-3 shadow-[0_4px_18px_rgba(11,61,145,0.06)]">
+              <span className="size-12 rounded-full bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center shrink-0"><User size={24} /></span>
+              <span className="flex flex-col gap-0.5 min-w-0 flex-1">
+                <span className="text-[14px] font-extrabold truncate">{bonus.referredCustomerName}</span>
+                <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#5b6784]"><Calendar size={13} />{new Date(bonus.createdAt).toLocaleDateString("bn-BD")}</span>
+              </span>
+              <span className="shrink-0 rounded-md bg-[#e8f1ff] px-2.5 py-1.5 text-center">
+                <span className="block text-[15px] font-extrabold text-[#1b6fd6] leading-tight">+৳{Number(bonus.bonusEarned).toLocaleString()}</span>
+                <span className="block text-[10px] font-bold text-[#5b6784]">(কমিশন ২%)</span>
+              </span>
+              <ChevronRight size={16} className="text-[#9aa4b8] shrink-0" />
             </div>
-          ) : (
-            data.bonuses.map((bonus: any) => (
-              <div
-                key={bonus.id}
-                className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded border border-blue-100 shadow-sm relative overflow-hidden flex items-center justify-between"
-              >
-                <div className="space-y-1">
-                  <p className="text-blue-900 font-bold text-md">
-                    {bonus.referredCustomerName}
-                  </p>
-                  <p className="text-blue-700 font-semibold text-[13px] uppercase tracking-wider">
-                    পণ্যের মূল্য: ৳{Number(bonus.purchaseAmount || 0).toLocaleString()}
-                  </p>
-                  <p className="text-blue-500 font-medium text-[11px] uppercase tracking-wider">
-                    {new Date(bonus.createdAt).toLocaleDateString(
-                      "bn-BD",
-                    )}
-                  </p>
-                </div>
-
-                <div className="text-right">
-                  <p className="text-blue-600 font-bold text-base">
-                    +৳{Number(bonus.bonusEarned).toLocaleString()}
-                  </p>
-                  <p className="text-[12px] text-blue-400 font-bold uppercase">
-                    বোনাস (২%)
-                  </p>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+          ))
+        )}
       </div>
     </>
   );

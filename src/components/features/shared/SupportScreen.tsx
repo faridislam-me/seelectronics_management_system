@@ -1,5 +1,6 @@
 "use client";
 
+import PageBanner from "@/components/ui/PageBanner";
 import { contactDetails } from "@/constants";
 import { AlertCircle, Building2, ChevronRight, Clock, Headphones, HelpCircle, Mail, MessageCircle, PhoneCall, Ticket, UserCog, Users } from "lucide-react";
 import Link from "next/link";
@@ -24,21 +25,7 @@ export default function SupportScreen({ ticketHref = "/customer/complain" }: { t
   return (
     <div className="flex flex-col gap-2.5 px-2 pt-2 pb-24 text-[#16213a]">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-md bg-[#0b3d91] bg-[linear-gradient(105deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-3.5 shadow-[0_10px_30px_rgba(10,47,112,0.35)]">
-        <span className="absolute -right-8 -top-10 size-40 rounded-full bg-white/10" />
-        <span className="absolute right-3 top-3 font-script text-[clamp(13px,3.6vw,16px)] leading-[1] text-right text-white/90 rotate-[-6deg]">আমরা আছি<br />আপনার সাথে</span>
-        <div className="relative flex items-start gap-3 pr-16">
-          <span className="size-12 rounded-md bg-white/15 border border-white/25 flex items-center justify-center shrink-0"><Headphones size={26} /></span>
-          <div className="flex flex-col gap-0.5 min-w-0">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[2px] text-white/85"><span className="relative flex size-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2ecc71] opacity-75" /><span className="relative inline-flex rounded-full size-2 bg-[#2ecc71]" /></span>সরাসরি সাপোর্ট</span>
-            <span className="text-[13px] font-semibold text-white/90">এস ই ইলেকট্রনিকস</span>
-            <span className="text-[clamp(22px,6.6vw,28px)] font-extrabold leading-none">সাপোর্ট টিম</span>
-            <span className="text-[14px] font-bold">সহযোগিতার জন্য আমাদের টিম, আপনার পাশে সবসময়</span>
-          </div>
-        </div>
-        <p className="relative mt-3 text-[13px] leading-relaxed text-white/90">আপনার যেকোনো সমস্যা বা জিজ্ঞাসায় আমাদের দক্ষ টিম আপনার সেবায় নিয়োজিত। নিচের বাটনগুলোতে ক্লিক করে সরাসরি যোগাযোগ করুন।</p>
-        <a href={`tel:${contactDetails.customerCare}`} className="relative mt-3 inline-flex items-center gap-2 h-10 px-4 rounded-md bg-white/15 border border-white/30 text-[13px] font-extrabold"><Headphones size={16} />কিভাবে সাহায্য চান?<ChevronRight size={15} /></a>
-      </section>
+      <PageBanner src="/banners/support.jpg" alt="SE Electronics সাপোর্ট টিম" width={755} height={328} href={`tel:${contactDetails.customerCare}`} />
 
       {/* Quick contact */}
       <section className="rounded-md bg-[#e8f1ff] border border-[#cfe0fb] p-2.5 flex flex-col gap-2.5">

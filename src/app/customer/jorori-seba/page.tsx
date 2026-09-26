@@ -1,5 +1,6 @@
 "use client";
 
+import PageBanner from "@/components/ui/PageBanner";
 import React, { useState, useMemo } from "react";
 import { CustomerLayout } from "@/components/layout";
 import {
@@ -156,34 +157,7 @@ export default function JoruriSebaPage() {
       <div className="flex flex-col gap-6 p-4 sm:p-6 text-gray-800 pb-24 font-sans">
         
         {/* Elegant Header Section (Optimized size for dashboard) */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-brand via-brand-800 to-indigo-950 rounded-md p-6 sm:p-8 text-white shadow-2xl border border-white/5">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-brand-400/20 rounded-full blur-[100px] -mr-48 -mt-48" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none" />
-
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="text-center md:text-left space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white text-[12px] font-black uppercase  shadow-inner mb-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                ২৪/৭ আপনার পাশে
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
-                আপনার সেবায় <span className="bg-gradient-to-r from-emerald-400 to-teal-200 bg-clip-text text-transparent p-2">জরুরি যোগাযোগ</span>
-              </h1>
-              <p className="text-brand-100/70 text-sm font-medium">
-                বাংলাদেশের যেকোনো স্থান থেকে সরাসরি গুরুত্বপূর্ণ সেবাগুলোতে কল করুন।
-              </p>
-            </div>
-            
-            <div className="flex-shrink-0">
-               <div className="p-4 bg-white/5 backdrop-blur-2xl rounded-md border border-white/10 shadow-lg">
-                  <PhoneCall size={32} className="text-emerald-400 animate-pulse" />
-               </div>
-            </div>
-          </div>
-        </div>
+        <PageBanner src="/banners/emergency.jpg" alt="জরুরি কল - Emergency Call" width={721} height={273} href="tel:09649355555" />
 
         {/* --- Advanced Filtering Section --- */}
         <div className="bg-white rounded-md p-5 border border-gray-100 shadow-sm transition-all">

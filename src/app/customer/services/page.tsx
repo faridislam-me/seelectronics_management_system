@@ -1,3 +1,4 @@
+import PageBanner from "@/components/ui/PageBanner";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { getServiceHistoryById } from "@/actions/serviceActions";
 import { CustomerAppHeader, CustomerAppNav } from "@/components/ui/CustomerAppChrome";
@@ -24,16 +25,7 @@ export default async function CustomerServicesPage() {
 
       <main className="px-2 -mt-4 relative flex flex-col gap-2.5">
         {/* Support banner */}
-        <section className="rounded-md bg-[linear-gradient(100deg,#dbe7fb_0%,#e9f0fc_100%)] border border-[#c9d9f5] p-3 flex items-center gap-3 shadow-[0_6px_18px_rgba(11,61,145,0.10)]">
-          <span className="size-14 rounded-md bg-white/70 text-[#1f7cf0] flex items-center justify-center shrink-0"><Headset size={32} strokeWidth={2} /></span>
-          <span className="flex flex-col min-w-0 flex-1 leading-tight">
-            <span className="text-[clamp(15px,4.4vw,18px)] font-extrabold">কোনো সমস্যা?<br />সাপোর্ট প্রয়োজন?</span>
-            <span className="text-[12px] font-semibold text-[#3d4a63] mt-0.5">আজই একটি নতুন রিকোয়েস্ট পাঠান</span>
-          </span>
-          <Link href="/get-service" className="shrink-0 inline-flex items-center gap-1 h-10 px-3 rounded-md bg-[#1f7cf0] text-white text-[12px] font-extrabold shadow-[0_6px_14px_rgba(31,124,240,0.35)]">
-            <Plus size={15} strokeWidth={3} />নতুন রিকোয়েস্ট<ChevronRight size={14} />
-          </Link>
-        </section>
+        <PageBanner src="/banners/new-request.jpg" alt="কোনো সমস্যা? সাপোর্ট প্রয়োজন? নতুন রিকোয়েস্ট" width={983} height={238} href="/get-service" />
 
         {/* List header */}
         <div className="flex items-center justify-between px-0.5 mt-1">

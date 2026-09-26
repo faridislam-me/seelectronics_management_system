@@ -160,17 +160,19 @@ export const getInvoiceByNumber = async (invoiceNumber: string) => {
     const session = await verifySession(false);
     if (!session) return { success: false, message: "Unauthorized" };
 
-    const invoice = await db.query.invoices.findFirst({
-      where: eq(invoices.invoiceNumber, invoiceNumber),
-      with: {
-        products: {
-          columns: {
-            createdAt: false,
-            updatedAt: false,
-          },
-        },
-      },
+    // Accept either an invoice number or a customer ID (e.g. SES58PHU8D)
+    const q = (invoiceNumber || "").trim();
+    const withProducts = { products: { columns: { createdAt: false, updatedAt: false } } } as const;
+    let invoice = await db.query.invoices.findFirst({
+      where: eq(invoices.invoiceNumber, q),
+      with: withProducts,
     });
+    if (!invoice && q) {
+      invoice = await db.query.invoices.findFirst({
+        where: eq(invoices.customerId, q.toUpperCase()),
+        with: withProducts,
+      });
+    }
     if (!invoice) {
       return { success: false, message: "Invoice not found" };
     }

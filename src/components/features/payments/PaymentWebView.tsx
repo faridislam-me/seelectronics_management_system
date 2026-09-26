@@ -1,136 +1,102 @@
-import { BankInfo, PaymentDataType } from "@/types";
+import { PaymentDataType } from "@/types";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
-import { User, Briefcase, Building2, CreditCard, Hash, Calendar, FileText, Smartphone } from "lucide-react";
+import { Building2, Calendar, CheckCircle2, Clock, FileText, Hash, IdCard, Printer, Settings, User, Wallet, XCircle } from "lucide-react";
 
 interface PaymentWebViewProps {
-  data: Omit<PaymentDataType, 'staff'> & { staff?: { name: string } };
+  data: Omit<PaymentDataType, "staff"> & { staff?: { name: string } };
 }
 
+function Row({ icon: Icon, label, children }: { icon: any; label: string; children: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-[42%_58%] border-b border-[#e6ebf4] last:border-0">
+      <span className="flex items-center gap-2.5 px-3 py-2.5 bg-[#f5f8fd] text-[13px] font-semibold text-[#3d4a63]"><Icon size={17} className="text-[#1f5fc9] shrink-0" />{label}</span>
+      <span className="px-3 py-2.5 text-[13px] font-extrabold text-[#16213a] break-words">{children}</span>
+    </div>
+  );
+}
+
+function Section({ icon: Icon, title, children }: { icon: any; title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-md border border-[#dfe6f2] overflow-hidden">
+      <div className="flex items-center gap-3 px-3 py-2.5 bg-[#e8f1ff]">
+        <span className="size-10 rounded-full bg-[#0b3d91] text-white flex items-center justify-center"><Icon size={19} /></span>
+        <span className="text-[14px] font-extrabold tracking-[1.5px] text-[#0b3d91] uppercase">{title}</span>
+      </div>
+      <div className="p-2"><div className="rounded-md border border-[#e6ebf4] overflow-hidden">{children}</div></div>
+    </section>
+  );
+}
+
+/** Payment receipt ("Invoice View") shown in the preview modal. */
 export default function PaymentWebView({ data }: PaymentWebViewProps) {
-  const isCompleted = data.status === "completed";
+  const st = data.status as string;
+  const paid = st === "completed" || st === "credited";
+  const StatusIcon = paid ? CheckCircle2 : st === "rejected" ? XCircle : Clock;
+  const statusLabel = st === "completed" ? "PAID" : st === "credited" ? "RECEIVED" : st.toUpperCase();
+  const isBank = data.paymentMethod === "bank";
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-white p-3 sm:p-10 space-y-8 border-2 sm:border-4 border-double border-gray-100 rounded-2xl sm:rounded-3xl">
-      {/* Header Info */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b-2 border-dashed border-gray-200">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tighter uppercase mb-1">Payment Receipt</h1>
-          <p className="text-[13px] font-bold text-brand tracking-[0.2em] uppercase opacity-80">Official Transaction Document</p>
+    <div className="w-full max-w-2xl mx-auto flex flex-col gap-3 text-[#16213a]">
+      {/* Brand + invoice */}
+      <section className="rounded-md border border-[#dfe6f2] overflow-hidden shadow-[0_6px_18px_rgba(11,61,145,0.10)]">
+        <div className="relative flex items-stretch min-h-[88px]">
+          <div className="flex items-center gap-2.5 bg-[linear-gradient(110deg,#0a2f70_0%,#1259c9_100%)] text-white px-3 w-[58%] [clip-path:polygon(0_0,100%_0,86%_100%,0_100%)]">
+            <span className="text-[30px] font-extrabold italic tracking-[-2px] leading-none">SE</span>
+            <span className="flex flex-col leading-tight"><span className="text-[15px] font-extrabold">SE ELECTRONICS</span><span className="text-[9.5px] text-white/85">Trusted Power | Better Tomorrow</span></span>
+          </div>
+          <div className="flex-1 flex flex-col items-end justify-center gap-1.5 px-3">
+            <span className="text-[20px] font-extrabold text-[#0b3d91] leading-none">{data.invoiceNumber.startsWith("BAL-") ? "RECEIPT" : "INVOICE"}</span>
+            <span className="max-w-full truncate px-2.5 h-7 rounded-full bg-[#1f7cf0] text-white text-[11px] font-extrabold inline-flex items-center">#{data.invoiceNumber}</span>
+          </div>
         </div>
-        <div className="text-left sm:text-right">
-          <p className="text-[13px] font-black text-gray-600 uppercase tracking-widest mb-1">Receipt Number</p>
-          <p className="text-base sm:text-lg font-black text-gray-900">#{data.invoiceNumber}</p>
+        <div className="grid grid-cols-3 divide-x divide-[#e6ebf4] border-t border-[#e6ebf4] text-[11.5px]">
+          <span className="flex items-start gap-2 p-2.5"><Calendar size={17} className="text-[#0b3d91] shrink-0" /><span className="flex flex-col"><span className="text-[10px] font-bold text-[#5b6784] tracking-wide">DATE</span><b>{formatDate(data.date || data.createdAt)}</b></span></span>
+          <span className="flex items-start gap-2 p-2.5 min-w-0"><Hash size={17} className="text-[#0b3d91] shrink-0" /><span className="flex flex-col min-w-0"><span className="text-[10px] font-bold text-[#5b6784] tracking-wide">RECEIPT NUMBER</span><b className="break-all">#{data.invoiceNumber}</b></span></span>
+          <span className="flex items-start gap-2 p-2.5 min-w-0"><FileText size={17} className="text-[#0b3d91] shrink-0" /><span className="flex flex-col min-w-0"><span className="text-[10px] font-bold text-[#5b6784] tracking-wide">ID</span><b className="break-all">{data.paymentId}</b></span></span>
         </div>
+      </section>
+
+      <Section icon={Building2} title="Sender Information">
+        <Row icon={Building2} label="Company">SE ELECTRONICS</Row>
+        <Row icon={Settings} label="Method"><span className="uppercase">{st === "credited" ? "SE Virtual Account" : data.paymentMethod}</span></Row>
+        {isBank && data.senderBankInfo ? (
+          <Row icon={Wallet} label="Bank">{data.senderBankInfo.bankName}<span className="block text-[12px] font-medium text-[#5b6784]">{data.senderBankInfo.accountNumber}</span></Row>
+        ) : (
+          <Row icon={Wallet} label="Wallet / TRX">{data.senderWalletNumber || "N/A"}<span className="block text-[12px] font-medium text-[#9aa4b8] break-all">{data.transactionId || "No Trx ID"}</span></Row>
+        )}
+        {data.serviceId && <Row icon={Hash} label="Service ID">#{data.serviceId}</Row>}
+      </Section>
+
+      <Section icon={User} title="Recipient Information">
+        <Row icon={User} label="Staff"><span className="uppercase">{data.staff?.name || "N/A"}</span></Row>
+        <Row icon={IdCard} label="Staff ID">{data.staffId}</Row>
+        {isBank && data.receiverBankInfo ? (
+          <Row icon={Wallet} label="Bank">{data.receiverBankInfo.bankName}<span className="block text-[12px] font-medium text-[#5b6784]">{data.receiverBankInfo.accountNumber}</span></Row>
+        ) : (
+          <Row icon={Wallet} label="Wallet">{st === "credited" ? "SE Virtual Account" : data.receiverWalletNumber || "N/A"}</Row>
+        )}
+        <Row icon={FileText} label="Details"><span className="italic font-medium text-[#3d4a63]">{data.description || "No description."}</span></Row>
+      </Section>
+
+      {/* Amount */}
+      <section className={clsx("rounded-md border p-3 flex items-center gap-3", paid ? "bg-[#e9f9ef] border-[#bfe8cd]" : st === "rejected" ? "bg-[#ffe9ec] border-[#f7c3ca]" : "bg-[#fff6e3] border-[#f5dfa0]")}>
+        <span className={clsx("size-12 rounded-full text-white flex items-center justify-center shrink-0 text-[20px] font-extrabold", paid ? "bg-[#1a9c4b]" : st === "rejected" ? "bg-[#e0243f]" : "bg-[#e0a11b]")}>৳</span>
+        <span className="flex flex-col flex-1 min-w-0 leading-tight">
+          <span className="text-[11px] font-bold tracking-[2px] text-[#5b6784]">AMOUNT</span>
+          <span className={clsx("text-[clamp(26px,8vw,34px)] font-extrabold", paid ? "text-[#178a42]" : "text-[#16213a]")}>৳{data.amount.toLocaleString()} <small className="text-[13px]">TK</small></span>
+        </span>
+        <span className={clsx("shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-[12px] font-extrabold text-white", paid ? "bg-[#1a9c4b]" : st === "rejected" ? "bg-[#e0243f]" : "bg-[#e0a11b]")}><StatusIcon size={16} strokeWidth={2.6} />{statusLabel}</span>
+      </section>
+
+      <div className="grid grid-cols-2 divide-x divide-[#e6ebf4] rounded-md border border-[#dfe6f2] text-[12px]">
+        <span className="flex items-center gap-2 p-2.5"><Calendar size={17} className="text-[#0b3d91]" /><span className="flex flex-col"><span className="text-[10px] font-bold text-[#5b6784]">DATE</span><b>{formatDate(data.date || data.createdAt)}</b></span></span>
+        <span className="flex items-center gap-2 p-2.5 min-w-0"><Hash size={17} className="text-[#0b3d91]" /><span className="flex flex-col min-w-0"><span className="text-[10px] font-bold text-[#5b6784]">ID</span><b className="truncate">{data.paymentId}</b></span></span>
       </div>
 
-      <div className="space-y-6 sm:space-y-8">
-        {/* Sender Information Table */}
-        <section>
-          <div className="flex items-center gap-2 mb-3">
-             <Building2 size={16} className="text-brand" />
-             <h3 className="text-[14px] sm:text-[14px] font-black text-gray-900 uppercase tracking-widest">Sender Information</h3>
-          </div>
-          <div className="overflow-hidden rounded-xl border border-gray-200">
-            <table className="w-full text-xs">
-              <tbody className="divide-y divide-gray-200">
-                <tr>
-                  <td className="w-[40%] sm:w-1/3 bg-gray-50/80 p-3 sm:p-4 font-black text-gray-600 uppercase text-[13px] sm:text-[13px] tracking-widest border-r border-gray-200">Company</td>
-                  <td className="p-3 sm:p-4 font-bold text-gray-900 uppercase">SE Electronics</td>
-                </tr>
-                <tr>
-                  <td className="w-[40%] sm:w-1/3 bg-gray-50/80 p-3 sm:p-4 font-black text-gray-600 uppercase text-[13px] sm:text-[13px] tracking-widest border-r border-gray-200">Method</td>
-                  <td className="p-3 sm:p-4 font-bold text-gray-900 uppercase tracking-widest">{data.paymentMethod}</td>
-                </tr>
-                {data.paymentMethod === 'bank' && data.senderBankInfo ? (
-                  <>
-                    <tr>
-                      <td className="w-[40%] sm:w-1/3 bg-gray-50/80 p-3 sm:p-4 font-black text-gray-600 uppercase text-[13px] sm:text-[13px] tracking-widest border-r border-gray-200">Bank</td>
-                      <td className="p-3 sm:p-4 space-y-1">
-                        <p className="font-bold text-gray-900 leading-none">{data.senderBankInfo.bankName}</p>
-                        <p className="text-[13px] text-gray-500 font-medium">{data.senderBankInfo.accountNumber}</p>
-                      </td>
-                    </tr>
-                  </>
-                ) : (
-                   <tr>
-                    <td className="w-[40%] sm:w-1/3 bg-gray-50/80 p-3 sm:p-4 font-black text-gray-600 uppercase text-[13px] sm:text-[13px] tracking-widest border-r border-gray-200">Wallet / Trx</td>
-                    <td className="p-3 sm:p-4 space-y-1">
-                      <p className="font-bold text-gray-900">{data.senderWalletNumber || "N/A"}</p>
-                      <p className="text-[13px] font-mono text-gray-400 break-all">{data.transactionId || "No Trx ID"}</p>
-                    </td>
-                  </tr>
-                )}
-                {data.serviceId && (
-                  <tr>
-                    <td className="w-[40%] sm:w-1/3 bg-gray-50/80 p-3 sm:p-4 font-black text-gray-600 uppercase text-[13px] sm:text-[13px] tracking-widest border-r border-gray-200">Service ID</td>
-                    <td className="p-3 sm:p-4 font-bold text-brand uppercase tracking-tighter">#{data.serviceId}</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        {/* Receipt Information Table */}
-        <section>
-          <div className="flex items-center gap-2 mb-3">
-             <User size={16} className="text-brand" />
-             <h3 className="text-[14px] sm:text-[14px] font-black text-gray-900 uppercase tracking-widest">Recipient Information</h3>
-          </div>
-          <div className="overflow-hidden rounded-xl border border-gray-200">
-            <table className="w-full text-xs">
-              <tbody className="divide-y divide-gray-200">
-                <tr>
-                  <td className="w-[40%] sm:w-1/3 bg-gray-50/80 p-3 sm:p-4 font-black text-gray-600 uppercase text-[13px] sm:text-[13px] tracking-widest border-r border-gray-200">Staff</td>
-                  <td className="p-3 sm:p-4 font-bold text-gray-900 uppercase">{data.staff?.name || 'N/A'}</td>
-                </tr>
-                <tr>
-                  <td className="w-[40%] sm:w-1/3 bg-gray-50/80 p-3 sm:p-4 font-black text-gray-600 uppercase text-[13px] sm:text-[13px] tracking-widest border-r border-gray-200">Staff ID</td>
-                  <td className="p-3 sm:p-4 font-black text-gray-400 tracking-tighter opacity-80">{data.staffId}</td>
-                </tr>
-                {data.paymentMethod === 'bank' && data.receiverBankInfo ? (
-                  <tr>
-                    <td className="w-[40%] sm:w-1/3 bg-gray-50/80 p-3 sm:p-4 font-black text-gray-500 uppercase text-[13px] sm:text-[13px] tracking-widest border-r border-gray-200">Bank</td>
-                    <td className="p-3 sm:p-4 space-y-1">
-                      <p className="font-bold text-gray-900 leading-none">{data.receiverBankInfo.bankName}</p>
-                      <p className="text-[13px] text-gray-500 font-medium">{data.receiverBankInfo.accountNumber}</p>
-                    </td>
-                  </tr>
-                ) : (
-                  <tr>
-                    <td className="w-[40%] sm:w-1/3 bg-gray-50/80 p-3 sm:p-4 font-black text-gray-500 uppercase text-[13px] sm:text-[13px] tracking-widest border-r border-gray-200">Wallet</td>
-                    <td className="p-3 sm:p-4 font-bold text-gray-900">{data.receiverWalletNumber || "N/A"}</td>
-                  </tr>
-                )}
-                <tr>
-                  <td className="w-[40%] sm:w-1/3 bg-gray-50/80 p-3 sm:p-4 font-black text-gray-500 uppercase text-[13px] sm:text-[13px] tracking-widest border-r border-gray-200">Details</td>
-                  <td className="p-3 sm:p-4 text-[12px] text-gray-600 italic leading-snug">
-                    {data.description || "No description."}
-                  </td>
-                </tr>
-                <tr className="bg-emerald-50/30">
-                  <td className="w-[40%] sm:w-1/3 bg-emerald-50/50 p-3 sm:p-4 font-black text-emerald-700 uppercase text-[13px] sm:text-[13px] tracking-widest border-r border-emerald-100">Amount</td>
-                  <td className="p-3 sm:p-4">
-                    <span className="text-xl sm:text-2xl font-black text-emerald-600 tracking-tighter">৳{data.amount.toLocaleString()} <small className="text-[12px] sm:text-[13px] uppercase ml-1 opacity-60">TK</small></span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </div>
-
-      {/* Footer Summary */}
-      <div className="flex flex-col sm:flex-row justify-between gap-4 pt-6 border-t border-gray-100 italic text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest">
-        <div className="flex items-center gap-2">
-          <Calendar size={16} className="text-gray-300" />
-          <span className="text-gray-600 text-[12px] sm:text-[13px]">Date: {formatDate(data.date)}</span>
-        </div>
-        <div className="flex items-center gap-2">
-           <Hash size={16} className="text-gray-600" />
-           <span className="truncate text-gray-600 text-[12px] sm:text-[13px]">ID: {data.paymentId}</span>
-        </div>
+      <div className="flex items-center justify-between gap-3 rounded-md bg-[linear-gradient(100deg,#eef3fb_0%,#dbe7fb_100%)] p-3">
+        <span className="leading-tight"><span className="block font-script text-[22px] text-[#0b3d91]">Thank you</span><span className="text-[11.5px] text-[#3d4a63]">for choosing SE Electronics</span></span>
+        <a href={`/pdf/download?type=payment&id=${data.invoiceNumber}`} target="_blank" className="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-[#0b3d91] text-white text-[13px] font-extrabold shrink-0"><Printer size={16} />Download / Print</a>
       </div>
     </div>
   );

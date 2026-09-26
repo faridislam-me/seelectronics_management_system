@@ -23,11 +23,11 @@ export default function CheckWarrantyPage() {
   const [error, setError] = useState("");
 
   const handleSubmit = async () => {
-    if (!invoiceNumber.trim()) return setError("ইনভয়েস নম্বর প্রবেশ করান");
+    if (!invoiceNumber.trim()) return setError("ইনভয়েস নম্বর বা কাস্টমার আইডি প্রবেশ করান");
     setLoading(true); setError(""); setWarrantyData(null);
     try {
       const response = await getInvoiceByNumber(invoiceNumber.trim());
-      if (!response.success) setError("দুঃখিত, এই ইনভয়েস নাম্বার দিয়ে কোনো তথ্য পাওয়া যায়নি। সম্ভবত এটি এস ই ইলেকট্রনিকস এর ইনভয়েস নয়। সঠিক নাম্বার দিয়ে আবার চেষ্টা করুন।");
+      if (!response.success) setError(response.message === "Unauthorized" ? "ওয়ারেন্টি চেক করতে অনুগ্রহ করে আগে লগইন করুন।" : response.message === "Unauthorized access to invoice" ? "এই ইনভয়েস/কাস্টমার আইডিটি আপনার একাউন্টের নয়।" : "দুঃখিত, এই ইনভয়েস নাম্বার বা কাস্টমার আইডি দিয়ে কোনো তথ্য পাওয়া যায়নি। সঠিক নাম্বার দিয়ে আবার চেষ্টা করুন।");
       else setWarrantyData(response.data);
     } catch {
       setError("একটি সমস্যা হয়েছে। আবার চেষ্টা করুন।");
@@ -77,7 +77,7 @@ export default function CheckWarrantyPage() {
           <div className="p-3 flex flex-col gap-2.5">
             <label className="relative block">
               <span className="absolute left-0 top-0 h-12 w-11 flex items-center justify-center text-[#5b6784]"><FileText size={20} /></span>
-              <input type="text" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="ইনভয়েস নম্বর লিখুন" disabled={loading} className="w-full h-12 rounded-md border border-[#dfe6f2] bg-[#f8fafd] pl-11 pr-3 text-[15px] font-semibold outline-none focus:border-[#1f7cf0] focus:ring-1 focus:ring-[#1f7cf0]" />
+              <input type="text" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="ইনভয়েস নম্বর বা কাস্টমার আইডি লিখুন" disabled={loading} className="w-full h-12 rounded-md border border-[#dfe6f2] bg-[#f8fafd] pl-11 pr-3 text-[15px] font-semibold outline-none focus:border-[#1f7cf0] focus:ring-1 focus:ring-[#1f7cf0]" />
             </label>
             <button onClick={handleSubmit} disabled={loading} className="h-12 rounded-md bg-[#0b3d91] text-white text-[16px] font-extrabold inline-flex items-center justify-center gap-2 disabled:opacity-50 shadow-[0_8px_20px_rgba(11,61,145,0.3)] active:scale-[0.98] transition-all">
               <Search size={20} strokeWidth={2.6} />{loading ? "Checking..." : "Check"}

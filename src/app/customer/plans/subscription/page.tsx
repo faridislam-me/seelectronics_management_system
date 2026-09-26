@@ -1,118 +1,74 @@
 import { getCustomerSubscriptions } from "@/actions/subscriptionActions";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { CustomerLayout } from "@/components/layout";
-import {
-    Zap,
-    Calendar,
-    Clock,
-    ArrowRight,
-    Package,
-    ShieldCheck,
-    CheckCircle2,
-    Smartphone
-} from "lucide-react";
+import { ArrowRight, Calendar, Clock, CreditCard, Package, ShieldCheck, Smartphone, Wrench } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export default async function ActiveSubscriptionListPage() {
-    const session = await verifyCustomerSession();
+  const session = await verifyCustomerSession();
+  if (!session.isAuth || !session.customer) redirect("/customer/login");
 
-    if (!session.isAuth || !session.customer) {
-        redirect("/customer/login");
-    }
+  const { data: allSubscriptions = [] } = await getCustomerSubscriptions(session.customer.customerId, session.customer.phone);
+  const activeSubscriptions = allSubscriptions.filter((sub) => sub.isActive && sub.status === "active");
 
-    const { data: allSubscriptions = [] } = await getCustomerSubscriptions(
-        session.customer.customerId,
-        session.customer.phone
-    );
+  return (
+    <CustomerLayout>
+      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-24 text-[#16213a]">
+        {/* Title */}
+        <div className="relative flex items-center gap-3 pr-24">
+          <span className="size-14 rounded-md bg-[#1f7cf0] text-white flex items-center justify-center shrink-0 shadow-[0_6px_16px_rgba(31,124,240,0.35)]"><CreditCard size={28} /></span>
+          <span className="flex flex-col leading-tight">
+            <span className="text-[clamp(19px,5.6vw,24px)] font-extrabold">Active Subscriptions</span>
+            <span className="text-[12px] font-semibold text-[#5b6784]">Your currently active maintenance plans and their coverage.</span>
+          </span>
+          <span className="absolute right-0 top-1 font-script text-[clamp(14px,4vw,18px)] leading-[1] text-right text-[#0b3d91] rotate-[-8deg]">Stay Protected<br />Stay Powered</span>
+        </div>
 
-    const activeSubscriptions = allSubscriptions.filter(sub => sub.isActive && sub.status === 'active');
-
-    return (
-        <CustomerLayout>
-            <div className="min-h-screen bg-[#fafafa] p-4 sm:p-6 pb-24 selection:bg-blue-200">
-                <div className="max-w-4xl mx-auto mb-8">
-                    <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-                        <Zap className="text-brand w-8 h-8" />
-                        Active Subscriptions
-                    </h1>
-                    <p className="text-slate-500 font-medium text-sm mt-1">
-                        Your currently active maintenance plans and their coverage.
-                    </p>
+        {activeSubscriptions.length > 0 ? (
+          activeSubscriptions.map((sub) => {
+            const pct = sub.subscriptionDuration ? Math.min(100, Math.round((sub.servicesCompleted / sub.subscriptionDuration) * 100)) : 0;
+            const name = sub.subscriptionType.replace(/_/g, " ");
+            return (
+              <article key={sub.subscriptionId} className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+                <div className="flex items-start gap-3">
+                  <span className="size-14 rounded-md bg-[linear-gradient(135deg,#0a2f70_0%,#1f7cf0_100%)] text-white flex items-center justify-center shrink-0"><ShieldCheck size={28} /></span>
+                  <span className="flex flex-col gap-1 min-w-0 flex-1">
+                    <span className="text-[16px] font-extrabold capitalize leading-tight">{name}</span>
+                    <span className="self-start px-2 h-6 rounded-md bg-[#e8f1ff] text-[#1b6fd6] text-[10.5px] font-extrabold tracking-wide inline-flex items-center">PACKAGE</span>
+                    <span className="self-start px-2 h-6 rounded-md bg-[#f5f7fb] border border-[#eef1f6] text-[11px] font-bold text-[#5b6784] inline-flex items-center">ID: {sub.subscriptionId}</span>
+                  </span>
+                  <span className="shrink-0 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-[#e9f9ef] text-[#178a42] text-[11px] font-extrabold"><span className="size-1.5 rounded-full bg-[#1a9c4b] animate-pulse" />ACTIVE</span>
                 </div>
 
-                <div className="max-w-4xl mx-auto">
-                    {activeSubscriptions.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {activeSubscriptions.map((sub) => (
-                                <Link
-                                    key={sub.subscriptionId}
-                                    href={`/customer/plans/subscription/${sub.subscriptionId}`}
-                                    className="group relative bg-white border border-slate-200 rounded-md p-6 hover:border-brand/40 hover:shadow-xl hover:shadow-brand/5 transition-all duration-300 overflow-hidden"
-                                >
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-brand/10 transition-colors"></div>
-
-                                    <div className="relative z-10">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div className="p-2 bg-brand/5 rounded-md">
-                                                <ShieldCheck className="text-brand w-6 h-6" />
-                                            </div>
-                                            <div className="bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded border border-emerald-100 flex items-center gap-1">
-                                                <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse"></div>
-                                                Active
-                                            </div>
-                                        </div>
-
-                                        <h3 className="text-lg font-black text-slate-900 mb-1 capitalize">
-                                            {sub.subscriptionType.replace(/_/g, ' ')}
-                                        </h3>
-                                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">
-                                            ID: {sub.subscriptionId}
-                                        </p>
-
-                                        <div className="space-y-3">
-                                            <div className="flex items-center gap-3 text-sm text-slate-600 font-medium font-mono">
-                                                <Smartphone className="size-4 text-slate-400" />
-                                                {sub.phone}
-                                            </div>
-                                            <div className="flex items-center gap-3 text-sm text-slate-600 font-medium">
-                                                <Calendar size={16} className="text-slate-400" />
-                                                Started: {new Date(sub.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
-                                            </div>
-                                            <div className="flex items-center gap-3 text-sm text-slate-600 font-medium">
-                                                <Clock size={16} className="text-slate-400" />
-                                                {sub.servicesCompleted} of {sub.subscriptionDuration} Services Used
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-6 flex items-center justify-between">
-                                            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                                <div
-                                                    className="bg-brand h-full rounded-full transition-all duration-500"
-                                                    style={{ width: `${(sub.servicesCompleted / sub.subscriptionDuration) * 100}%` }}
-                                                ></div>
-                                            </div>
-                                            <ArrowRight size={18} className="text-slate-300 group-hover:text-brand group-hover:translate-x-1 transition-all ml-4" />
-                                        </div>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="bg-white border border-dashed border-slate-300 rounded-md p-12 text-center">
-                            <Package className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                            <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">No Active Subscriptions</p>
-                            <p className="text-slate-400 text-xs mt-1">You don't have any active maintenance plans at the moment.</p>
-                            <Link
-                                href="/customer/maintenance-plans"
-                                className="mt-8 inline-flex items-center gap-2 bg-brand text-white px-8 py-3 rounded-md font-black text-sm uppercase tracking-widest hover:bg-brand/90 transition-all shadow-lg shadow-brand/20"
-                            >
-                                Browse Plans
-                            </Link>
-                        </div>
-                    )}
+                <div className="rounded-md bg-[#f5f8fd] border border-[#eef1f6] grid grid-cols-3 divide-x divide-[#e3e8f1] text-[11.5px]">
+                  <span className="flex items-start gap-1.5 p-2 min-w-0"><Smartphone size={16} className="text-[#1f7cf0] shrink-0" /><span className="flex flex-col min-w-0"><span className="text-[10px] font-semibold text-[#5b6784]">Subscription ID</span><b className="truncate">{sub.phone}</b></span></span>
+                  <span className="flex items-start gap-1.5 p-2"><Calendar size={16} className="text-[#1f7cf0] shrink-0" /><span className="flex flex-col"><span className="text-[10px] font-semibold text-[#5b6784]">Started On</span><b>{new Date(sub.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}</b></span></span>
+                  <span className="flex items-start gap-1.5 p-2"><Clock size={16} className="text-[#1f7cf0] shrink-0" /><span className="flex flex-col"><span className="text-[10px] font-semibold text-[#5b6784]">Services Used</span><b>{sub.servicesCompleted} of {sub.subscriptionDuration}</b></span></span>
                 </div>
-            </div>
-        </CustomerLayout>
-    );
+
+                <div className="rounded-md bg-[#e8f1ff] border border-[#cfe0fb] p-2 flex items-center gap-2.5">
+                  <span className="size-10 rounded-full bg-[#1f7cf0] text-white flex items-center justify-center shrink-0"><Wrench size={18} /></span>
+                  <span className="flex flex-col min-w-0 flex-1 leading-tight"><span className="text-[11px] font-semibold text-[#1b6fd6]">Maintenance Coverage</span><span className="text-[13px] font-extrabold capitalize truncate">{name}</span></span>
+                  <Link href={`/customer/plans/subscription/${sub.subscriptionId}`} className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 rounded-md border-2 border-[#1f7cf0] bg-white text-[#1f7cf0] text-[12px] font-extrabold">View Details<ArrowRight size={14} /></Link>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-2 rounded-full bg-[#e3e8f1] overflow-hidden"><div className="h-full rounded-full bg-[linear-gradient(90deg,#0b3d91,#1f7cf0)]" style={{ width: `${pct}%` }} /></div>
+                  <span className="text-[13px] font-extrabold text-[#0b3d91] w-10 text-right">{pct}%</span>
+                </div>
+              </article>
+            );
+          })
+        ) : (
+          <div className="rounded-md bg-white border border-dashed border-[#c9d3e6] p-8 text-center flex flex-col items-center gap-2">
+            <Package size={40} className="text-[#c9d3e6]" />
+            <span className="text-[14px] font-extrabold uppercase tracking-wide text-[#5b6784]">No Active Subscriptions</span>
+            <span className="text-[12px] text-[#9aa4b8]">You don&apos;t have any active maintenance plans at the moment.</span>
+            <Link href="/customer/maintenance-plans" className="mt-3 h-10 px-5 rounded-md bg-[#1f7cf0] text-white text-[13px] font-extrabold inline-flex items-center">Browse Plans</Link>
+          </div>
+        )}
+      </div>
+    </CustomerLayout>
+  );
 }

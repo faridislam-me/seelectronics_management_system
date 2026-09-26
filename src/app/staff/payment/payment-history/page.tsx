@@ -1,9 +1,9 @@
 import { verifyStaffSession } from "@/actions";
 import { getStaffPaymentHistory } from "@/actions/paymentRequestActions";
+import { PaymentHistoryList } from "@/components/features/payments/StaffPaymentCards";
 import { StaffLayout } from "@/components/layout/StaffLayout";
 import { PaymentDataType } from "@/types";
-import clsx from "clsx";
-import { CreditCard } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default async function PaymentHistoryPage() {
@@ -12,142 +12,19 @@ export default async function PaymentHistoryPage() {
 
   const userId = session.userId as string;
   const paymentsRes = await getStaffPaymentHistory(userId);
+  const paymentsList = (paymentsRes.success ? (paymentsRes.data ?? []) : []) as PaymentDataType[];
 
-  const paymentsList = (
-    paymentsRes.success ? (paymentsRes.data ?? []) : []
-  ) as PaymentDataType[];
   return (
     <StaffLayout balance={0}>
-      <div className="min-h-screen bg-gray-50 p-3 space-y-3">
-        {/* Title */}
-        <h1 className="text-xl font-black text-gray-900 uppercase tracking-wide">
-          All Payment History
-        </h1>
-
-        {paymentsList.length === 0 ? (
-          <div className="bg-white p-12 rounded-md border text-center text-gray-500 shadow-sm">
-            <CreditCard size={40} className="mx-auto mb-4 text-gray-200" />
-            <p className="text-lg font-black text-gray-800">No History Yet</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {paymentsList.map((payment: PaymentDataType) => {
-              const isRequest = payment.status !== "credited";
-
-              const statusLabel =
-                payment.status === "completed"
-                  ? "PAID"
-                  : payment.status === "requested"
-                    ? "REQUESTED"
-                    : payment.status === "credited"
-                      ? "RECEIVED"
-                      : payment.status === "rejected"
-                        ? "REJECTED"
-                        : "PROCESSING";
-
-              const statusStyle =
-                payment.status === "completed" || payment.status === "credited"
-                  ? "bg-green-100 text-green-700 border border-green-700"
-                  : payment.status === "rejected"
-                    ? "bg-red-100 text-red-700 border border-red-700"
-                    : payment.status === "requested"
-                      ? "bg-blue-100 text-blue-700 border border-blue-700"
-                      : "bg-yellow-100 text-yellow-700 border border-yellow-700";
-
-              let messageText = "";
-              if (payment.status === "credited") {
-                messageText = `এস ইলেকট্রনিক্স আপনার সার্ভিস আইডির টাকা ভার্চুয়াল একাউন্টে পেমেন্টটি পাঠানো হয়েছে। পেমেন্ট আইডি এবং বিস্তারিত জানতে আপনার পেমেন্ট হিস্ট্রি চেক করুন।`;
-              } else if (payment.status === "completed") {
-                messageText = `টেকনিশিয়ান/ ইলেকট্রিশিয়ান, এস ই ইলেকট্রনিকস-এ আপনার টাকা উত্তোলন রিকোয়েস্ট পেমেন্ট এডমিন প্যানেল থেকে সফলভাবে পরিশোধ করা হয়েছে। অনুগ্রহ করে আপনার একাউন্ট চেক করে নিন।`;
-              } else if (payment.status === "approved") {
-                messageText = `এস ইলেকট্রনিক্স এডমিন প্যানেলে আপনার পেমেন্ট রিকোয়েস্টটি সফলভাবে সাবমিট হয়েছে। খুব শীঘ্রই টাকা আপনার ${payment.paymentMethod || "Bkash"} একাউন্টে মাধ্যমে নির্দিষ্ট সময়ে পাঠিয়ে দেওয়া হবে।`;
-              } else {
-                messageText = `আপনার পেমেন্ট রিকোয়েস্ট (৳${payment.amount}) এখন ${payment.status} অবস্থায় আছে।`;
-              }
-
-              return (
-                <Link
-                  key={payment.paymentId}
-                  href={`/staff/payment/${payment.invoiceNumber}`}
-                  className="block bg-white rounded-lg p-4 border border-gray-300 shadow-sm active:scale-[0.98] transition-all"
-                >
-                  <div className="flex justify-between gap-3">
-                    {/* LEFT SIDE */}
-                    <div className="flex flex-col justify-between flex-1">
-                      <div>
-                        <h2 className="font-extrabold text-gray-800 text-sm uppercase tracking-wide">
-                          {isRequest
-                            ? "Cash Out Payment Request"
-                            : "Technician Payment Cash In"}
-                        </h2>
-
-                        <p className="text-sm text-gray-700 mt-1">
-                          {messageText}
-                        </p>
-
-                        <p className="text-xs text-gray-500 mt-2">
-                          Payment ID: {payment.paymentId}
-                        </p>
-
-                        <p className="text-xs text-gray-500">
-                          Status: {statusLabel}
-                        </p>
-
-                        <p className="text-xs text-gray-500">
-                          {payment.createdAt
-                            ? new Date(payment.createdAt).toLocaleString()
-                            : ""}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* RIGHT SIDE */}
-                    <div className="flex flex-col items-end justify-between gap-2">
-                      {/* Payment Method (always show) */}
-                      {isRequest ? (
-                        <span
-                          className={clsx(
-                            "px-2 py-[2px] rounded text-xs font-semibold capitalize",
-                            payment.paymentMethod === "bkash" &&
-                              "bg-pink-100 text-pink-600 border border-pink-600",
-                            payment.paymentMethod === "nagad" &&
-                              "bg-orange-100 text-orange-600 border border-orange-600",
-                            payment.paymentMethod === "cash" &&
-                              "bg-blue-100 text-blue-700 border border-blue-700",
-                            payment.paymentMethod === "bank" &&
-                              "bg-emerald-100 text-emerald-600 border border-emerald-600",
-                          )}
-                        >
-                          {payment.paymentMethod}
-                        </span>
-                      ) : (
-                        // <span className="px-2 py-[2px] rounded text-xs font-bold bg-green-100 text-green-700 border border-green-600">
-                        //   Balance Added
-                        // </span>
-                        ""
-                      )}
-
-                      {/* Amount */}
-                      <span className="text-lg font-extrabold text-gray-900">
-                        ৳{payment.amount?.toLocaleString()}
-                      </span>
-
-                      {/* Status Badge */}
-                      <span
-                        className={clsx(
-                          "text-xs font-bold px-2 py-[2px] rounded border",
-                          statusStyle,
-                        )}
-                      >
-                        {statusLabel}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
+      <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-24 flex flex-col gap-2.5">
+        <div className="flex items-center gap-3">
+          <Link href="/staff/payment" aria-label="Back" className="size-11 rounded-full bg-white border border-[#dfe6f2] flex items-center justify-center shrink-0"><ArrowLeft size={20} /></Link>
+          <span className="flex flex-col leading-tight min-w-0">
+            <span className="text-[clamp(18px,5.4vw,22px)] font-extrabold">All Payment History</span>
+            <span className="text-[12px] font-semibold text-[#5b6784]">Your all payment requests and transaction details</span>
+          </span>
+        </div>
+        <PaymentHistoryList payments={paymentsList} />
       </div>
     </StaffLayout>
   );

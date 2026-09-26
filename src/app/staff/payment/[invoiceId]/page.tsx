@@ -1,769 +1,128 @@
 import { getPaymentByNumber } from "@/actions/paymentActions";
-import {
-  getStaffProfileStats,
-  verifyStaffSession,
-} from "@/actions/staffActions";
+import { getStaffProfileStats, verifyStaffSession } from "@/actions/staffActions";
 import { InvoicePreviewButton } from "@/components/features/invoices";
 import { StaffLayout } from "@/components/layout/StaffLayout";
 import { PaymentDataType } from "@/types";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
-import {
-  Briefcase,
-  Building2,
-  Calendar,
-  ChevronLeft,
-  CreditCard,
-  Download,
-  Eye,
-  FileText,
-  Hash,
-  Smartphone,
-  User,
-  Activity,
-  PhoneCall,
-} from "lucide-react";
+import { ArrowLeft, Building2, Calendar, CheckCircle2, ChevronRight, Clock, Copy, Crown, Download, Eye, FileText, Settings, User, Wallet, XCircle } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import { MobilePageHeader } from "@/components/layout";
 import { notFound } from "next/navigation";
 
-export default async function StaffInvoiceDetailsPage({
-  params,
-}: {
-  params: Promise<{ invoiceId: string }>;
-}) {
+const logos: Record<string, string> = { bkash: "/bkash.png", nagad: "/nagad.png", rocket: "/rocket.png", bank: "/bank.png" };
+
+export default async function StaffInvoiceDetailsPage({ params }: { params: Promise<{ invoiceId: string }> }) {
   const session = await verifyStaffSession();
   if (!session.isAuth) return null;
-
   const { invoiceId } = await params;
-
-  const [paymentRes, statsRes] = await Promise.all([
-    getPaymentByNumber(invoiceId),
-    getStaffProfileStats(session.userId as string),
-  ]);
-
-  if (!paymentRes.success || !paymentRes.data) {
-    notFound();
-  }
-
+  const [paymentRes, statsRes] = await Promise.all([getPaymentByNumber(invoiceId), getStaffProfileStats(session.userId as string)]);
+  if (!paymentRes.success || !paymentRes.data) notFound();
   const payment = paymentRes.data as PaymentDataType;
   const stats = statsRes.success ? statsRes.data : null;
+  if (payment.staffId !== session.userId) notFound();
 
-  // Security check: Ensure staff can only view their own invoices
-  if (payment.staffId !== session.userId) {
-    notFound();
-  }
+  const st = payment.status as string;
+  const status = st === "credited" ? { label: "RECEIVED", cls: "bg-[#1a9c4b] text-white", icon: CheckCircle2 } : st === "completed" ? { label: "PAID", cls: "bg-[#1a9c4b] text-white", icon: CheckCircle2 } : st === "rejected" ? { label: "REJECTED", cls: "bg-[#e0243f] text-white", icon: XCircle } : { label: st.toUpperCase(), cls: "bg-[#e0a11b] text-white", icon: Clock };
+  const method = (payment.paymentMethod || "").toLowerCase();
+  const isBank = method === "bank";
+  const amount = Number(payment.amount || 0);
+  const Row = ({ k, v, accent }: { k: string; v: React.ReactNode; accent?: string }) => (
+    <div className="flex items-center justify-between gap-3 py-2 border-b border-[#eef1f6] last:border-0 text-[13px]"><span className="font-semibold text-[#3d4a63]">{k}</span><span className={clsx("font-extrabold", accent)}>{v}</span></div>
+  );
+  const Head = ({ icon: Icon, title, tone }: { icon: any; title: string; tone: string }) => (
+    <span className="flex items-center gap-2.5"><span className={`size-10 rounded-full ${tone} text-white flex items-center justify-center`}><Icon size={19} /></span><span className="text-[15px] font-extrabold">{title}</span></span>
+  );
 
   return (
     <StaffLayout balance={stats?.availableBalance || 0}>
-      <MobilePageHeader
-        title="Invoice Details"
-        backHref="/staff/payment"
-        Icon={FileText}
-      />
-
-      {/* ─────────────── DESKTOP VIEW ─────────────── */}
-      <div className="hidden lg:block">
-        <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-4">
-          {/* Header & Back Button */}
-          <div className="flex items-center justify-between">
-            <Link
-              href="/staff/payment"
-              className="flex items-center gap-2 text-gray-500 hover:text-brand font-black text-sm uppercase tracking-widest transition-colors group"
-            >
-              <div className="size-8 rounded-md bg-gray-100 flex items-center justify-center group-hover:bg-brand/10 transition-colors">
-                <ChevronLeft size={18} />
-              </div>
-              Back to Payments
-            </Link>
-            <div
-              className={clsx(
-                "px-4 py-2 rounded-md text-sm font-black uppercase tracking-[0.2em] shadow-sm border",
-                payment.status === "completed" || payment.status === "credited"
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                  : payment.status === "rejected"
-                    ? "bg-rose-50 text-rose-700 border-rose-100"
-                    : "bg-blue-50 text-blue-700 border-blue-100",
-              )}
-            >
-              {payment.status === "completed"
-                ? "Paid"
-                : payment.status === "credited"
-                  ? "Received"
-                  : payment.status}
-            </div>
-          </div>
-
-          {/* Invoice Web View Card */}
-          <div className="bg-white rounded-[1.5rem] shadow-xl border border-gray-100 overflow-hidden">
-            <div className="bg-brand p-8 sm:p-12 text-white relative overflow-hidden">
-              <div className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-                <div className="space-y-2">
-                  <div className="inline-flex items-center px-3 py-1 rounded-md bg-white/10 text-white/90 text-[10px] font-black uppercase tracking-[0.3em] mb-2">
-                    Official Receipt
-                  </div>
-                  <h1 className="text-3xl sm:text-5xl font-black tracking-tight">
-                    Invoice Details
-                  </h1>
-                  <p className="text-white/60 font-bold uppercase tracking-widest text-sm">
-                    #{payment.invoiceNumber}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] mb-1">
-                    Amount Paid
-                  </p>
-                  <div className="flex items-baseline justify-end gap-2">
-                    <span className="text-xl font-black text-white/60">৳</span>
-                    <span className="text-4xl sm:text-6xl font-black">
-                      {payment.amount?.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              {/* Abstract bg icon */}
-              <FileText className="absolute -right-8 -bottom-8 size-64 text-white/5" />
-            </div>
-
-            <div className="p-8 sm:p-12 space-y-10">
-              {/* Payment Summary Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div className="space-y-1">
-                  <p className="text-[13px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                    <Calendar size={16} />
-                    Payment Date
-                  </p>
-                  <p className="text-base font-black text-gray-900">
-                    {formatDate(payment.date || payment.createdAt!)}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[13px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                    <CreditCard size={16} />
-                    Payment Method
-                  </p>
-                  <p className="text-base font-black text-brand uppercase">
-                    {payment.paymentMethod}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[13px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                    <Hash size={16} />
-                    Transaction ID
-                  </p>
-                  <p className="text-base font-black text-gray-900 truncate">
-                    {payment.transactionId || "N/A"}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[13px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                    <Briefcase size={16} />
-                    Service ID
-                  </p>
-                  {payment.serviceId ? (
-                    <Link
-                      href={`/service-track?trackingId=${payment.serviceId}`}
-                      className="text-base font-black text-brand hover:underline"
-                    >
-                      #{payment.serviceId}
-                    </Link>
-                  ) : (
-                    <p className="text-base font-black text-gray-900">N/A</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="h-px bg-gray-100 w-full"></div>
-
-              {/* Account Details Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                {/* Receiver (Staff) Details */}
-                <div className="space-y-6">
-                  <h3 className="text-md font-black text-gray-400 uppercase tracking-[0.25em] flex items-center gap-2">
-                    <User size={16} className="text-brand" />
-                    Recipient Account
-                  </h3>
-                  <div className="bg-gray-50 rounded-lg p-6 space-y-4 border border-gray-100">
-                    <div className="flex items-center gap-4">
-                      <div className="size-12 rounded-md bg-white flex items-center justify-center text-brand shadow-sm">
-                        <Briefcase size={20} />
-                      </div>
-                      <div>
-                        <p className="text-[13px] font-black text-gray-400 uppercase tracking-tighter">
-                          Staff Name
-                        </p>
-                        <p className="text-md font-black text-gray-900">
-                          {String(session.username)}
-                        </p>
-                      </div>
-                    </div>
-                    {payment.paymentMethod === "bank" ? (
-                      <div className="space-y-3 pt-2">
-                        <div>
-                          <p className="text-[13px] font-black text-gray-400 uppercase tracking-tighter">
-                            Bank Name
-                          </p>
-                          <p className="text-md font-bold text-gray-700">
-                            {payment.receiverBankInfo?.bankName}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[13px] font-black text-gray-400 uppercase tracking-tighter">
-                            Account Number
-                          </p>
-                          <p className="text-md font-bold text-gray-700">
-                            {payment.receiverBankInfo?.accountNumber}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="pt-2">
-                        <p className="text-[13px] font-black text-gray-400 uppercase tracking-tighter">
-                          Wallet Number
-                        </p>
-                        <p className="text-md font-bold text-gray-700">
-                          {payment.receiverWalletNumber || "N/A"}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Sender (Company) Details */}
-                <div className="space-y-6">
-                  <h3 className="text-md font-black text-gray-400 uppercase tracking-[0.25em] flex items-center gap-2 text-right justify-end">
-                    Sender Details
-                    <Building2 size={14} className="text-brand" />
-                  </h3>
-                  <div className="bg-gray-50 rounded-lg p-6 space-y-4 border border-gray-100">
-                    <div className="flex items-center gap-4 justify-end text-right">
-                      <div>
-                        <p className="text-[13px] font-black text-gray-400 uppercase tracking-tighter">
-                          Company
-                        </p>
-                        <p className="text-md font-black text-gray-900">
-                          SE ELECTRONICS
-                        </p>
-                      </div>
-                      <div className="size-12 rounded-md bg-white flex items-center justify-center text-brand shadow-sm">
-                        <Smartphone size={20} />
-                      </div>
-                    </div>
-                    {payment.paymentMethod === "bank" ? (
-                      <div className="space-y-3 pt-2 text-right">
-                        <div>
-                          <p className="text-[13px] font-black text-gray-400 uppercase tracking-tighter">
-                            Bank Name
-                          </p>
-                          <p className="text-md font-bold text-gray-700">
-                            {payment.senderBankInfo?.bankName ||
-                              "Corporate Bank"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[13px] font-black text-gray-400 uppercase tracking-tighter">
-                            Account Number
-                          </p>
-                          <p className="text-md font-bold text-gray-700">
-                            {payment.senderBankInfo?.accountNumber ||
-                              "********4590"}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="pt-2 text-right">
-                        <p className="text-[13px] font-black text-gray-400 uppercase tracking-tighter">
-                          Sender Number
-                        </p>
-                        <p className="text-md font-bold text-gray-700">
-                          {payment.senderWalletNumber || "N/A"}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Customer Information (New) */}
-                {payment.service && (
-                  <div className="space-y-6">
-                    <h3 className="text-md font-black text-gray-400 uppercase tracking-[0.25em] flex items-center gap-2">
-                      <User size={14} className="text-brand" />
-                      Customer Information
-                    </h3>
-                    <div className="bg-brand/5 rounded-lg p-6 space-y-4 border border-brand/10">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-[13px] font-black text-gray-400 uppercase tracking-tighter">
-                            Name
-                          </p>
-                          <p className="text-md font-black text-gray-900">
-                            {payment.service.customerName}
-                          </p>
-                        </div>
-                        <Link
-                          href={`/staff/customers/${payment.service.customerId}`}
-                          className="px-4 py-2 bg-white rounded-md text-[13px] font-black text-brand uppercase tracking-tighter border border-brand/20 shadow-sm hover:bg-brand hover:text-white transition-all"
-                        >
-                          View Profile
-                        </Link>
-                      </div>
-                      <div>
-                        <p className="text-[13px] font-black text-gray-400 uppercase tracking-tighter">
-                          Phone
-                        </p>
-                        <p className="text-md font-bold text-gray-700">
-                          {payment.service.customerPhone}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[13px] font-black text-gray-400 uppercase tracking-tighter">
-                          Address
-                        </p>
-                        <p className="text-md font-bold text-gray-700 leading-tight">
-                          {payment.service.customerAddress}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Service Information (New) */}
-                {payment.service && (
-                  <div className="space-y-6">
-                    <h3 className="text-md font-black text-gray-400 uppercase tracking-[0.25em] flex items-center gap-2 text-right justify-end">
-                      Service details
-                      <Activity size={14} className="text-brand" />
-                    </h3>
-                    <div className="bg-gray-50 rounded-lg p-6 space-y-4 border border-gray-100 text-right">
-                      <div>
-                        <p className="text-[13px] font-black text-gray-400 uppercase tracking-tighter">
-                          Type
-                        </p>
-                        <p className="text-md font-black text-brand uppercase">
-                          {payment.service.type}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[13px] font-black text-gray-400 uppercase tracking-tighter">
-                          Product
-                        </p>
-                        <p className="text-md font-bold text-gray-700">
-                          {payment.service.productType} •{" "}
-                          {payment.service.productModel}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[13px] font-black text-gray-400 uppercase tracking-tighter">
-                          Status
-                        </p>
-                        <p className="text-md font-black text-gray-900 uppercase">
-                          {payment.service.isActive ? "Active" : "Closed"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {payment.description && (
-                <div className="space-y-4">
-                  <h3 className="text-md font-black text-gray-600 uppercase tracking-[0.25em]">
-                    Description / Task
-                  </h3>
-                  <div className="bg-brand/5 rounded-lg p-6 border border-brand/10">
-                    <p className="text-sm text-gray-700 font-medium italic leading-relaxed">
-                      &ldquo;{payment.description}&rdquo;
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Action Footer */}
-            <div className="bg-gray-50 p-8 sm:p-12 border-t border-gray-100 flex flex-col sm:flex-row items-center gap-4">
-              <InvoicePreviewButton
-                paymentData={payment}
-                className="w-full sm:flex-1 flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-900 py-5 rounded-[1.5rem] text-sm font-black transition-all shadow-sm border border-gray-200 active:scale-[0.98]"
-              >
-                <Eye size={20} />
-                <span>Preview PDF Invoice</span>
-              </InvoicePreviewButton>
-              {payment.status === "completed" && (
-                <a
-                  target="_blank"
-                  href={`/pdf/download?type=payment&id=${payment.invoiceNumber}`}
-                  className="w-full sm:flex-1 flex items-center justify-center gap-3 bg-brand hover:bg-brand-800 text-white py-5 rounded-[1rem] text-sm font-black transition-all shadow-xl shadow-brand/20 active:scale-[0.98]"
-                >
-                  <Download size={20} />
-                  <span>Download PDF Invoice</span>
-                </a>
-              )}
-            </div>
-          </div>
-
-          <p className="text-center text-[10px] text-gray-400 font-black uppercase tracking-widest">
-            © SEIPSBD - Official Digital Receipt
-          </p>
+      <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-24 flex flex-col gap-2.5">
+        <div className="flex items-center gap-3">
+          <Link href="/staff/payment" aria-label="Back" className="size-11 rounded-full bg-white border border-[#dfe6f2] flex items-center justify-center shrink-0"><ArrowLeft size={20} /></Link>
+          <span className="flex flex-col leading-tight min-w-0"><span className="text-[clamp(18px,5.4vw,22px)] font-extrabold">Payment Details</span><span className="text-[12px] font-semibold text-[#5b6784]">Invoice Information &amp; Transaction Details</span></span>
         </div>
-      </div>
 
-      {/* ─────────────── MOBILE VIEW (Steadfast-style) ─────────────── */}
-      <div className="lg:hidden bg-gray-100 min-h-screen pb-24 space-y-3 p-3">
-        {/* ── Invoice Header Block ── */}
-        <div className="bg-white rounded-md p-4 shadow-sm">
-          <p className="text-gray-400 text-[13px] font-black uppercase tracking-[0.2em] mb-1">
-            INVOICE
-          </p>
-          <div className="flex items-center justify-between mb-2">
-            <p className="font-black text-gray-900 text-base">
-              {payment.invoiceNumber}
-            </p>
-            <span
-              className={clsx(
-                "text-[13px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md shadow-sm border",
-                payment.status === "completed" || payment.status === "credited"
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                  : payment.status === "rejected"
-                    ? "bg-rose-50 text-rose-700 border-rose-100"
-                    : "bg-blue-50 text-blue-700 border-blue-100",
-              )}
-            >
-              {payment.status === "completed"
-                ? "Paid"
-                : payment.status === "credited"
-                  ? "Received"
-                  : payment.status}
+        {/* Invoice banner */}
+        <section className={clsx("rounded-md border p-3 flex items-center gap-3", st === "rejected" ? "bg-[#ffe9ec] border-[#f7c3ca]" : "bg-[#e9f9ef] border-[#bfe8cd]")}>
+          <span className={clsx("size-12 rounded-full text-white flex items-center justify-center shrink-0", st === "rejected" ? "bg-[#e0243f]" : "bg-[#1a9c4b]")}><FileText size={22} /></span>
+          <span className="flex flex-col min-w-0 flex-1 leading-tight">
+            <span className="text-[10.5px] font-bold text-[#5b6784] tracking-wide">INVOICE</span>
+            <span className="text-[clamp(13px,3.8vw,16px)] font-extrabold break-all">{payment.invoiceNumber}</span>
+            <span className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[#5b6784]"><Calendar size={12} />{formatDate(payment.date || payment.createdAt!)}</span>
+          </span>
+          <span className={clsx("shrink-0 inline-flex items-center gap-1 h-8 px-2.5 rounded-full text-[11px] font-extrabold", status.cls)}><status.icon size={13} strokeWidth={2.8} />{status.label}</span>
+        </section>
+
+        {/* Payment information */}
+        <section className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-2 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+          <Head icon={Wallet} title="Payment Information" tone="bg-[#1f7cf0]" />
+          <div className="rounded-md bg-[#f5f7fb] px-3">
+            <Row k="Amount Delivered" v={`৳${amount.toLocaleString()}`} />
+            <Row k="Sub-Total" v={`৳${amount.toLocaleString()}`} />
+            <Row k="COD Charge & Fees" v="+৳0" accent="text-[#e0243f]" />
+          </div>
+          <div className="border-t border-dashed border-[#c9d3e6] pt-2 flex items-center gap-2">
+            <span className="size-9 rounded-md bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center shrink-0"><FileText size={17} /></span>
+            <span className="text-[13px] font-bold text-[#3d4a63] flex-1 truncate">{payment.receiverWalletNumber || String(session.username)}</span>
+            <span className="text-[13px] font-bold text-[#3d4a63]">Total Settlement</span>
+            <span className="rounded-md bg-[#e9f9ef] text-[#178a42] px-2.5 py-1 text-[18px] font-extrabold leading-none">৳{amount.toLocaleString()}</span>
+          </div>
+        </section>
+
+        {/* Recipient */}
+        <section className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-2 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+          <Head icon={User} title="Recipient Information" tone="bg-[#8b3fe8]" />
+          <div className="relative overflow-hidden rounded-md bg-[linear-gradient(100deg,#ffe9f1_0%,#fff5f9_100%)] border border-[#ffd6e5] p-3 flex items-start gap-3">
+            <span className="flex flex-col gap-1 min-w-0 flex-1 text-[12px] font-semibold text-[#5b6784] uppercase tracking-wide">
+              <span className="text-[18px] font-extrabold text-[#16213a] normal-case tracking-normal inline-flex items-center gap-1.5">{payment.receiverWalletNumber || payment.receiverBankInfo?.accountNumber || String(session.username)}<Copy size={14} className="text-[#1f7cf0]" /></span>
+              <span>Staff-member <span className="text-[#c9d3e6]">•</span> {method || "N/A"}</span>
+              <span>Wallet number <b className="text-[#16213a]">{payment.receiverWalletNumber || "N/A"}</b></span>
+              <span>Amount <b className="text-[#16213a]">৳{amount.toLocaleString()}</b></span>
+              <span>Trx ID <b className="text-[#16213a]">{payment.transactionId || "N/A"}</b></span>
+            </span>
+            <span className="flex flex-col items-center gap-1 shrink-0">
+              {logos[method] ? <Image src={logos[method]} alt={method} width={72} height={72} className="size-16 object-contain" /> : <span className="size-16 rounded-md bg-white border border-[#ffd6e5] flex items-center justify-center text-[#e0243f]"><Wallet size={28} /></span>}
+              <span className="px-2 h-6 rounded-md bg-[#ffd6e5] text-[#c81f38] text-[10px] font-extrabold inline-flex items-center uppercase">{method ? `${method} wallet` : "wallet"}</span>
             </span>
           </div>
-          <p className="text-sm text-gray-400 font-bold">
-            {formatDate(payment.date || payment.createdAt!)}
-          </p>
-        </div>
+        </section>
 
-        {/* ── Payment Information Block ── */}
-        <div className="bg-white rounded-md p-5 shadow-sm">
-          <h3 className="text-sm font-black text-gray-900 mb-4 flex items-center gap-2">
-            <CreditCard size={16} className="text-brand" />
-            Payment Information
-          </h3>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500 font-bold">Amount Delivered</span>
-              <span className="font-black text-gray-900">
-                ৳{(payment.amount).toLocaleString()}
-              </span>
-            </div>
-
-            {/* <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500 font-bold">Due Bills</span>
-              <span className="font-black text-rose-500">-৳190</span>
-            </div> */}
-
-            <div className="flex items-center justify-between text-md border-t border-gray-50 pt-2">
-              <span className="text-gray-500 font-bold">Sub-Total</span>
-              <span className="font-black text-gray-900">
-                ৳{(payment.amount).toLocaleString()}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500 font-bold">COD Charge & Fees</span>
-              <span className="font-black text-rose-500">-৳00</span>
-            </div>
-            <div className="border-t-2 border-dashed border-gray-400 my-4"></div>
-            {/* Final Total */}
-            <div className="  " />
-            <div className="flex items-center justify-between">
-              {String(session.username)}
-              <span className="text-sm font-black text-gray-900">
-                Total Settlement
-              </span>
-              <span className="text-xl font-black text-brand">
-                ৳{payment.amount?.toLocaleString()}
-              </span>
-            </div>
+        {/* Sender */}
+        <section className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-2 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+          <Head icon={Building2} title="Sender Information" tone="bg-[#1a9c4b]" />
+          <div className="flex items-start gap-3">
+            <span className="flex flex-col gap-0.5 min-w-0 flex-1 text-[12.5px] text-[#3d4a63]">
+              <span className="text-[15px] font-extrabold text-[#16213a]">SE ELECTRONICS <span className="text-[10px] font-bold text-[#5b6784] tracking-[2px] uppercase">Corporate Office</span></span>
+              {isBank ? (<><span>Bank: <b>{payment.senderBankInfo?.bankName || "Corporate Bank"}</b></span><span>Account: <b>{payment.senderBankInfo?.accountNumber || "********4590"}</b></span></>) : (<><span>Merchant: <b>{payment.senderWalletNumber || "N/A"}</b></span><span>Payment Method: <b>{payment.paymentMethod || "N/A"}</b></span><span>Trx ID: <b>{payment.transactionId || "N/A"}</b></span></>)}
+            </span>
+            <span className="shrink-0 inline-flex items-center gap-1 h-7 px-2 rounded-md bg-[#e9f9ef] text-[#178a42] text-[10px] font-extrabold uppercase"><CheckCircle2 size={12} />Verified merchant</span>
           </div>
-        </div>
+        </section>
 
-        {/* ── Recipient Information (Customer) ── */}
-        {payment.service && (
-          <div className="bg-white rounded-md p-5 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-16 h-16 bg-brand/5 rounded-full -mr-8 -mt-8 grayscale" />
-            <h3 className="text-sm font-black text-gray-900 mb-4 flex items-center gap-2">
-              <User size={16} className="text-brand" />
-              Customer Information
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <p className="text-base font-black text-gray-900 mb-1">
-                  {payment.service.customerName}
-                </p>
-                <p className="text-sm text-gray-500 font-bold leading-relaxed">
-                  {payment.service.customerAddress},{" "}
-                  {payment.service.customerAddressDistrict}
-                </p>
-                <p className="text-sm text-brand font-black mt-1">
-                  {payment.service.customerPhone}
-                </p>
-              </div>
-
-              <div className="pt-2 border-t border-gray-50 flex gap-3">
-                <Link
-                  href={`/staff/customers/${payment.service.customerId}`}
-                  className="flex-1 text-center py-2.5 rounded-md  text-gray-600 font-black text-[13px] uppercase tracking-widest border border-gray-100 hover:bg-brand/5 hover:text-brand hover:border-brand/20 transition-all active:scale-95"
-                >
-                  View Profile
-                </Link>
-                <Link
-                  href={`tel:${payment.service.customerPhone}`}
-                  className="p-2.5 rounded-md bg-brand text-white shadow-lg shadow-brand/20 active:scale-95"
-                >
-                  <PhoneCall size={16} />
-                </Link>
-              </div>
-            </div>
+        {/* Service */}
+        <section className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-2 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+          <Head icon={Settings} title="Service Information" tone="bg-[#e0a11b]" />
+          <div className="flex items-start gap-3">
+            <span className="flex flex-col gap-0.5 min-w-0 flex-1 text-[12.5px] text-[#3d4a63]">
+              <span>Service Id: <b className="text-[#16213a]">{payment.serviceId || "N/A"}</b></span>
+              <span>Customer: <b className="text-[#16213a]">{String(session.username)}</b></span>
+              <span>Date: <b className="text-[#16213a]">{formatDate(payment.date || payment.createdAt!)}</b></span>
+              {payment.description && <span>Note: <b className="text-[#16213a]">{payment.description}</b></span>}
+            </span>
+            <span className="flex flex-col items-end gap-1 shrink-0">
+              <span className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md bg-[#fff6e3] text-[#b8620b] text-[11px] font-extrabold uppercase"><Crown size={13} />{st === "credited" ? "Credited" : st}</span>
+              <span className="text-[12px] font-bold text-[#3d4a63]">COD: <b className="text-[#16213a]">{amount.toLocaleString()}</b></span>
+            </span>
           </div>
-        )}
+        </section>
 
-        {/* ── Recipient (Staff) Info ── */}
-        <div className="bg-white rounded-md p-5 shadow-sm border border-gray-400 md:border-none">
-          <h3 className="text-sm font-black text-gray-900 mb-4 flex items-center gap-2">
-            {/* <Briefcase size={16} className="text-brand" /> */}
-            Recipient Information
-          </h3>
-          <p className="font-black text-gray-900 text-base">
-            {String(session.username)}
-          </p>
-          <p className="text-sm text-gray-400 font-bold uppercase tracking-tighter mt-1">
-            Staff Member • {payment.paymentMethod}
-          </p>
-
-          {payment.paymentMethod === "bank" ? (
-            <div className="mt-3  bg-gray-50 rounded-md border border-gray-100">
-              <p className="text-md font-black text-gray-400 uppercase mb-1">
-                Bank Account
-              </p>
-              <p className="text-md font-bold text-gray-700">
-                {payment.receiverBankInfo?.bankName}
-              </p>
-              <p className="text-md font-black text-gray-900">
-                {payment.receiverBankInfo?.accountNumber}
-              </p>
-            </div>
-          ) : (
-            <div>
-              <div className=" flex justify-start gap-2 items-center   rounded-md ">
-                <p className="text-md font-black text-gray-400 uppercase mb-1">
-                  Wallet Number
-                </p>
-                <p className="text-md font-black text-gray-900">
-                  {payment.receiverWalletNumber || "N/A"}
-                </p>
-              </div>
-              <div className="flex justify-start gap-2 items-center   rounded-md ">
-                <p className="text-md font-black text-gray-400 uppercase ">
-                  Amount
-                </p>
-                <p className="text-md font-black text-gray-500">
-                  {payment.amount || "N/A"}
-                </p>
-              </div>
-              <div className="flex justify-start gap-2 items-center   rounded-md  ">
-                <p className="text-md font-black text-gray-400 uppercase ">
-                  Trx Id :
-                </p>
-                <p className="text-md font-black text-gray-500">
-                  {payment.transactionId || "N/A"}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ── Service Information Block ── */}
-        {payment.service && (
-          <div className="bg-white rounded-md p-5 shadow-sm border-l-4 border-brand ">
-            <h3 className="text-md font-black text-gray-900 mb-4 flex items-center gap-2">
-              <Activity size={16} className="text-brand" />
-              Service details
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-md">
-                <span className="text-gray-600 font-bold uppercase tracking-widest">
-                  Service ID
-                </span>
-                <span className=" font-black uppercase text-brand">
-                  {payment.service.serviceId}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-md">
-                <span className="text-gray-600 font-bold uppercase tracking-widest">
-                  Service Type
-                </span>
-                <span className=" font-black uppercase text-brand">
-                  {payment.service.type}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-md">
-                <span className="text-gray-600 font-bold uppercase tracking-widest">
-                  Product
-                </span>
-                <span className="text-gray-900 font-black text-right">
-                  {payment.service.productType} • {payment.service.productModel}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-md">
-                <span className="text-gray-600 font-bold uppercase tracking-widest">
-                  Tracking ID
-                </span>
-                <Link
-                  href={`/service-track?trackingId=${payment.service.serviceId}`}
-                  className="text-brand font-black underline"
-                >
-                  #{payment.service.serviceId.substring(0, 12)}...
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Sender Information Block ── */}
-        <div className="bg-white rounded-md md:border-none border border-gray-500 p-5 shadow-sm opacity-75">
-          <h3 className="text-md font-black text-gray-900 mb-4 flex items-center gap-2">
-            {/* <Building2 size={16} /> */}
-            Sender Information
-          </h3>
-          <div className="flex justify-start gap-3 items-center">
-            <p className="font-black text-gray-800 text-md">SE ELECTRONICS</p>
-            <p className="text-[13px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-0.5">
-              Corporate Office
-            </p>
-          </div>
-
-          {payment.paymentMethod === "bank" ? (
-            <div className="mt-3 text-md space-y-0.5 font-bold text-gray-500">
-              <p>{payment.senderBankInfo?.bankName || "Corporate Bank"}</p>
-              <p>{payment.senderBankInfo?.accountNumber || "********4590"}</p>
-            </div>
-          ) : (
-            <div>
-              <p className="text-md font-bold text-gray-500 mt-2">
-                Merchant: {payment.senderWalletNumber || "N/A"}
-              </p>
-              <p className="text-md font-bold text-gray-500 mt-2">
-                Payment Method: {payment.paymentMethod || "N/A"}
-              </p>
-              <p className="text-md font-bold text-gray-500 mt-2">
-                Trx ID: {payment.transactionId || "N/A"}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="bg-white rounded-md md:border-none border border-gray-500 p-5 shadow-sm opacity-75">
-          <h3 className="text-md font-black text-gray-900 mb-4 flex items-center gap-2">
-            {/* <Building2 size={16} /> */}
-            Service Information
-          </h3>
-
-          {payment.paymentMethod === "bank" ? (
-            <div className="mt-3 text-md space-y-0.5 font-bold text-gray-500">
-              <p>{payment.senderBankInfo?.bankName || "Corporate Bank"}</p>
-              <p>{payment.senderBankInfo?.accountNumber || "********4590"}</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {/* Service ID + Status */}
-              <div className="flex justify-between items-center">
-                <p className="text-md font-bold text-gray-500">
-                  Service Id: {payment.serviceId || "N/A"}
-                </p>
-
-                <div
-                  className={clsx(
-                    "px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-[0.2em] shadow-sm border",
-                    payment.status === "completed"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                      : payment.status === "processing"
-                        ? "bg-blue-50 text-blue-700 border-blue-100"
-                        : payment.status === "rejected"
-                          ? "bg-rose-50 text-rose-700 border-rose-100"
-                          : "bg-amber-50 text-amber-700 border-amber-100",
-                  )}
-                >
-                  {payment.status}
-                </div>
-              </div>
-
-              {/* Customer + COD */}
-              <div className="flex justify-between">
-                <p className="text-md font-bold text-gray-500">
-                  Customer: {String(session.username)}
-                </p>
-
-                <span className="text-md font-bold text-gray-500">
-                  COD: {payment.amount?.toLocaleString()}
-                </span>
-              </div>
-
-              {/* Date */}
-              <p className="text-md font-bold text-gray-500">
-                Date:{" "}
-                <span>{formatDate(payment.date || payment.createdAt!)}</span>
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* createdAt: Date;
-    updatedAt: Date;
-    id: string;
-    date: Date;
-    paymentId: string;
-    invoiceNumber: string;
-    paymentMethod: PaymentTypes;
-    senderWalletNumber: string | null;
-    receiverWalletNumber: string | null;
-    transactionId: string | null;
-    amount: number;
-    serviceId?: string | null;
-    description: string | null;
-    staffId: string;
-    status: Statuses;
-    statusHistory?: {
-        customNote: string | null;
-        customLabel: string | null;
-        cancelReason: string | null;
-        id: string;
-        status: Statuses;
-        statusType: "system" | "custom";
-    }[];
-    staff?: StaffsType;
-    service?: ServicesType | null;
-    senderBankInfo: BankInfo | null;
-    receiverBankInfo: BankInfo | null;
-} */}
-        {/* ====================================================== */}
-
-        {/* ── Action Buttons ── */}
-        <div className="pt-4 grid grid-cols-2 gap-3">
-          <InvoicePreviewButton
-            paymentData={payment}
-            className="flex items-center justify-center gap-2 bg-white text-gray-900 py-4 rounded-md text-md font-black border border-gray-200 shadow-sm active:scale-95"
-          >
-            <Eye size={16} />
-            Preview
+        {/* Actions */}
+        <div className="grid grid-cols-1 gap-2">
+          <InvoicePreviewButton paymentData={payment} className="h-11 w-full rounded-md border-2 border-[#1f7cf0] bg-white text-[#1f7cf0] text-[14px] font-extrabold inline-flex items-center justify-center gap-2 active:scale-[0.98] transition-all">
+            <Eye size={18} /><span>Preview Invoice</span><ChevronRight size={16} />
           </InvoicePreviewButton>
-          {payment.status === "completed" && (
-            <a
-              target="_blank"
-              href={`/pdf/download?type=payment&id=${payment.invoiceNumber}`}
-              className="flex items-center justify-center gap-2 bg-brand text-white py-4 rounded-md text-md font-black shadow-lg shadow-brand/20 active:scale-95"
-            >
-              <Download size={16} />
-              Download
-            </a>
+          {st === "completed" && (
+            <a target="_blank" href={`/pdf/download?type=payment&id=${payment.invoiceNumber}`} className="h-11 w-full rounded-md bg-[#0b3d91] text-white text-[14px] font-extrabold inline-flex items-center justify-center gap-2"><Download size={18} />Download Receipt</a>
           )}
         </div>
       </div>

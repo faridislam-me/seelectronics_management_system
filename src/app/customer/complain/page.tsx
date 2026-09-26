@@ -1,367 +1,100 @@
 import { getComplaintsByCustomer } from "@/actions/complaintActions";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { CustomerLayout } from "@/components/layout/CustomerLayout";
+import { contactDetails } from "@/constants";
 import { formatDate } from "@/utils";
-import { CheckCircle, FileText, Home, PlusCircle } from "lucide-react";
+import clsx from "clsx";
+import { AlertCircle, Calendar, CheckCircle2, ChevronRight, ClipboardCheck, FilePlus2, Headset, Info, PhoneCall, Search, Settings, ShieldCheck, User } from "lucide-react";
 import Link from "next/link";
+
+const statusMeta = (s: string) => {
+  if (s === "completed" || s === "resolved") return { label: "সমাধান হয়েছে", cls: "bg-[#e9f9ef] text-[#178a42]", icon: CheckCircle2 };
+  if (s === "hearing" || s === "processing") return { label: "প্রক্রিয়াধীন", cls: "bg-[#fff6e3] text-[#b8620b]", icon: Settings };
+  if (s === "dismissed") return { label: "খারিজ", cls: "bg-gray-100 text-gray-600", icon: AlertCircle };
+  return { label: "অভিযোগ গৃহীত", cls: "bg-[#ffe9ec] text-[#c81f38]", icon: AlertCircle };
+};
+const avatarTones = ["bg-[#ff4d8d]", "bg-[#8b3fe8]", "bg-[#1a9c4b]", "bg-[#e0243f]", "bg-[#1f7cf0]"];
 
 export default async function ComplainDashboardPage() {
   const session = await verifyCustomerSession();
   if (!session.isAuth || !session.customer) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">
-            অভিযোগ দাখিল করতে অনুগ্রহ করে লগইন করুন
-          </h2>
-          <Link
-            href="/customer/login"
-            className="bg-brand text-white font-bold py-3 px-6 rounded-md hover:bg-brand/90 transition-colors"
-          >
-            লগইন করুন
-          </Link>
-        </div>
+      <div className="min-h-screen bg-[#eef3fb] flex items-center justify-center p-4 text-center">
+        <div><h2 className="text-xl font-extrabold mb-4">অভিযোগ দাখিল করতে অনুগ্রহ করে লগইন করুন</h2><Link href="/customer/login" className="bg-[#1f7cf0] text-white font-bold py-3 px-6 rounded-md">লগইন করুন</Link></div>
       </div>
     );
   }
-
   const res = await getComplaintsByCustomer(session.customer.customerId);
-  const complaints = res.success ? res.data || [] : [];
-  const lastComplaint = complaints.length > 0 ? complaints[0] : null;
+  const complaints = (res.success ? res.data || [] : []) as any[];
+  const latest = complaints[0];
+
+  const quick = [
+    { label: "নতুন অভিযোগ", sub: "এস্টাফের বিরুদ্ধে অভিযোগ দাখিল করুন", icon: FilePlus2, color: "bg-[#e0243f]", href: "/customer/complain/new" },
+    { label: "আমার অভিযোগ", sub: "আপনার করা অভিযোগ দেখুন", icon: Search, color: "bg-[#1f7cf0]", href: "/customer/complain/history" },
+    { label: "অভিযোগের অবস্থা", sub: "চলমান অভিযোগের আপডেট দেখুন", icon: ShieldCheck, color: "bg-[#1a9c4b]", href: latest ? `/customer/complain/doc/${latest.complaintId}` : "/customer/complain/history" },
+    { label: "অভিযোগ সংক্রান্ত নির্দেশিকা", sub: "কিভাবে অভিযোগ করবেন জানুন", icon: Info, color: "bg-[#8b3fe8]", href: "/customer/support" },
+  ];
 
   return (
     <CustomerLayout>
-      <div className="space-y-2 pb-20">
-        {/* Header Title */}
-        <div className="flex items-center justify-between border-b border-gray-200/60 py-4">
-          <h1 className="text-xl sm:text-2xl font-black text-brand px-4 tracking-tight">
-            অভিযোগ ড্যাশবোর্ড
-          </h1>
+      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-24 text-[#16213a]">
+        {/* Hero */}
+        <section className="relative overflow-hidden rounded-md bg-[linear-gradient(105deg,#e6efff_0%,#f5f8ff_60%,#1259c9_100%)] border border-[#cfe0fb] p-3 shadow-[0_6px_18px_rgba(11,61,145,0.10)]">
+          <span className="absolute right-3 top-3 w-[26%] rounded-md bg-[#1f7cf0] text-white text-center font-extrabold text-[clamp(11px,3.2vw,14px)] leading-snug p-2">আপনার কথাই আমাদের শক্তি</span>
+          <ShieldCheck size={44} className="absolute right-5 bottom-3 text-white drop-shadow" fill="#1f7cf0" />
+          <div className="flex items-center gap-2.5 pr-[28%]">
+            <span className="size-12 rounded-full bg-[#1f7cf0] text-white flex items-center justify-center shrink-0"><User size={26} /></span>
+            <span className="text-[clamp(18px,5.4vw,24px)] font-extrabold text-[#0b3d91] leading-tight">এস্টাফের বিরুদ্ধে কাস্টমার অভিযোগ</span>
+          </div>
+          <p className="mt-2 text-[12.5px] font-semibold text-[#3d4a63] leading-relaxed pr-[28%]">আপনার অভিজ্ঞতা আমাদের জন্য গুরুত্বপূর্ণ। এস্টাফের আচরণ সম্পর্কে অভিযোগ করুন, আমরা দ্রুত ব্যবস্থা নিচ্ছি!</p>
+          <Link href="/customer/complain/new" className="mt-3 inline-flex items-center gap-2 h-10 px-4 rounded-md bg-[#e0243f] text-white text-[13px] font-extrabold shadow-[0_6px_14px_rgba(224,36,63,0.35)]"><FilePlus2 size={16} />অভিযোগ করুন<ChevronRight size={14} /></Link>
+        </section>
+
+        {/* Quick tiles */}
+        <div className="rounded-md bg-[#e8f1ff] border border-[#cfe0fb] p-2 grid grid-cols-4 divide-x divide-[#cfe0fb]">
+          {quick.map((q) => (
+            <Link key={q.label} href={q.href} className="flex flex-col items-center text-center gap-1 px-1">
+              <span className={`size-11 rounded-full ${q.color} text-white flex items-center justify-center`}><q.icon size={20} /></span>
+              <span className="text-[11px] font-extrabold leading-tight">{q.label}</span>
+              <span className="text-[9.5px] font-semibold text-[#5b6784] leading-tight">{q.sub}</span>
+              <span className={`size-5 rounded-full ${q.color} text-white flex items-center justify-center`}><ChevronRight size={11} strokeWidth={3} /></span>
+            </Link>
+          ))}
         </div>
 
-        {/* Top Action Buttons (Dashboard Style) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 px-2">
-          <Link
-            href="/customer/complain/new"
-            className="flex items-center justify-center gap-3 bg-emerald-50 hover:bg-emerald-100/80 text-emerald-700 font-black py-4 px-6 rounded-xl border border-emerald-100 transition-all shadow-sm active:scale-[0.98]"
-          >
-            <PlusCircle size={20} className="text-emerald-600" />
-            <span className="text-sm">নতুন অভিযোগ</span>
-          </Link>
-          <Link
-            href="/customer/complain/history"
-            className="flex items-center justify-center gap-3 bg-blue-50 hover:bg-blue-100/80 text-blue-700 font-black py-4 px-6 rounded-xl border border-blue-100 transition-all shadow-sm active:scale-[0.98]"
-          >
-            <FileText size={20} className="text-blue-600" />
-            <span className="text-sm">অভিযোগ তালিকা</span>
-          </Link>
-          <Link
-            href="/customer/profile"
-            className="flex items-center justify-center gap-3 bg-rose-50 hover:bg-rose-100/80 text-rose-700 font-black py-4 px-6 rounded-xl border border-rose-100 transition-all shadow-sm active:scale-[0.98]"
-          >
-            <Home size={20} className="text-rose-600" />
-            <span className="text-sm">ড্যাশবোর্ড</span>
-          </Link>
+        {/* Recent */}
+        <div className="flex items-center justify-between px-0.5 mt-1">
+          <span className="flex items-center gap-2 text-[16px] font-extrabold"><span className="size-8 rounded-md bg-[#0b3d91] text-white flex items-center justify-center"><ClipboardCheck size={16} /></span>সাম্প্রতিক অভিযোগ</span>
+          <Link href="/customer/complain/history" className="inline-flex items-center gap-1 h-8 px-3 rounded-md bg-[#e8f1ff] text-[#1b6fd6] text-[12px] font-bold">সব দেখুন<ChevronRight size={13} /></Link>
         </div>
+        {complaints.length === 0 ? (
+          <div className="rounded-md bg-white border border-[#dfe6f2] p-6 text-center text-[13px] font-medium text-[#5b6784]">কোনো সাম্প্রতিক অভিযোগ পাওয়া যায়নি।</div>
+        ) : (
+          complaints.slice(0, 5).map((c, i) => {
+            const m = statusMeta(c.status);
+            return (
+              <Link key={c.complaintId} href={`/customer/complain/doc/${c.complaintId}`} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-start gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+                <span className={`size-12 rounded-full ${avatarTones[i % avatarTones.length]} text-white flex items-center justify-center shrink-0`}><User size={24} /></span>
+                <span className="flex flex-col gap-0.5 min-w-0 flex-1">
+                  <span className="text-[14px] font-extrabold truncate">{c.staff?.name || "প্রযোজ্য নয়"}</span>
+                  <span className="text-[11.5px] font-semibold text-[#5b6784]">ID: {c.complaintId}</span>
+                  <span className="text-[12px] text-[#3d4a63] line-clamp-2">{c.subject}{c.description ? ` — ${c.description}` : ""}</span>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#5b6784] mt-0.5"><Calendar size={12} />{formatDate(c.createdAt)}</span>
+                </span>
+                <span className="flex flex-col items-end gap-2 shrink-0">
+                  <span className={clsx("inline-flex items-center gap-1 h-7 px-2 rounded-md text-[11px] font-extrabold", m.cls)}><m.icon size={12} />{m.label}</span>
+                  <ChevronRight size={16} className="text-[#9aa4b8]" />
+                </span>
+              </Link>
+            );
+          })
+        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Last Complaint Box */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col">
-            <h2 className="text-base font-black text-gray-900 border-b border-gray-100 pb-3.5 mb-4">
-              সর্বশেষ অভিযোগ
-            </h2>
-
-            {lastComplaint ? (
-              <div className="flex-1 flex flex-col space-y-5">
-                {/* Vertical Status Tracker */}
-                <div className="space-y-4 pt-1">
-                  <div className="flex flex-col gap-4 max-w-[280px] mx-auto w-full">
-                    {/* Step 1 */}
-                    <div className="flex items-center gap-3">
-                      <div className="size-8 rounded-full border-2 border-emerald-500 bg-emerald-50 flex items-center justify-center shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.1)]">
-                        <CheckCircle size={15} className="text-emerald-500" />
-                      </div>
-                      <div className="flex-1 bg-emerald-50/40 border border-emerald-100/80 rounded-xl px-3 py-1.5">
-                        <p className="font-black text-emerald-800 text-sm uppercase tracking-wider">
-                          অপেক্ষমাণ
-                        </p>
-                        <p className="text-xs text-emerald-600 font-extrabold">
-                          {formatDate(lastComplaint.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Step 2 */}
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`size-8 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                          lastComplaint.status !== "under_trial"
-                            ? "border-emerald-500 bg-emerald-50 shadow-[0_0_8px_rgba(16,185,129,0.1)]"
-                            : "border-gray-200 bg-white"
-                        }`}
-                      >
-                        <CheckCircle
-                          size={15}
-                          className={
-                            lastComplaint.status !== "under_trial"
-                              ? "text-emerald-500"
-                              : "text-gray-300"
-                          }
-                        />
-                      </div>
-                      <div
-                        className={`flex-1 border rounded-xl px-3 py-1.5 ${
-                          lastComplaint.status !== "under_trial"
-                            ? "bg-emerald-50/40 border-emerald-100/80"
-                            : "bg-gray-55 border-gray-100 opacity-60"
-                        }`}
-                      >
-                        <p
-                          className={`font-black text-sm uppercase tracking-wider ${
-                            lastComplaint.status !== "under_trial"
-                              ? "text-emerald-800"
-                              : "text-gray-400"
-                          }`}
-                        >
-                          প্রক্রিয়াধীন
-                        </p>
-                        <p
-                          className={`text-xs font-extrabold ${
-                            lastComplaint.status !== "under_trial"
-                              ? "text-emerald-600"
-                              : "text-gray-300"
-                          }`}
-                        >
-                          {lastComplaint.status !== "under_trial"
-                            ? "পর্যালোচনায়"
-                            : "অপেক্ষায়"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Step 3 */}
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`size-8 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                          lastComplaint.status === "hearing" ||
-                          lastComplaint.status === "completed"
-                            ? "border-emerald-500 bg-emerald-50 shadow-[0_0_8px_rgba(16,185,129,0.1)]"
-                            : "border-gray-200 bg-white"
-                        }`}
-                      >
-                        <CheckCircle
-                          size={15}
-                          className={
-                            lastComplaint.status === "hearing" ||
-                            lastComplaint.status === "completed"
-                              ? "text-emerald-500"
-                              : "text-gray-300"
-                          }
-                        />
-                      </div>
-                      <div
-                        className={`flex-1 border rounded-xl px-3 py-1.5 ${
-                          lastComplaint.status === "hearing" ||
-                          lastComplaint.status === "completed"
-                            ? "bg-emerald-50/40 border-emerald-100/80"
-                            : "bg-gray-55 border-gray-100 opacity-60"
-                        }`}
-                      >
-                        <p
-                          className={`font-black text-sm uppercase tracking-wider ${
-                            lastComplaint.status === "hearing" ||
-                            lastComplaint.status === "completed"
-                              ? "text-emerald-800"
-                              : "text-gray-400"
-                          }`}
-                        >
-                          শুনানি
-                        </p>
-                        <p
-                          className={`text-xs font-extrabold ${
-                            lastComplaint.status === "hearing" ||
-                            lastComplaint.status === "completed"
-                              ? "text-emerald-600"
-                              : "text-gray-300"
-                          }`}
-                        >
-                          {lastComplaint.status === "hearing" ||
-                          lastComplaint.status === "completed"
-                            ? "कर्मকর্তা তলব"
-                            : "পরিকল্পিত"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Step 4 */}
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`size-8 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                          lastComplaint.status === "completed"
-                            ? "border-emerald-500 bg-emerald-50 shadow-[0_0_8px_rgba(16,185,129,0.1)]"
-                            : "border-gray-200 bg-white"
-                        }`}
-                      >
-                        <CheckCircle
-                          size={15}
-                          className={
-                            lastComplaint.status === "completed"
-                              ? "text-emerald-500"
-                              : "text-gray-300"
-                          }
-                        />
-                      </div>
-                      <div
-                        className={`flex-1 border rounded-xl px-3 py-1.5 ${
-                          lastComplaint.status === "completed"
-                            ? "bg-emerald-600 text-white border-transparent"
-                            : "bg-gray-55 border-gray-100 opacity-60"
-                        }`}
-                      >
-                        <p
-                          className={`font-black text-sm uppercase tracking-wider ${
-                            lastComplaint.status === "completed"
-                              ? "text-white"
-                              : "text-gray-400"
-                          }`}
-                        >
-                          নিষ্পত্তি
-                        </p>
-                        <p
-                          className={`text-xs font-extrabold ${
-                            lastComplaint.status === "completed"
-                              ? "text-white/80"
-                              : "text-gray-300"
-                          }`}
-                        >
-                          {lastComplaint.status === "completed"
-                            ? "সম্পন্ন"
-                            : "চূড়ান্ত ধাপ"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2.5 flex-1 bg-gray-50/50 p-4 rounded-xl border border-gray-100/80">
-                  <div className="text-sm">
-                    <span className="font-extrabold text-gray-400 uppercase tracking-wider block mb-0.5">
-                      ট্র্যাকিং নম্বর:
-                    </span>
-                    <span className="text-gray-800 font-bold font-mono">
-                      {lastComplaint.complaintId}
-                    </span>
-                  </div>
-                  <div className="text-sm">
-                    <span className="font-extrabold text-gray-400 uppercase tracking-wider block mb-0.5">
-                      অভিযুক্ত কর্মী:
-                    </span>
-                    <span className="text-gray-800 font-bold">
-                      {lastComplaint.staff?.name || "প্রযোজ্য নয়"}
-                    </span>
-                  </div>
-                  <div className="text-sm">
-                    <span className="font-extrabold text-gray-400 uppercase tracking-wider block mb-0.5">
-                      বিষয়:
-                    </span>
-                    <span className="text-gray-800 font-bold">
-                      {lastComplaint.subject}
-                    </span>
-                  </div>
-                  {lastComplaint.serviceId && (
-                    <div className="text-sm">
-                      <span className="font-extrabold text-gray-400 uppercase tracking-wider block mb-0.5">
-                        সেবা আইডি:
-                      </span>
-                      <span className="text-gray-800 font-bold font-mono">
-                        {lastComplaint.serviceId}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between pt-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-black text-amber-800 bg-amber-100 border border-amber-200/50 px-2 py-1 rounded-md uppercase tracking-wider">
-                      আবেদনের অবস্থা
-                    </span>
-                    <span className="text-sm font-black text-gray-700 bg-gray-100 border border-gray-200 px-2 py-1 rounded-md  tracking-wider capitalize">
-                      {lastComplaint.status.replace("_", " ")}
-                    </span>
-                  </div>
-                  <Link
-                    href={`/customer/complain/doc/${lastComplaint.complaintId}`}
-                    className="bg-brand hover:bg-brand-hover text-white font-extrabold py-2 px-3.5 rounded-lg transition-all text-sm   shadow-sm active:scale-95"
-                  >
-                    বিস্তারিত দেখুন
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-400 font-medium py-12 text-sm">
-                কোনো সাম্প্রতিক অভিযোগ পাওয়া যায়নি।
-              </div>
-            )}
-          </div>
-
-          {/* Hearing Notice / Recent Summary Table */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col">
-            <h2 className="text-base font-black text-gray-900 border-b border-gray-100 pb-3.5 mb-4">
-              সাম্প্রতিক অভিযোগ নোটিশ
-            </h2>
-
-            {complaints.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="py-2.5 px-2 text-sm font-black text-gray-400 uppercase tracking-wider">
-                        অভিযুক্ত কর্মী
-                      </th>
-                      <th className="py-2.5 px-2 text-sm font-black text-gray-400 uppercase tracking-wider">
-                        তারিখ
-                      </th>
-                      <th className="py-2.5 px-2 text-sm font-black text-gray-400 uppercase tracking-wider">
-                        অবস্থা
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {complaints.slice(0, 4).map((c: any) => (
-                      <tr
-                        key={c.complaintId}
-                        className="hover:bg-gray-50/50 transition-colors"
-                      >
-                        <td className="py-3 px-2 text-sm font-bold text-gray-800">
-                          {c.staff?.name}
-                        </td>
-                        <td className="py-3 px-2 text-sm text-gray-500">
-                          {formatDate(c.createdAt)}
-                        </td>
-                        <td className="py-3 px-2">
-                          <span
-                            className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase border ${
-                              c.status === "completed"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                                : c.status === "hearing"
-                                  ? "bg-amber-50 text-amber-700 border-amber-100"
-                                  : "bg-blue-50 text-blue-700 border-blue-100"
-                            }`}
-                          >
-                            {c.status.replace("_", " ")}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-400 font-medium py-12 text-sm">
-                কোনো নোটিশ পাওয়া যায়নি।
-              </div>
-            )}
-          </div>
+        {/* Support */}
+        <div className="rounded-md bg-[#e8f1ff] border border-[#cfe0fb] p-2.5 flex items-center gap-3">
+          <span className="size-12 rounded-full bg-[#0b3d91] text-white flex items-center justify-center shrink-0"><Headset size={24} /></span>
+          <span className="flex flex-col min-w-0 flex-1 leading-tight"><span className="text-[14px] font-extrabold">সহায়তা প্রয়োজন?</span><span className="text-[11.5px] font-semibold text-[#3d4a63]">অভিযোগ দাখিল, স্ট্যাটাস চেক বা অন্য কোনো সহায়তার জন্য আমাদের সাপোর্ট টিমের সাথে যোগাযোগ করুন।</span></span>
+          <a href={`tel:${contactDetails.customerCare}`} className="shrink-0 inline-flex items-center gap-1.5 h-10 px-3 rounded-md bg-[#1f7cf0] text-white text-[12px] font-extrabold"><PhoneCall size={14} />সাপোর্ট কল করুন</a>
         </div>
       </div>
     </CustomerLayout>

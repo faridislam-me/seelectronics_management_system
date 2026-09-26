@@ -5,9 +5,17 @@ import { CustomerAppHeader, CustomerAppNav } from "@/components/ui/CustomerAppCh
 import { AppError } from "@/utils";
 import clsx from "clsx";
 import {
-  BatteryCharging, Calendar, CheckCircle2, ChevronRight, ClipboardList, Clock, FileText, Headset, History, Home, Info, ListChecks, Navigation, Plus, Settings, User, Wrench, XCircle, Zap,
+  Calendar, CheckCircle2, ChevronRight, ClipboardList, Clock, FileText, Headset, History, Home, Info, ListChecks, Navigation, Plus, Settings, User, Wrench, XCircle, Zap,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+
+const PRODUCT_IMAGES: Record<string, string> = {
+  ips: "/products/ips.jpg",
+  battery: "/products/battery.jpg",
+  stabilizer: "/products/stabilizer.jpg",
+  others: "/products/others.jpg",
+};
 import { redirect } from "next/navigation";
 
 export default async function CustomerServicesPage() {
@@ -51,7 +59,7 @@ export default async function CustomerServicesPage() {
             const statusCls = done ? "bg-[#e9f9ef] text-[#178a42] border-[#bfe8cd]" : canceled ? "bg-[#ffe9ec] text-[#c81f38] border-[#f7c3ca]" : "bg-[#fff6e3] text-[#b8620b] border-[#f5dfa0]";
             const statusLabel = done ? "COMPLETED" : canceled ? "CANCELED" : "PROCESSING";
             const isInstall = service.type === "install";
-            const ProductIcon = service.productType === "battery" ? BatteryCharging : Zap;
+            const productImg = PRODUCT_IMAGES[service.productType as string] ?? PRODUCT_IMAGES.others;
             const date = new Date(service.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }).toUpperCase();
 
             return (
@@ -66,7 +74,7 @@ export default async function CustomerServicesPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className="size-[76px] rounded-md bg-[#f5f7fb] border border-[#e6ebf4] text-[#0b3d91] flex items-center justify-center shrink-0"><ProductIcon size={34} strokeWidth={1.8} /></span>
+                  <span className="relative size-[76px] rounded-md bg-white border border-[#e6ebf4] overflow-hidden shrink-0"><Image src={productImg} alt={service.productType} fill sizes="76px" className="object-contain p-1" /></span>
                   <span className="flex flex-col gap-1.5 min-w-0 flex-1">
                     <span className="text-[clamp(13px,3.8vw,15px)] font-extrabold leading-tight">{service.productModel}</span>
                     <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] font-semibold text-[#5b6784]">

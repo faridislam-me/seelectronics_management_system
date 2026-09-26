@@ -2,13 +2,14 @@
 
 import { createService } from "@/actions";
 import geoData from "@/assets/data/geo-data.json";
-import { InputField } from "@/components";
+import PageBanner from "@/components/ui/PageBanner";
 import { batteryTypes, contactDetails, ipsBrands, productPowerRatings, productTypes, stabilizerBrands, stabilizerPowerRatings } from "@/constants";
 import { useThemeColor } from "@/hooks";
 import clsx from "clsx";
-import { Box, Calendar, CheckCircle2, ChevronRight, ClipboardList, FileText, Headset, Home, ImagePlus, LucideIcon, MapPin, Phone, Send, Settings, ShieldCheck, Truck, User, Wrench } from "lucide-react";
+import { Box, Building2, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, ClipboardList, FileText, Gauge, Headset, Home, ImagePlus, LucideIcon, Mail, Map as MapIcon, MapPin, Phone, Send, Settings, ShieldCheck, Truck, UploadCloud, User, Wrench, X, Zap } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 const requirementsList: { title: string; description: string; icon: LucideIcon }[] = [
@@ -69,30 +70,95 @@ const steps = ["বেসিক তথ্য", "পণ্যের তথ্য"
 
 function AppHeader({ homeHref }: { homeHref: string }) {
   return (
-    <header className="bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] text-white px-3 h-[60px] flex items-center gap-2.5 rounded-b-[16px]">
-      <Link href={homeHref} aria-label="Back" className="size-10 rounded-full bg-white/15 border border-white/20 flex items-center justify-center shrink-0"><Home size={19} /></Link>
-      <span className="text-[24px] font-extrabold italic tracking-[-1px] leading-none">SE</span>
+    <header className="bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] text-white px-3 h-[56px] flex items-center gap-2.5">
+      <Link href={homeHref} aria-label="Back" className="size-9 rounded-full bg-white/15 border border-white/20 flex items-center justify-center shrink-0"><Home size={18} /></Link>
       <span className="flex flex-col leading-tight min-w-0 flex-1"><span className="text-[16px] font-extrabold truncate">SE Electronics</span><span className="text-[10.5px] text-white/85 font-medium truncate">Smart Power | Better Tomorrow</span></span>
       <a href={`tel:${contactDetails.customerCare}`} className="inline-flex items-center gap-1.5 text-[11px] font-bold leading-tight"><Headset size={20} /><span>Service<br />Support</span></a>
     </header>
   );
 }
 
-function SectionCard({ n, icon: Icon, title, children }: { n: number; icon: LucideIcon; title: string; children: React.ReactNode }) {
+function SectionCard({ id, n, title, children }: { id: string; n: number; title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-md bg-white border border-[#dfe6f2] overflow-hidden shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
-      <div className="flex items-center gap-2.5 px-3 py-2.5 bg-[#e8f1ff] border-b border-[#cfe0fb]">
-        <span className="size-8 rounded-full bg-[#0b3d91] text-white text-[13px] font-extrabold flex items-center justify-center">{n}</span>
-        <span className="text-[15px] font-extrabold text-[#16213a]">{title}</span>
-        <Icon size={16} className="ml-auto text-[#1f7cf0]" />
+    <section id={id} data-step={n - 1} className="scroll-mt-[76px] rounded-md bg-white border border-[#dfe6f2] overflow-hidden shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+      <div className="flex items-center gap-2.5 px-2.5 py-2 bg-[#eef4fd] border-b border-[#dfe8f7]">
+        <span className="size-7 rounded-full bg-[#0b3d91] text-white text-[13px] font-extrabold flex items-center justify-center">{n}</span>
+        <span className="text-[15px] font-extrabold text-[#0b3d91]">{title}</span>
       </div>
-      <div className="p-3 flex flex-col gap-3">{children}</div>
+      <div className="p-2.5 flex flex-col gap-2.5">{children}</div>
     </section>
   );
 }
 
-const selectCls = "w-full h-11 rounded-md border border-[#dfe6f2] bg-[#f8fafd] px-3 text-[14px] font-semibold text-[#16213a] outline-none focus:border-[#1f7cf0] focus:ring-1 focus:ring-[#1f7cf0]";
-const Label = ({ text, req }: { text: string; req?: boolean }) => <span className="text-[13px] font-bold text-[#16213a]">{text} {req && <span className="text-[#e0243f]">*</span>}</span>;
+const boxCls = "w-full h-10 rounded-md border border-[#d9e2f0] bg-white pl-9 pr-2.5 text-[14px] font-semibold text-[#16213a] placeholder:font-medium placeholder:text-[#9aa4b8] outline-none focus:border-[#1f7cf0] focus:ring-1 focus:ring-[#1f7cf0]";
+const Label = ({ text, req }: { text: string; req?: boolean }) => <span className="text-[12.5px] font-bold text-[#16213a]">{text} {req && <span className="text-[#e0243f]">*</span>}</span>;
+
+/** Text input with its icon inside the box. */
+function Field({ icon: Icon, label, req = true, className = "", ...props }: { icon: LucideIcon; label: string; req?: boolean } & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <label className={clsx("flex flex-col gap-1 min-w-0", className)}>
+      <Label text={label} req={req} />
+      <span className="relative">
+        <Icon size={17} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#1f5fc9] pointer-events-none" />
+        <input {...props} required={req} className={boxCls} />
+      </span>
+    </label>
+  );
+}
+
+/** Select with its icon inside the box. */
+function SelectField({ icon: Icon, label, req = true, options, format, className = "", ...props }: { icon: LucideIcon; label: string; req?: boolean; options: readonly string[]; format?: (v: string) => string } & React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <label className={clsx("flex flex-col gap-1 min-w-0", className)}>
+      <Label text={label} req={req} />
+      <span className="relative">
+        <Icon size={17} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#1f5fc9] pointer-events-none" />
+        <select {...props} required={req} className={clsx(boxCls, "appearance-none pr-7")}>
+          <option value="">নির্বাচন করুন</option>
+          {options.map((o) => <option key={o} value={o}>{format ? format(o) : o}</option>)}
+        </select>
+        <ChevronDown size={16} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#5b6784] pointer-events-none" />
+      </span>
+    </label>
+  );
+}
+
+/** Compact dashed upload tile with preview. */
+function UploadBox({ name, label }: { name: string; label: string }) {
+  const [preview, setPreview] = useState<string | null>(null);
+  const ref = useRef<HTMLInputElement | null>(null);
+  const maxMb = Number(process.env.NEXT_PUBLIC_MAX_IMAGE_SIZE_MB || 2);
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return setPreview(null);
+    if (file.size > maxMb * 1024 * 1024) {
+      toast.error(`ফাইল ${maxMb} MB-এর বেশি হতে পারবে না!`);
+      e.target.value = "";
+      return setPreview(null);
+    }
+    setPreview(URL.createObjectURL(file));
+  };
+  return (
+    <div className={clsx("relative h-[100px] rounded-md border border-dashed overflow-hidden", preview ? "border-[#1f7cf0]" : "border-[#b9cdee] bg-[#f7faff]")}>
+      {preview ? (
+        <>
+          <Image src={preview} alt={label} fill className="object-cover" />
+          <span className="absolute inset-x-0 bottom-0 bg-black/55 text-white text-[10px] font-bold text-center py-0.5 truncate px-1">{label}</span>
+          <button type="button" aria-label="Remove" onClick={() => { setPreview(null); if (ref.current) ref.current.value = ""; }} className="absolute top-1 right-1 z-20 size-6 rounded-md bg-black/55 text-white flex items-center justify-center"><X size={14} /></button>
+        </>
+      ) : (
+        <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1 text-center">
+          <UploadCloud size={22} className="text-[#1f5fc9]" />
+          <span className="text-[11px] font-bold text-[#16213a] leading-tight">{label} <span className="text-[#e0243f]">*</span></span>
+          <span className="text-[9px] font-medium text-[#5b6784] leading-tight">(JPG, PNG বা WebP - Max {maxMb}MB)</span>
+        </span>
+      )}
+      <input ref={ref} type="file" name={name} accept="image/png, image/jpeg, image/webp" required={!preview} onChange={onChange} className={clsx("absolute inset-0 opacity-0 cursor-pointer", preview ? "z-10" : "z-20")} />
+    </div>
+  );
+}
+
+const sectionIds = ["sr-basic", "sr-product", "sr-issue", "sr-photos", "sr-submit"];
 
 export default function GetServiceForm({ preferredStaffId, customerId, customerData }: { preferredStaffId?: string; customerId?: string; customerData?: any }) {
   useThemeColor("#0b3d91");
@@ -101,15 +167,36 @@ export default function GetServiceForm({ preferredStaffId, customerId, customerD
   const [agreed, setAgreed] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [issueLen, setIssueLen] = useState(0);
+  const [activeStep, setActiveStep] = useState(0);
+  const lockUntil = useRef(0);
   const [selectedDistrict, setSelectedDistrict] = useState(customerData?.district || "");
   const [selectedProductType, setSelectedProductType] = useState("");
   const districts = Object.keys(geoData);
   const thanas = geoData[selectedDistrict as keyof typeof geoData] || [];
   const homeHref = customerId ? "/customer/profile" : "/";
+  const cap = (v: string) => v.charAt(0).toUpperCase() + v.slice(1);
 
   useEffect(() => {
     if (!isPending && response && !response.success) toast.error(response.message);
   }, [isPending]);
+
+  // Highlight the step whose section is currently under the sticky step bar.
+  useEffect(() => {
+    if (showToC) return;
+    const onScroll = () => {
+      if (Date.now() < lockUntil.current) return;
+      let current = 0;
+      sectionIds.forEach((id, i) => {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= 140) current = i;
+      });
+      const last = document.getElementById(sectionIds[sectionIds.length - 1]);
+      if (last && window.innerHeight + window.scrollY >= document.body.scrollHeight - 4 && last.getBoundingClientRect().top < window.innerHeight * 0.5) current = sectionIds.length - 1;
+      setActiveStep(current);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [showToC]);
 
   if (response?.success) {
     return (
@@ -168,97 +255,102 @@ export default function GetServiceForm({ preferredStaffId, customerId, customerD
     );
   }
 
+  const goToStep = (i: number) => {
+    setActiveStep(i);
+    lockUntil.current = Date.now() + 1200;
+    document.getElementById(sectionIds[i])?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-6">
       <AppHeader homeHref={homeHref} />
       <div className="px-2 pt-2 flex flex-col gap-2.5 max-w-[720px] mx-auto">
-        {/* Hero */}
-        <section className="relative overflow-hidden rounded-md bg-[#0b3d91] bg-[linear-gradient(105deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-3 shadow-[0_10px_30px_rgba(10,47,112,0.35)]">
-          <span className="absolute -right-8 -top-10 size-44 rounded-full bg-white/10" />
-          <span className="absolute right-3 top-3 w-[30%] text-right font-extrabold text-[clamp(11px,3.2vw,14px)] leading-snug text-white">আপনার সমস্যার<br />সমাধান আমাদের<br />প্রতিশ্রুতি</span>
-          <div className="relative flex items-center gap-3 pr-[32%]">
-            <span className="size-14 rounded-full bg-white/15 border border-white/25 flex items-center justify-center shrink-0"><Wrench size={28} /></span>
-            <span className="flex flex-col leading-tight"><span className="text-[13px] font-bold text-white/90">Online Service</span><span className="text-[clamp(22px,6.4vw,28px)] font-extrabold leading-none text-[#7fd1ff]">Request</span></span>
-          </div>
-          <p className="relative mt-2 text-[12.5px] font-semibold text-white/95 pr-[32%]">ঘরে বসেই নিন দ্রুত ও নির্ভরযোগ্য সার্ভিস সেবা</p>
-          <p className="relative text-[11.5px] text-white/85">SE Electronics আপনার পাশে সবসময় · হেল্পলাইন {contactDetails.customerCare}</p>
-        </section>
+        <PageBanner src="/banners/service-request.jpg" alt="Online Service Request - ঘরে বসেই নিন দ্রুত ও নির্ভরযোগ্য সার্ভিস সেবা" width={757} height={211} href={`tel:${contactDetails.customerCare}`} external />
 
-        {/* Steps */}
-        <div className="rounded-md bg-white border border-[#dfe6f2] px-2 py-2.5 flex items-start">
-          {steps.map((s, i) => (
-            <div key={s} className="flex items-start flex-1 last:flex-none">
-              <div className="flex flex-col items-center gap-1 w-14">
-                <span className={clsx("size-8 rounded-full text-[12px] font-extrabold flex items-center justify-center border-2", i === 0 ? "bg-[#1f7cf0] border-[#1f7cf0] text-white shadow-[0_0_0_4px_#dbeafe]" : "bg-white border-[#d7deea] text-[#5b6784]")}>{i + 1}</span>
-                <span className="text-[10px] font-bold text-center leading-tight">{s}</span>
-              </div>
-              {i < steps.length - 1 && <span className="flex-1 h-0.5 bg-[#e3e8f1] mt-4 -mx-3" />}
-            </div>
-          ))}
-        </div>
+        {/* Steps (sticky, clickable) */}
+        <nav className="sticky top-0 z-30 -mx-2 px-2 py-1.5 bg-[#eef3fb]/95 backdrop-blur-sm">
+          <div className="rounded-md bg-white border border-[#dfe6f2] px-1.5 py-2 flex items-start shadow-[0_2px_8px_rgba(11,61,145,0.05)]">
+            {steps.map((st, i) => {
+              const active = i === activeStep;
+              const done = i < activeStep;
+              return (
+                <div key={st} className="flex items-start flex-1 last:flex-none">
+                  <button type="button" onClick={() => goToStep(i)} className="flex flex-col items-center gap-1 w-[58px]">
+                    <span className={clsx("size-8 rounded-full text-[12px] font-extrabold flex items-center justify-center border-2 transition-all", active ? "bg-[#1f7cf0] border-[#1f7cf0] text-white shadow-[0_0_0_4px_#dbeafe]" : done ? "bg-[#0b3d91] border-[#0b3d91] text-white" : "bg-white border-[#d7deea] text-[#5b6784]")}>{done ? <Check size={15} strokeWidth={3} /> : i + 1}</span>
+                    <span className={clsx("text-[10px] font-bold text-center leading-tight", active ? "text-[#1f7cf0]" : "text-[#3d4a63]")}>{st}</span>
+                  </button>
+                  {i < steps.length - 1 && <span className={clsx("flex-1 h-0.5 mt-4 -mx-2.5", done ? "bg-[#0b3d91]" : "bg-[#e3e8f1]")} />}
+                </div>
+              );
+            })}
+          </div>
+        </nav>
 
         <form action={createServiceAction} className="flex flex-col gap-2.5">
           <input type="hidden" name="staffId" value={preferredStaffId || ""} />
           <input type="hidden" name="customerId" value={customerId || ""} />
 
-          <SectionCard n={1} icon={User} title="বেসিক তথ্য">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex gap-2.5"><span className="size-10 rounded-full bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center shrink-0 mt-6"><User size={18} /></span><div className="flex-1"><InputField label="নাম" name="customerName" placeholder="আপনার নাম লিখুন" defaultValue={customerData?.name || ""} /></div></div>
-              <div className="flex gap-2.5"><span className="size-10 rounded-full bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center shrink-0 mt-6"><Phone size={18} /></span><div className="flex-1"><InputField label="মোবাইল নাম্বার" name="customerPhone" type="tel" placeholder="মোবাইল নাম্বার লিখুন" defaultValue={customerData?.phone || ""} /></div></div>
+          <SectionCard id={sectionIds[0]} n={1} title="বেসিক তথ্য">
+            <div className="grid grid-cols-2 gap-2">
+              <Field icon={User} label="নাম" name="customerName" placeholder="আপনার নাম লিখুন" defaultValue={customerData?.name || ""} />
+              <Field icon={Phone} label="মোবাইল নাম্বার" name="customerPhone" type="tel" placeholder="মোবাইল নাম্বার লিখুন" defaultValue={customerData?.phone || ""} />
             </div>
-            <div className="flex gap-2.5"><span className="size-10 rounded-full bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center shrink-0 mt-6"><MapPin size={18} /></span><div className="flex-1"><InputField label="বর্তমান ঠিকানা" name="customerAddress" placeholder="বাড়ি/এলাকা/জেলা লিখুন" defaultValue={customerData?.address || ""} /></div></div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:pl-0 pl-[50px]">
-              <label className="flex flex-col gap-1"><Label text="জেলা" req /><select required name="customerAddressDistrict" value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)} className={selectCls}><option value="">নির্বাচন করুন</option>{districts.map((d) => <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>)}</select></label>
-              <label className="flex flex-col gap-1"><Label text="থানা" req /><select required name="customerAddressPoliceStation" defaultValue={customerData?.policeStation || ""} className={selectCls}><option value="">নির্বাচন করুন</option>{thanas.map((t) => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}</select></label>
-              <InputField label="পোস্ট অফিস" name="customerAddressPostOffice" defaultValue={customerData?.postOffice || ""} />
+            <Field icon={MapPin} label="বর্তমান ঠিকানা" name="customerAddress" placeholder="বাড়ি/এলাকা/জেলা লিখুন" defaultValue={customerData?.address || ""} />
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <SelectField icon={MapIcon} label="জেলা" name="customerAddressDistrict" value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)} options={districts} format={cap} />
+              <SelectField icon={Building2} label="থানা" name="customerAddressPoliceStation" defaultValue={customerData?.policeStation || ""} options={thanas} format={cap} />
+              <Field icon={Mail} label="পোস্ট অফিস" name="customerAddressPostOffice" placeholder="পোস্ট অফিস" defaultValue={customerData?.postOffice || ""} className="col-span-2 sm:col-span-1" />
             </div>
           </SectionCard>
 
-          <SectionCard n={2} icon={Box} title="পণ্যের তথ্য">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex gap-2.5"><span className="size-10 rounded-full bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center shrink-0 mt-6"><Box size={18} /></span><label className="flex-1 flex flex-col gap-1"><Label text="পণ্যের ধরণ" req /><select required name="productType" value={selectedProductType} onChange={(e) => setSelectedProductType(e.target.value)} className={selectCls}><option value="">নির্বাচন করুন</option>{productTypes.map((t) => <option key={t} value={t}>{t.toUpperCase()}</option>)}</select></label></div>
-              <div className="flex gap-2.5"><span className="size-10 rounded-full bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center shrink-0 mt-6"><FileText size={18} /></span><div className="flex-1"><InputField label="মেমো নং" name="memoNumber" placeholder="লিখুন (যদি জানা থাকে)" required={false} /></div></div>
+          <SectionCard id={sectionIds[1]} n={2} title="পণ্যের তথ্য">
+            <div className="grid grid-cols-2 gap-2">
+              <SelectField icon={Box} label="পণ্যের ধরণ" name="productType" value={selectedProductType} onChange={(e) => setSelectedProductType(e.target.value)} options={productTypes} format={(t) => t.toUpperCase()} />
+              <Field icon={FileText} label="মেমো নং" name="memoNumber" placeholder="লিখুন (যদি জানা থাকে)" req={false} />
             </div>
             {(selectedProductType === "ips" || selectedProductType === "battery") && (
-              <label className="flex flex-col gap-1"><Label text="আইপিএস ব্র্যান্ড" req /><select required name="ipsBrand" className={selectCls}><option value="">নির্বাচন করুন</option>{ipsBrands.map((m) => <option key={m} value={m}>{m}</option>)}</select></label>
+              <SelectField icon={Zap} label="আইপিএস ব্র্যান্ড" name="ipsBrand" options={ipsBrands} />
             )}
             {selectedProductType && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {selectedProductType === "others" ? <InputField label="পণ্যের মডেল" name="productModel" required /> : (
-                  <label className="flex flex-col gap-1"><Label text="পণ্যের মডেল" req /><select required name="productModel" className={selectCls}><option value="">নির্বাচন করুন</option>{(selectedProductType === "stabilizer" ? stabilizerBrands : batteryTypes).map((m) => <option key={m} value={m}>{m}</option>)}</select></label>
+              <div className="grid grid-cols-2 gap-2">
+                {selectedProductType === "others" ? (
+                  <Field icon={Settings} label="পণ্যের মডেল" name="productModel" placeholder="মডেল লিখুন" />
+                ) : (
+                  <SelectField icon={Settings} label="পণ্যের মডেল" name="productModel" options={selectedProductType === "stabilizer" ? stabilizerBrands : batteryTypes} />
                 )}
-                {selectedProductType === "others" ? <InputField label="পণ্যের ওয়াট/ভিএ" name="powerRating" required /> : (
-                  <label className="flex flex-col gap-1"><Label text="পণ্যের ওয়াট/ভিএ" req /><select name="powerRating" className={selectCls}><option value="">নির্বাচন করুন</option>{(selectedProductType === "stabilizer" ? stabilizerPowerRatings : productPowerRatings).map((r) => <option key={r} value={r}>{r}</option>)}</select></label>
+                {selectedProductType === "others" ? (
+                  <Field icon={Gauge} label="পণ্যের ওয়াট/ভিএ" name="powerRating" placeholder="ওয়াট/ভিএ লিখুন" />
+                ) : (
+                  <SelectField icon={Gauge} label="পণ্যের ওয়াট/ভিএ" name="powerRating" req={false} options={selectedProductType === "stabilizer" ? stabilizerPowerRatings : productPowerRatings} />
                 )}
               </div>
             )}
           </SectionCard>
 
-          <SectionCard n={3} icon={FileText} title="সমস্যার বিবরণ">
-            <div className="flex gap-2.5">
-              <span className="size-10 rounded-full bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center shrink-0"><FileText size={18} /></span>
-              <label className="flex-1 relative">
-                <textarea required name="reportedIssue" maxLength={500} onChange={(e) => setIssueLen(e.target.value.length)} placeholder="সমস্যার বিস্তারিত লিখুন..." className="w-full min-h-[110px] rounded-md border border-[#dfe6f2] bg-[#f8fafd] p-3 text-[14px] outline-none focus:border-[#1f7cf0] focus:ring-1 focus:ring-[#1f7cf0]" />
-                <span className="absolute right-2 bottom-2 text-[11px] font-semibold text-[#9aa4b8]">{issueLen}/500</span>
-              </label>
+          <SectionCard id={sectionIds[2]} n={3} title="সমস্যার বিবরণ">
+            <label className="relative block">
+              <FileText size={17} className="absolute left-2.5 top-2.5 text-[#1f5fc9] pointer-events-none" />
+              <textarea required name="reportedIssue" maxLength={500} rows={3} onChange={(e) => setIssueLen(e.target.value.length)} placeholder="সমস্যার বিস্তারিত লিখুন..." className="w-full min-h-[84px] rounded-md border border-[#d9e2f0] bg-white pl-9 pr-2.5 pt-2 pb-5 text-[14px] outline-none placeholder:text-[#9aa4b8] focus:border-[#1f7cf0] focus:ring-1 focus:ring-[#1f7cf0] block" />
+              <span className="absolute right-2 bottom-1.5 text-[11px] font-semibold text-[#9aa4b8]">{issueLen}/500</span>
+            </label>
+          </SectionCard>
+
+          <SectionCard id={sectionIds[3]} n={4} title="ছবি আপলোড">
+            <div className="grid grid-cols-3 gap-2">
+              <UploadBox name="warrantyCardPhoto" label="ওয়ারেন্টি কার্ডের ছবি" />
+              <UploadBox name="productFrontPhoto" label="প্রোডাক্টের ছবি (সামনে)" />
+              <UploadBox name="productBackPhoto" label="প্রোডাক্টের ছবি (পেছনে)" />
             </div>
           </SectionCard>
 
-          <SectionCard n={4} icon={ImagePlus} title="ছবি আপলোড">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <InputField label="ওয়ারেন্টি কার্ডের ছবি" name="warrantyCardPhoto" type="file" />
-              <InputField label="প্রোডাক্টের ছবি (সামনে)" placeholder="সামনের দিকের ছবি" name="productFrontPhoto" type="file" />
-              <InputField label="প্রোডাক্টের ছবি (পেছনে)" placeholder="পেছনের দিকের ছবি" name="productBackPhoto" type="file" />
-            </div>
-            <p className="text-[11px] font-semibold text-[#5b6784]">(JPG, PNG বা WebP - Max {process.env.NEXT_PUBLIC_MAX_IMAGE_SIZE_MB || 2}MB)</p>
-          </SectionCard>
-
-          <label className="rounded-md bg-[#e8f1ff] border border-[#cfe0fb] p-2.5 flex items-start gap-3 cursor-pointer">
-            <input type="checkbox" required checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="size-5 mt-0.5 accent-[#1f7cf0] shrink-0" />
-            <span className="text-[12.5px] font-bold leading-snug">আমি নিশ্চিত করছি যে, প্রদত্ত তথ্য সঠিক এবং আমার ডিভাইস/পণ্যের সমস্যা সম্পর্কিত।</span>
-          </label>
-          <button type="submit" disabled={isPending || !confirmed} className="h-12 rounded-md bg-[#1f7cf0] text-white text-[15px] font-extrabold inline-flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(31,124,240,0.35)] disabled:opacity-40 active:scale-[0.98] transition-all"><Send size={18} />{isPending ? "Submitting..." : "সাবমিট করুন"}</button>
-          <div className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-2 text-[11.5px] font-semibold text-[#3d4a63]"><Headset size={18} className="text-[#1f7cf0] shrink-0" />সার্ভিস রিকুয়েস্ট জমা দেওয়ার পর আমাদের টিম আপনার সাথে যোগাযোগ করবে। আপনার পণ্যের সার্ভিসং এর জন্য উপরের বক্স গুলা পূরণ করে আমাদের SEIPSBD সার্ভিসং টিমকে সঠিক তথ্য দিয়ে সহযোগিতা করুন।</div>
+          <div id={sectionIds[4]} data-step={4} className="scroll-mt-[76px] flex flex-col gap-2.5">
+            <label className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" required checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="size-5 mt-0.5 accent-[#0b3d91] shrink-0" />
+              <span className="text-[12.5px] font-bold leading-snug">আমি নিশ্চিত করছি যে, প্রদত্ত তথ্য সঠিক এবং আমার ডিভাইস/পণ্যের সমস্যা সম্পর্কিত।</span>
+            </label>
+            <button type="submit" disabled={isPending || !confirmed} className="h-11 rounded-md bg-[linear-gradient(90deg,#0b3d91,#1f7cf0)] text-white text-[15px] font-extrabold inline-flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(31,124,240,0.35)] disabled:opacity-40 active:scale-[0.98] transition-all"><Send size={18} />{isPending ? "Submitting..." : "সাবমিট করুন"}</button>
+            <div className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-2 text-[11.5px] font-semibold text-[#3d4a63]"><Headset size={18} className="text-[#1f7cf0] shrink-0" /><span>সার্ভিস রিকুয়েস্ট জমা দেওয়ার পর আমাদের টিম আপনার সাথে যোগাযোগ করবে। আপনার পণ্যের সার্ভিসং এর জন্য উপরের বক্স গুলা পূরণ করে আমাদের SEIPSBD সার্ভিসং টিমকে সঠিক তথ্য দিয়ে সহযোগিতা করুন। হেল্পলাইন {contactDetails.customerCare}</span></div>
+          </div>
         </form>
       </div>
     </div>

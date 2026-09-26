@@ -1,6 +1,5 @@
 "use client";
 
-import { MoreVertical } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { StaffNotificationBell } from "../features/notices";
@@ -85,14 +84,13 @@ export function StaffHeader({ balance }: StaffHeaderProps) {
         <Link href="/staff/profile" className="flex items-center gap-2 min-w-0 flex-1">
           <span className="size-10 rounded-md bg-[#1f7cf0] text-white text-[17px] font-extrabold flex items-center justify-center shadow-[0_6px_16px_rgba(0,40,120,0.35)] shrink-0">SE</span>
           <span className="flex flex-col leading-tight min-w-0">
-            <span className="text-[15px] font-extrabold text-white leading-tight truncate">SE Electronics</span>
-            <span className="text-[10.5px] text-white/85 font-medium truncate">Smart Solution &nbsp;Better Life</span>
+            <span className="text-[clamp(13px,3.9vw,15px)] font-extrabold text-white leading-tight truncate">SE Electronics</span>
+            <span className="text-[clamp(9px,2.8vw,10.5px)] text-white/85 font-medium truncate">Smart Solution &nbsp;Better Life</span>
           </span>
         </Link>
         <div className="ml-auto flex items-center gap-1 shrink-0">
           {isHome && <StaffBalanceBar amount={balance} compact />}
           <StaffNotificationBell />
-          <Link href="/staff/settings" aria-label="Menu" className="size-8 flex items-center justify-center text-white"><MoreVertical size={20} strokeWidth={2.2} /></Link>
         </div>
       </div>
     </header>

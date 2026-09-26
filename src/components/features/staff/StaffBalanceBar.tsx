@@ -25,14 +25,14 @@ export function StaffBalanceBar({ amount, compact = false }: { amount: number; c
 
   return (
     <div className="flex items-center">
-      <div className={`bg-white rounded-full px-1 shadow-md border border-brand/10 overflow-hidden relative ${compact ? "h-7 min-w-[118px]" : "h-8 min-w-[170px] sm:min-w-[170px]"}`}>
+      <div className={`bg-white rounded-full px-1 shadow-md border border-brand/10 overflow-hidden relative ${compact ? "h-8 w-[156px]" : "h-8 min-w-[170px] sm:min-w-[170px]"}`}>
         
-        <div className={`flex items-start h-full w-full relative overflow-hidden ${compact ? "px-4 py-1" : "px-8 py-2"}`}>
+        <div className={`flex items-start h-full w-full relative overflow-hidden ${compact ? "px-2 py-1" : "px-8 py-2"}`}>
 
           {/* 🔹 Tap For Balance (ALWAYS mounted) */}
           <button
             onClick={() => setRevealed(true)}
-            className={`absolute inset-0 flex items-center gap-3 z-20 bg-white
+            className={`absolute inset-0 flex items-center ${compact ? "gap-2 pl-1.5" : "gap-3"} z-20 bg-white
             transition-all duration-1200 ease-[cubic-bezier(0.4,0,0.2,1)] delay-200
             hover:bg-gray-50 active:scale-95
             ${revealed ? "translate-x-full opacity-0" : "translate-x-0 opacity-100"}`}
@@ -42,7 +42,7 @@ export function StaffBalanceBar({ amount, compact = false }: { amount: number; c
                 ৳
               </div>
             </div>
-            <span className={`${compact ? "text-[10.5px]" : "text-sm"} font-black text-brand whitespace-nowrap`}>
+            <span className={`${compact ? "text-[12px]" : "text-sm"} font-black text-brand whitespace-nowrap`}>
               Tap For Balance
             </span>
           </button>
@@ -60,12 +60,12 @@ export function StaffBalanceBar({ amount, compact = false }: { amount: number; c
             </div> */}
 
             <div className="flex-1 flex items-center justify-between gap-2">
-                <span className="text-lg  pl-3 sm:text-lg font-black text-brand ml-2">
+                <span className={`${compact ? "text-[14px] pl-1.5" : "text-lg pl-3 ml-2"} font-black text-brand whitespace-nowrap`}>
                 {amountText}
               </span>
                <Link
                 href="/staff/payment"
-                className="h-6 px-2 rounded-full bg-brand text-white flex items-center gap-1 text-[10px] sm:text-sm font-black hover:bg-brand-800 transition-all active:scale-95 shadow-sm"
+                className={`h-6 px-2 rounded-full bg-brand text-white flex items-center gap-1 ${compact ? "text-[10px] mr-1" : "text-[10px] sm:text-sm"} font-black hover:bg-brand-800 transition-all active:scale-95 shadow-sm`}
               >
               Details
                 

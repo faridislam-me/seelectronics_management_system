@@ -26,35 +26,16 @@ const messageFor = (p: PaymentDataType) => {
   return `আপনার পেমেন্ট রিকোয়েস্ট (৳${p.amount}) এখন ${p.status} অবস্থায় আছে।`;
 };
 
-/** Method chip + faint brand watermark for a payment card. */
-function MethodMark({ p }: { p: PaymentDataType }) {
-  const key = methodKey(p.status as string, p.paymentMethod, true);
-  const t = methodThemes[key];
-  const logo = key === "virtualLight" ? null : methodLogos[key];
-  return (
-    <>
-      <span aria-hidden className="pointer-events-none absolute -right-2 -bottom-3 size-24 opacity-[0.10]">
-        {logo ? <Image src={logo} alt="" fill sizes="96px" className="object-contain" /> : <Wallet className={clsx("size-full", t.mark)} strokeWidth={1.4} />}
-      </span>
-    </>
-  );
-}
-
 function MethodChip({ p }: { p: PaymentDataType }) {
   const key = methodKey(p.status as string, p.paymentMethod, true);
   const t = methodThemes[key];
   const logo = key === "virtualLight" ? null : methodLogos[key];
   return (
-    <span className={clsx("self-start inline-flex items-center gap-1 h-5 px-1.5 rounded-md text-[10px] font-extrabold", t.chip)}>
-      {logo ? <Image src={logo} alt="" width={12} height={12} className="size-3 object-contain rounded-sm bg-white" /> : <Wallet size={11} />}
+    <span className="self-start inline-flex items-center gap-1.5 h-6 pl-0.5 pr-2 rounded-md bg-white border border-[#e3e8f1] text-[10.5px] font-extrabold text-[#16213a]">
+      {logo ? <Image src={logo} alt="" width={20} height={20} className="h-5 w-5 object-contain rounded-sm" /> : <span className="h-5 w-5 rounded-sm bg-[#0b3d91] text-white flex items-center justify-center"><Wallet size={12} /></span>}
       {t.label}
     </span>
   );
-}
-
-function cardTheme(p: PaymentDataType) {
-  const t = methodThemes[methodKey(p.status as string, p.paymentMethod, true)];
-  return clsx(t.card, t.border);
 }
 
 function FilterBar({ filters, value, onChange }: { filters: { key: Filter; label: string; icon: LucideIcon }[]; value: Filter; onChange: (f: Filter) => void }) {
@@ -93,8 +74,7 @@ export function PaymentHistoryList({ payments }: { payments: PaymentDataType[] }
         const Tile = isRequest ? HandCoins : Landmark;
         const tile = m.filter === "pending" ? "bg-[#e0a11b]" : isRequest ? "bg-[#1a9c4b]" : "bg-[#1f7cf0]";
         return (
-          <Link key={p.paymentId} href={`/staff/payment/${p.invoiceNumber}`} className={clsx("relative overflow-hidden rounded-md border p-2.5 flex items-start gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] active:scale-[0.99] transition-all", cardTheme(p))}>
-            <MethodMark p={p} />
+          <Link key={p.paymentId} href={`/staff/payment/${p.invoiceNumber}`} className="relative overflow-hidden rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-start gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] active:scale-[0.99] transition-all">
             <span className={clsx("relative size-11 rounded-full text-white flex items-center justify-center shrink-0 mt-0.5", tile)}><Tile size={20} /></span>
             <span className="relative flex flex-col gap-1 min-w-0 flex-1">
               <span className="text-[12.5px] font-extrabold text-[#0b3d91] uppercase tracking-wide leading-tight">{isRequest ? "Cash Out Payment Request" : "Technician Payment Cash In"}</span>
@@ -135,8 +115,7 @@ export function PaymentCompactList({ payments }: { payments: PaymentDataType[] }
         const isBal = p.invoiceNumber.startsWith("BAL-");
         const title = isBal ? "BAL#" + p.paymentId.substring(0, 8) : "SFC#" + p.invoiceNumber;
         return (
-          <Link key={p.paymentId} href={`/staff/payment/${p.invoiceNumber}`} className={clsx("relative overflow-hidden rounded-md border p-2.5 flex items-center gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] active:scale-[0.99] transition-all", cardTheme(p))}>
-            <MethodMark p={p} />
+          <Link key={p.paymentId} href={`/staff/payment/${p.invoiceNumber}`} className="relative overflow-hidden rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] active:scale-[0.99] transition-all">
             <span className={clsx("relative size-12 rounded-md flex items-center justify-center shrink-0", isBal ? "bg-[#f3e9ff] text-[#8b3fe8]" : "bg-[#e8f1ff] text-[#1f7cf0]")}>{isBal ? <Landmark size={22} /> : <CreditCard size={22} />}</span>
             <span className="relative flex flex-col gap-1 min-w-0 flex-1">
               <span className="text-[13px] font-extrabold truncate">{title}</span>

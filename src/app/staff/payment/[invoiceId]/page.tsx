@@ -1,4 +1,5 @@
 import { getPaymentByNumber } from "@/actions/paymentActions";
+import { getServiceById } from "@/actions";
 import { getStaffProfileStats, verifyStaffSession } from "@/actions/staffActions";
 import { InvoicePreviewButton } from "@/components/features/invoices";
 import { StaffLayout } from "@/components/layout/StaffLayout";
@@ -28,6 +29,12 @@ export default async function StaffInvoiceDetailsPage({ params }: { params: Prom
   const [paymentRes, statsRes] = await Promise.all([getPaymentByNumber(invoiceId), getStaffProfileStats(session.userId as string)]);
   if (!paymentRes.success || !paymentRes.data) notFound();
   const payment = paymentRes.data as PaymentDataType;
+  // Credited payments often carry the job id only in the note ("Service charge added for job #SEXXXX").
+  const jobId = payment.serviceId || payment.description?.match(/#\s*(SE[A-Z0-9]+)/i)?.[1]?.toUpperCase() || null;
+  const serviceRes = jobId ? await getServiceById(jobId).catch(() => null) : null;
+  const service: any = serviceRes?.success ? serviceRes.data : null;
+  const svcStatus = (service?.status as string | undefined) ?? null;
+  const svcAddress = service ? [service.customerAddress, service.customerAddressPoliceStation, service.customerAddressDistrict].filter(Boolean).join(", ") : "";
   const stats = statsRes.success ? statsRes.data : null;
   if (payment.staffId !== session.userId) notFound();
 
@@ -97,7 +104,7 @@ export default async function StaffInvoiceDetailsPage({ params }: { params: Prom
                   <span className={clsx("text-[18px] font-extrabold normal-case tracking-normal inline-flex items-center gap-1.5", dark ? "text-white" : "text-[#16213a]")}>{idLine}<Copy size={14} className={dark ? "text-[#7fb4ff]" : "text-[#1f7cf0]"} /></span>
                   <span>Staff-member <span className="opacity-50">•</span> {isVirtual ? "Virtual Balance" : method || "N/A"}</span>
                   {isVirtual ? (
-                    <><span>Account <b className="text-white">SE Virtual Account</b></span><span>Credited for <b className="text-white">{payment.serviceId ? `Job #${payment.serviceId}` : "Completed service"}</b></span></>
+                    <><span>Account <b className="text-white">SE Virtual Account</b></span><span>Credited for <b className="text-white">{jobId ? `Job #${jobId}` : "Completed service"}</b></span></>
                   ) : (
                     <span>{key === "bank" ? "Account number" : "Wallet number"} <b className="text-[#16213a]">{payment.receiverWalletNumber || payment.receiverBankInfo?.accountNumber || "N/A"}</b></span>
                   )}
@@ -136,10 +143,22 @@ export default async function StaffInvoiceDetailsPage({ params }: { params: Prom
           <Head icon={Settings} title="Service Information" tone="bg-[#e0a11b]" />
           <div className="flex items-start gap-3">
             <span className="flex flex-col gap-0.5 min-w-0 flex-1 text-[12.5px] text-[#3d4a63]">
-              <span>Service Id: <b className="text-[#16213a]">{payment.serviceId || "N/A"}</b></span>
-              <span>Customer: <b className="text-[#16213a]">{String(session.username)}</b></span>
+              <span>Service Id: <b className="text-[#16213a]">{jobId || "N/A"}</b></span>
+              <span>Customer: <b className="text-[#16213a]">{service?.customerName || "N/A"}</b></span>
+              <span>Mobile: {service?.customerPhone ? <a href={`tel:${service.customerPhone}`} className="font-bold text-[#1f5fc9]">{service.customerPhone}</a> : <b className="text-[#16213a]">N/A</b>}</span>
+              <span>Address: <b className="text-[#16213a]">{svcAddress || "N/A"}</b></span>
+              {service?.productType && <span>Product: <b className="text-[#16213a] uppercase">{service.productType}</b>{service.productModel ? <b className="text-[#16213a]"> · {service.productModel}</b> : null}</span>}
               <span>Date: <b className="text-[#16213a]">{formatDate(payment.date || payment.createdAt!)}</b></span>
               {payment.description && <span>Note: <b className="text-[#16213a]">{payment.description}</b></span>}
+              {svcStatus && (
+                <span className="mt-1 inline-flex items-center gap-1.5 self-start">
+                  Job Status:
+                  <span className={clsx("inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-extrabold uppercase", svcStatus === "completed" ? "bg-[#e9f9ef] text-[#178a42]" : svcStatus === "canceled" ? "bg-[#ffe9ec] text-[#c81f38]" : "bg-[#e8f1ff] text-[#1b6fd6]")}>
+                    {svcStatus === "completed" ? <CheckCircle2 size={13} /> : svcStatus === "canceled" ? <XCircle size={13} /> : <Clock size={13} />}
+                    {svcStatus === "completed" ? "Completed" : svcStatus.replace(/_/g, " ")}
+                  </span>
+                </span>
+              )}
             </span>
             <span className="flex flex-col items-end gap-1 shrink-0">
               <span className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md bg-[#fff6e3] text-[#b8620b] text-[11px] font-extrabold uppercase"><Crown size={13} />{st === "credited" ? "Credited" : st}</span>

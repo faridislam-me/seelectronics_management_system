@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Marquee from "react-fast-marquee";
-import { toast } from "react-toastify";
 import PrayerTimes from "../shared/PrayerTimes";
 
 import { StaffLayout } from "@/components/layout";
@@ -233,17 +232,7 @@ export default function StaffDashboardClient({
               {
                 label: "Certificate",
                 icon: Award,
-                href: certificateToken
-                  ? `/staff/certificate?token=${certificateToken}`
-                  : "#",
-                onClick: (e: any) => {
-                  if (!certificateToken) {
-                    e.preventDefault();
-                    toast.error(
-                      "আপনার জন্য কোনো সার্টিফিকেট ইস্যু করা হয়নি। অনুগ্রহ করে এডমিনের সাথে যোগাযোগ করুন।",
-                    );
-                  }
-                },
+                href: "/staff/certificate",
                 color: "text-amber-500",
                 bg: "bg-amber-50",
               },
@@ -265,7 +254,6 @@ export default function StaffDashboardClient({
               <Link
                 key={action.label}
                 href={action.href}
-                onClick={action.onClick}
                 className="flex flex-col items-center gap-2 group"
               >
                 <div

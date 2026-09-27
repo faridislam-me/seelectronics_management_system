@@ -42,7 +42,6 @@ export default function PaymentWebView({ data }: PaymentWebViewProps) {
       <section className="rounded-md border border-[#dfe6f2] overflow-hidden shadow-[0_6px_18px_rgba(11,61,145,0.10)]">
         <div className="relative flex items-stretch min-h-[88px]">
           <div className="flex items-center gap-2.5 bg-[linear-gradient(110deg,#0a2f70_0%,#1259c9_100%)] text-white px-3 w-[58%] [clip-path:polygon(0_0,100%_0,86%_100%,0_100%)]">
-            <span className="text-[30px] font-extrabold italic tracking-[-2px] leading-none">SE</span>
             <span className="flex flex-col leading-tight"><span className="text-[15px] font-extrabold">SE ELECTRONICS</span><span className="text-[9.5px] text-white/85">Trusted Power | Better Tomorrow</span></span>
           </div>
           <div className="flex-1 flex flex-col items-end justify-center gap-1.5 px-3">

@@ -13,7 +13,6 @@ export default function LocationPage() {
       {/* Light header */}
       <header className="bg-white px-2 py-2.5 flex items-center gap-2 border-b border-[#dfe6f2]">
         <Link href="/customer/profile" aria-label="Back" className="size-10 rounded-full bg-[#eef3fb] flex items-center justify-center"><ArrowLeft size={20} /></Link>
-        <span className="text-[26px] font-extrabold italic tracking-[-1px] text-[#1f7cf0] leading-none">SE</span>
         <span className="flex flex-col leading-tight min-w-0 flex-1">
           <span className="text-[17px] font-extrabold">SE Electronics</span>
           <span className="text-[11px] font-semibold text-[#5b6784]">Service · Support · Solution</span>

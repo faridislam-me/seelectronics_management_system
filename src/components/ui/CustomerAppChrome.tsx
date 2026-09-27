@@ -2,13 +2,10 @@ import clsx from "clsx";
 import { ArrowLeft, LucideIcon } from "lucide-react";
 import Link from "next/link";
 
-/** SE wordmark used in the customer app headers. */
+/** Brand text used in customer app headers (plain text, no standalone "SE" mark). */
 export function SEWordmark({ size = "md" }: { size?: "sm" | "md" }) {
   return (
-    <span className="flex flex-col items-center leading-none shrink-0">
-      <span className={clsx("font-extrabold italic text-white tracking-[-1px] leading-none", size === "sm" ? "text-[24px]" : "text-[30px]")}>SE</span>
-      <span className={clsx("text-white/90 font-extrabold tracking-[2px]", size === "sm" ? "text-[7px]" : "text-[8px]")}>ELECTRONICS</span>
-    </span>
+    <span className={clsx("shrink-0 font-extrabold text-white leading-tight tracking-wide", size === "sm" ? "text-[13px]" : "text-[15px]")}>SE Electronics</span>
   );
 }
 
@@ -21,8 +18,6 @@ export function CustomerAppHeader({ title, subtitle, backHref, right }: { title:
         {backHref && (
           <Link href={backHref} aria-label="Back" className="size-10 rounded-md bg-white/15 border border-white/20 flex items-center justify-center shrink-0"><ArrowLeft size={20} strokeWidth={2.4} /></Link>
         )}
-        <SEWordmark size="sm" />
-        <span className="h-9 w-px bg-white/40" />
         <span className="flex flex-col min-w-0 flex-1 leading-tight">
           <span className="text-[clamp(16px,4.6vw,20px)] font-extrabold truncate">{title}</span>
           {subtitle && <span className="text-[clamp(11px,3.2vw,13px)] font-semibold text-white/85 truncate">{subtitle}</span>}

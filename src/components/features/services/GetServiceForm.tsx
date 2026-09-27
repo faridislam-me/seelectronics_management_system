@@ -3,6 +3,7 @@
 import { createService } from "@/actions";
 import geoData from "@/assets/data/geo-data.json";
 import PageBanner from "@/components/ui/PageBanner";
+import SuccessPopup from "@/components/ui/SuccessPopup";
 import { batteryTypes, contactDetails, ipsBrands, productPowerRatings, productTypes, stabilizerBrands, stabilizerPowerRatings } from "@/constants";
 import { useThemeColor } from "@/hooks";
 import clsx from "clsx";
@@ -200,12 +201,14 @@ export default function GetServiceForm({ preferredStaffId, customerId, customerD
 
   if (response?.success) {
     return (
-      <div className="min-h-screen bg-[#eef3fb] flex items-center justify-center p-4">
-        <div className="w-full max-w-md rounded-md bg-white border border-[#dfe6f2] p-6 text-center flex flex-col items-center gap-3">
-          <span className="size-20 rounded-full bg-[#e9f9ef] text-[#1a9c4b] flex items-center justify-center"><CheckCircle2 size={44} /></span>
-          <p className="text-[15px] leading-relaxed text-[#16213a]">আসসালামু আলাইকুম প্রিয় স্যার/মেডাম আপনার তথ্য সঠিক ভাবে প্রেরণ করা হয়েছে। তথ্য যাচাইয়ের পর আমাদের দক্ষ ইঞ্জিনিয়ার টিম আপনার সাথে যোগাযোগ করবে সেই পর্যন্ত আমাদের সাথে থাকুন ধন্যবাদ।</p>
-          <Link href={homeHref} className="h-11 px-5 rounded-md bg-[#1f7cf0] text-white font-bold inline-flex items-center">{customerId ? "Back to Profile" : "Back to Home"}</Link>
-        </div>
+      <div className="min-h-screen bg-[#eef3fb]">
+        <AppHeader homeHref={homeHref} />
+        <SuccessPopup
+          title="আপনার সার্ভিস অনুরোধ সফলভাবে জমা হয়েছে!"
+          message="আসসালামু আলাইকুম প্রিয় স্যার/মেডাম আপনার তথ্য সঠিক ভাবে প্রেরণ করা হয়েছে। তথ্য যাচাইয়ের পর আমাদের দক্ষ ইঞ্জিনিয়ার টিম আপনার সাথে যোগাযোগ করবে সেই পর্যন্ত আমাদের সাথে থাকুন ধন্যবাদ।"
+          buttonLabel={customerId ? "প্রোফাইলে ফিরে যান" : "হোমে ফিরে যান"}
+          href={homeHref}
+        />
       </div>
     );
   }
@@ -215,17 +218,17 @@ export default function GetServiceForm({ preferredStaffId, customerId, customerD
       <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-6">
         <AppHeader homeHref={homeHref} />
         <div className="px-2 pt-2 flex flex-col gap-2.5 max-w-[720px] mx-auto">
-          {/* Hero */}
-          <section className="relative overflow-hidden rounded-md bg-[linear-gradient(105deg,#e6efff_0%,#f5f8ff_55%,#0b3d91_56%,#1259c9_100%)] border border-[#cfe0fb] p-3 min-h-[128px] flex items-center shadow-[0_6px_18px_rgba(11,61,145,0.10)]">
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 w-[40%] text-right text-white font-extrabold text-[clamp(12px,3.6vw,15px)] leading-snug">আপনার সন্তুষ্টিই<br />আমাদের<br />প্রধান লক্ষ্য</span>
-            <div className="flex items-center gap-3 w-[60%]">
-              <span className="size-14 rounded-md bg-white text-[#1f7cf0] flex items-center justify-center shrink-0 shadow-sm"><ClipboardList size={30} /></span>
-              <span className="flex flex-col leading-tight">
-                <span className="text-[clamp(17px,5vw,22px)] font-extrabold text-[#0b3d91]">অনলাইনে সার্ভিস কন্ডিশন</span>
-                <span className="text-[12px] font-bold text-[#1f7cf0]">Terms &amp; Conditions</span>
-                <span className="text-[11.5px] font-semibold text-[#3d4a63]">অনলাইন সার্ভিসের জন্য নিচের শর্তাবলী সমূহ প্রযোজ্য।</span>
-              </span>
-            </div>
+          <PageBanner src="/banners/service-request.jpg" alt="Online Service Request - ঘরে বসেই নিন দ্রুত ও নির্ভরযোগ্য সার্ভিস সেবা" width={757} height={211} href={`tel:${contactDetails.customerCare}`} external />
+
+          {/* Title */}
+          <section className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-3 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+            <span className="size-12 rounded-md bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><ClipboardList size={26} /></span>
+            <span className="flex flex-col leading-tight min-w-0 flex-1">
+              <span className="text-[clamp(16px,4.8vw,19px)] font-extrabold text-[#0b3d91]">অনলাইনে সার্ভিস কন্ডিশন</span>
+              <span className="text-[12px] font-bold text-[#1f7cf0]">Terms &amp; Conditions</span>
+              <span className="text-[11.5px] font-semibold text-[#3d4a63]">অনলাইন সার্ভিসের জন্য নিচের শর্তাবলী সমূহ প্রযোজ্য।</span>
+            </span>
+            <span className="hidden min-[360px]:block shrink-0 text-right text-[11px] font-extrabold leading-snug text-[#0b3d91]">আপনার সন্তুষ্টিই<br />আমাদের<br />প্রধান লক্ষ্য</span>
           </section>
 
           <p className="text-[12.5px] font-medium text-[#3d4a63] leading-relaxed px-0.5">প্রিয় গ্রাহক, এস ই ইলেকট্রনিকস-এর আইপিএস, ব্যাটারি ও অন্যান্য ইলেকট্রনিক পণ্য অনলাইন সার্ভিসিং-এর জন্য আবেদন করার জন্য আপনাকে ধন্যবাদ। আপনার সমস্যার দ্রুত ও কার্যকর সমাধানের জন্য নিম্নলিখিত শর্তাবলী ও নির্দেশিকাগুলি অত্যন্ত মনোযোগ সহকারে পড়ুন এবং মেনে চলুন।</p>

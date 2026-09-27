@@ -35,8 +35,7 @@ export default function HistoryPage() {
           const logo = methodLogos[key];
           const m = statusMeta(req.status);
           return (
-            <div key={req.id} className={clsx("relative overflow-hidden rounded-md border p-2.5 flex flex-col gap-2 shadow-[0_4px_14px_rgba(11,61,145,0.06)]", t.card, t.border)}>
-              {logo && <span aria-hidden className="pointer-events-none absolute -right-2 -bottom-3 size-24 opacity-[0.10]"><Image src={logo} alt="" fill sizes="96px" className="object-contain" /></span>}
+            <div key={req.id} className="relative overflow-hidden rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col gap-2 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
               <div className="relative flex items-start justify-between gap-2">
                 <span className="text-[12px] font-bold text-[#5b6784] uppercase tracking-wide break-all">#{req.requestId}</span>
                 <span className={clsx("shrink-0 inline-flex items-center gap-1 h-6 px-2 rounded-md border text-[10.5px] font-extrabold uppercase", m.cls)}><m.icon size={12} />{req.status}</span>

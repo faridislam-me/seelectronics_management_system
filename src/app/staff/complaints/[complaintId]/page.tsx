@@ -3,6 +3,7 @@ import { getComplaintById } from "@/actions/complaintActions";
 import { getStaffProfileStats } from "@/actions/staffActions";
 import { StaffLayout } from "@/components/layout/StaffLayout";
 import { formatDate } from "@/utils";
+import clsx from "clsx";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -48,269 +49,107 @@ export default async function StaffComplaintDetailsPage({
     complaint.status === "hearing" || complaint.status === "completed";
   const isCompleted = complaint.status === "completed";
 
+  const steps = [
+    { title: "অপেক্ষমাণ", sub: formatDate(complaint.createdAt), done: true, iconDone: isProcessing || complaint.status === "under_trial", final: false },
+    { title: "প্রক্রিয়াধীন", sub: isProcessing ? "তদন্তাধীন" : "নির্ধারিত পদক্ষেপের অপেক্ষায়", done: isProcessing, iconDone: isProcessing, final: false },
+    { title: "শুনানি", sub: isHearing ? "সমন জারি হয়েছে" : "অপেক্ষমাণ", done: isHearing, iconDone: isHearing, final: false },
+    { title: "নিষ্পত্তি", sub: isCompleted ? "সমাধান হয়েছে" : "চূড়ান্তকরণ", done: isCompleted, iconDone: isCompleted, final: true },
+  ];
+  const lastDone = steps.reduce((acc, st, i) => (st.done ? i : acc), 0);
+
   return (
     <StaffLayout balance={stats?.availableBalance || 0}>
-      <div className="p-2 sm:p-2 space-y-2">
+      <div className="px-2 pt-2 pb-2 flex flex-col gap-2 text-[#16213a]">
         {/* Header */}
-        <div className="flex items-center gap-2">
-          <Link
-            href="/staff/profile"
-            className="p-3 bg-white rounded-md shadow-sm border border-gray-100 text-gray-400 hover:text-brand transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </Link>
-          <div className="flex-1">
-            <h1 className="text-xl font-black text-gray-900 flex items-center gap-2">
-              <ShieldAlert className="text-red-500" size={24} />
-              অভিযোগের বিস্তারিত
-            </h1>
-            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
-              ট্র্যাকিং আইডি: {complaint.complaintId}
-            </p>
-          </div>
-        </div>
+        <section className="rounded-md bg-[linear-gradient(115deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-3 flex items-center gap-2.5 shadow-[0_8px_22px_rgba(11,61,145,0.25)]">
+          <Link href="/staff/profile" aria-label="Back" className="size-9 rounded-md bg-white/15 border border-white/20 flex items-center justify-center shrink-0"><ArrowLeft size={18} /></Link>
+          <span className="size-10 rounded-md bg-white/15 border border-white/20 flex items-center justify-center shrink-0"><ShieldAlert size={20} /></span>
+          <span className="flex flex-col min-w-0 flex-1 leading-tight">
+            <span className="text-[clamp(16px,4.8vw,19px)] font-extrabold">অভিযোগের বিস্তারিত</span>
+            <span className="text-[11.5px] font-semibold text-white/85 truncate">ট্র্যাকিং আইডি: {complaint.complaintId}</span>
+          </span>
+        </section>
 
         {/* Complaint Warning Card */}
-        <div className="bg-red-50 border-2 border-red-100 rounded-md p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
-            <AlertTriangle size={80} className="text-red-600" />
+        <section className="relative overflow-hidden rounded-md bg-[#fff1f3] border border-[#f7c3ca] p-2.5 flex flex-col gap-2">
+          <AlertTriangle size={70} className="absolute -right-2 -top-2 text-[#e0243f]/10" />
+          <div className="relative flex items-center gap-2.5">
+            <span className="size-10 rounded-md bg-white text-[#e0243f] flex items-center justify-center shrink-0 shadow-sm"><User size={20} /></span>
+            <span className="flex flex-col min-w-0 leading-tight">
+              <span className="text-[14.5px] font-extrabold text-[#b3182f]">গ্রাহকের দাখিলকৃত অভিযোগ</span>
+              <span className="text-[12px] font-semibold text-[#c81f38]/80">{complaint.customer?.name} এই অভিযোগটি দাখিল করেছেন।</span>
+            </span>
           </div>
-          <div className="relative z-10 flex flex-col sm:flex-row gap-6 items-start">
-            <div className="bg-white p-4 rounded-md shadow-sm">
-              <User className="text-red-500" size={32} />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-black text-red-700 mb-1">
-                গ্রাহকের দাখিলকৃত অভিযোগ
-              </h3>
-              <p className="text-sm font-bold text-red-600/80 mb-4">
-                {complaint.customer?.name} এই অভিযোগটি দাখিল করেছেন।
-              </p>
-              <div className="bg-white/60 p-4 rounded-md border border-red-200">
-                <p className="text-sm font-black text-red-800 uppercase tracking-widest mb-2">
-                  বিষয়: {complaint.subject}
-                </p>
-                <p className="text-sm text-gray-700 leading-relaxed font-medium">
-                  "{complaint.description}"
-                </p>
-              </div>
-            </div>
+          <div className="relative rounded-md bg-white/80 border border-[#f7c3ca] p-2.5">
+            <p className="text-[13px] font-extrabold text-[#9b1427] mb-1">বিষয়: {complaint.subject}</p>
+            <p className="text-[12.5px] text-[#3d4a63] leading-relaxed">&quot;{complaint.description}&quot;</p>
           </div>
-        </div>
+        </section>
 
-        {/* Status Tracker - Vertical English UI */}
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
-          <h3 className="text-center font-black text-gray-900 uppercase tracking-[0.2em] text-sm mb-10">
-            অভিযোগের ধাপসমূহ
-          </h3>
-
-          <div className="max-w-md mx-auto relative px-4">
-            {/* Vertical Line Connecting Dots */}
-            <div className="absolute left-[39px] top-4 bottom-4 w-0.5 bg-emerald-100 hidden sm:block"></div>
-
-            <div className="space-y-10">
-              {/* Step 1: Pending */}
-              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 relative group">
-                <div
-                  className={`z-10 size-10 rounded-full border-2 flex items-center justify-center shrink-0 transition-all bg-white ${isProcessing || complaint.status === "under_trial" ? "border-emerald-500 bg-emerald-50 text-emerald-600" : "border-gray-200"}`}
-                >
-                  <CheckCircle size={20} />
-                </div>
-
-                <div className="flex-1 flex items-center gap-4 w-full">
-                  <div className="h-0.5 w-8 bg-emerald-100 hidden sm:block"></div>
-                  <div className="flex-1 bg-emerald-50/30 border border-emerald-100 rounded-md p-4 transition-colors">
-                    <h4 className="font-bold text-emerald-800 text-[13px] uppercase tracking-widest leading-none">
-                      অপেক্ষমাণ
-                    </h4>
-                    <div className="mt-2 flex items-center gap-2">
-                      <Calendar size={12} className="text-emerald-400" />
-                      <span className="text-sm font-black text-emerald-700">
-                        {formatDate(complaint.createdAt)}
-                      </span>
-                    </div>
+        {/* Status Tracker */}
+        <section className="rounded-md bg-white border border-[#dfe6f2] p-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+          <h3 className="text-[14px] font-extrabold text-[#0b3d91] mb-2">অভিযোগের ধাপসমূহ</h3>
+          <ol className="flex flex-col">
+            {steps.map((st, i) => {
+              const current = i === lastDone;
+              return (
+                <li key={st.title} className="flex gap-2.5">
+                  <span className="flex flex-col items-center">
+                    <span className={clsx("relative size-7 rounded-full border-2 flex items-center justify-center shrink-0", st.iconDone ? (st.final ? "bg-[#1a9c4b] border-[#1a9c4b] text-white" : "bg-[#e9f9ef] border-[#1a9c4b] text-[#1a9c4b]") : "bg-white border-[#d7deea] text-[#c3cad8]")}>
+                      {current && st.iconDone && <span className="absolute inset-0 rounded-full bg-[#1a9c4b]/30 animate-ping" />}
+                      <CheckCircle size={14} />
+                    </span>
+                    {i < steps.length - 1 && <span className={clsx("w-0.5 flex-1 min-h-3", steps[i + 1].done ? "bg-[#1a9c4b]" : "bg-[#e3e8f1]")} />}
+                  </span>
+                  <div className={clsx("flex-1 mb-2 rounded-md border px-2.5 py-1.5", st.done ? (st.final ? "bg-[#1a9c4b] border-[#1a9c4b] text-white" : "bg-[#f3fbf6] border-[#cdeedb]") : "bg-[#f7f9fc] border-[#eef1f6] opacity-70")}>
+                    <h4 className={clsx("text-[13px] font-extrabold leading-tight", st.done ? (st.final ? "text-white" : "text-[#146c36]") : "text-[#9aa4b8]")}>{st.title}</h4>
+                    <span className={clsx("mt-0.5 inline-flex items-center gap-1 text-[12px] font-bold", st.done ? (st.final ? "text-white/90" : "text-[#178a42]") : "text-[#b3bccb]")}><Calendar size={12} />{st.sub}</span>
                   </div>
-                </div>
-              </div>
-
-              {/* Step 2: Processing */}
-              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 relative group">
-                <div
-                  className={`z-10 size-10 rounded-full border-2 flex items-center justify-center shrink-0 transition-all bg-white ${isProcessing ? "border-emerald-500 bg-emerald-50 text-emerald-600" : "border-gray-200 text-gray-300"}`}
-                >
-                  <CheckCircle size={20} />
-                </div>
-
-                <div className="flex-1 flex items-center gap-4 w-full">
-                  <div
-                    className={`h-0.5 w-8 hidden sm:block ${isProcessing ? "bg-emerald-100" : "bg-gray-100"}`}
-                  ></div>
-                  <div
-                    className={`flex-1 border rounded-md p-4 transition-all ${isProcessing ? "bg-emerald-50/30 border-emerald-100" : "bg-gray-50 border-gray-100 opacity-60"}`}
-                  >
-                    <h4
-                      className={`font-bold text-[13px] uppercase tracking-widest leading-none ${isProcessing ? "text-emerald-800" : "text-gray-400"}`}
-                    >
-                      প্রক্রিয়াধীন
-                    </h4>
-                    <div className="mt-2 flex items-center gap-2">
-                      <Calendar
-                        size={12}
-                        className={
-                          isProcessing ? "text-emerald-400" : "text-gray-200"
-                        }
-                      />
-                      <span
-                        className={`text-sm font-black ${isProcessing ? "text-emerald-700" : "text-gray-300"}`}
-                      >
-                        {isProcessing
-                          ? "তদন্তাধীন"
-                          : "নির্ধারিত পদক্ষেপের অপেক্ষায়"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 3: Hearing */}
-              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 relative group">
-                <div
-                  className={`z-10 size-10 rounded-full border-2 flex items-center justify-center shrink-0 transition-all bg-white ${isHearing ? "border-emerald-500 bg-emerald-50 text-emerald-600" : "border-gray-200 text-gray-300"}`}
-                >
-                  <CheckCircle size={20} />
-                </div>
-
-                <div className="flex-1 flex items-center gap-4 w-full">
-                  <div
-                    className={`h-0.5 w-8 hidden sm:block ${isHearing ? "bg-emerald-100" : "bg-gray-100"}`}
-                  ></div>
-                  <div
-                    className={`flex-1 border rounded-md p-4 transition-all ${isHearing ? "bg-emerald-50/30 border-emerald-100" : "bg-gray-50 border-gray-100 opacity-60"}`}
-                  >
-                    <h4
-                      className={`font-bold text-[13px] uppercase tracking-widest leading-none ${isHearing ? "text-emerald-800" : "text-gray-400"}`}
-                    >
-                      শুনানি
-                    </h4>
-                    <div className="mt-2 flex items-center gap-2">
-                      <Calendar
-                        size={12}
-                        className={
-                          isHearing ? "text-emerald-400" : "text-gray-200"
-                        }
-                      />
-                      <span
-                        className={`text-sm font-black ${isHearing ? "text-emerald-700" : "text-gray-300"}`}
-                      >
-                        {isHearing ? "সমন জারি হয়েছে" : "অপেক্ষমাণ"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 4: Completed */}
-              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 relative group">
-                <div
-                  className={`z-10 size-10 rounded-full border-2 flex items-center justify-center shrink-0 transition-all bg-white ${isCompleted ? "border-emerald-500 bg-emerald-50 text-emerald-600" : "border-gray-200 text-gray-300"}`}
-                >
-                  <CheckCircle size={20} />
-                </div>
-
-                <div className="flex-1 flex items-center gap-4 w-full">
-                  <div
-                    className={`h-0.5 w-8 hidden sm:block ${isCompleted ? "bg-emerald-100" : "bg-gray-100"}`}
-                  ></div>
-                  <div
-                    className={`flex-1 border rounded-md p-4 transition-all ${isCompleted ? "bg-emerald-600 text-white shadow-xl shadow-emerald-100" : "bg-gray-50 border-gray-100 opacity-60 font-black"}`}
-                  >
-                    <h4
-                      className={`font-bold text-[13px] uppercase tracking-widest leading-none ${isCompleted ? "text-white" : "text-gray-400"}`}
-                    >
-                      নিষ্পত্তি
-                    </h4>
-                    <div className="mt-2 flex items-center gap-2">
-                      <Calendar
-                        size={12}
-                        className={
-                          isCompleted ? "text-emerald-100" : "text-gray-200"
-                        }
-                      />
-                      <span
-                        className={`text-sm font-black ${isCompleted ? "text-white" : "text-gray-300"}`}
-                      >
-                        {isCompleted ? "সমাধান হয়েছে" : "চূড়ান্তকরণ"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
 
         {/* Admin Resolution / Notes */}
         {complaint.adminNote && (
-          <div className="bg-amber-50 border-2 border-amber-100 rounded-md p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <MessageSquare size={18} className="text-amber-600" />
-              <h4 className="text-sm font-black text-amber-800 uppercase tracking-widest">
-                অ্যাডমিন রেজোলিউশনের বিস্তারিত
-              </h4>
+          <section className="rounded-md bg-[#fff8e6] border border-[#f5dfa0] p-2.5 flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <span className="size-8 rounded-md bg-[#ffecb8] text-[#b8620b] flex items-center justify-center"><MessageSquare size={16} /></span>
+              <h4 className="text-[13.5px] font-extrabold text-[#7a4a05]">অ্যাডমিন রেজোলিউশনের বিস্তারিত</h4>
             </div>
-            <div className="bg-white p-4 rounded-md border border-amber-100">
-              <p className="text-sm text-gray-700 leading-relaxed font-bold italic">
-                "{complaint.adminNote}"
-              </p>
+            <div className="rounded-md bg-white border border-[#f5dfa0] p-2.5">
+              <p className="text-[12.5px] text-[#3d4a63] leading-relaxed font-semibold italic">&quot;{complaint.adminNote}&quot;</p>
             </div>
-            <p className="mt-4 text-[10px] font-bold text-amber-600/60 uppercase text-center tracking-widest">
-              Updated on {formatDate(complaint.updatedAt)}
-            </p>
-          </div>
+            <p className="text-[10.5px] font-bold text-[#b8620b]/70 text-center">Updated on {formatDate(complaint.updatedAt)}</p>
+          </section>
         )}
 
         {/* Punishment Document Download - Only for completed complaints */}
         {isCompleted && (
-          <div className="bg-blue-50 border-2 border-blue-100 rounded-md p-6">
-            <div className="flex items-center gap-3">
-              <div className="bg-white p-3 rounded-md shadow-sm">
-                <FileDown className="text-blue-600" size={24} />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-sm font-black text-blue-800 uppercase tracking-widest">
-                  {complaint.punishmentType === "not_guilty"
-                    ? "নিষ্পত্তি ও দায়মুক্তি পত্র"
-                    : "শাস্তিমূলক আদেশনামা"}
-                </h4>
-                <p className="text-xs text-blue-600/80 mt-1">
-                  {complaint.punishmentType === "not_guilty"
-                    ? "আপনার দায়মুক্তি পত্রটি ডাউনলোড করুন"
-                    : "আপনার বিরুদ্ধে গৃহীত শাস্তিমূলক ব্যবস্থার আদেশনামা ডাউনলোড করুন"}
-                </p>
-              </div>
-              <Link
-                href={`/pdf/download?type=${complaint.punishmentType === "not_guilty" ? "staff-not-guilty" : "complaint"}&id=${complaint.complaintId}`}
-                target="_blank"
-                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-blue-700 transition-colors flex items-center gap-2"
-              >
-                <FileDown size={16} />
-                ডাউনলোড
-              </Link>
-            </div>
-          </div>
+          <section className="rounded-md bg-[#eef4fd] border border-[#cfe0fb] p-2.5 flex items-center gap-2.5">
+            <span className="size-10 rounded-md bg-white text-[#1f5fc9] flex items-center justify-center shrink-0 shadow-sm"><FileDown size={20} /></span>
+            <span className="flex flex-col min-w-0 flex-1 leading-tight">
+              <span className="text-[13.5px] font-extrabold text-[#0b3d91]">{complaint.punishmentType === "not_guilty" ? "নিষ্পত্তি ও দায়মুক্তি পত্র" : "শাস্তিমূলক আদেশনামা"}</span>
+              <span className="text-[11.5px] text-[#1f5fc9]/80">{complaint.punishmentType === "not_guilty" ? "আপনার দায়মুক্তি পত্রটি ডাউনলোড করুন" : "আপনার বিরুদ্ধে গৃহীত শাস্তিমূলক ব্যবস্থার আদেশনামা ডাউনলোড করুন"}</span>
+            </span>
+            <Link
+              href={`/pdf/download?type=${complaint.punishmentType === "not_guilty" ? "staff-not-guilty" : "complaint"}&id=${complaint.complaintId}`}
+              target="_blank"
+              className="shrink-0 h-9 px-3 rounded-md bg-[#0b3d91] text-white text-[12.5px] font-extrabold inline-flex items-center gap-1.5"
+            >
+              <FileDown size={15} />ডাউনলোড
+            </Link>
+          </section>
         )}
 
-        <div className="bg-gray-900 rounded-md p-4 text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
-            <ShieldAlert size={60} />
-          </div>
-          <h4 className="font-black text-lg mb-2">অভ্যন্তরীণ নীতি</h4>
-          <p className="text-sm text-gray-400 font-medium leading-relaxed">
-            আমাদের স্টাফ গাইডলাইন অনুসারে, যেকোনো অভিযোগ ৪৮ ঘণ্টার মধ্যে
-            পর্যালোচনা করা আবশ্যক। অনুগ্রহ করে ম্যানেজমেন্টের সাথে সমন্বয় করুন
-            যদি শুনানির তারিখ নির্ধারিত হয়।
+        <section className="relative overflow-hidden rounded-md bg-[linear-gradient(115deg,#0a2f70_0%,#0b3d91_100%)] text-white p-2.5">
+          <ShieldAlert size={60} className="absolute -right-2 -top-2 text-white/10" />
+          <h4 className="relative text-[14.5px] font-extrabold mb-1">অভ্যন্তরীণ নীতি</h4>
+          <p className="relative text-[12.5px] text-white/80 leading-relaxed">
+            আমাদের স্টাফ গাইডলাইন অনুসারে, যেকোনো অভিযোগ ৪৮ ঘণ্টার মধ্যে পর্যালোচনা করা আবশ্যক। অনুগ্রহ করে ম্যানেজমেন্টের সাথে সমন্বয় করুন যদি শুনানির তারিখ নির্ধারিত হয়।
           </p>
-        </div>
+        </section>
       </div>
     </StaffLayout>
   );

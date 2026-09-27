@@ -22,9 +22,10 @@ interface IdCardProps {
     };
 }
 
-export default function IdCardTemplate({ data }: IdCardProps) {
+export default function IdCardTemplate({ data, variant = "a4" }: IdCardProps & { variant?: "a4" | "preview" }) {
+    // Front on top, back below (vertical stack) — both for the A4 PDF and the on-screen preview.
     return (
-        <div className="relative w-[210mm] h-[297mm] mx-auto flex justify-evenly pt-10">
+        <div className={variant === "a4" ? "relative w-[210mm] h-[297mm] mx-auto flex flex-col items-center gap-10 pt-10" : "relative mx-auto flex flex-col items-center gap-4"}>
             <div
                 className="relative bg-white overflow-hidden border border-black"
                 style={{

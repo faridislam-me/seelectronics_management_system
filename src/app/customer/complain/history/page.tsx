@@ -36,7 +36,7 @@ export default async function ComplaintHistoryPage() {
 
   return (
     <CustomerLayout>
-      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-24 text-[#16213a]">
+      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-2 text-[#16213a]">
         {/* Title */}
         <div className="flex items-center gap-2.5">
           <span className="size-11 rounded-full bg-[#0b3d91] text-white flex items-center justify-center shrink-0 shadow-[0_6px_14px_rgba(11,61,145,0.3)]"><FileText size={22} /></span>

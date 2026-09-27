@@ -18,7 +18,7 @@ export default async function ApplicationListPage() {
 
   return (
     <CustomerLayout>
-      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-24 text-[#16213a]">
+      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-2 text-[#16213a]">
         <div className="relative flex items-center gap-3 pr-24">
           <span className="size-14 rounded-full bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><FileText size={28} /></span>
           <span className="flex flex-col leading-tight">

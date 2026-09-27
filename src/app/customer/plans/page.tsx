@@ -42,7 +42,7 @@ export default async function PlansLandingPage() {
 
   return (
     <CustomerLayout>
-      <div className="space-y-6 pb-24">
+      <div className="space-y-6 pb-2">
         {/* Header Banner */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 border border-gray-100/80 shadow-sm relative overflow-hidden">
           <div className="absolute -top-12 -right-12 w-36 h-36 bg-gradient-to-br from-brand/20 to-transparent rounded-full blur-2xl pointer-events-none" />

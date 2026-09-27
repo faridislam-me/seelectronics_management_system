@@ -16,7 +16,7 @@ export default async function PaymentHistoryPage() {
 
   return (
     <StaffLayout balance={0}>
-      <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-24 flex flex-col gap-2.5">
+      <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-2 flex flex-col gap-2.5">
         <div className="flex items-center gap-3">
           <Link href="/staff/payment" aria-label="Back" className="size-11 rounded-full bg-white border border-[#dfe6f2] flex items-center justify-center shrink-0"><ArrowLeft size={20} /></Link>
           <span className="flex flex-col leading-tight min-w-0">

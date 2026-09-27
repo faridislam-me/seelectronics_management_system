@@ -3,7 +3,7 @@ import { verifyCustomerSession } from "@/actions/customerActions";
 import { getServiceHistoryById } from "@/actions/serviceActions";
 import { CustomerLayout } from "@/components/layout/CustomerLayout";
 import clsx from "clsx";
-import { Calendar, CheckCircle2, ChevronRight, ClipboardList, Clock, MapPin, MessageSquare, Plus, Send, Star, User, Wrench } from "lucide-react";
+import { Calendar, CheckCircle2, ChevronRight, ClipboardList, Clock, MapPin, MessageSquare, Phone, Plus, Send, Star, User, Wrench } from "lucide-react";
 import Link from "next/link";
 
 export default async function CustomerFeedbackPage() {
@@ -26,7 +26,7 @@ export default async function CustomerFeedbackPage() {
 
   return (
     <CustomerLayout>
-      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-24 text-[#16213a]">
+      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-2 text-[#16213a]">
         {/* Hero */}
         <PageBanner src="/banners/feedback.jpg" alt="Customer Feedback" width={963} height={242} />
 
@@ -48,7 +48,11 @@ export default async function CustomerFeedbackPage() {
         ) : (
           completed.map((s) => {
             const has = !!s.feedback?.serviceId;
-            const rating = Math.round(Number(s.feedback?.rating || 0));
+            const hasRating = s.feedback?.rating != null && Number(s.feedback.rating) > 0;
+            const rating = hasRating ? Math.min(5, Math.round(Number(s.feedback.rating))) : 0;
+            const staffName: string | null = s.appointedStaff?.name || s.staffName || null;
+            const staffId: string | null = s.appointedStaff?.staffId || s.staffId || null;
+            const staffPhone: string | null = s.appointedStaff?.phone || s.staffPhone || null;
             return (
               <article key={s.serviceId} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col gap-2 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
                 <div className="flex items-center gap-2.5">
@@ -64,12 +68,26 @@ export default async function CustomerFeedbackPage() {
                   )}
                 </div>
                 <div className="flex flex-col gap-1 border-t border-[#eef1f6] pt-2 text-[12.5px] font-semibold text-[#3d4a63]">
-                  <span className="inline-flex items-center gap-2"><Wrench size={14} className="text-[#0b3d91]" /><span className="font-extrabold text-[#16213a]">{s.productModel}</span><span className="text-[#9aa4b8]">#{s.serviceId} · {s.type}</span></span>
-                  <span className="inline-flex items-center gap-2"><Calendar size={14} className="text-[#0b3d91]" />{fmt(s.createdAt)}</span>
+                  <span className="flex items-center gap-2 min-w-0"><Wrench size={14} className="text-[#0b3d91] shrink-0" /><span className="font-extrabold text-[#16213a] truncate">{s.productModel}</span><span className="text-[#9aa4b8] truncate">#{s.serviceId} · {s.type}</span></span>
+                  <span className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-2"><Calendar size={14} className="text-[#0b3d91]" />{fmt(s.createdAt)}</span>
+                    {has && (
+                      <span className="ml-auto inline-flex items-center gap-1" aria-label={hasRating ? `${rating} / 5` : "রেটিং নেই"}>
+                        {[1, 2, 3, 4, 5].map((i) => <Star key={i} size={15} className={i <= rating ? "text-[#f5a623]" : "text-[#d7deea]"} fill={i <= rating ? "#f5a623" : "#d7deea"} />)}
+                        {!hasRating && <span className="text-[10.5px] font-bold text-[#9aa4b8]">রেটিং নেই</span>}
+                      </span>
+                    )}
+                  </span>
+                  {staffName && (
+                    <span className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1.5 min-w-0"><User size={14} className="text-[#0b3d91] shrink-0" /><span className="font-extrabold text-[#16213a] truncate">{staffName}</span></span>
+                      {staffId && <span className="h-5 px-1.5 rounded-md bg-[#e8f1ff] text-[#1b6fd6] text-[10.5px] font-extrabold inline-flex items-center">ID: {staffId}</span>}
+                      {staffPhone && <a href={`tel:${staffPhone}`} className="inline-flex items-center gap-1 font-bold text-[#1f5fc9]"><Phone size={13} />{staffPhone}</a>}
+                    </span>
+                  )}
                 </div>
-                <div className="rounded-md bg-[#e8f1ff] p-2.5 flex items-start gap-2">
-                  <p className="text-[12.5px] leading-relaxed text-[#16213a] flex-1">আপনার মূল্যবান ফিডব্যাক আমাদের জন্য অত্যন্ত গুরুত্বপূর্ণ। আপনার মতামতের ভিত্তিতে <b>SE ELECTRONICS</b> আরও উন্নত ও চমৎকার সেবা প্রদান করতে অবিরাম কাজ করে যাচ্ছে। আমাদের লক্ষ্য আপনার সন্তুষ্টি।</p>
-                  {has && <span className="inline-flex gap-0.5 shrink-0">{[1, 2, 3, 4, 5].map((i) => <Star key={i} size={14} className={i <= rating ? "text-[#f5a623]" : "text-[#d7deea]"} fill={i <= rating ? "#f5a623" : "#d7deea"} />)}</span>}
+                <div className="rounded-md bg-[#e8f1ff] p-2.5">
+                  <p className="text-[12.5px] leading-relaxed text-[#16213a]">আপনার মূল্যবান ফিডব্যাক আমাদের জন্য অত্যন্ত গুরুত্বপূর্ণ। আপনার মতামতের ভিত্তিতে <b>SE ELECTRONICS</b> আরও উন্নত ও চমৎকার সেবা প্রদান করতে অবিরাম কাজ করে যাচ্ছে। আমাদের লক্ষ্য আপনার সন্তুষ্টি।</p>
                 </div>
               </article>
             );

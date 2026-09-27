@@ -2,7 +2,8 @@ import { getAllTeamMembers } from "@/actions";
 import { TeamMembers } from "@/components";
 import { contactDetails } from "@/constants";
 import { AppError } from "@/utils";
-import { Mail, MapPin, Phone, Users } from "lucide-react";
+import PageBanner from "@/components/ui/PageBanner";
+import { Mail, MapPin, Phone } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -31,21 +32,7 @@ export default async function TeamMembersPage({
 
       <div className="mx-auto max-w-[1200px] px-2 pt-2 flex flex-col gap-2">
         {/* Banner */}
-        <section className="relative overflow-hidden rounded-md border border-[#cfe0fb] bg-[linear-gradient(100deg,#eaf2ff_0%,#f6f9ff_55%,#dbe8fb_100%)] p-3 min-h-[118px] flex items-center shadow-[0_6px_18px_rgba(11,61,145,0.08)]">
-          <div className="relative z-10 flex items-start gap-2.5 pr-[34%]">
-            <Users size={34} className="text-[#0b3d91] shrink-0" />
-            <span className="flex flex-col gap-1 leading-tight">
-              <span className="text-[clamp(18px,5.4vw,24px)] font-extrabold text-[#0b3d91]">আমাদের টিম মেম্বার</span>
-              <span className="text-[12.5px] font-semibold text-[#3d4a63]">&quot;একটি শক্তিশালী টিমই গড়ে তোলে সফলতার গল্প&quot;</span>
-            </span>
-          </div>
-          {/* building illustration */}
-          <div aria-hidden className="absolute right-0 bottom-0 w-[34%] h-full">
-            <div className="absolute right-3 bottom-0 w-[78%] h-[86%] rounded-t-md bg-[linear-gradient(180deg,#1d3f7a,#0b2a66)] grid grid-cols-3 gap-1 p-2 content-start">
-              {Array.from({ length: 12 }).map((_, i) => <span key={i} className="h-3 rounded-[2px] bg-[#7fb4ff]/60" />)}
-            </div>
-          </div>
-        </section>
+        <PageBanner src="/banners/team.jpg" alt="আমাদের টিম মেম্বার - একটি শক্তিশালী টিমই গড়ে তোলে সফলতার গল্প" width={803} height={232} />
 
         {/* Company contact (unchanged info) */}
         <section className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col gap-1 text-[12px] text-[#3d4a63]">

@@ -199,14 +199,14 @@ export function BlueCard({ children, className }: { children: React.ReactNode; c
 /** Floating bottom navigation shared by the staff and seller portals. */
 export function BlueBottomNav({ items, pathname, homeHref }: { items: { label: string; icon: LucideIcon; href: string }[]; pathname: string; homeHref: string }) {
   return (
-    <nav className="fixed bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[414px] h-[72px] bg-white rounded-md shadow-[0_-4px_24px_rgba(11,61,145,0.15)] grid grid-cols-4 items-center px-1 z-50">
+    <nav className="fixed bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[414px] h-11 bg-white rounded-md shadow-[0_-4px_24px_rgba(11,61,145,0.15)] grid grid-cols-4 items-center px-1 z-50">
       {items.map((item) => {
         const active = item.href === homeHref ? pathname === item.href : pathname.startsWith(item.href);
         return (
-          <Link key={item.href} href={item.href} className={clsx("relative flex flex-col items-center justify-center gap-1 min-h-11", active ? "text-[#1f7cf0]" : "text-[#6b7690]")}>
-            <item.icon size={23} strokeWidth={2} />
-            <span className="text-[clamp(11px,3.2vw,13px)] font-bold">{item.label}</span>
-            {active && <span className="absolute -bottom-1.5 w-12 h-1 rounded-full bg-[#1f7cf0]" />}
+          <Link key={item.href} href={item.href} className={clsx("relative flex flex-col items-center justify-center gap-0 h-11", active ? "text-[#1f7cf0]" : "text-[#6b7690]")}>
+            <item.icon size={18} strokeWidth={2} />
+            <span className="text-[clamp(9.5px,2.8vw,11px)] font-bold leading-tight">{item.label}</span>
+            {active && <span className="absolute bottom-0.5 w-8 h-0.5 rounded-full bg-[#1f7cf0]" />}
           </Link>
         );
       })}

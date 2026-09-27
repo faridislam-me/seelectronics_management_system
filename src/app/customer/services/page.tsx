@@ -28,7 +28,7 @@ export default async function CustomerServicesPage() {
   const services = servicesRes.data || [];
 
   return (
-    <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-24">
+    <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-12">
       <CustomerAppHeader backHref="/customer/profile" title="My Services" subtitle="Service History & Status" />
 
       <main className="px-2 -mt-4 relative flex flex-col gap-2.5">

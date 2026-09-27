@@ -53,7 +53,7 @@ export default async function StaffPaymentRequestPage() {
 
   return (
     <StaffLayout balance={balance}>
-      <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-24 flex flex-col gap-2.5 overflow-x-hidden">
+      <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-2 flex flex-col gap-2.5 overflow-x-hidden">
         {/* Title */}
         <div className="flex items-center gap-2.5">
           <Link href="/staff/payment" aria-label="Back" className="size-10 rounded-md bg-white border border-[#dfe6f2] flex items-center justify-center shrink-0"><ArrowLeft size={20} /></Link>

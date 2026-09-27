@@ -24,7 +24,7 @@ export default async function IdCardPage() {
   if (!response.success || !response.data) {
     return (
       <StaffLayout balance={balance}>
-        <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-24 flex flex-col gap-2.5">
+        <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-2 flex flex-col gap-2.5">
           <section className="rounded-md bg-white border border-[#dfe6f2] p-5 flex flex-col items-center gap-3 text-center shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
             <span className="size-16 rounded-full bg-[#ffe9ec] text-[#e0243f] flex items-center justify-center"><TriangleAlert size={30} /></span>
             <h1 className="text-[17px] font-extrabold text-[#0b2a66]">{response.message || "Invalid Staff Data"}</h1>
@@ -91,7 +91,7 @@ export default async function IdCardPage() {
 
   return (
     <StaffLayout balance={balance}>
-      <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-24 flex flex-col gap-2.5">
+      <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-2 flex flex-col gap-2.5">
         {/* Title */}
         <section className="relative overflow-hidden rounded-md bg-[linear-gradient(105deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-3 shadow-[0_10px_30px_rgba(10,47,112,0.30)]">
           <span className="absolute -right-8 -top-10 size-40 rounded-full bg-white/10" />
@@ -120,9 +120,10 @@ export default async function IdCardPage() {
           </Link>
         </section>
 
-        <div className="h-[calc(100dvh-270px)] min-h-[420px]">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between px-0.5 text-[11.5px] font-bold text-[#5b6784]"><span>সামনের অংশ (উপরে) · পেছনের অংশ (নিচে)</span></div>
           <ZoomableView>
-            <IdCardTemplate data={data as any} />
+            <IdCardTemplate data={data as any} variant="preview" />
           </ZoomableView>
         </div>
       </div>

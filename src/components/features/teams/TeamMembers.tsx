@@ -381,15 +381,18 @@ export default function TeamMembers({
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
           {visibleStaffs.map((staff) => {
             const tone = staff.role === "technician"
-              ? { panel: "bg-[#fff1e6]", badge: "bg-[#f57c1f]", btn: "bg-[#fff1e6] text-[#e8710a]", label: "Technical", Icon: Settings }
-              : { panel: "bg-[#e6f7ee]", badge: "bg-[#1a9c4b]", btn: "bg-[#e6f7ee] text-[#178a42]", label: "Electrical", Icon: Zap };
+              ? { panel: "bg-[linear-gradient(180deg,#ffe9d6_0%,#fff6ee_100%)]", blob: "bg-[#ffe3cc]", badge: "bg-[#f57c1f]", btn: "bg-[#fff1e6] text-[#e8710a]", label: "Technical", Icon: Settings }
+              : { panel: "bg-[linear-gradient(180deg,#d9f3e5_0%,#f1fbf5_100%)]", blob: "bg-[#cdeedb]", badge: "bg-[#1a9c4b]", btn: "bg-[#e6f7ee] text-[#178a42]", label: "Electrical", Icon: Zap };
             return (
               <button type="button" key={staff.id} onClick={() => handleProfileSelect(staff)} className="relative text-left rounded-md bg-white border border-[#dfe6f2] p-2 flex flex-col gap-1.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] active:scale-[0.99] transition-transform">
                 <div className={clsx("relative w-full aspect-[5/4] rounded-md overflow-hidden flex items-end justify-center", tone.panel)}>
+                  {/* soft curved backdrop behind the photo, like the mockup */}
+                  <span aria-hidden className={clsx("absolute -left-[12%] -bottom-[38%] w-[124%] h-[78%] rounded-[50%] opacity-80", tone.blob)} />
+                  <span aria-hidden className="absolute -right-[20%] -top-[30%] w-[70%] h-[70%] rounded-full bg-white/50" />
                   {staff.photoUrl ? (
-                    <Image src={staff.photoUrl} alt={staff.name} fill sizes="(max-width:640px) 50vw, 25vw" className="object-cover object-top" />
+                    <Image src={staff.photoUrl} alt={staff.name} fill sizes="(max-width:640px) 50vw, 25vw" className="relative object-contain object-bottom" />
                   ) : (
-                    <span className="mb-3 size-16 rounded-full bg-white/80 text-[#0b3d91] text-[22px] font-extrabold flex items-center justify-center">{staff.name?.charAt(0) || <User size={28} />}</span>
+                    <span className="relative mb-3 size-16 rounded-full bg-white/80 text-[#0b3d91] text-[22px] font-extrabold flex items-center justify-center">{staff.name?.charAt(0) || <User size={28} />}</span>
                   )}
                   {staff.isActiveStaff === false && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10 pointer-events-none">

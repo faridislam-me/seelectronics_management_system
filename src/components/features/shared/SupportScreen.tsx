@@ -23,7 +23,7 @@ export default function SupportScreen({ ticketHref = "/customer/complain" }: { t
   ];
 
   return (
-    <div className="flex flex-col gap-2.5 px-2 pt-2 pb-24 text-[#16213a]">
+    <div className="flex flex-col gap-2.5 px-2 pt-2 pb-2 text-[#16213a]">
       {/* Hero */}
       <PageBanner src="/banners/support.jpg" alt="SE Electronics সাপোর্ট টিম" width={755} height={328} href={`tel:${contactDetails.customerCare}`} />
 

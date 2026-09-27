@@ -35,7 +35,7 @@ export default async function ComplainDashboardPage() {
 
   return (
     <CustomerLayout>
-      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-24 text-[#16213a]">
+      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-2 text-[#16213a]">
         <PageBanner src="/banners/complaint.jpg" alt="অভিযোগ করুন - নতুন অভিযোগ করুন" width={738} height={273} href="/customer/complain/new" />
 
         <span className="text-[18px] font-extrabold text-[#0b3d91] px-0.5">অভিযোগ ড্যাশবোর্ড</span>

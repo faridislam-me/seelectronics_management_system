@@ -50,7 +50,7 @@ export default async function StaffCertificatePage({ searchParams }: PageProps) 
     const notIssued = !token;
     return (
       <StaffLayout balance={balance}>
-        <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-24 flex flex-col gap-2.5">
+        <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-2 flex flex-col gap-2.5">
           <TitleCard subtitle="SE Electronics Certificate" />
           <section className="rounded-md bg-white border border-[#dfe6f2] p-5 flex flex-col items-center gap-3 text-center shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
             <span className={notIssued ? "size-16 rounded-full bg-[#fff6e3] text-[#e0a11b] flex items-center justify-center" : "size-16 rounded-full bg-[#ffe9ec] text-[#e0243f] flex items-center justify-center"}>
@@ -78,7 +78,7 @@ export default async function StaffCertificatePage({ searchParams }: PageProps) 
 
   return (
     <StaffLayout balance={balance}>
-      <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-24 flex flex-col gap-2.5">
+      <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-2 flex flex-col gap-2.5">
         <TitleCard subtitle={data.shopName || "Shop Certificate"} />
 
         {/* Issued-to summary */}

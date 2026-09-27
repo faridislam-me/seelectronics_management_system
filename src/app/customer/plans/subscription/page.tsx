@@ -14,7 +14,7 @@ export default async function ActiveSubscriptionListPage() {
 
   return (
     <CustomerLayout>
-      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-24 text-[#16213a]">
+      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-2 text-[#16213a]">
         {/* Title */}
         <div className="relative flex items-center gap-3 pr-24">
           <span className="size-14 rounded-md bg-[#1f7cf0] text-white flex items-center justify-center shrink-0 shadow-[0_6px_16px_rgba(31,124,240,0.35)]"><CreditCard size={28} /></span>

@@ -39,7 +39,7 @@ export default async function SubscriptionPlanDetailsPage({ params }: PlanDetail
 
     return (
         <CustomerLayout>
-            <div className="min-h-screen bg-[#fafafa] p-4 sm:p-6 pb-24 selection:bg-blue-200">
+            <div className="min-h-screen bg-[#fafafa] p-4 sm:p-6 pb-2 selection:bg-blue-200">
                 {/* Top Navigation */}
                 <div className="max-w-4xl mx-auto mb-6">
                     <Link 

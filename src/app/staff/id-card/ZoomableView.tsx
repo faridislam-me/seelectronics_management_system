@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Maximize, Minus, Plus } from "lucide-react";
 
 export default function ZoomableView({
@@ -9,13 +9,27 @@ export default function ZoomableView({
   children: React.ReactNode;
 }) {
   const [scale, setScale] = useState(1);
+  const [fit, setFit] = useState(1);
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+
+  // Start zoomed to fit the available width so the card never overflows small phones.
+  useEffect(() => {
+    const box = boxRef.current, content = contentRef.current;
+    if (!box || !content) return;
+    const avail = box.clientWidth - 16;
+    const natural = content.scrollWidth;
+    const f = natural > 0 ? Math.min(1, avail / natural) : 1;
+    setFit(f);
+    setScale(f);
+  }, []);
 
   const handleZoomIn = () => setScale((s) => Math.min(s + 0.1, 2.5));
   const handleZoomOut = () => setScale((s) => Math.max(s - 0.1, 0.3));
-  const handleReset = () => setScale(1);
+  const handleReset = () => setScale(fit);
 
   return (
-    <div className="flex flex-col items-center w-full h-full relative">
+    <div className="flex flex-col items-center w-full relative">
       <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white border border-[#dfe6f2] shadow-[0_4px_14px_rgba(11,61,145,0.10)] p-1 rounded-md z-20">
         <button
           onClick={handleZoomOut}
@@ -44,12 +58,9 @@ export default function ZoomableView({
         </button>
       </div>
 
-      <div className="flex-1 w-full h-full overflow-auto relative rounded-md bg-white border border-[#dfe6f2] p-2 pt-14 sm:p-6 sm:pt-16 flex">
+      <div ref={boxRef} className="w-full overflow-auto relative rounded-md bg-white border border-[#dfe6f2] p-2 pt-12 sm:p-6 sm:pt-16 flex">
         <div className="m-auto w-max h-max">
-          <div
-            className="origin-center transition-transform duration-200 ease-out"
-            style={{ transform: `scale(${scale})` }}
-          >
+          <div ref={contentRef} style={{ zoom: scale }}>
             {children}
           </div>
         </div>

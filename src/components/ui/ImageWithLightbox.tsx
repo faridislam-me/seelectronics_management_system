@@ -8,12 +8,15 @@ export default function ImageWithLightbox(
 ) {
   const [openLightbox, setOpenLightbox] = useState(false);
 
+  // Lock page scroll only while the lightbox is open. Never touch overflow
+  // otherwise: restoring a captured value on unmount used to leave the page
+  // stuck at "hidden" when this sat inside a Modal that had locked scrolling.
   useEffect(() => {
+    if (!openLightbox) return;
     const original = document.body.style.overflow;
-    if (openLightbox) document.body.style.overflow = "hidden";
-
+    document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = original;
+      document.body.style.overflow = original === "hidden" ? "" : original;
     };
   }, [openLightbox]);
 

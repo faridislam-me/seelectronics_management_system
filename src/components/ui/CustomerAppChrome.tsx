@@ -45,14 +45,14 @@ export function CustomerAppFooter({ tagline }: { tagline: string }) {
 /** Dark blue bottom navigation used by the customer app screens. */
 export function CustomerAppNav({ items, active }: { items: { label: string; icon: LucideIcon; href: string }[]; active: string }) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#0b3d91] bg-[linear-gradient(180deg,#0d47a8_0%,#072a66_100%)] text-white grid px-1 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom,0px))]" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#0b3d91] bg-[linear-gradient(180deg,#0d47a8_0%,#072a66_100%)] text-white grid px-1 pt-1 pb-[calc(2px+env(safe-area-inset-bottom,0px))]" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
       {items.map((item) => {
         const isActive = item.href === active;
         return (
-          <Link key={item.label} href={item.href} className="min-w-0 flex flex-col items-center gap-0.5 py-1 px-0.5">
-            <span className={clsx("size-9 rounded-md flex items-center justify-center", isActive ? "bg-white/15" : "")}><item.icon size={21} strokeWidth={2.2} /></span>
-            <span className="max-w-full text-center text-[clamp(9.5px,2.9vw,11px)] font-bold leading-tight">{item.label}</span>
-            <span className={clsx("h-0.5 w-8 rounded-full", isActive ? "bg-[#7fb4ff]" : "bg-transparent")} />
+          <Link key={item.label} href={item.href} className={clsx("relative min-w-0 flex flex-col items-center gap-0 py-0.5 px-0.5", isActive ? "text-white" : "text-white/75")}>
+            <span className={clsx("h-6 w-9 rounded-md flex items-center justify-center", isActive ? "bg-white/15" : "")}><item.icon size={17} strokeWidth={2.2} /></span>
+            <span className="max-w-full text-center text-[clamp(9px,2.7vw,10.5px)] font-bold leading-tight truncate">{item.label}</span>
+            {isActive && <span className="absolute top-0 h-0.5 w-6 rounded-full bg-[#7fb4ff]" />}
           </Link>
         );
       })}

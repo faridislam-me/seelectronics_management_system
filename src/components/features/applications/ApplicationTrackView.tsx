@@ -95,7 +95,7 @@ export default function ApplicationTrackView({ type, status, message, applicantN
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-[640px] mx-auto px-2 pt-2 pb-24 flex flex-col gap-2.5">
+      <main className="flex-1 w-full max-w-[640px] mx-auto px-2 pt-2 pb-14 flex flex-col gap-2.5">
         {/* Banner */}
         <section className="relative overflow-hidden rounded-md bg-[#0a2f70] bg-[linear-gradient(100deg,#0a2f70_0%,#0d3f96_45%,#1b5fd0_70%,#0a2f70_100%)] text-white shadow-[0_10px_30px_rgba(10,47,112,0.35)]">
           <span className="absolute right-[26%] -top-10 h-[200%] w-24 bg-white/10 rotate-[18deg]" />
@@ -210,12 +210,12 @@ export default function ApplicationTrackView({ type, status, message, applicantN
       </main>
 
       {/* Bottom nav */}
-      <nav className="fixed bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[600px] h-[68px] bg-white rounded-md shadow-[0_-4px_24px_rgba(11,61,145,0.15)] grid grid-cols-4 items-center px-1 z-50">
+      <nav className="fixed bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[600px] h-11 bg-white rounded-md shadow-[0_-4px_24px_rgba(11,61,145,0.15)] grid grid-cols-4 items-center px-1 z-50">
         {nav.map((n) => (
-          <Link key={n.label} href={n.href} className={clsx("relative flex flex-col items-center justify-center gap-1 min-h-11", n.current ? "text-[#1f7cf0]" : "text-[#6b7690]")}>
-            <n.icon size={24} strokeWidth={2} />
-            <span className="text-[12px] font-bold">{n.label}</span>
-            {n.current && <span className="absolute -bottom-2 w-14 h-1 rounded-full bg-[#1f7cf0]" />}
+          <Link key={n.label} href={n.href} className={clsx("relative flex flex-col items-center justify-center gap-0 h-11", n.current ? "text-[#1f7cf0]" : "text-[#6b7690]")}>
+            <n.icon size={18} strokeWidth={2} />
+            <span className="text-[10.5px] font-bold leading-tight">{n.label}</span>
+            {n.current && <span className="absolute bottom-0.5 w-8 h-0.5 rounded-full bg-[#1f7cf0]" />}
           </Link>
         ))}
       </nav>

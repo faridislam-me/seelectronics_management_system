@@ -60,7 +60,7 @@ export default async function StaffTrackingPage() {
 
   return (
     <StaffLayout balance={stats?.availableBalance || 0}>
-      <div className="w-full max-w-7xl mx-auto px-2 pt-2 pb-24 flex flex-col gap-2.5 text-[#16213a]">
+      <div className="w-full max-w-7xl mx-auto px-2 pt-2 pb-2 flex flex-col gap-2.5 text-[#16213a]">
         {/* Title */}
         <div className="relative flex items-center gap-2.5 min-h-[72px] pr-[34%]">
           <Link href="/staff/profile" aria-label="Back" className="size-10 rounded-md bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center shrink-0"><ArrowLeft size={20} /></Link>

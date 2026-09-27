@@ -9,7 +9,7 @@ const MAPS_LINK = `https://www.google.com/maps/search/?api=1&query=${encodeURICo
 
 export default function LocationPage() {
   return (
-    <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-24">
+    <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-12">
       {/* Light header */}
       <header className="bg-white px-2 py-2.5 flex items-center gap-2 border-b border-[#dfe6f2]">
         <Link href="/customer/profile" aria-label="Back" className="size-10 rounded-full bg-[#eef3fb] flex items-center justify-center"><ArrowLeft size={20} /></Link>

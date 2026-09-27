@@ -35,7 +35,7 @@ export default async function ComplaintDocPage({ params }: { params: Promise<{ c
 
   return (
     <CustomerLayout>
-      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-24 text-[#16213a]">
+      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-2 text-[#16213a]">
         {/* Top bar */}
         <div className="flex items-center gap-3">
           <Link href="/customer/complain" aria-label="ড্যাশবোর্ডে ফিরুন" className="size-11 rounded-full bg-white border border-[#dfe6f2] flex items-center justify-center shrink-0"><ArrowLeft size={20} /></Link>

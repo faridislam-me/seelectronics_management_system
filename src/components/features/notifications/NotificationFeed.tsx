@@ -38,7 +38,7 @@ export default function NotificationFeed({ items, isLoading, heroImage }: { item
   ];
 
   return (
-    <div className="flex flex-col gap-2.5 px-2 pt-2 pb-24 text-[#16213a]">
+    <div className="flex flex-col gap-2.5 px-2 pt-2 pb-2 text-[#16213a]">
       {/* Hero */}
       <section className="relative overflow-hidden rounded-md bg-[#0b3d91] bg-[linear-gradient(105deg,#071f4d_0%,#0b3d91_55%,#1f7cf0_100%)] text-white p-3.5 min-h-[112px] flex items-center shadow-[0_10px_30px_rgba(10,47,112,0.35)]">
         {heroImage && (

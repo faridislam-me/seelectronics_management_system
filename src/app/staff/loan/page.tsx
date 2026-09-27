@@ -17,7 +17,7 @@ export default async function LoanPage() {
 
   return (
     <StaffLayout balance={balance}>
-      <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-24 flex flex-col gap-2.5">
+      <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-2 flex flex-col gap-2.5">
         {/* Title */}
         <div className="flex items-center gap-2.5">
           <Link href="/staff/profile" aria-label="Back" className="size-10 rounded-md bg-white border border-[#dfe6f2] text-[#0b3d91] flex items-center justify-center shrink-0"><ArrowLeft size={20} /></Link>

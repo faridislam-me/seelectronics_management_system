@@ -5,7 +5,7 @@ import { CustomerAppFooter, CustomerAppNav, SEWordmark } from "@/components/ui/C
 import { contactDetails } from "@/constants";
 import { calculateWarrantyEndDate, formatDate, isWarrantyValid } from "@/utils";
 import clsx from "clsx";
-import { Calendar, CalendarCheck, CheckCircle2, FileText, Headset, Home, IdCard, Info, Lock, Mail, MapPin, Menu, Phone, Search, ShieldCheck, TimerOff, User } from "lucide-react";
+import { Calendar, CalendarCheck, CheckCircle2, FileText, Headset, Home, IdCard, Info, Lock, Mail, MapPin, Phone, Search, ShieldCheck, TimerOff, User } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -37,14 +37,13 @@ export default function CheckWarrantyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-24">
+    <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-12">
       <header className="relative bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] text-white px-3 pt-3 pb-7 rounded-b-[26px] overflow-hidden">
         <span className="absolute -right-10 -top-14 size-56 rounded-full bg-white/10" />
         <div className="relative flex items-center gap-3">
           <Link href="/"><SEWordmark /></Link>
           <span className="h-10 w-px bg-white/40" />
           <span className="text-[clamp(14px,4vw,17px)] font-extrabold leading-tight flex-1 min-w-0">বিশ্বাসে প্রযুক্তি<br />সেবায় আমরা</span>
-          <Link href="/customer/profile" aria-label="Menu" className="size-10 flex items-center justify-center"><Menu size={26} /></Link>
         </div>
       </header>
 
@@ -111,9 +110,9 @@ export default function CheckWarrantyPage() {
                 const end = has ? calculateWarrantyEndDate(product.warrantyStartDate, product.warrantyDurationMonths) : null;
                 return (
                   <div key={index} className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[15px] font-extrabold">{product.type.toUpperCase()} · {product.model}</span>
-                      <span className={clsx("inline-flex items-center gap-1 px-2 h-7 rounded-md border text-[11px] font-extrabold", !has ? "bg-gray-100 text-gray-600 border-gray-200" : valid ? "bg-[#e9f9ef] text-[#178a42] border-[#bfe8cd]" : "bg-[#ffe9ec] text-[#c81f38] border-[#f7c3ca]")}>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-[15px] font-extrabold min-w-0 break-words">{product.type.toUpperCase()} · {product.model}</span>
+                      <span className={clsx("shrink-0 whitespace-nowrap inline-flex items-center gap-1 px-2 h-7 rounded-md border text-[11px] font-extrabold", !has ? "bg-gray-100 text-gray-600 border-gray-200" : valid ? "bg-[#e9f9ef] text-[#178a42] border-[#bfe8cd]" : "bg-[#ffe9ec] text-[#c81f38] border-[#f7c3ca]")}>
                         {!has ? "ওয়ারেন্টি নেই" : valid ? <><CheckCircle2 size={13} />ওয়ারেন্টি আছে</> : <><TimerOff size={13} />ওয়ারেন্টি শেষ</>}
                       </span>
                     </div>

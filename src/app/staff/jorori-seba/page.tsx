@@ -287,7 +287,7 @@ export default function JoruriSebaPage() {
 
   return (
     <StaffLayout balance={0}>
-      <div className="flex flex-col gap-6 p-4 sm:p-6 text-gray-800 pb-24 font-sans">
+      <div className="flex flex-col gap-6 p-4 sm:p-6 text-gray-800 pb-2 font-sans">
         {/* Elegant Header Section (Optimized size for dashboard) */}
         <PageBanner src="/banners/emergency.jpg" alt="জরুরি কল - Emergency Call" width={721} height={273} href="tel:09649355555" />
 

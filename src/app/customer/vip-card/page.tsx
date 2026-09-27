@@ -38,7 +38,7 @@ export default async function VipCardPage() {
 
   return (
     <CustomerLayout>
-      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-24 text-[#16213a]">
+      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-2 text-[#16213a]">
         {/* Card / application */}
         {approved && vipCardNumber ? (
           <div className="rounded-md overflow-hidden"><VipFlipCard customer={customer} vipCardNumber={vipCardNumber} vipBgSrc={vipBg?.src || "/vipbg.jpeg"} baseUrl={process.env.NEXT_PUBLIC_BASE_URL} /></div>

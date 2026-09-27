@@ -3,7 +3,7 @@
 import { db } from "@/db/drizzle";
 import { customers, referralBonuses, referralPaymentRequests } from "@/db/schema";
 import { verifySession } from "@/lib";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -27,9 +27,29 @@ export const getCustomerReferralData = async () => {
 
     if (!customer) return { success: false, message: "Customer not found" };
 
-    const bonuses = await db.query.referralBonuses.findMany({
+    const rawBonuses = await db.query.referralBonuses.findMany({
       where: eq(referralBonuses.referrerCustomerId, customerId),
       orderBy: [desc(referralBonuses.createdAt)],
+    });
+
+    // Attach what each referred customer bought (from their invoice) so the
+    // referrer can see name, products and amount.
+    const referredIds = [...new Set(rawBonuses.map((b) => b.referredCustomerId).filter(Boolean))] as string[];
+    const referred = referredIds.length
+      ? await db.query.customers.findMany({
+          where: inArray(customers.customerId, referredIds),
+          columns: { customerId: true, invoiceNumber: true },
+          with: { invoice: { columns: { invoiceNumber: true }, with: { products: { columns: { type: true, model: true, quantity: true } } } } },
+        })
+      : [];
+    const byId = new Map(referred.map((c) => [c.customerId, c]));
+    const bonuses = rawBonuses.map((b) => {
+      const c = b.referredCustomerId ? byId.get(b.referredCustomerId) : undefined;
+      return {
+        ...b,
+        invoiceNumber: c?.invoice?.invoiceNumber ?? c?.invoiceNumber ?? null,
+        products: (c?.invoice?.products ?? []).map((p) => ({ type: p.type, model: p.model, quantity: p.quantity })),
+      };
     });
 
     const requests = await db.query.referralPaymentRequests.findMany({

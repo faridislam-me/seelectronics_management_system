@@ -49,9 +49,9 @@ export function CustomerAppNav({ items, active }: { items: { label: string; icon
       {items.map((item) => {
         const isActive = item.href === active;
         return (
-          <Link key={item.label} href={item.href} className="flex flex-col items-center gap-0.5 py-1">
+          <Link key={item.label} href={item.href} className="min-w-0 flex flex-col items-center gap-0.5 py-1 px-0.5">
             <span className={clsx("size-9 rounded-md flex items-center justify-center", isActive ? "bg-white/15" : "")}><item.icon size={21} strokeWidth={2.2} /></span>
-            <span className="text-[11px] font-bold">{item.label}</span>
+            <span className="max-w-full text-center text-[clamp(9.5px,2.9vw,11px)] font-bold leading-tight">{item.label}</span>
             <span className={clsx("h-0.5 w-8 rounded-full", isActive ? "bg-[#7fb4ff]" : "bg-transparent")} />
           </Link>
         );

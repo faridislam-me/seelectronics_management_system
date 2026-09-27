@@ -21,10 +21,10 @@ export function StaffPaymentRequestForm({ staffId }: StaffPaymentRequestFormProp
     undefined,
   );
 
-  const inputCls = "w-full h-12 rounded-md border border-[#dfe6f2] bg-white text-[14px] text-[#16213a] placeholder:text-[#9aa4b8] outline-none focus:border-[#1f7cf0] focus:ring-1 focus:ring-[#1f7cf0] transition-all";
+  const inputCls = "w-full h-10 rounded-md border border-[#d9e2f0] bg-white text-[14px] text-[#16213a] placeholder:text-[#9aa4b8] outline-none focus:border-[#1f7cf0] focus:ring-1 focus:ring-[#1f7cf0] transition-all";
 
   return (
-    <form action={formAction} className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-3 shadow-[0_4px_18px_rgba(11,61,145,0.06)]">
+    <form action={formAction} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
       <input type="hidden" name="staffId" value={staffId} />
 
       <div className="flex items-center gap-2">
@@ -33,29 +33,29 @@ export function StaffPaymentRequestForm({ staffId }: StaffPaymentRequestFormProp
       </div>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-[13px] font-semibold text-[#3d4a63]">Amount (৳)</span>
+        <span className="text-[12.5px] font-bold text-[#3d4a63]">Amount (৳)</span>
         <span className="relative block">
-          <span className="absolute left-0 top-0 h-12 w-11 rounded-l-md border-r border-[#dfe6f2] bg-[#f5f7fb] text-[#5b6784] flex items-center justify-center text-base font-bold">৳</span>
-          <input type="number" name="amount" min="1" inputMode="numeric" required placeholder="Enter amount" className={`${inputCls} pl-14 pr-3`} />
+          <span className="absolute left-0 top-0 h-10 w-10 rounded-l-md border-r border-[#dfe6f2] bg-[#f5f7fb] text-[#5b6784] flex items-center justify-center text-base font-bold">৳</span>
+          <input type="number" name="amount" min="1" inputMode="numeric" required placeholder="Enter amount" className={`${inputCls} pl-12 pr-3`} />
         </span>
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-[13px] font-semibold text-[#3d4a63]">Note (Optional)</span>
+        <span className="text-[12.5px] font-bold text-[#3d4a63]">Note (Optional)</span>
         <span className="relative block">
-          <span className="absolute left-0 top-0 h-12 w-11 rounded-l-md border-r border-[#dfe6f2] bg-[#f5f7fb] text-[#5b6784] flex items-center justify-center"><Pencil size={16} /></span>
-          <input type="text" name="description" placeholder="Add a note (optional)" className={`${inputCls} pl-14 pr-3`} />
+          <span className="absolute left-0 top-0 h-10 w-10 rounded-l-md border-r border-[#dfe6f2] bg-[#f5f7fb] text-[#5b6784] flex items-center justify-center"><Pencil size={16} /></span>
+          <input type="text" name="description" placeholder="Add a note (optional)" className={`${inputCls} pl-12 pr-3`} />
         </span>
       </label>
 
-      <button type="submit" disabled={isPending} className="mt-1 h-12 w-full rounded-md bg-[#1f7cf0] hover:bg-[#1668d0] text-white font-extrabold text-[15px] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 shadow-[0_8px_20px_rgba(31,124,240,0.35)]">
+      <button type="submit" disabled={isPending} className="mt-0.5 h-11 w-full rounded-md bg-[linear-gradient(90deg,#0b3d91,#1f7cf0)] text-white font-extrabold text-[15px] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 shadow-[0_8px_20px_rgba(31,124,240,0.35)]">
         <Send size={18} strokeWidth={2.3} />
         {isPending ? "Sending..." : "Request Payment"}
       </button>
 
       {showSuccess && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-md p-6 w-full max-w-sm text-center shadow-xl animate-in zoom-in duration-200 relative">
+          <div className="bg-white rounded-md p-4 w-full max-w-sm text-center shadow-xl animate-in zoom-in duration-200 relative">
             <button type="button" onClick={() => setShowSuccess(false)} aria-label="Close" className="absolute top-3 right-3 text-[#9aa4b8] hover:text-[#16213a] transition-colors"><X size={18} /></button>
             <div className="size-20 mx-auto rounded-full bg-[#e9f9ef] flex items-center justify-center mb-4">
               <span className="size-11 rounded-full bg-[#1a9c4b] text-white flex items-center justify-center"><Check size={24} strokeWidth={3} /></span>

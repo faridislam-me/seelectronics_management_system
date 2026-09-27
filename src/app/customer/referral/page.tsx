@@ -1,6 +1,6 @@
 "use client";
 
-import { Banknote, Calendar, ChevronRight, ClipboardList, History, Phone, User, Wallet } from "lucide-react";
+import { Banknote, Calendar, ChevronRight, ClipboardList, History, Package, Phone, User, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useReferral } from "./_components/ReferralProvider";
 
@@ -61,17 +61,27 @@ export default function CustomerReferralPage() {
           <div className="rounded-md bg-white border border-[#dfe6f2] p-6 text-center text-[13px] font-medium text-[#5b6784]">এখনও কোনো রেফারেল বোনাস নেই।</div>
         ) : (
           bonuses.map((bonus) => (
-            <div key={bonus.id} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-3 shadow-[0_4px_18px_rgba(11,61,145,0.06)]">
-              <span className="size-12 rounded-full bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center shrink-0"><User size={24} /></span>
-              <span className="flex flex-col gap-0.5 min-w-0 flex-1">
-                <span className="text-[14px] font-extrabold truncate">{bonus.referredCustomerName}</span>
-                <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#5b6784]"><Calendar size={13} />{new Date(bonus.createdAt).toLocaleDateString("bn-BD")}</span>
-              </span>
-              <span className="shrink-0 rounded-md bg-[#e8f1ff] px-2.5 py-1.5 text-center">
-                <span className="block text-[15px] font-extrabold text-[#1b6fd6] leading-tight">+৳{Number(bonus.bonusEarned).toLocaleString()}</span>
-                <span className="block text-[10px] font-bold text-[#5b6784]">(কমিশন ২%)</span>
-              </span>
-              <ChevronRight size={16} className="text-[#9aa4b8] shrink-0" />
+            <div key={bonus.id} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col gap-2 shadow-[0_4px_18px_rgba(11,61,145,0.06)]">
+              <div className="flex items-center gap-3">
+                <span className="size-11 rounded-full bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center shrink-0"><User size={22} /></span>
+                <span className="flex flex-col gap-0.5 min-w-0 flex-1">
+                  <span className="text-[14px] font-extrabold truncate">{bonus.referredCustomerName}</span>
+                  <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#5b6784]"><Calendar size={12} />{new Date(bonus.createdAt).toLocaleDateString("bn-BD")}</span>
+                </span>
+                <span className="shrink-0 rounded-md bg-[#e8f1ff] px-2.5 py-1.5 text-center">
+                  <span className="block text-[15px] font-extrabold text-[#1b6fd6] leading-tight">+৳{Number(bonus.bonusEarned).toLocaleString()}</span>
+                  <span className="block text-[10px] font-bold text-[#5b6784]">বোনাস (২%)</span>
+                </span>
+              </div>
+              <div className="rounded-md bg-[#f5f8fd] border border-[#eef1f6] px-2.5 py-2 flex flex-col gap-1 text-[12.5px]">
+                {bonus.products?.length > 0 && (
+                  <span className="flex items-start gap-1.5"><Package size={14} className="text-[#1f7cf0] mt-0.5 shrink-0" /><span className="min-w-0"><span className="text-[#5b6784] font-semibold">যা কিনেছেন: </span><b>{bonus.products.map((p: any) => `${String(p.type).toUpperCase()} ${p.model}${p.quantity > 1 ? ` ×${p.quantity}` : ""}`).join(", ")}</b></span></span>
+                )}
+                <span className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5"><Banknote size={14} className="text-[#1a9c4b]" /><span className="text-[#5b6784] font-semibold">পণ্যের মূল্য:</span><b>৳{Number(bonus.purchaseAmount || 0).toLocaleString()}</b></span>
+                  {bonus.invoiceNumber && <span className="text-[11px] font-bold text-[#5b6784]">Invoice #{bonus.invoiceNumber}</span>}
+                </span>
+              </div>
             </div>
           ))
         )}

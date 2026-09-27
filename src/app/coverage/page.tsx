@@ -41,7 +41,7 @@ export default function CoverageAreaPage() {
             const shown = d.regions.slice(0, 5);
             const more = d.regions.length - shown.length;
             return (
-              <div key={d.name} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] flex flex-col gap-2">
+              <div key={d.name} className="min-w-0 rounded-md bg-white border border-[#dfe6f2] p-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <span className={`size-9 rounded-full ${d.tile} flex items-center justify-center shrink-0`}><d.icon size={18} /></span>
                   <span className="text-[13px] font-extrabold text-[#1f7cf0]">{i + 1}</span>
@@ -50,9 +50,11 @@ export default function CoverageAreaPage() {
                 <div className="flex flex-wrap gap-1">
                   {shown.map((r) => <span key={r} className={`px-1.5 h-6 rounded-md text-[10.5px] font-bold inline-flex items-center ${d.chip}`}>{r}</span>)}
                   {more > 0 && (
-                    <details className="contents">
-                      <summary className="list-none cursor-pointer px-1.5 h-6 rounded-md text-[10.5px] font-bold inline-flex items-center bg-[#eef3fb] text-[#5b6784]">+{more} জেলা</summary>
-                      {d.regions.slice(5).map((r) => <span key={r} className={`px-1.5 h-6 rounded-md text-[10.5px] font-bold inline-flex items-center ${d.chip}`}>{r}</span>)}
+                    <details className="group w-full">
+                      <summary className="list-none cursor-pointer w-fit px-1.5 h-6 rounded-md text-[10.5px] font-bold inline-flex items-center bg-[#eef3fb] text-[#5b6784] group-open:hidden">+{more} জেলা</summary>
+                      <div className="flex flex-wrap gap-1">
+                        {d.regions.slice(5).map((r) => <span key={r} className={`px-1.5 h-6 rounded-md text-[10.5px] font-bold inline-flex items-center ${d.chip}`}>{r}</span>)}
+                      </div>
                     </details>
                   )}
                 </div>

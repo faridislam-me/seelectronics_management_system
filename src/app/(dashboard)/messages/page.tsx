@@ -23,6 +23,7 @@ export default function MessagesPage() {
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
   const [adminReply, setAdminReply] = useState("");
   const [isReplying, setIsReplying] = useState(false);
+  const [sendSms, setSendSms] = useState(true);
 
   useEffect(() => {
     loadMessages();
@@ -43,7 +44,7 @@ export default function MessagesPage() {
       return;
     }
     setIsReplying(true);
-    const res = await replyToMessage(selectedMessage.messageId, adminReply);
+    const res = await replyToMessage(selectedMessage.messageId, adminReply, { sendSms });
     if (res.success) {
       toast.success(res.message);
       setSelectedMessage(null);
@@ -228,6 +229,18 @@ export default function MessagesPage() {
                 value={adminReply}
                 onChange={(e) => setAdminReply(e.target.value)}
               />
+              <label className="mt-3 flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={sendSms}
+                  onChange={(e) => setSendSms(e.target.checked)}
+                  className="size-4 accent-blue-600"
+                />
+                Also send as SMS to customer
+                <span className="text-xs font-medium text-gray-400">
+                  ({selectedMessage?.customer?.phone || "customer phone"})
+                </span>
+              </label>
             </div>
 
             <div className="p-8 bg-gray-50 flex gap-4">

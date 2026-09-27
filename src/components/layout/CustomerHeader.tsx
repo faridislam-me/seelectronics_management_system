@@ -26,7 +26,7 @@ export function CustomerHeader() {
   const { title } = current;
 
   return (
-    <header className={`sticky top-0 z-50 text-white overflow-hidden w-full ${isHome ? "bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] pb-2" : "bg-[#0A1A3A]"}`}>
+    <header className={`sticky top-0 z-50 text-white w-full ${isHome ? "bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] pb-1" : "bg-[#0A1A3A] overflow-hidden"}`}>
       <div className="max-w-4xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between gap-3">
         {isHome ? (
           <Link href="/customer/profile" className="flex items-center gap-2.5 min-w-0">
@@ -64,7 +64,13 @@ export function CustomerHeader() {
         </div>
       </div>
       {/* Light content background with rounded top corners, sitting on the blue header */}
-      {isHome && <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-2 bg-[#eef3fb] rounded-t-[14px]" />}
+      {/* Rounded top corners of the light content area: blue corner pieces hang just below the header */}
+      {isHome && (
+        <>
+          <span aria-hidden className="pointer-events-none absolute top-full left-0 size-5 bg-[radial-gradient(circle_at_100%_100%,transparent_19.5px,#0a3888_20px)]" />
+          <span aria-hidden className="pointer-events-none absolute top-full right-0 size-5 bg-[radial-gradient(circle_at_0%_100%,transparent_19.5px,#082f72_20px)]" />
+        </>
+      )}
     </header>
   );
 }

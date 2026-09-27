@@ -63,6 +63,8 @@ export function CustomerHeader() {
           )}
         </div>
       </div>
+      {/* Light content background with rounded top corners, sitting on the blue header */}
+      {isHome && <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-4 bg-[#eef3fb] rounded-t-[18px]" />}
     </header>
   );
 }

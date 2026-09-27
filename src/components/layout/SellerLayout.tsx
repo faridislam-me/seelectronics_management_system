@@ -63,7 +63,7 @@ export function SellerLayout({ children, badge = 0 }: { children: React.ReactNod
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-4xl mx-auto pb-14 overflow-x-hidden">
+      <main className="flex-1 w-full max-w-4xl mx-auto pb-[72px] overflow-x-hidden">
         <div key={pathname} className="animate-in fade-in slide-in-from-bottom-2 duration-300 w-full">{children}</div>
       </main>
 

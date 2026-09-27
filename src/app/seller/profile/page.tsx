@@ -17,7 +17,7 @@ export default async function SellerProfilePage() {
         <div className="relative flex items-center gap-2.5">
           {seller.ownerPhotoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={seller.ownerPhotoUrl} alt="" className="size-9 rounded-full object-cover border-2 border-white shadow-[0_0_0_1.5px_#1f7cf0] shrink-0 bg-[#1f7cf0]" />
+            <img src={seller.ownerPhotoUrl} alt="" className="size-9 rounded-full object-cover object-top border-2 border-white shadow-[0_0_0_1.5px_#1f7cf0] shrink-0 bg-[#1f7cf0]" />
           ) : (
             <span className="size-9 rounded-full bg-[#1f7cf0] border-2 border-white shadow-[0_0_0_1.5px_#1f7cf0] flex items-center justify-center text-white text-xs font-extrabold shrink-0">{seller.shopName.slice(0, 2).toUpperCase()}</span>
           )}

@@ -9,7 +9,7 @@ import { ReferralProvider } from "./_components/ReferralProvider";
 export default function ReferralLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   return (
-    <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-12 font-['Hind_Siliguri',sans-serif]">
+    <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-16 font-['Hind_Siliguri',sans-serif]">
       <header className="relative bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] text-white px-3 pt-3 pb-7 rounded-b-[26px] overflow-hidden">
         <span className="absolute -right-10 -top-14 size-56 rounded-full bg-white/10" />
         <div className="relative flex items-center gap-3">

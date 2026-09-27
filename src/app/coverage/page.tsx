@@ -16,7 +16,7 @@ const divisions: { name: string; regions: string[]; icon: LucideIcon; tile: stri
 
 export default function CoverageAreaPage() {
   return (
-    <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-12">
+    <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-16">
       <header className="bg-white px-2 py-2.5 flex items-center gap-2 border-b border-[#dfe6f2]">
         <span className="flex flex-col leading-tight min-w-0 flex-1">
           <span className="text-[17px] font-extrabold">SE Electronics</span>

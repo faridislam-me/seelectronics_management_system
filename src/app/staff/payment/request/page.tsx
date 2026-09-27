@@ -70,7 +70,7 @@ export default async function StaffPaymentRequestPage() {
           <div className="relative flex items-center gap-2.5">
             {staffData?.photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={staffData.photoUrl} alt={staffData.name || ""} className="size-12 rounded-md object-cover border-2 border-white/70 bg-white shrink-0" />
+              <img src={staffData.photoUrl} alt={staffData.name || ""} className="size-12 rounded-md object-cover object-top border-2 border-white/70 bg-white shrink-0" />
             ) : (
               <span className="size-12 rounded-md bg-white/15 border border-white/25 flex items-center justify-center shrink-0"><User size={24} /></span>
             )}

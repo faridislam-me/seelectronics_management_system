@@ -23,9 +23,17 @@ export default async function StaffInvoiceDetailsPage({ params }: { params: Prom
   if (!paymentRes.success || !paymentRes.data) notFound();
   const payment = paymentRes.data as PaymentDataType;
   // Credited payments often carry the job id only in the note ("Service charge added for job #SEXXXX").
-  const jobId = payment.serviceId || payment.description?.match(/#\s*(SE[A-Z0-9]+)/i)?.[1]?.toUpperCase() || null;
-  const serviceRes = jobId ? await getServiceById(jobId).catch(() => null) : null;
-  const service: any = serviceRes?.success ? serviceRes.data : null;
+  // The job id may be stored on the payment or only written in the note, with or
+  // without "#" (e.g. "...job #SEKXUBYAED" or "সার্ভিস আই ডি পেমেন্ট টা SEP7WH2OO3 ...").
+  // Try every SE-prefixed code that contains a digit until one matches a service.
+  const noteIds = [...(payment.description || "").toUpperCase().matchAll(/\bSE(?=[A-Z]*\d)[A-Z0-9]{6,12}\b/g)].map((m) => m[0]);
+  const candidates = [...new Set([payment.serviceId, ...noteIds].filter(Boolean) as string[])];
+  let service: any = null;
+  let jobId: string | null = payment.serviceId || noteIds[0] || null;
+  for (const id of candidates) {
+    const res = await getServiceById(id).catch(() => null);
+    if (res?.success && res.data) { service = res.data; jobId = id; break; }
+  }
   const svcStatus = (service?.status as string | undefined) ?? null;
   const svcAddress = service ? [service.customerAddress, service.customerAddressPoliceStation, service.customerAddressDistrict].filter(Boolean).join(", ") : "";
   const stats = statsRes.success ? statsRes.data : null;

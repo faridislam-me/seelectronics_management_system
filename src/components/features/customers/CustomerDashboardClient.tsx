@@ -159,7 +159,7 @@ export default function CustomerDashboardClient({
       bg: "bg-orange-50",
     },
     {
-      label: "Emergency Services",
+      label: "Emergency",
       icon: AlertCircle,
       href: "/customer/jorori-seba",
       color: "text-red-500",
@@ -197,7 +197,7 @@ export default function CustomerDashboardClient({
 
   return (
     <CustomerLayout>
-      <div className="flex flex-col gap-2.5 px-2 text-gray-800 pb-2 pt-3 bg-[#eef3fb] rounded-t-[18px] -mt-4 relative z-10">
+      <div className="flex flex-col gap-2.5 px-2 text-gray-800 pb-2 pt-1 bg-[#eef3fb] relative">
         {/* Welcome banner (admin managed slides) */}
         <div className="w-full overflow-hidden rounded-md shadow-sm">
           <Banner slides={banners && banners.length > 0 ? banners : undefined} />

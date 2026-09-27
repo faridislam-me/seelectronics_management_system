@@ -78,7 +78,7 @@ export default async function ServiceDetailsPage({ params }: { params: Promise<{
   const card = "rounded-md bg-white border border-[#dfe6f2] p-3 shadow-[0_4px_14px_rgba(11,61,145,0.06)]";
 
   return (
-    <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-12">
+    <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-16">
       <CustomerAppHeader backHref="/customer/services" title="Service Details" subtitle="Service History & Status" />
 
       <main className="px-2 -mt-4 relative flex flex-col gap-2.5 max-w-3xl mx-auto">

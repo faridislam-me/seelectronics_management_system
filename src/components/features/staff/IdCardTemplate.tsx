@@ -56,7 +56,7 @@ export default function IdCardTemplate({ data, variant = "a4" }: IdCardProps & {
                             <img
                                 src={data.photoUrl}
                                 alt="Photo"
-                                className="w-full h-full object-cover object-center"
+                                className="w-full h-full object-cover object-top"
                             />
                         </div>
                         {/* Role text scaled down */}

@@ -8,7 +8,7 @@ import { contactDetails } from "@/constants";
 import { verifySession } from "@/lib";
 import { AppError, formatDate, renderText } from "@/utils";
 import clsx from "clsx";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Calendar, CheckCircle2, ChevronRight, Clock, History, IdCard, MapPin, Package, Phone, ShieldCheck, Truck, User, Wrench, XCircle } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -380,6 +380,15 @@ const electricianStatuses = {
   },
 };
 
+const toneColors: Record<string, { bg: string; text: string; ring: string }> = {
+  blue: { bg: "bg-[#1f7cf0]", text: "text-[#5aa2ff]", ring: "bg-[#1f7cf0]/40" },
+  yellow: { bg: "bg-[#e9a800]", text: "text-[#ffc629]", ring: "bg-[#e9a800]/40" },
+  green: { bg: "bg-[#16a34a]", text: "text-[#34d36b]", ring: "bg-[#16a34a]/40" },
+  red: { bg: "bg-[#e0243f]", text: "text-[#ff5a6e]", ring: "bg-[#e0243f]/40" },
+};
+
+const cardCls = "rounded-md border border-[#1d3d7a] bg-[linear-gradient(135deg,#0c2254_0%,#0a1a40_100%)] shadow-[0_6px_18px_rgba(0,0,0,0.25)]";
+
 export default async function ServiceTrackPage({
   searchParams,
 }: {
@@ -393,7 +402,7 @@ export default async function ServiceTrackPage({
   const response = await getServiceById(params.trackingId);
 
   if (!response.success || !response.data) {
-    throw new AppError("ট্র্যাকিং আইডিটি সঠিক নয় অথবা খুঁজে পাওয়া যায়নি।");
+    throw new AppError("ট্র্যাকিং আইডিটি সঠিক নয় অথবা খুঁজে পাওয়া যায়নি।");
   }
   const serviceData = response.data;
   const statusHistory = serviceData.statusHistory;
@@ -416,140 +425,72 @@ export default async function ServiceTrackPage({
   const isWarrantyValid = serviceData?.warrantyExpiryDate
     ? new Date(serviceData.warrantyExpiryDate) >= new Date()
     : false;
-  return (
-    <div className="bg-black h-screen overflow-y-auto">
-      <ServiceTrackingPageThemeColor />
-      <div className="mx-auto max-w-[600px] text-center pb-4">
-        {/* Header */}
-        <div className="mb-3 bg-slate-900 text-white p-4 sm:rounded-md">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            {/* Left Column - Service Info */}
-            <div className="flex-1 min-w-0">
-              <div
-                className={clsx(
-                  "text-md font-bold mb-3",
-                  serviceData?.type === "install" && "text-yellow-500",
-                )}
-              >
-                এস ই ইলেকট্রনিকস গ্রাহক সেবা সার্ভিসিং তথ্য ট্রেকিং
-              </div>
-              <div className="space-y-1 text-sm text-start mx-2">
-                <div className="flex">
-                  <span className="w-28 flex-shrink-0">ট্রেকিং নম্বর</span>
-                  <span className="mr-2 flex-shrink-0">:</span>
-                  <span className="font-bold truncate">
-                    {serviceData.serviceId}
-                  </span>
-                </div>
-                <div className="flex">
-                  <span className="w-28 flex-shrink-0">হেল্প নাম্বার</span>
-                  <span className="mr-2 flex-shrink-0">:</span>
-                  <span className="font-bold truncate">
-                    {contactDetails.customerCare}
-                  </span>
-                </div>
-                <div className="flex">
-                  <span className="w-28 flex-shrink-0">হেড অফিস</span>
-                  <span className="mr-2 flex-shrink-0">:</span>
-                  <span className="font-bold truncate">
-                    {contactDetails.headOffice}
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  <span className="w-28 flex-shrink-0">পণ্য ওয়ারেন্টি</span>
-                  <span className="mr-2 flex-shrink-0">:</span>
-                  <span
-                    className={clsx(
-                      "font-bold truncate flex items-center gap-1",
-                      isWarrantyValid ? "text-green-400" : "text-red-400",
-                    )}
-                  >
-                    {!isWarrantyValid && (
-                      <AlertTriangle className="size-4 shrink-0 text-red-500 inline-block" />
-                    )}
-                    {isWarrantyValid ? "ওয়ারেন্টি চালু আছে" : "ওয়ারেন্টি শেষ"}
-                  </span>
-                </div>
-                {serviceData?.warrantyExpiryDate && (
-                  <div className="flex">
-                    <span className="w-28 flex-shrink-0">মেয়াদ উত্তীর্ণ</span>
-                    <span className="mr-2 flex-shrink-0">:</span>
-                    <span className="font-bold truncate text-gray-200">
-                      {formatDate(serviceData.warrantyExpiryDate)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+  const isInstall = serviceData.type === "install";
+  const staffPhone = serviceData.appointedStaff?.phone || serviceData.staffPhone;
+  const chip =
+    currentStatus === "completed"
+      ? { label: "সম্পন্ন হয়েছে", cls: "bg-[#0f5a2c] border-[#22c55e] text-[#7df0a5]", Icon: CheckCircle2 }
+      : currentStatus === "canceled"
+        ? { label: "বাতিল করা হয়েছে", cls: "bg-[#5a0f1c] border-[#ef4444] text-[#ff9aa6]", Icon: XCircle }
+        : { label: "চলমান", cls: "bg-[#0f2f6a] border-[#1f7cf0] text-[#8fc0ff]", Icon: Clock };
 
-          {/* Staff Info Section */}
-          {((serviceData?.staffName && serviceData?.staffPhone) ||
-            serviceData?.appointedStaff) && (
-            <div className="border-t border-slate-700 pt-3 mx-2">
-              <div
-                className={clsx(
-                  "font-bold text-md mb-4",
-                  serviceData?.type === "install" && "text-yellow-500",
-                )}
-              >
-                এস ই ইলেকট্রনিকস নিযুক্ত{" "}
-                {serviceData.type === "install"
-                  ? "ইলেকট্রিসিয়ান"
-                  : "টেকনিশিয়ান"}{" "}
-                তথ্য
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm space-y-1 text-start flex-1 min-w-0">
-                  <div className="flex items-start">
-                    <span className="w-20 flex-shrink-0">নাম</span>
-                    <span className="mr-2 flex-shrink-0">:</span>
-                    <span className="font-bold truncate block">
-                      {serviceData.appointedStaff?.name ||
-                        serviceData.staffName}
-                    </span>
-                  </div>
-                  <div className="flex items-start">
-                    <span className="w-20 flex-shrink-0">ফোন</span>
-                    <span className="mr-2 flex-shrink-0">:</span>
-                    <span className="font-bold truncate block">
-                      {serviceData.appointedStaff?.phone ||
-                        serviceData.staffPhone}
-                    </span>
-                  </div>
-                  <div className="flex items-start">
-                    <span className="w-20 flex-shrink-0">সার্ভিস এরিয়া</span>
-                    <span className="mr-2 flex-shrink-0">:</span>
-                    <span className="font-bold truncate block">
-                      {serviceData.customerAddress}
-                    </span>
-                  </div>
-                </div>
-                {serviceData.appointedStaff && (
-                  <div className="flex-shrink-0 __center flex flex-col">
-                    <div className="size-16 rounded-full overflow-hidden border-2 border-slate-600">
-                      <ImageWithLightbox
-                        src={appointedStaffPhotoUrl}
-                        alt="Staff Photo"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <Link
-                      target="_blank"
-                      href={`/team-members?staffId=${serviceData.appointedStaff.staffId}`}
-                      className="mt-2 text-blue-500 hover:underline"
-                    >
-                      View Profile
-                    </Link>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+  return (
+    <div className="bg-[#061433] bg-[radial-gradient(120%_60%_at_50%_0%,#0d2a66_0%,#061433_60%)] min-h-screen overflow-y-auto text-white">
+      <ServiceTrackingPageThemeColor />
+      <div className="mx-auto max-w-[600px] px-2 pt-2 pb-6 flex flex-col gap-2.5">
+        {/* Page header */}
+        <section className={clsx(cardCls, "relative overflow-hidden p-2.5 flex items-center gap-2.5")}>
+          {profileHref ? (
+            <Link href={profileHref} aria-label="Back" className="size-9 rounded-full bg-white/10 border border-white/15 flex items-center justify-center shrink-0"><ArrowLeft size={18} /></Link>
+          ) : null}
+          <span className="size-10 rounded-full bg-[#1f7cf0] flex items-center justify-center shrink-0 shadow-[0_0_0_3px_rgba(31,124,240,0.25)]"><MapPin size={20} /></span>
+          <span className="flex flex-col min-w-0 flex-1 leading-tight">
+            <span className="text-[19px] font-extrabold">ট্র্যাকিং পেইজ</span>
+            <span className="text-[11.5px] text-white/80">আপনার অর্ডার/সার্ভিসের বর্তমান অবস্থা দেখুন</span>
+            <span className={clsx("mt-0.5 text-[11px] font-bold", isInstall ? "text-[#ffc629]" : "text-[#8fc0ff]")}>এস ই ইলেকট্রনিকস গ্রাহক সেবা সার্ভিসিং তথ্য ট্রেকিং</span>
+          </span>
+          <span className="relative shrink-0 w-[64px] h-[48px] hidden min-[360px]:block" aria-hidden="true">
+            <span className="absolute inset-x-0 bottom-1 border-t border-dashed border-[#5aa2ff]/60" />
+            <MapPin size={18} className="absolute right-6 top-0 text-[#34d3c5]" />
+            <Truck size={30} className="absolute right-0 bottom-0 text-[#5aa2ff]" />
+          </span>
+        </section>
+
+        {/* Tracking ID card */}
+        <section className={clsx(cardCls, "p-2.5 flex flex-col gap-2.5")}>
+          <div className="flex items-center gap-2.5">
+            <span className="size-11 rounded-full bg-[#1f7cf0] flex items-center justify-center shrink-0"><Package size={22} /></span>
+            <span className="flex flex-col min-w-0 flex-1 leading-tight">
+              <span className="text-[12px] text-[#8fc0ff] font-semibold">ট্রেকিং নম্বর</span>
+              <span className="text-[17px] font-extrabold tracking-wide truncate">{serviceData.serviceId}</span>
+            </span>
+            <span className={clsx("shrink-0 inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border text-[12px] font-extrabold", chip.cls)}><chip.Icon size={15} />{chip.label}</span>
+          </div>
+          <div className="grid grid-cols-3 divide-x divide-white/10 border-t border-white/10 pt-2.5 text-[11px]">
+            <span className="flex items-center gap-1.5 pr-1.5 min-w-0"><span className="size-7 rounded-md bg-[#1f7cf0]/20 text-[#5aa2ff] flex items-center justify-center shrink-0"><Calendar size={15} /></span><span className="flex flex-col min-w-0"><span className="text-white/70">নিবন্ধন তারিখ</span><b className="text-[12px] truncate">{formatDate(serviceData.createdAt)}</b></span></span>
+            <span className="flex items-center gap-1.5 px-1.5 min-w-0"><span className="size-7 rounded-md bg-[#1f7cf0]/20 text-[#5aa2ff] flex items-center justify-center shrink-0"><ShieldCheck size={15} /></span><span className="flex flex-col min-w-0"><span className="text-white/70">পণ্য ওয়ারেন্টি</span><b className={clsx("text-[11px] inline-flex items-center gap-0.5", isWarrantyValid ? "text-[#34d36b]" : "text-[#ff5a6e]")}>{!isWarrantyValid && <AlertTriangle className="size-3 shrink-0" />}{isWarrantyValid ? "ওয়ারেন্টি চালু আছে" : "ওয়ারেন্টি শেষ"}</b></span></span>
+            <span className="flex items-center gap-1.5 pl-1.5 min-w-0"><span className="size-7 rounded-md bg-[#1f7cf0]/20 text-[#5aa2ff] flex items-center justify-center shrink-0"><Wrench size={15} /></span><span className="flex flex-col min-w-0"><span className="text-white/70">সার্ভিস টাইপ</span><b className="text-[12px] uppercase truncate">{serviceData.productType}</b></span></span>
+          </div>
+          <div className="rounded-md bg-white/5 border border-white/10 px-2.5 py-2 flex flex-col gap-1 text-[12px]">
+            <span className="flex gap-2"><span className="w-24 shrink-0 text-white/70">হেল্প নাম্বার</span><span className="text-white/50">:</span><a href={`tel:${contactDetails.customerCare}`} className="font-bold truncate">{contactDetails.customerCare}</a></span>
+            <span className="flex gap-2"><span className="w-24 shrink-0 text-white/70">হেড অফিস</span><span className="text-white/50">:</span><span className="font-bold">{contactDetails.headOffice}</span></span>
+            {serviceData?.warrantyExpiryDate && (
+              <span className="flex gap-2"><span className="w-24 shrink-0 text-white/70">মেয়াদ উত্তীর্ণ</span><span className="text-white/50">:</span><span className="font-bold text-white/90">{formatDate(serviceData.warrantyExpiryDate)}</span></span>
+            )}
+          </div>
+        </section>
+
+        {/* History header */}
+        <section className={clsx(cardCls, "p-2.5 flex items-center gap-2.5")}>
+          <span className="size-10 rounded-full bg-[#1f7cf0] flex items-center justify-center shrink-0"><History size={20} /></span>
+          <span className="flex flex-col leading-tight">
+            <span className="text-[17px] font-extrabold">ট্র্যাকিং হিস্ট্রি</span>
+            <span className="text-[11.5px] text-[#8fc0ff]">আপনার রিকুয়েস্টের প্রতিটি ধাপ এখানে দেখুন</span>
+          </span>
+        </section>
 
         {/* Event History */}
-        <div className="flex flex-col gap-6 bg-slate-900 text-white p-4 sm:rounded-md">
+        <section className={clsx(cardCls, "p-2.5")}>
           <ul className="flex flex-col">
             {statusHistory.map(
               ({
@@ -576,61 +517,51 @@ export default async function ServiceTrackPage({
                 const isCompleted = status === "completed";
                 const isCanceled = status === "canceled";
                 const isCustomStatus = statusType === "custom";
+                const tone = toneColors[isCustomStatus ? "blue" : statusData?.color || "blue"] || toneColors.blue;
+                const titleCls =
+                  status === "appointment_retry"
+                    ? "text-[#ff5a6e]"
+                    : status === "completed"
+                      ? "text-[#34d36b]"
+                      : serviceData?.type === "install"
+                        ? "text-[#ffc629]"
+                        : tone.text;
 
                 return (
-                  <li key={id} className="relative flex gap-4">
+                  <li key={id} className="relative flex gap-2.5">
                     {(!isLastOne ||
                       isFirstOne ||
                       (!isCanceled && !isCompleted)) && (
-                      <div className="absolute w-7 h-full">
-                        <div className=" bg-blue-500 w-0.5 m-auto h-full"></div>
-                      </div>
+                      <span className="absolute left-0 top-0 w-7 h-full flex justify-center"><span className="w-0.5 h-full bg-[linear-gradient(180deg,#1f7cf0,#1f7cf0aa)]" /></span>
                     )}
-                    <div
-                      className={clsx(
-                        `size-7 min-w-7 rounded-full __center text-white relative`,
-                        isCustomStatus
-                          ? "bg-blue-500"
-                          : `bg-${statusData?.color}-500`,
-                      )}
-                    >
-                      {isCustomStatus ? (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={1.5}
-                          stroke="currentColor"
-                          className="size-4"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
-                          />
-                        </svg>
-                      ) : (
-                        statusData?.icon
-                      )}
-                    </div>
-                    <div className="flex flex-col text-start gap-1 pb-5">
-                      <span
-                        className={clsx(
-                          "font-bold",
-                          status === "appointment_retry"
-                            ? "text-red-600"
-                            : status === "completed"
-                              ? "text-green-600"
-                              : serviceData?.type === "install"
-                                ? "text-yellow-500"
-                                : isCustomStatus
-                                  ? "text-blue-500"
-                                  : `text-${statusData?.color}-500`,
+                    <span className="relative size-7 min-w-7 shrink-0">
+                      {isLastOne && <span className={clsx("absolute inset-0 rounded-full animate-ping", tone.ring)} />}
+                      <span className={clsx("relative size-7 rounded-full flex items-center justify-center text-white ring-2 ring-[#0a1a40]", tone.bg, isLastOne && "animate-pulse")}>
+                        {isCustomStatus ? (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.5}
+                            stroke="currentColor"
+                            className="size-4"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+                            />
+                          </svg>
+                        ) : (
+                          statusData?.icon
                         )}
-                      >
+                      </span>
+                    </span>
+                    <div className={clsx("flex-1 min-w-0 mb-2 rounded-md border px-2.5 py-2 flex flex-col gap-1", isLastOne ? "border-[#2a5bb5] bg-[#0f2a60]/70" : "border-white/10 bg-white/[0.03]")}>
+                      <span className={clsx("text-[14px] font-extrabold leading-snug", titleCls)}>
                         {isCustomStatus ? customLabel : statusData?.title}
                       </span>
-                      <p className="text-sm">
+                      <p className="text-[12.5px] leading-relaxed text-white/85">
                         {isCustomStatus
                           ? customNote
                           : isCanceled && cancelReason
@@ -640,7 +571,7 @@ export default async function ServiceTrackPage({
                                 customer_name: serviceData?.customerName,
                               })}
                       </p>
-                      <Timestamp timestamp={createdAt} />
+                      <span className="inline-flex items-center gap-1.5 text-[#8fc0ff]"><Calendar size={13} className="shrink-0" /><Timestamp timestamp={createdAt} /></span>
                     </div>
                   </li>
                 );
@@ -648,8 +579,8 @@ export default async function ServiceTrackPage({
             )}
 
             {currentStatus !== "completed" && currentStatus !== "canceled" && (
-              <li className="flex gap-4 opacity-60">
-                <div className="size-7 min-w-7 rounded-full bg-gray-500 __center text-white">
+              <li className="flex gap-2.5 opacity-60">
+                <span className="size-7 min-w-7 rounded-full bg-gray-500 flex items-center justify-center text-white">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
@@ -664,27 +595,27 @@ export default async function ServiceTrackPage({
                       d="m4.5 12.75 6 6 9-13.5"
                     />
                   </svg>
-                </div>
+                </span>
 
                 {serviceData.type === "install" ? (
-                  <div className="flex flex-col text-start gap-1 pb-8">
-                    <span className="text-white font-bold">
+                  <div className="flex-1 rounded-md border border-dashed border-white/15 px-2.5 py-2 flex flex-col gap-1">
+                    <span className="text-white font-bold text-[14px]">
                       আপনার IPS প্যাকেজ টি প্রদত্ত ঠিকানায় ইন্সটলের কাজ শেষ করা
-                      হয়েছে।
+                      হয়েছে।
                     </span>
-                    <p className="text-sm text-gray-300">
-                      প্রিয় গ্রাহক, আপনার IPS প্যাকেজ টি আমাদের ইন্সটল টিম
-                      দক্ষতার সঙ্গে আপনার প্রদত্ত ঠিকানায় হাউস ওয়ারিং IPS
-                      ইন্সটল করেছেন। আশা করি আমরা আপনাকে সন্তুষ্ট করতে পেরেছি।
+                    <p className="text-[12.5px] text-gray-300">
+                      প্রিয় গ্রাহক, আপনার IPS প্যাকেজ টি আমাদের ইন্সটল টিম
+                      দক্ষতার সঙ্গে আপনার প্রদত্ত ঠিকানায় হাউস ওয়ারিং IPS
+                      ইন্সটল করেছেন। আশা করি আমরা আপনাকে সন্তুষ্ট করতে পেরেছি।
                     </p>
                   </div>
                 ) : (
-                  <div className="flex flex-col text-start gap-1 pb-8">
-                    <span className="text-white font-bold">
-                      আপনার পণ্যের সমস্যা সমাধান করা হয়েছে।
+                  <div className="flex-1 rounded-md border border-dashed border-white/15 px-2.5 py-2 flex flex-col gap-1">
+                    <span className="text-white font-bold text-[14px]">
+                      আপনার পণ্যের সমস্যা সমাধান করা হয়েছে।
                     </span>
-                    <p className="text-sm text-gray-300">
-                      প্রিয় গ্রাহক, আপনার পন্যটি আমাদের সার্ভিস টিম দক্ষতার
+                    <p className="text-[12.5px] text-gray-300">
+                      প্রিয় গ্রাহক, আপনার পন্যটি আমাদের সার্ভিস টিম দক্ষতার
                       সঙ্গে সমস্যাগুলা সমাধান করেছেন। আশা করি আমরা আপনাকে
                       সন্তুষ্ট করতে পেরেছি।
                     </p>
@@ -693,7 +624,53 @@ export default async function ServiceTrackPage({
               </li>
             )}
           </ul>
-        </div>
+        </section>
+
+        {/* Staff Info Section */}
+        {((serviceData?.staffName && serviceData?.staffPhone) ||
+          serviceData?.appointedStaff) && (
+          <section className={clsx(cardCls, "p-2.5 flex flex-col gap-2")}>
+            <span className={clsx("self-start px-2 h-6 rounded-md text-[11.5px] font-bold inline-flex items-center", isInstall ? "bg-[#e9a800]/20 text-[#ffc629]" : "bg-[#1f7cf0]/25 text-[#8fc0ff]")}>
+              এস ই ইলেকট্রনিকস নিযুক্ত{" "}
+              {serviceData.type === "install" ? "ইলেকট্রিসিয়ান" : "টেকনিশিয়ান"}{" "}
+              তথ্য
+            </span>
+            <div className="flex items-center gap-2.5">
+              <div className="flex flex-col items-center gap-1 shrink-0">
+                <div className="size-16 rounded-full overflow-hidden border-2 border-[#1f7cf0] bg-[#0f2a60] flex items-center justify-center">
+                  {serviceData.appointedStaff && appointedStaffPhotoUrl ? (
+                    <ImageWithLightbox
+                      src={appointedStaffPhotoUrl}
+                      alt="Staff Photo"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User size={30} className="text-[#8fc0ff]" />
+                  )}
+                </div>
+                {serviceData.appointedStaff && (
+                  <Link
+                    target="_blank"
+                    href={`/team-members?staffId=${serviceData.appointedStaff.staffId}`}
+                    className="text-[11px] font-bold text-[#5aa2ff] hover:underline"
+                  >
+                    View Profile
+                  </Link>
+                )}
+              </div>
+              <div className="flex-1 min-w-0 flex flex-col gap-1 text-[12.5px]">
+                <span className="flex items-center gap-1.5 min-w-0"><IdCard size={14} className="text-[#5aa2ff] shrink-0" /><span className="text-white/70 shrink-0">নাম :</span><b className="uppercase truncate">{serviceData.appointedStaff?.name || serviceData.staffName}</b></span>
+                <span className="flex items-center gap-1.5 min-w-0"><Phone size={14} className="text-[#5aa2ff] shrink-0" /><span className="text-white/70 shrink-0">ফোন :</span><b className="truncate">{staffPhone}</b></span>
+                <span className="flex items-start gap-1.5 min-w-0"><MapPin size={14} className="text-[#5aa2ff] shrink-0 mt-0.5" /><span className="text-white/70 shrink-0">সার্ভিস এরিয়া :</span><b className="break-words">{serviceData.customerAddress}</b></span>
+              </div>
+            </div>
+            {staffPhone && (
+              <a href={`tel:${staffPhone}`} className="h-9 rounded-md border border-[#2a5bb5] bg-[#0f2a60] text-[#8fc0ff] text-[13px] font-extrabold inline-flex items-center justify-center gap-2"><Phone size={15} />যোগাযোগ করুন<ChevronRight size={15} /></a>
+            )}
+          </section>
+        )}
+
+        <p className="text-center text-[11px] font-semibold text-white/50 mt-1">SE Electronics · Sylhet, Bangladesh</p>
       </div>
     </div>
   );

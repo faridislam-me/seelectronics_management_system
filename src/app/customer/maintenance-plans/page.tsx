@@ -1,5 +1,6 @@
 "use client";
 
+import SuccessPopup from "@/components/ui/SuccessPopup";
 import { createSubscriber } from "@/actions";
 import { InputField, PaymentModal } from "@/components";
 import {
@@ -17,7 +18,9 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import geoData from "@/assets/data/geo-data.json";
 import { MobilePageHeader } from "@/components/layout";
-import { Zap } from "lucide-react";
+import { ArrowRight, Calendar, Check, CheckCircle2, ChevronRight, Coins, Eye, FileCheck2, FileText, Home, LucideIcon, Mail, MapPin, Phone, Zap } from "lucide-react";
+import clsx from "clsx";
+import { CustomerAppHeader } from "@/components/ui/CustomerAppChrome";
 
 const subscriptionDurations = [1, 3, 6, 12, 18, 24, 30, 36];
 
@@ -81,6 +84,12 @@ const packages: SubscriptionPackage[] = [
     ],
   },
 ];
+
+const packageMeta: Record<SubscriptionPackage["type"], { tag: string; icon: LucideIcon }> = {
+  battery_maintenance: { tag: "নিম্ন আয়ের ফ্যামেলির জন্য", icon: Coins },
+  ips_and_battery_maintenance: { tag: "মধ্যবিত্ত পরিবারের জন্য", icon: Home },
+  full_maintenance: { tag: "অ্যাডভান্স প্যাকেজ (এডভান্স সেবা)", icon: Zap },
+};
 
 const requirementsList = [
   {
@@ -198,31 +207,13 @@ export default function MaintenancePlans() {
 
   if (response?.success) {
     return (
-      <div className="absolute inset-0 flex flex-col gap-4 items-center text-center px-4 justify-start pt-32 bg-blue-100">
-        <div className={"text-green-600"}>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={0.5}
-            stroke="currentColor"
-            className="size-28"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-            />
-          </svg>
-        </div>
-        <p className="text-2xl">
-          আসসালামু আলাইকুম প্রিয় স্যার/মেডাম আপনার তথ্য সঠিক ভাবে প্রেরণ করা
-          হয়েছে। তথ্য যাচাইয়ের পর টেকনিশিয়ান টিম আপনার সাথে যোগাযোগ করবে সেই
-          পর্যন্ত আমাদের সাথে থাকুন ধন্যবাদ।
-        </p>
-        <Link href="/customer/profile" className="__btn mt-6">
-          Back to Profile
-        </Link>
+      <div className="min-h-screen bg-[#eef3fb]">
+        <SuccessPopup
+          title="আপনার সাবস্ক্রিপশন আবেদন সফলভাবে জমা হয়েছে!"
+          message="আসসালামু আলাইকুম প্রিয় স্যার/মেডাম আপনার তথ্য সঠিক ভাবে প্রেরণ করা হয়েছে। তথ্য যাচাইয়ের পর টেকনিশিয়ান টিম আপনার সাথে যোগাযোগ করবে সেই পর্যন্ত আমাদের সাথে থাকুন ধন্যবাদ।"
+          buttonLabel="প্রোফাইলে ফিরে যান"
+          href="/customer/profile"
+        />
       </div>
     );
   }
@@ -284,78 +275,109 @@ export default function MaintenancePlans() {
     );
   }
 
+  const choosePackage = (pkg: SubscriptionPackage) => {
+    setSelectedPackage(pkg);
+    if (pkg.type === "battery_maintenance") {
+      setSelectedPowerRating("");
+    }
+  };
+
   return (
-    <div className="mx-auto max-w-[1200px] text-center p-3">
-      <div className="h-full font-bold mb-4 flex flex-col gap-0.5 p-6 rounded-md border-2">
-        <div className="text-xl">এস ই ইলেকট্রনিকস কাস্টমার সার্ভিস সেন্টার</div>
-        <div className="text-md">হেল্পলাইন : {contactDetails.customerCare}</div>
-        <div className="text-md">Email : {contactDetails.email}</div>
-        <div className="text-sm text-gray-500">
-          হেড অফিস : {contactDetails.headOffice}
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#eef3fb]">
+    <CustomerAppHeader title="SE ELECTRONICS" subtitle="Trusted Power | Better Tomorrow" backHref="/customer/plans" />
+    <div className="mx-auto max-w-[1200px] text-center px-2 pt-2 pb-3 flex flex-col gap-2.5">
+      {/* Title */}
+      <section className="relative rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-3 text-left shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+        <span className="size-14 rounded-full bg-[linear-gradient(135deg,#0a2f70_0%,#1f7cf0_100%)] text-white flex items-center justify-center shrink-0 shadow-[0_6px_16px_rgba(31,124,240,0.35)]"><FileCheck2 size={28} /></span>
+        <span className="flex flex-col leading-tight min-w-0 flex-1 pr-[78px]">
+          <span className="text-[clamp(16px,4.6vw,22px)] font-extrabold text-[#16213a]">View Package Details</span>
+          <span className="text-[12px] font-semibold text-[#5b6784]">আপনার জন্য সেরা আইপিএস প্যাকেজ সমুহ</span>
+        </span>
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 font-script text-[clamp(12px,3.4vw,15px)] leading-[1] text-right text-[#0b3d91] rotate-[-8deg]">Quality Service<br />Trusted Always</span>
+      </section>
+
+      {/* Customer service centre */}
+      <section className="rounded-md bg-white border border-[#dfe6f2] p-2.5 text-left flex flex-col gap-1.5">
+        <span className="text-[14px] font-extrabold text-[#0b3d91]">এস ই ইলেকট্রনিকস কাস্টমার সার্ভিস সেন্টার</span>
+        <span className="grid grid-cols-2 gap-1.5 text-[12px] font-semibold text-[#3d4a63]">
+          <a href={`tel:${contactDetails.customerCare}`} className="inline-flex items-center gap-1.5 min-w-0"><Phone size={14} className="text-[#1f7cf0] shrink-0" /><span className="truncate">হেল্পলাইন : {contactDetails.customerCare}</span></a>
+          <a href={`mailto:${contactDetails.email}`} className="inline-flex items-center gap-1.5 min-w-0"><Mail size={14} className="text-[#1f7cf0] shrink-0" /><span className="truncate">Email : {contactDetails.email}</span></a>
+        </span>
+        <span className="inline-flex items-start gap-1.5 text-[11.5px] font-medium text-[#5b6784]"><MapPin size={14} className="text-[#1f7cf0] shrink-0 mt-0.5" />হেড অফিস : {contactDetails.headOffice}</span>
+      </section>
 
       {/* Pricing Cards */}
-      <div className="my-8">
-        <h2 className="text-2xl font-bold mb-6">আমাদের প্যাকেজ সমূহ</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {packages.map((pkg) => (
-            <div
+      <h2 className="text-left text-[16px] font-extrabold text-[#16213a] px-0.5 mt-0.5">আমাদের প্যাকেজ সমূহ</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+        {packages.map((pkg) => {
+          const meta = packageMeta[pkg.type];
+          const selected = selectedPackage?.type === pkg.type;
+          return (
+            <article
               key={pkg.type}
-              onClick={() => {
-                setSelectedPackage(pkg);
-                if (pkg.type === "battery_maintenance") {
-                  setSelectedPowerRating("");
-                }
-              }}
-              className={`border-2 rounded-md p-6 cursor-pointer ${selectedPackage?.type === pkg.type
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-300 bg-white hover:border-blue-300"
-                }`}
+              onClick={() => choosePackage(pkg)}
+              className={clsx(
+                "rounded-md bg-white border p-2.5 flex flex-col gap-2 text-left cursor-pointer transition-all shadow-[0_4px_14px_rgba(11,61,145,0.06)]",
+                selected ? "border-[#1f7cf0] ring-2 ring-[#1f7cf0]/25" : "border-[#dfe6f2]",
+              )}
             >
-              <h3 className="text-xl font-bold mb-2">{pkg.name}</h3>
-              <div className="text-3xl font-bold text-blue-600 mb-4">
-                ৳{pkg.price}/মাস
+              <div className="flex items-start gap-2">
+                <span className="flex flex-col gap-1.5 min-w-0 flex-1">
+                  <span className="self-start inline-flex items-center gap-1.5 h-7 pl-0.5 pr-3 rounded-full bg-[#e8f1ff] text-[#0b3d91] text-[12px] font-extrabold">
+                    <span className="size-6 rounded-full bg-[#0b3d91] text-white flex items-center justify-center"><meta.icon size={13} /></span>
+                    {meta.tag}
+                  </span>
+                  <span className="text-[clamp(17px,5vw,21px)] font-extrabold text-[#16213a] leading-tight">{pkg.name}</span>
+                </span>
+                <span className="flex flex-col items-end gap-1.5 shrink-0">
+                  <span className={clsx("inline-flex items-center gap-1 h-6 px-2 rounded-full text-[11px] font-extrabold", selected ? "bg-[#e9f9ef] text-[#178a42]" : "bg-[#f1f4f9] text-[#5b6784]")}>
+                    <CheckCircle2 size={13} />{selected ? "নির্বাচিত" : "উপলব্ধ"}
+                  </span>
+                  <span className="inline-flex items-center gap-0.5 h-9 px-3 rounded-full bg-[linear-gradient(90deg,#0b3d91,#1f7cf0)] text-white text-[16px] font-extrabold shadow-[0_6px_14px_rgba(11,61,145,0.3)]">৳{pkg.price}/মাস<ChevronRight size={15} /></span>
+                </span>
               </div>
-              <p className="text-sm font-semibold text-gray-700 mb-3">
-                {pkg.description}
-              </p>
-              <div className="text-left space-y-3">
-                {pkg.features.map((feature, index) => {
-                  const colonIndex = feature.indexOf(":");
-                  if (colonIndex > -1) {
-                    const title = feature.substring(0, colonIndex + 1);
-                    const description = feature.substring(colonIndex + 1);
+
+              <div className="flex items-center flex-wrap gap-y-1 text-[11.5px] font-semibold text-[#3d4a63] divide-x divide-[#dfe6f2]">
+                <span className="inline-flex items-center gap-1 pr-2"><Calendar size={14} className="text-[#1f7cf0]" />মেয়াদ: {subscriptionDurations[0]}–{subscriptionDurations[subscriptionDurations.length - 1]} মাস</span>
+                <span className="inline-flex items-center gap-1 px-2"><Coins size={14} className="text-[#1f7cf0]" />মাসিক: ৳{pkg.price}</span>
+                <span className="inline-flex items-center gap-1 pl-2"><FileText size={14} className="text-[#1f7cf0]" />সুবিধা: {pkg.features.length} টি</span>
+              </div>
+
+              <details className="group rounded-md bg-[#f5f8fd] border border-[#e6ecf6]" onClick={(e) => e.stopPropagation()}>
+                <summary className="list-none cursor-pointer p-2 flex items-start gap-2">
+                  <CheckCircle2 size={18} className="text-[#1a9c4b] shrink-0 mt-0.5" />
+                  <span className="flex flex-col min-w-0 flex-1 leading-snug">
+                    <span className="text-[13px] font-extrabold text-[#178a42]">প্যাকেজের বিবরণ · {pkg.description}</span>
+                    <span className="text-[11.5px] font-medium text-[#3d4a63] line-clamp-2 group-open:hidden">{pkg.features[0]}</span>
+                  </span>
+                  <span className="shrink-0 inline-flex items-center gap-1 h-8 px-2.5 rounded-full border border-[#1f7cf0] bg-white text-[#0b3d91] text-[11.5px] font-extrabold"><Eye size={14} /><span className="group-open:hidden">বিস্তারিত দেখুন</span><span className="hidden group-open:inline">বন্ধ করুন</span></span>
+                </summary>
+                <div className="px-2 pb-2 flex flex-col gap-2">
+                  {pkg.features.map((feature, index) => {
+                    const colonIndex = feature.indexOf(":");
+                    const title = colonIndex > -1 ? feature.substring(0, colonIndex + 1) : "";
+                    const description = colonIndex > -1 ? feature.substring(colonIndex + 1) : feature;
                     return (
-                      <div key={index} className="text-sm">
-                        <div className="flex items-start gap-2">
-                          <span className="text-green-600 mt-0.5 flex-shrink-0">
-                            ✓
-                          </span>
-                          <span className="font-semibold">{title}</span>
-                        </div>
-                        <p className="text-gray-600 ml-6">{description}</p>
+                      <div key={index} className="flex items-start gap-2 text-[12px]">
+                        <Check size={14} strokeWidth={3} className="text-[#1a9c4b] shrink-0 mt-0.5" />
+                        <span className="leading-snug">{title && <b className="text-[#16213a]">{title}</b>}<span className="text-[#3d4a63]">{description}</span></span>
                       </div>
                     );
-                  }
-                  return (
-                    <div key={index} className="flex items-start gap-2 text-sm">
-                      <span className="text-green-600 mt-0.5 flex-shrink-0">
-                        ✓
-                      </span>
-                      <span className="text-gray-600">{feature}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
+                  })}
+                </div>
+              </details>
+
+              <button type="button" onClick={(e) => { e.stopPropagation(); choosePackage(pkg); setTimeout(() => document.getElementById("subscription-form")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }} className={clsx("h-10 rounded-md text-[13px] font-extrabold inline-flex items-center justify-center gap-1.5", selected ? "bg-[#1a9c4b] text-white" : "bg-[#0b3d91] text-white")}>
+                {selected ? <><CheckCircle2 size={16} />নির্বাচিত — ফর্ম পূরণ করুন</> : <>এই প্যাকেজ নির্বাচন করুন<ArrowRight size={16} /></>}
+              </button>
+            </article>
+          );
+        })}
       </div>
 
       {/* Form - Only shown after package selection */}
       {selectedPackage && (
-        <div className="flex flex-col gap-6 border-2 p-6 rounded-md bg-white">
+        <div id="subscription-form" className="scroll-mt-2 flex flex-col gap-6 border-2 p-6 rounded-md bg-white">
           <div className="bg-blue-50 p-4 rounded-md border border-blue-200">
             <p className="font-semibold text-lg">
               নির্বাচিত প্যাকেজ: {selectedPackage.name}
@@ -643,6 +665,7 @@ export default function MaintenancePlans() {
           </form>
         </div>
       )}
+    </div>
     </div>
   );
 }

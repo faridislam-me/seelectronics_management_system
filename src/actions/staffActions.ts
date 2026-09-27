@@ -1335,8 +1335,21 @@ export const markStaffNotificationAsRead = async (id: string) => {
   }
 };
 
-export const getStaffCertificateToken = async (staffId: string) => {
+/**
+ * Latest valid certificate issued by admin for a staff member. Matches the
+ * staffId on the certificate, or (when admin issued it by mobile number only)
+ * the staff's phone number compared on its last 10 digits.
+ */
+export const getStaffCertificateToken = async (staffId: string, phone?: string | null) => {
   try {
+    const digits = (phone || "").replace(/\D/g, "").slice(-10);
+    const owner =
+      digits.length === 10
+        ? or(
+            sql`payload->>'staffId' = ${staffId}`,
+            sql`right(regexp_replace(coalesce(payload->>'phone', ''), '\\D', '', 'g'), 10) = ${digits}`,
+          )
+        : sql`payload->>'staffId' = ${staffId}`;
     const tokens = await db
       .select({ token: authTokens.token })
       .from(authTokens)
@@ -1344,7 +1357,7 @@ export const getStaffCertificateToken = async (staffId: string) => {
         and(
           gt(authTokens.expiresAt, new Date()),
           sql`payload->>'type' = 'certificate'`,
-          sql`payload->>'staffId' = ${staffId}`,
+          owner,
         ),
       )
       .orderBy(desc(authTokens.createdAt))

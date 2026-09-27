@@ -4,8 +4,7 @@ import { getMyServices, getStaffProfileStats } from "@/actions/staffActions";
 import { StaffLayout } from "@/components/layout/StaffLayout";
 import clsx from "clsx";
 import Link from "next/link";
-import { ArrowLeft, BarChart3, Phone, Settings, TrendingUp, Clock, CheckCircle, XCircle, Hash, User, Box } from "lucide-react";
-import { MobilePageHeader } from "@/components/layout";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Box, CheckCircle, ChevronRight, Clock, Hash, History, MapPin, Phone, Settings, TrendingUp, Truck, User, XCircle } from "lucide-react";
 
 export default async function StaffTrackingPage() {
   const session = await verifyStaffSession();
@@ -34,143 +33,104 @@ export default async function StaffTrackingPage() {
   const getStatusStyle = (status: string) => {
     switch (status) {
       case "completed":
-        return "bg-green-600  text-white";
+        return { cls: "bg-[#1a9c4b] text-white", Icon: CheckCircle };
       case "canceled":
-        return "bg-red-500  text-white";
+        return { cls: "bg-[#e0243f] text-white", Icon: XCircle };
       case "processing":
       case "pending":
-        return "bg-orange-500  text-white";
+        return { cls: "bg-[#f08a1c] text-white", Icon: Clock };
       default:
-        return "bg-gray-400  text-white";
+        return { cls: "bg-[#8a94a8] text-white", Icon: Clock };
     }
   };
 
+  const tiles = [
+    { label: "TOTAL EARNED", value: `৳${totalEarnings.toLocaleString()}`, Icon: TrendingUp, href: "/staff/payment/payment-history", box: "bg-[#effaf3] border-[#c9ecd6]", icon: "bg-[#d7f3e2] text-[#1a9c4b]", chev: "text-[#1a9c4b]" },
+    { label: "PENDING", value: `৳${pendingEarnings.toLocaleString()}`, Icon: Clock, href: "/staff/payment/payment-history", box: "bg-[#fff8ee] border-[#f7dfbd]", icon: "bg-[#ffe9cc] text-[#f08a1c]", chev: "text-[#f08a1c]" },
+    { label: "COMPLETED", value: String(stats?.completedServices || 0), Icon: CheckCircle, href: "#service-history", box: "bg-[#f1f6ff] border-[#cfe0fb]", icon: "bg-[#dbe8ff] text-[#1f7cf0]", chev: "text-[#1f7cf0]" },
+    { label: "CANCELLED", value: String(stats?.canceledServices || 0), Icon: XCircle, href: "#service-history", box: "bg-[#fff2f4] border-[#f7cdd4]", icon: "bg-[#ffdde2] text-[#e0243f]", chev: "text-[#e0243f]" },
+  ];
+
+  const rows = (service: any) => [
+    { Icon: Hash, label: "Service ID:", value: service.serviceId, tint: "bg-[#e8f1ff] text-[#1f7cf0]" },
+    { Icon: User, label: "Customer:", value: service.customerName, tint: "bg-[#efeaff] text-[#6b4de6]" },
+    { Icon: Phone, label: "Phone:", value: service.customerPhone, tint: "bg-[#e6f8ee] text-[#1a9c4b]", phone: true },
+    { Icon: Box, label: "Product:", value: service.productModel || service.productType, tint: "bg-[#e8f1ff] text-[#1f7cf0]" },
+  ];
+
   return (
     <StaffLayout balance={stats?.availableBalance || 0}>
-      <div className="w-full max-w-7xl mx-auto">
-        <MobilePageHeader 
-          title="Tracking & History" 
-          backHref="/staff/profile" 
-          Icon={BarChart3}
-        />
+      <div className="w-full max-w-7xl mx-auto px-2 pt-2 pb-24 flex flex-col gap-2.5 text-[#16213a]">
+        {/* Title */}
+        <div className="relative flex items-center gap-2.5 min-h-[72px] pr-[34%]">
+          <Link href="/staff/profile" aria-label="Back" className="size-10 rounded-md bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center shrink-0"><ArrowLeft size={20} /></Link>
+          <span className="flex flex-col leading-tight min-w-0">
+            <span className="text-[clamp(18px,5.4vw,22px)] font-extrabold">Tracking &amp; History</span>
+            <span className="text-[11.5px] font-medium text-[#5b6784]">Your service request and tracking history</span>
+          </span>
+          {/* van illustration */}
+          <span aria-hidden className="absolute right-0 top-1/2 -translate-y-1/2 w-[32%] h-[68px] rounded-md bg-[radial-gradient(90%_90%_at_60%_40%,#dbe8ff_0%,#eef4ff_70%,transparent_100%)] flex items-end justify-center pb-1.5">
+            <MapPin size={20} className="absolute right-3 top-0.5 text-[#1f7cf0] fill-[#cfe0fb]" />
+            <span className="relative flex items-center justify-center size-14 rounded-md bg-[#1f7cf0] text-white shadow-[0_6px_14px_rgba(31,124,240,0.35)]"><Truck size={32} strokeWidth={1.8} /></span>
+          </span>
+        </div>
 
-        <div className="p-3 md:p-2 space-y-2">
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gray-100 rounded-md p-2 text-center">
-              <TrendingUp className="mx-auto text-green-600 mb-1" size={18} />
-              <p className="font-bold text-lg">
-                ৳{totalEarnings.toLocaleString()}
-              </p>
-              <p className="text-sm text-gray-500">TOTAL EARNED</p>
-            </div>
+        {/* Stats: icon, value and label centered */}
+        <div className="grid grid-cols-2 gap-2">
+          {tiles.map((t) => (
+            <Link key={t.label} href={t.href} className={clsx("relative rounded-md border p-2.5 flex flex-col items-center justify-center text-center gap-1", t.box)}>
+              <span className={clsx("size-10 rounded-full flex items-center justify-center", t.icon)}><t.Icon size={20} /></span>
+              <span className="text-[clamp(20px,6vw,24px)] font-extrabold leading-none mt-0.5">{t.value}</span>
+              <span className="text-[11.5px] font-semibold tracking-wide text-[#5b6784]">{t.label}</span>
+              <ChevronRight size={18} className={clsx("absolute right-1.5 top-1/2 -translate-y-1/2", t.chev)} />
+            </Link>
+          ))}
+        </div>
 
-            <div className="bg-gray-100 rounded-md p-2 text-center">
-              <Clock className="mx-auto text-yellow-500 mb-1" size={18} />
-              <p className="font-bold text-lg">
-                ৳{pendingEarnings.toLocaleString()}
-              </p>
-              <p className="text-sm text-gray-500">PENDING</p>
-            </div>
+        {/* Service History */}
+        <div id="service-history" className="scroll-mt-4 flex items-center gap-2.5 mt-1">
+          <span className="size-10 rounded-full bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><History size={20} /></span>
+          <span className="flex flex-col leading-tight">
+            <span className="text-[16px] font-extrabold">Service History</span>
+            <span className="text-[11.5px] font-medium text-[#5b6784]">Your recent service requests</span>
+          </span>
+        </div>
 
-            <div className="bg-gray-100 rounded-md p-4 text-center">
-              <CheckCircle className="mx-auto text-gray-700 mb-1" size={18} />
-              <p className="font-bold text-lg">
-                {stats?.completedServices || 0}
-              </p>
-              <p className="text-sm text-gray-500">COMPLETED</p>
-            </div>
-
-            <div className="bg-gray-100 rounded-md p-4 text-center">
-              <XCircle className="mx-auto text-red-500 mb-1" size={18} />
-              <p className="font-bold text-lg">{stats?.canceledServices || 0}</p>
-              <p className="text-sm text-gray-500">CANCELLED</p>
-            </div>
-          </div>
-
-          {/* Service History */}
-          <div>
-            <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">
-              Service History
-            </h3>
-
-            <div className="space-y-2 md:grid md:grid-cols-2 md:gap-2 md:space-y-0">
-              {services.map((service: any) => {
-                const status = service.statusHistory?.[0]?.status || "processing";
-
-                return (
-              <div
-  key={service.id}
-  className="border rounded-md p-2 pt-6 bg-white shadow-sm relative"
->
-                    {/* Status Badge Top Right */}
-                    <span
-                      className={clsx(
-                        "absolute top-2 right-2  text-[10px] font-bold px-2 py-1 rounded",
-                        getStatusStyle(status),
-                      )}
-                    >
-                      {status.toUpperCase()}
+        <div className="flex flex-col gap-2 md:grid md:grid-cols-2">
+          {services.map((service: any) => {
+            const status = service.statusHistory?.[0]?.status || "processing";
+            const st = getStatusStyle(status);
+            return (
+              <article key={service.id} className="relative rounded-md bg-white border border-[#dfe6f2] p-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] flex flex-col gap-2">
+                <span className={clsx("absolute top-2.5 right-2.5 inline-flex items-center gap-1 h-7 px-2 rounded-md text-[10.5px] font-extrabold", st.cls)}><st.Icon size={13} />{status.toUpperCase()}</span>
+                {rows(service).map((r) => (
+                  <div key={r.label} className="flex items-center gap-2.5 min-w-0">
+                    <span className={clsx("size-9 rounded-md flex items-center justify-center shrink-0", r.tint)}><r.Icon size={17} /></span>
+                    <span className="flex flex-col leading-tight min-w-0">
+                      <span className="text-[11px] font-medium text-[#5b6784]">{r.label}</span>
+                      <span className="text-[13.5px] font-bold truncate">{r.value}</span>
                     </span>
-
-                    <div className="text-sm space-y-1">
-                      <p className="flex items-center gap-2">
-                        <Hash size={16} className="text-gray-500" />
-                        <span className="font-semibold">Service ID:</span>{" "}
-                        {service.serviceId}
-                      </p>
-
-                      {/* Customer Name */}
-                      <p className="flex items-center gap-2">
-                        <User size={16} className="text-gray-500" />
-                        <span className="font-semibold">Customer:</span>{" "}
-                        {service.customerName}
-                      </p>
-
-                      <p className="flex items-center gap-2">
-                        <Phone size={16} className="text-gray-500" />
-                        <span className="font-semibold">Phone:</span>{" "}
-                        {service.customerPhone}
-                        <a
-                          href={`tel:+88${service.customerPhone}`}
-                          className="text-blue-500 flex items-center gap-1 ml-2 hover:underline"
-                        >
-                          <Phone size={14} />
-                          Call Now
-                        </a>
-                      </p>
-
-                      <p className="flex items-center gap-2">
-                        <Box size={16} className="text-gray-500" />
-                        <span className="font-semibold">Product:</span>{" "}
-                        {service.productModel || service.productType}
-                      </p>
-
-                      <div className="flex items-center justify-between mt-2">
-                        {/* LEFT SIDE (Details) */}
-                        <Link
-                          href={`/service-track?trackingId=${service.serviceId}`}
-                          className=" text-[15px] text-blue-500 underline flex items-center gap-2"
-                        >
-                          TRACKING →
-                          <TrendingUp size={16} />
-                        </Link>
-
-                        {/* RIGHT SIDE (Settings Icon) */}
-                        <Settings className="text-gray-500" size={18} />
-                      </div>
-                    </div>
+                    {r.phone && (
+                      <a href={`tel:+88${service.customerPhone}`} className="ml-1 shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-[#e8f1ff] text-[#1f7cf0] text-[11.5px] font-bold"><Phone size={13} />Call Now</a>
+                    )}
                   </div>
-                );
-              })}
+                ))}
+                <div className="flex items-center justify-between border-t border-[#eef1f6] pt-2">
+                  <Link href={`/service-track?trackingId=${service.serviceId}`} className="inline-flex items-center gap-1.5 text-[13px] font-extrabold text-[#1f7cf0]">
+                    <MapPin size={16} />TRACKING<ArrowUpRight size={15} />
+                  </Link>
+                  <span className="flex items-center gap-2">
+                    <ArrowRight size={16} className="text-[#9ab4df]" />
+                    <span className="size-8 rounded-md bg-[#f1f5fb] text-[#5b6784] flex items-center justify-center"><Settings size={16} /></span>
+                  </span>
+                </div>
+              </article>
+            );
+          })}
 
-              {services.length === 0 && (
-                <p className="text-center text-gray-400 py-10 text-sm">
-                  No service history found
-                </p>
-              )}
-            </div>
-          </div>
+          {services.length === 0 && (
+            <p className="text-center text-gray-400 py-10 text-sm">No service history found</p>
+          )}
         </div>
       </div>
     </StaffLayout>

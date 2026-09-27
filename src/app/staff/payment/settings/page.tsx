@@ -1,8 +1,9 @@
 import { verifyStaffSession } from "@/actions";
 import { getStaffById, getStaffProfileStats } from "@/actions/staffActions";
 import { StaffPaymentSettingsForm } from "@/components/features/staff/StaffPaymentSettingsForm";
-import { StaffLayout, MobilePageHeader } from "@/components/layout";
-import { Settings, Wallet } from "lucide-react";
+import { StaffLayout } from "@/components/layout";
+import { ArrowLeft, Info, Wallet } from "lucide-react";
+import Link from "next/link";
 
 export default async function StaffPaymentSettingsPage() {
   const session = await verifyStaffSession();
@@ -19,8 +20,8 @@ export default async function StaffPaymentSettingsPage() {
 
   if (!staffData) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <p className="text-gray-600 font-bold">
+      <div className="min-h-screen bg-[#eef3fb] flex items-center justify-center p-4">
+        <p className="rounded-md bg-white border border-[#dfe6f2] p-4 text-[#3d4a63] font-bold">
           Staff profile data not available.
         </p>
       </div>
@@ -29,67 +30,49 @@ export default async function StaffPaymentSettingsPage() {
 
   return (
     <StaffLayout balance={stats?.availableBalance || 0}>
-      <MobilePageHeader 
-        title="Payout Settings" 
-        backHref="/staff/payment" 
-        Icon={Settings}
-      />
-
-      <div className="p-4 space-y-6">
-        {/* Page Title (Desktop Only) */}
-        <div className="hidden md:flex items-center gap-3 mb-2">
-          <div className="p-2 bg-brand/10 rounded-md text-brand">
-            <Settings size={20} />
-          </div>
-          <h1 className="text-xl font-bold text-gray-800">
-            Payout Configuration
-          </h1>
+      <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-24 flex flex-col gap-2.5 overflow-x-hidden">
+        {/* Title */}
+        <div className="flex items-center gap-2.5">
+          <Link href="/staff/payment" aria-label="Back" className="size-10 rounded-md bg-white border border-[#dfe6f2] flex items-center justify-center shrink-0"><ArrowLeft size={20} /></Link>
+          <span className="flex flex-col leading-tight min-w-0">
+            <span className="text-[clamp(18px,5.2vw,22px)] font-extrabold truncate">Payout Settings</span>
+            <span className="text-[12px] font-semibold text-[#5b6784] truncate">Payout Configuration</span>
+          </span>
         </div>
 
-        <div className="bg-white rounded-md p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-3 mb-5 p-4 rounded-md bg-gray-50/50 border border-gray-100">
-            <div className="size-10 rounded-md bg-brand/10 flex items-center justify-center text-brand">
-              <Wallet className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                Preferred Withdrawal Gateway
-              </h2>
-              <p className="text-sm font-bold text-gray-800">
-                Account & Identity Verification
-              </p>
-            </div>
+        {/* Hero */}
+        <section className="relative overflow-hidden rounded-md bg-[#0b3d91] bg-[linear-gradient(105deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-3 shadow-[0_10px_30px_rgba(10,47,112,0.35)]">
+          <span className="absolute -right-8 -top-10 size-40 rounded-full bg-white/10" />
+          <div className="relative flex items-center gap-2.5">
+            <span className="size-11 rounded-md bg-white/15 border border-white/25 flex items-center justify-center shrink-0"><Wallet size={22} /></span>
+            <span className="flex flex-col leading-tight min-w-0">
+              <span className="text-[10.5px] font-bold uppercase tracking-[1.5px] text-white/85">Preferred Withdrawal Gateway</span>
+              <span className="text-[15px] font-extrabold">Account &amp; Identity Verification</span>
+            </span>
           </div>
-
-          <p className="text-sm font-medium text-gray-500 mb-6 leading-relaxed px-1">
+          <p className="relative mt-2 text-[12.5px] font-medium leading-relaxed text-white/90">
             Configure your preferred payout gateway. Ensure the account details
             (bKash/Nagad/Bank) are accurate to avoid processing delays.
           </p>
+        </section>
 
-          <div className="bg-gray-50/30 p-2 rounded-md border border-gray-100">
-            <StaffPaymentSettingsForm
-              initialPaymentPreference={staffData.paymentPreference}
-              initialWalletNumber={staffData.walletNumber}
-              initialBankInfo={staffData.bankInfo ?? null}
-            />
-          </div>
-        </div>
+        <section className="rounded-md bg-white border border-[#dfe6f2] p-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+          <StaffPaymentSettingsForm
+            initialPaymentPreference={staffData.paymentPreference}
+            initialWalletNumber={staffData.walletNumber}
+            initialBankInfo={staffData.bankInfo ?? null}
+          />
+        </section>
 
         {/* Info Card */}
-        <div className="bg-blue-50 rounded-md p-5 border border-blue-100">
-          <div className="flex gap-3">
-            <div className="size-5 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 text-[10px] font-bold mt-0.5">
-              i
-            </div>
-            <div>
-              <p className="text-sm font-bold text-blue-800 uppercase tracking-tight">
-                Important Note
-              </p>
-              <p className="text-[11px] font-medium text-blue-700/80 mt-1 leading-relaxed">
-                Changes to payment settings may require up to 24 hours for
-                verification by our administrative team.
-              </p>
-            </div>
+        <div className="rounded-md bg-[#e8f1ff] border border-[#cfe0fb] p-2.5 flex gap-2.5">
+          <span className="size-8 rounded-md bg-[#1f7cf0] text-white flex items-center justify-center shrink-0"><Info size={16} /></span>
+          <div className="min-w-0">
+            <p className="text-[13px] font-extrabold text-[#0b3d91] uppercase tracking-tight">Important Note</p>
+            <p className="text-[12px] font-medium text-[#1b4f9c] mt-0.5 leading-relaxed">
+              Changes to payment settings may require up to 24 hours for
+              verification by our administrative team.
+            </p>
           </div>
         </div>
       </div>

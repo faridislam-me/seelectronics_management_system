@@ -189,6 +189,61 @@ export const getInvoiceByNumber = async (invoiceNumber: string) => {
   }
 };
 
+/**
+ * Public warranty lookup used by /check-warranty. Accepts an invoice number,
+ * a customer ID or a mobile number. Works without login but only returns the
+ * fields the warranty page needs; the phone number is masked unless the viewer
+ * is the owner, staff or admin.
+ */
+export const getWarrantyInfo = async (query: string) => {
+  try {
+    const q = (query || "").trim();
+    if (!q) return { success: false, message: "Invoice not found" };
+    const session = await verifySession(false);
+    const withProducts = {
+      products: { columns: { type: true, model: true, quantity: true, warrantyStartDate: true, warrantyDurationMonths: true } },
+    } as const;
+
+    let invoice = await db.query.invoices.findFirst({
+      where: or(eq(invoices.invoiceNumber, q), ilike(invoices.invoiceNumber, q)),
+      with: withProducts,
+    });
+    if (!invoice) {
+      invoice = await db.query.invoices.findFirst({ where: eq(invoices.customerId, q.toUpperCase()), with: withProducts });
+    }
+    const digits = q.replace(/\D/g, "");
+    if (!invoice && digits.length >= 10 && digits.length === q.replace(/[\s+-]/g, "").length) {
+      const last10 = digits.slice(-10);
+      invoice = await db.query.invoices.findFirst({
+        where: sql`right(regexp_replace(${invoices.customerPhone}, '\\D', '', 'g'), 10) = ${last10}`,
+        orderBy: (inv, { desc }) => [desc(inv.date)],
+        with: withProducts,
+      });
+    }
+    if (!invoice) return { success: false, message: "Invoice not found" };
+
+    const canSeeAll =
+      !!session && (session.role === "admin" || session.role === "staff" || (session.role === "customer" && session.userId === invoice.customerId));
+    const phone = invoice.customerPhone || "";
+    const maskedPhone = phone.length > 5 ? `${phone.slice(0, 3)}${"*".repeat(Math.max(phone.length - 6, 3))}${phone.slice(-3)}` : phone;
+
+    return {
+      success: true,
+      data: {
+        invoiceNumber: invoice.invoiceNumber,
+        customerId: invoice.customerId,
+        customerName: invoice.customerName,
+        customerPhone: canSeeAll ? phone : maskedPhone,
+        date: invoice.date,
+        products: invoice.products,
+      },
+    };
+  } catch (error) {
+    console.error(error);
+    return { success: false, message: "Something went wrong" };
+  }
+};
+
 export const deleteInvoice = async (invoiceNumber: string) => {
   try {
     const session = await verifySession(false, "admin");

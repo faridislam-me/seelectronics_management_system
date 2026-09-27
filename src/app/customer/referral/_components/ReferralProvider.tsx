@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { getCustomerReferralData } from "@/actions";
 import { toast } from "react-toastify";
-import { Spinner } from "@/components/ui";
 import { AlertCircle } from "lucide-react";
 import Link from "next/link";
 
@@ -32,15 +31,20 @@ export function ReferralProvider({ children }: { children: React.ReactNode }) {
     fetchData();
   }, []);
 
+  // Skeleton shaped like the referral screen so the footer doesn't float
+  // mid-page while data loads.
   if (loading)
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <Spinner />
-          <p className="text-slate-500 text-sm font-bold mt-4">
-            লোডিং হচ্ছে...
-          </p>
+      <div className="flex flex-col gap-2.5 animate-pulse" aria-busy="true" aria-label="লোডিং হচ্ছে...">
+        <div className="h-[170px] rounded-md bg-[#c9d8f0]" />
+        <div className="grid grid-cols-2 gap-2">
+          <div className="h-[64px] rounded-md bg-white border border-[#dfe6f2]" />
+          <div className="h-[64px] rounded-md bg-white border border-[#dfe6f2]" />
         </div>
+        <div className="h-6 w-40 rounded-md bg-[#dbe4f3]" />
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-[92px] rounded-md bg-white border border-[#dfe6f2]" />
+        ))}
       </div>
     );
 

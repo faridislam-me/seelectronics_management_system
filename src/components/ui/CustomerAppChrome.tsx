@@ -31,13 +31,13 @@ export function CustomerAppHeader({ title, subtitle, backHref, right }: { title:
 /** Wave footer with a tagline and the website. */
 export function CustomerAppFooter({ tagline }: { tagline: string }) {
   return (
-    <div className="relative mt-3 pt-5 pb-2 text-center bg-[#0b3d91] bg-[radial-gradient(120%_120%_at_50%_100%,#1b5fd0_0%,#0b3d91_60%,#072a66_100%)] text-white rounded-t-[30px]">
+    <div className="relative mt-2 pt-2 pb-1 text-center text-[#0b3d91]">
       <div className="flex items-center justify-center gap-3 px-6">
-        <span className="h-px flex-1 max-w-16 bg-white/40" />
+        <span className="h-px flex-1 max-w-16 bg-[#0b3d91]/30" />
         <span className="font-script text-[clamp(15px,4.4vw,19px)] leading-none">{tagline}</span>
-        <span className="h-px flex-1 max-w-16 bg-white/40" />
+        <span className="h-px flex-1 max-w-16 bg-[#0b3d91]/30" />
       </div>
-      <p className="mt-1 text-[12px] font-bold tracking-wide text-white/90">www.seelectronicsbd.com</p>
+      <p className="mt-1 text-[12px] font-bold tracking-wide text-[#5b6784]">www.seelectronicsbd.com</p>
     </div>
   );
 }

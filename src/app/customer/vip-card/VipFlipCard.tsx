@@ -86,14 +86,14 @@ export function VipFlipCard({
 
   return (
     <div
-      className="relative flex flex-col items-center w-full px-2"
+      className="relative flex flex-col items-center w-full"
       style={{ perspective: "1200px" }}
     >
       {/* ── Card body (flips on click) ─────────────────────────────── */}
       <div
-        className="relative w-full max-w-[420px] cursor-pointer"
+        className="relative w-full max-w-[560px] cursor-pointer"
         style={{
-          aspectRatio: "1.586 / 1", // standard credit-card ratio
+          aspectRatio: "1.7 / 1", // slightly shorter than a credit card, per client
           transformStyle: "preserve-3d",
           WebkitTransformStyle: "preserve-3d",
           transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
@@ -235,7 +235,7 @@ export function VipFlipCard({
       </div>
 
       {/* ── Hint label ────────────────────────────────────────────── */}
-      <p className="mt-4 text-base text-gray-700 font-medium tracking-wider select-none animate-pulse">
+      <p className="mt-2 text-base text-gray-700 font-medium tracking-wider select-none animate-pulse">
         কার্ড উল্টাতে ট্যাপ করুন
       </p>
     </div>

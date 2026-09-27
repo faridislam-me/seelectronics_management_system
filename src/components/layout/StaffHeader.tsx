@@ -82,7 +82,6 @@ export function StaffHeader({ balance }: StaffHeaderProps) {
       <div className="max-w-4xl mx-auto px-3 h-[60px] flex items-center justify-between gap-2">
         {/* Brand block (same on every staff page) */}
         <Link href="/staff/profile" className="flex items-center gap-2 min-w-0 flex-1">
-          <span className="size-10 rounded-md bg-[#1f7cf0] text-white text-[17px] font-extrabold flex items-center justify-center shadow-[0_6px_16px_rgba(0,40,120,0.35)] shrink-0">SE</span>
           <span className="flex flex-col leading-tight min-w-0">
             <span className="text-[clamp(13px,3.9vw,15px)] font-extrabold text-white leading-tight truncate">SE Electronics</span>
             <span className="text-[clamp(9px,2.8vw,10.5px)] text-white/85 font-medium truncate">Smart Solution &nbsp;Better Life</span>

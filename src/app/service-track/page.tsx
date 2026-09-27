@@ -405,7 +405,22 @@ export default async function ServiceTrackPage({
     throw new AppError("ট্র্যাকিং আইডিটি সঠিক নয় অথবা খুঁজে পাওয়া যায়নি।");
   }
   const serviceData = response.data;
-  const statusHistory = serviceData.statusHistory;
+  // Older services can have no status history rows; fall back to a single step
+  // built from the service itself instead of crashing.
+  const statusHistory: typeof serviceData.statusHistory = serviceData.statusHistory?.length
+    ? serviceData.statusHistory
+    : ([
+        {
+          id: `initial-${serviceData.serviceId}`,
+          serviceId: serviceData.serviceId,
+          statusType: "system",
+          status: serviceData.status ?? "pending",
+          customLabel: null,
+          customNote: null,
+          cancelReason: null,
+          createdAt: serviceData.createdAt,
+        },
+      ] as unknown as typeof serviceData.statusHistory);
   const currentStatus = statusHistory[statusHistory.length - 1].status;
   const appointedStaffPhotoUrl =
     serviceData.appointedStaff &&

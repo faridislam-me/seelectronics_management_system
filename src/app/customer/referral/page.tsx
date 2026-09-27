@@ -20,7 +20,6 @@ export default function CustomerReferralPage() {
           <rect x="36" y="32" width="70" height="42" rx="9" fill="#1f5fc9" />
           <rect x="80" y="44" width="26" height="18" rx="5" fill="#7fb4ff" />
           <circle cx="93" cy="53" r="4" fill="#0b3d91" />
-          <text x="46" y="60" fontSize="16" fontWeight="800" fill="#fff" fontStyle="italic">SE</text>
           <ellipse cx="22" cy="72" rx="16" ry="6" fill="#e0a11b" /><rect x="6" y="60" width="32" height="12" fill="#f5c542" /><ellipse cx="22" cy="60" rx="16" ry="6" fill="#ffd966" />
           <ellipse cx="22" cy="52" rx="16" ry="6" fill="#e0a11b" /><rect x="6" y="46" width="32" height="6" fill="#f5c542" /><ellipse cx="22" cy="46" rx="16" ry="6" fill="#ffd966" />
           <path d="M100 8l4 8M112 6l-2 9M108 22l8-2" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />

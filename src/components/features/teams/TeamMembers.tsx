@@ -5,8 +5,18 @@ import blacklistImg from "@/assets/images/suspend.png";
 import { ImageWithLightbox, Modal } from "@/components/ui";
 import { contactDetails } from "@/constants";
 import { renderText } from "@/utils";
+import clsx from "clsx";
 import {
   AlertTriangle,
+  BadgeCheck,
+  ChevronDown,
+  ChevronRight,
+  ListFilter,
+  Search,
+  Settings,
+  User,
+  Users,
+  Zap,
   BriefcaseBusiness,
   Building2,
   CheckSquare,
@@ -50,6 +60,8 @@ export default function TeamMembers({
 }) {
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [selectedThana, setSelectedThana] = useState("");
+  const [query, setQuery] = useState("");
+  const [role, setRole] = useState("");
   const [selectedProfile, setSelectedProfile] = useState<
     (typeof staffs)[number] | null
   >(
@@ -73,6 +85,13 @@ export default function TeamMembers({
       })
     : staffs;
 
+  const q = query.trim().toLowerCase();
+  const visibleStaffs = filteredStaffs.filter(
+    (staff) =>
+      (!role || staff.role === role) &&
+      (!q || staff.name.toLowerCase().includes(q) || staff.phone.includes(q) || staff.staffId.toLowerCase().includes(q)),
+  );
+
   const handleProfileSelect = (staff: (typeof staffs)[number]) => {
     const url = new URL(window.location.href);
     url.searchParams.set("staffId", staff.staffId);
@@ -81,7 +100,7 @@ export default function TeamMembers({
   };
 
   return (
-    <div className="my-6">
+    <div className="my-2">
       {selectedProfile && (
         <Modal
           width="500"
@@ -319,83 +338,77 @@ export default function TeamMembers({
           </div>
         </Modal>
       )}
-      <h2 className="text-2xl font-bold mb-6">আমাদের টিম মেম্বার</h2>
-      <div className="flex gap-4 py-4 items-center justify-end">
-        <div>
-          <span>জেলাঃ</span>
-          <select
-            onChange={(e) => setSelectedDistrict(e.target.value)}
-            className="ml-1.5 border rounded-md outline-none h-8 px-2"
-          >
-            <option value="">সকল</option>
-            {districts.map((district) => (
-              <option key={district} value={district}>
-                {district}
-              </option>
-            ))}
+      {/* Search + filters */}
+      <div className="flex gap-2">
+        <label className="relative flex-1 min-w-0">
+          <Search size={17} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#5b6784] pointer-events-none" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="টিম মেম্বার খুঁজুন..." className="w-full h-10 rounded-md border border-[#dfe6f2] bg-white pl-9 pr-2.5 text-[13.5px] outline-none placeholder:text-[#9aa4b8] focus:border-[#1f7cf0] focus:ring-1 focus:ring-[#1f7cf0]" />
+        </label>
+        <label className="relative shrink-0">
+          <ListFilter size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#0b3d91] pointer-events-none" />
+          <select value={role} onChange={(e) => setRole(e.target.value)} className="appearance-none h-10 rounded-md border border-[#dfe6f2] bg-white pl-8 pr-7 text-[13px] font-bold text-[#0b3d91] outline-none focus:border-[#1f7cf0]">
+            <option value="">সব বিভাগ</option>
+            <option value="technician">টেকনিশিয়ান</option>
+            <option value="electrician">ইলেকট্রিশিয়ান</option>
           </select>
-        </div>
-        <div>
-          <span>থানাঃ</span>
-          <select
-            onChange={(e) => setSelectedThana(e.target.value)}
-            className="ml-1.5 border rounded-md outline-none h-8 px-2"
-          >
-            <option value="">সকল</option>
-            {thanas.map((thana) => (
-              <option key={thana} value={thana}>
-                {thana}
-              </option>
-            ))}
-          </select>
-        </div>
+          <ChevronDown size={15} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#0b3d91] pointer-events-none" />
+        </label>
       </div>
-      {filteredStaffs.length > 0 ? (
-        <div className="overflow-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredStaffs.map((staff) => (
-            <div
-              key={staff.id}
-              onClick={() => handleProfileSelect(staff)}
-              className="bg-white border p-6 rounded-md text-center cursor-pointer"
-            >
-              <div className="size-44 rounded-full overflow-hidden __center mx-auto relative">
-                <Image
-                  src={staff.photoUrl || ""}
-                  alt=""
-                  width={176}
-                  height={176}
-                />
-                {staff.isActiveStaff === false && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10 pointer-events-none">
-                    <Image
-                      src={blacklistImg}
-                      alt="Blacklisted"
-                      className="w-full object-contain"
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col mt-5 gap-2">
-                <div className="flex gap-1 self-center items-center">
-                  <span className="text-lg font-semibold">{staff.name}</span>
-                  <CircleCheck size={18} />
+      <div className="grid grid-cols-2 gap-2 mt-2">
+        <label className="flex flex-col gap-1 text-left">
+          <span className="text-[11.5px] font-bold text-[#5b6784]">জেলাঃ</span>
+          <select onChange={(e) => { setSelectedDistrict(e.target.value); setSelectedThana(""); }} className="h-9 rounded-md border border-[#dfe6f2] bg-white px-2 text-[13px] outline-none focus:border-[#1f7cf0]">
+            <option value="">সকল</option>
+            {districts.map((district) => <option key={district} value={district}>{district}</option>)}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-left">
+          <span className="text-[11.5px] font-bold text-[#5b6784]">থানাঃ</span>
+          <select value={selectedThana} onChange={(e) => setSelectedThana(e.target.value)} className="h-9 rounded-md border border-[#dfe6f2] bg-white px-2 text-[13px] outline-none focus:border-[#1f7cf0]">
+            <option value="">সকল</option>
+            {thanas.map((thana) => <option key={thana} value={thana}>{thana}</option>)}
+          </select>
+        </label>
+      </div>
+
+      {/* Section header */}
+      <div className="flex items-center justify-between gap-2 mt-3 mb-2">
+        <span className="flex items-center gap-2 text-[18px] font-extrabold text-[#0b2a66]"><Users size={22} className="text-[#0b3d91]" />আমাদের টিম</span>
+        <span className="h-7 px-3 rounded-md bg-[#e3edff] text-[#1f5fc9] text-[12px] font-bold inline-flex items-center">মোট সদস্য {visibleStaffs.length}</span>
+      </div>
+
+      {visibleStaffs.length > 0 ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          {visibleStaffs.map((staff) => {
+            const tone = staff.role === "technician"
+              ? { panel: "bg-[#fff1e6]", badge: "bg-[#f57c1f]", btn: "bg-[#fff1e6] text-[#e8710a]", label: "Technical", Icon: Settings }
+              : { panel: "bg-[#e6f7ee]", badge: "bg-[#1a9c4b]", btn: "bg-[#e6f7ee] text-[#178a42]", label: "Electrical", Icon: Zap };
+            return (
+              <button type="button" key={staff.id} onClick={() => handleProfileSelect(staff)} className="relative text-left rounded-md bg-white border border-[#dfe6f2] p-2 flex flex-col gap-1.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] active:scale-[0.99] transition-transform">
+                <div className={clsx("relative w-full aspect-[5/4] rounded-md overflow-hidden flex items-end justify-center", tone.panel)}>
+                  {staff.photoUrl ? (
+                    <Image src={staff.photoUrl} alt={staff.name} fill sizes="(max-width:640px) 50vw, 25vw" className="object-cover object-top" />
+                  ) : (
+                    <span className="mb-3 size-16 rounded-full bg-white/80 text-[#0b3d91] text-[22px] font-extrabold flex items-center justify-center">{staff.name?.charAt(0) || <User size={28} />}</span>
+                  )}
+                  {staff.isActiveStaff === false && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10 pointer-events-none">
+                      <Image src={blacklistImg} alt="Blacklisted" className="w-full object-contain" />
+                    </div>
+                  )}
+                  <span className={clsx("absolute top-1.5 right-1.5 z-10 inline-flex items-center gap-1 h-6 px-2 rounded-md text-white text-[10.5px] font-bold", tone.badge)}><tone.Icon size={12} />{tone.label}</span>
                 </div>
-                <div className="flex items-center gap-1 text-gray-600 self-center">
-                  <MapPin size={18} />
-                  <span>{staff.currentDistrict}</span>
-                </div>
-                <div className="flex items-center gap-1 text-gray-600 self-center">
-                  <BriefcaseBusiness size={18} />
-                  <span>
-                    {staff.role === "technician" ? "Technician" : "Electrician"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
+                <span className="flex items-center gap-1 min-w-0"><span className="text-[14px] font-extrabold text-[#16213a] truncate">{staff.name}</span><BadgeCheck size={16} className="shrink-0 text-white fill-[#1f7cf0]" /></span>
+                <span className="text-[12px] font-semibold text-[#3d4a63] -mt-1">{staff.role === "technician" ? "টেকনিশিয়ান" : "ইলেকট্রিশিয়ান"}</span>
+                <span className="flex items-center gap-1.5 text-[12px] text-[#3d4a63]"><Phone size={13} className="text-[#0b3d91] shrink-0" /><span className="truncate">{staff.phone}</span></span>
+                <span className="flex items-center gap-1.5 text-[12px] text-[#3d4a63] pr-8"><MapPin size={13} className="text-[#0b3d91] shrink-0" /><span className="truncate">{staff.currentDistrict}</span></span>
+                <span className={clsx("absolute right-2 bottom-2 size-7 rounded-md flex items-center justify-center", tone.btn)}><ChevronRight size={16} /></span>
+              </button>
+            );
+          })}
         </div>
       ) : (
-        <div className="w-full self-center h-72 __center">No Results</div>
+        <div className="rounded-md bg-white border border-dashed border-[#c9d3e6] h-48 flex flex-col items-center justify-center gap-2 text-[#5b6784]"><Users size={32} className="text-[#c9d3e6]" /><span className="font-bold">No Results</span></div>
       )}
     </div>
   );

@@ -166,7 +166,6 @@ export function BlueFooterBand({ quote = <>সততা ও দক্ষতা�
         <span className="absolute -right-6 -top-10 size-28 rounded-full bg-white/10" />
         <span className="absolute right-6 bottom-2 size-10 rounded-full bg-white/5" />
         <span className="relative pl-3 border-l-2 border-white/40 flex items-center gap-2.5">
-          <span className="size-10 rounded-md bg-[#1f7cf0] text-white font-extrabold text-[15px] flex items-center justify-center shadow-[0_6px_14px_rgba(0,40,120,0.45)]">SE</span>
           <span className="flex flex-col leading-tight"><span className="text-[14px] font-extrabold text-white">SE Electronics</span><span className="text-[9.5px] text-white/85 font-medium">Smart Solution &nbsp;Better Life</span></span>
         </span>
         {/* leaf accent */}

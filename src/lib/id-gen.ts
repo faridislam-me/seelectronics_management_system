@@ -2,9 +2,10 @@ import QRCode from "qrcode";
 import JsBarcode from "jsbarcode";
 import { createCanvas } from "canvas";
 
-export async function qrcode(text: string): Promise<string> {
+/** `margin` is the white quiet zone in modules (library default 4). */
+export async function qrcode(text: string, margin?: number): Promise<string> {
     try {
-        return await QRCode.toDataURL(text);
+        return await QRCode.toDataURL(text, margin === undefined ? undefined : { margin, width: 300 });
     } catch (err) {
         console.error("QR Code Error:", err);
         return "";

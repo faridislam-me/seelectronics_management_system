@@ -1421,7 +1421,7 @@ export const getCertificatePreviewData = async (token: string) => {
     );
 
     const { qrcode } = await import("@/lib/id-gen");
-    const qrCodeData = await qrcode(payload.staffId || payload.shopId || "");
+    const qrCodeData = await qrcode(payload.staffId || payload.shopId || "", 1);
 
     const issueDate = new Date();
 

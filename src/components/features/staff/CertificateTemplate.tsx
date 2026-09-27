@@ -38,7 +38,7 @@ export default function CertificateTemplate({
       {/* QR code (enlarged, drawn over the artwork's small QR box) */}
       <div className="absolute left-[146px] top-[120px] w-[118px] flex flex-col items-stretch">
         <div className="h-[112px] bg-white border-2 border-[#2b3a67] rounded-[3px] flex items-center justify-center">
-          <img src={data.qrcode} alt="qr" width={102} height={102} className="w-[102px] h-[102px] object-contain" />
+          <img src={data.qrcode} alt="qr" width={108} height={108} className="w-[108px] h-[108px] object-contain" />
         </div>
         <div className="-mt-[2px] h-[26px] bg-white border-2 border-[#2b3a67] rounded-[3px] text-[12px] font-bold tracking-wide text-[#16213a] flex items-center justify-center">SCAN NOW</div>
       </div>

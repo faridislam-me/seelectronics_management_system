@@ -274,6 +274,7 @@ export default async function generatePDF({
         const { qrcode } = await import("@/lib/id-gen");
         const qrCodeData = await qrcode(
           ((staffInfo as any).staffId || (staffInfo as any).shopId) as string,
+          1,
         );
 
         const data: CertificateTemplateData = {

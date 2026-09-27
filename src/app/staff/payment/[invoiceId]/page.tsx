@@ -2,6 +2,7 @@ import { getPaymentByNumber } from "@/actions/paymentActions";
 import { getServiceById } from "@/actions";
 import { getStaffProfileStats, verifyStaffSession } from "@/actions/staffActions";
 import { InvoicePreviewButton } from "@/components/features/invoices";
+import { methodLogos, methodThemes } from "@/components/features/payments/paymentThemes";
 import { StaffLayout } from "@/components/layout/StaffLayout";
 import { PaymentDataType } from "@/types";
 import { formatDate } from "@/utils";
@@ -11,16 +12,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-const logos: Record<string, string> = { bkash: "/bkash.png", nagad: "/nagad.png", rocket: "/rocket.png", bank: "/bank.png" };
-/** Card theme per payout method (light watermark tint + brand accent). */
-const themes: Record<string, { card: string; border: string; chip: string; label: string; mark: string }> = {
-  bkash: { card: "bg-[linear-gradient(100deg,#ffe9f1_0%,#fff5f9_100%)]", border: "border-[#ffd6e5]", chip: "bg-[#ffd6e5] text-[#c2185b]", label: "bKash Wallet", mark: "text-[#e2136e]" },
-  nagad: { card: "bg-[linear-gradient(100deg,#fff0e6_0%,#fff8f2_100%)]", border: "border-[#ffd9bf]", chip: "bg-[#ffe0cc] text-[#d9480f]", label: "Nagad Wallet", mark: "text-[#f15a22]" },
-  rocket: { card: "bg-[linear-gradient(100deg,#f5e9fb_0%,#fbf5fe_100%)]", border: "border-[#e6cdf3]", chip: "bg-[#ecd6f7] text-[#8c3494]", label: "Rocket Wallet", mark: "text-[#8c3494]" },
-  bank: { card: "bg-[linear-gradient(100deg,#e6f0ff_0%,#f3f8ff_100%)]", border: "border-[#cfe0fb]", chip: "bg-[#d6e7ff] text-[#1b6fd6]", label: "Bank Account", mark: "text-[#1f7cf0]" },
-  cash: { card: "bg-[linear-gradient(100deg,#e9f9ef_0%,#f4fcf7_100%)]", border: "border-[#bfe8cd]", chip: "bg-[#d4f3e0] text-[#178a42]", label: "Cash", mark: "text-[#1a9c4b]" },
-  virtual: { card: "bg-[linear-gradient(100deg,#0a2f70_0%,#1259c9_100%)]", border: "border-[#0b3d91]", chip: "bg-white/20 text-white", label: "SE Virtual Account", mark: "text-white" },
-};
+const logos = methodLogos;
+const themes = methodThemes;
 
 export default async function StaffInvoiceDetailsPage({ params }: { params: Promise<{ invoiceId: string }> }) {
   const session = await verifyStaffSession();
@@ -113,7 +106,7 @@ export default async function StaffInvoiceDetailsPage({ params }: { params: Prom
                 </span>
                 <span className="relative flex flex-col items-center gap-1.5 shrink-0">
                   {isVirtual ? (
-                    <span className="size-16 rounded-md bg-white/15 border border-white/25 text-white flex flex-col items-center justify-center"><Wallet size={26} /><span className="text-[9px] font-extrabold mt-0.5">SE</span></span>
+                    <span className="size-16 rounded-md bg-white/15 border border-white/25 text-white flex flex-col items-center justify-center"><Wallet size={28} /></span>
                   ) : logos[key] ? (
                     <span className="size-16 rounded-md bg-white border border-white flex items-center justify-center shadow-sm"><Image src={logos[key]} alt={key} width={56} height={56} className="size-12 object-contain" /></span>
                   ) : (

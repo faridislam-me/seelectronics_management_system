@@ -2,8 +2,10 @@
 
 import { PaymentDataType } from "@/types";
 import clsx from "clsx";
-import { Calendar, CheckCircle2, ChevronRight, Clock, CreditCard, Download, HandCoins, Landmark, LucideIcon, XCircle } from "lucide-react";
+import { Calendar, CheckCircle2, ChevronRight, Clock, CreditCard, Download, HandCoins, Landmark, LucideIcon, Wallet, XCircle } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+import { methodKey, methodLogos, methodThemes } from "./paymentThemes";
 import { useState } from "react";
 
 type Filter = "all" | "paid" | "pending" | "received" | "bank" | "failed";
@@ -23,6 +25,37 @@ const messageFor = (p: PaymentDataType) => {
   if (s === "approved") return `এস ইলেকট্রনিক্স এডমিন প্যানেলে আপনার পেমেন্ট রিকোয়েস্টটি সফলভাবে সাবমিট হয়েছে। খুব শীঘ্রই টাকা আপনার ${p.paymentMethod || "Bkash"} একাউন্টে মাধ্যমে নির্দিষ্ট সময়ে পাঠিয়ে দেওয়া হবে।`;
   return `আপনার পেমেন্ট রিকোয়েস্ট (৳${p.amount}) এখন ${p.status} অবস্থায় আছে।`;
 };
+
+/** Method chip + faint brand watermark for a payment card. */
+function MethodMark({ p }: { p: PaymentDataType }) {
+  const key = methodKey(p.status as string, p.paymentMethod, true);
+  const t = methodThemes[key];
+  const logo = key === "virtualLight" ? null : methodLogos[key];
+  return (
+    <>
+      <span aria-hidden className="pointer-events-none absolute -right-2 -bottom-3 size-24 opacity-[0.10]">
+        {logo ? <Image src={logo} alt="" fill sizes="96px" className="object-contain" /> : <Wallet className={clsx("size-full", t.mark)} strokeWidth={1.4} />}
+      </span>
+    </>
+  );
+}
+
+function MethodChip({ p }: { p: PaymentDataType }) {
+  const key = methodKey(p.status as string, p.paymentMethod, true);
+  const t = methodThemes[key];
+  const logo = key === "virtualLight" ? null : methodLogos[key];
+  return (
+    <span className={clsx("self-start inline-flex items-center gap-1 h-5 px-1.5 rounded-md text-[10px] font-extrabold", t.chip)}>
+      {logo ? <Image src={logo} alt="" width={12} height={12} className="size-3 object-contain rounded-sm bg-white" /> : <Wallet size={11} />}
+      {t.label}
+    </span>
+  );
+}
+
+function cardTheme(p: PaymentDataType) {
+  const t = methodThemes[methodKey(p.status as string, p.paymentMethod, true)];
+  return clsx(t.card, t.border);
+}
 
 function FilterBar({ filters, value, onChange }: { filters: { key: Filter; label: string; icon: LucideIcon }[]; value: Filter; onChange: (f: Filter) => void }) {
   return (
@@ -60,17 +93,19 @@ export function PaymentHistoryList({ payments }: { payments: PaymentDataType[] }
         const Tile = isRequest ? HandCoins : Landmark;
         const tile = m.filter === "pending" ? "bg-[#e0a11b]" : isRequest ? "bg-[#1a9c4b]" : "bg-[#1f7cf0]";
         return (
-          <Link key={p.paymentId} href={`/staff/payment/${p.invoiceNumber}`} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-start gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] active:scale-[0.99] transition-all">
-            <span className={clsx("size-11 rounded-full text-white flex items-center justify-center shrink-0 mt-0.5", tile)}><Tile size={20} /></span>
-            <span className="flex flex-col gap-1 min-w-0 flex-1">
+          <Link key={p.paymentId} href={`/staff/payment/${p.invoiceNumber}`} className={clsx("relative overflow-hidden rounded-md border p-2.5 flex items-start gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] active:scale-[0.99] transition-all", cardTheme(p))}>
+            <MethodMark p={p} />
+            <span className={clsx("relative size-11 rounded-full text-white flex items-center justify-center shrink-0 mt-0.5", tile)}><Tile size={20} /></span>
+            <span className="relative flex flex-col gap-1 min-w-0 flex-1">
               <span className="text-[12.5px] font-extrabold text-[#0b3d91] uppercase tracking-wide leading-tight">{isRequest ? "Cash Out Payment Request" : "Technician Payment Cash In"}</span>
+              <MethodChip p={p} />
               <span className="text-[11.5px] font-medium text-[#3d4a63] leading-snug">{messageFor(p)}</span>
               <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-semibold text-[#5b6784]">
                 <span className="inline-flex items-center gap-1 whitespace-nowrap"><Calendar size={12} />{p.createdAt ? new Date(p.createdAt).toLocaleString("en-US", { dateStyle: "short", timeStyle: "short" }) : ""}</span>
                 <span className="whitespace-nowrap">Status: <span className={clsx("font-extrabold", m.filter === "pending" ? "text-[#b8620b]" : "text-[#5b6784]")}>{m.label}</span></span>
               </span>
             </span>
-            <span className="flex flex-col items-end gap-1.5 shrink-0">
+            <span className="relative flex flex-col items-end gap-1.5 shrink-0">
               <span className="rounded-md bg-[#e9f9ef] text-[#178a42] px-2 py-1 text-[15px] font-extrabold leading-none">৳{p.amount?.toLocaleString()}</span>
               <span className={clsx("inline-flex items-center gap-1 h-6 px-2 rounded-full text-[10px] font-extrabold tracking-wide", m.solid)}><m.icon size={11} strokeWidth={2.8} />{m.label}</span>
             </span>
@@ -100,15 +135,16 @@ export function PaymentCompactList({ payments }: { payments: PaymentDataType[] }
         const isBal = p.invoiceNumber.startsWith("BAL-");
         const title = isBal ? "BAL#" + p.paymentId.substring(0, 8) : "SFC#" + p.invoiceNumber;
         return (
-          <Link key={p.paymentId} href={`/staff/payment/${p.invoiceNumber}`} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] active:scale-[0.99] transition-all">
-            <span className={clsx("size-12 rounded-md flex items-center justify-center shrink-0", isBal ? "bg-[#f3e9ff] text-[#8b3fe8]" : "bg-[#e8f1ff] text-[#1f7cf0]")}>{isBal ? <Landmark size={22} /> : <CreditCard size={22} />}</span>
-            <span className="flex flex-col gap-1 min-w-0 flex-1">
+          <Link key={p.paymentId} href={`/staff/payment/${p.invoiceNumber}`} className={clsx("relative overflow-hidden rounded-md border p-2.5 flex items-center gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] active:scale-[0.99] transition-all", cardTheme(p))}>
+            <MethodMark p={p} />
+            <span className={clsx("relative size-12 rounded-md flex items-center justify-center shrink-0", isBal ? "bg-[#f3e9ff] text-[#8b3fe8]" : "bg-[#e8f1ff] text-[#1f7cf0]")}>{isBal ? <Landmark size={22} /> : <CreditCard size={22} />}</span>
+            <span className="relative flex flex-col gap-1 min-w-0 flex-1">
               <span className="text-[13px] font-extrabold truncate">{title}</span>
-              <span className="self-start px-2 h-5 rounded-md bg-[#e8f1ff] text-[#1b6fd6] text-[10px] font-bold inline-flex items-center">SE Electronics</span>
+              <MethodChip p={p} />
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#5b6784]"><Calendar size={12} />{new Date(p.date || p.createdAt!).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
               <span className="text-[11px] font-semibold text-[#5b6784] truncate">Payment Id: {p.paymentId}</span>
             </span>
-            <span className="flex flex-col items-end gap-1.5 shrink-0">
+            <span className="relative flex flex-col items-end gap-1.5 shrink-0">
               <span className={clsx("inline-flex items-center gap-1 h-7 px-2.5 rounded-full text-[10.5px] font-extrabold tracking-wide", m.chip)}><m.icon size={12} strokeWidth={2.8} />{m.label}</span>
               <span className="text-[clamp(18px,5.4vw,22px)] font-extrabold leading-none">৳{p.amount?.toLocaleString()}</span>
             </span>

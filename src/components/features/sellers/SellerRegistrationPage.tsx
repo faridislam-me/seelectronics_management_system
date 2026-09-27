@@ -24,7 +24,6 @@ function Hero({ kicker, title, subtitle }: { kicker: string; title: string; subt
       <span className="absolute -right-12 -top-16 size-64 rounded-full bg-white/10" />
       <span className="absolute -left-16 bottom-4 size-40 rounded-full bg-white/5" />
       <div className="flex items-center gap-2.5 relative">
-        <span className="size-11 rounded-md bg-[#1f7cf0] text-white font-extrabold flex items-center justify-center shadow-[0_6px_16px_rgba(0,40,120,0.35)]">SE</span>
         <span className="flex flex-col leading-tight">
           <span className="font-extrabold text-base">SE Electronics</span>
           <span className="text-white/80 text-[10px] font-medium tracking-wide">Smart Solution &nbsp;Better Life</span>

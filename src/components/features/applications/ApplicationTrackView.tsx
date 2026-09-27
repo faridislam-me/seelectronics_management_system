@@ -80,7 +80,6 @@ export default function ApplicationTrackView({ type, status, message, applicantN
       <header className="sticky top-0 z-40 bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] text-white">
         <div className="max-w-[640px] mx-auto px-4 h-16 flex items-center justify-between gap-3">
           <span className="flex items-center gap-2.5">
-            <span className="size-11 rounded-md bg-[#1f7cf0] text-white font-extrabold text-lg flex items-center justify-center shadow-[0_6px_16px_rgba(0,40,120,0.35)]">SE</span>
             <span className="flex flex-col leading-tight">
               <span className="font-extrabold text-lg">SE Electronics</span>
               <span className="text-white/85 text-[11px] font-medium">Smart Solution &nbsp;Better Life</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { User } from "lucide-react";
+import { Home, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -44,7 +44,7 @@ export function CustomerHeader() {
               className="flex items-center shrink-0 gap-2 hover:bg-white/10 p-1.5 rounded-md transition-colors"
             >
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-md flex items-center justify-center border border-white/20 overflow-hidden shrink-0">
-                <span className="text-sm sm:text-base font-bold">SE</span>
+                <Home size={18} />
               </div>
             </Link>
 

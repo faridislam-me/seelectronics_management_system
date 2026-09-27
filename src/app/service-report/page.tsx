@@ -76,9 +76,6 @@ export default async function ServiceReportPage({ searchParams }: { searchParams
                     <header className="sticky top-0 z-50 bg-[#0A1A3A] text-white shadow-lg">
                         <div className="max-w-4xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between">
                             <h1 className="font-bold text-sm sm:text-base p-1">Service Report</h1>
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-md flex items-center justify-center border border-white/20">
-                                <span className="text-base font-bold">SE</span>
-                            </div>
                         </div>
                     </header>
                     <main className="flex-1 w-full max-w-4xl mx-auto p-4">
@@ -120,9 +117,6 @@ export default async function ServiceReportPage({ searchParams }: { searchParams
                 <header className="sticky top-0 z-50 bg-[#0A1A3A] text-white shadow-lg">
                     <div className="max-w-4xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between">
                         <h1 className="font-bold text-sm sm:text-base p-1">Submit Service Report</h1>
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-md flex items-center justify-center border border-white/20">
-                            <span className="text-base font-bold">SE</span>
-                        </div>
                     </div>
                 </header>
                 <main className="flex-1 w-full max-w-4xl mx-auto p-4 pb-20">

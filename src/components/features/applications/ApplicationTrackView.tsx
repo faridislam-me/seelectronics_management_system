@@ -5,24 +5,24 @@ import { formatDate } from "@/utils";
 import clsx from "clsx";
 import {
   BadgeCheck, Bell, CalendarCheck, CalendarDays, Check, ClipboardList, Clock, CreditCard, FileBadge, FileText, Headset, Home, IdCard,
-  LucideIcon, Mail, MapPin, Package, Phone, Settings, ShieldCheck, Truck, User, UserCog, Wrench, X,
+  LucideIcon, Mail, MapPin, Package, Phone, Search, Send, Settings, ShieldCheck, Truck, User, UserCog, Wrench, X,
 } from "lucide-react";
 import Link from "next/link";
 
 type Status = "pending" | "processing" | "approved" | "rejected" | "expired";
 
 const typeConfig: Record<ApplicationTypes, { banner: string; sub: string; icon: LucideIcon; chip: string; steps: [string, string, string, string]; stepIcons: [LucideIcon, LucideIcon, LucideIcon, LucideIcon]; profileHref: string; noun: string }> = {
-  seller_application: { banner: "Seller Tracking", sub: "আপনার সেলার আবেদনের বর্তমান অবস্থা", icon: Truck, chip: "SE Electronics Seller", steps: ["আবেদন জমা", "যাচাই প্রক্রিয়া", "ট্রেড লাইসেন্স", "সম্পূর্ণ"], stepIcons: [Check, FileText, IdCard, Check], profileHref: "/seller/login", noun: "সেলার আবেদন" },
-  staff_application: { banner: "Staff Tracking", sub: "আপনার স্টাফ আবেদনের বর্তমান অবস্থা", icon: UserCog, chip: "SE Electronics Staff", steps: ["আবেদন জমা", "যাচাই প্রক্রিয়া", "NID যাচাই", "সম্পূর্ণ"], stepIcons: [Check, FileText, IdCard, Check], profileHref: "/staff/login", noun: "স্টাফ আবেদন" },
-  subscription_application: { banner: "Subscription Tracking", sub: "আপনার সাবস্ক্রিপশন অনুরোধের বর্তমান অবস্থা", icon: CalendarCheck, chip: "SE Electronics Subscriber", steps: ["আবেদন জমা", "যাচাই প্রক্রিয়া", "প্যাকেজ সেটআপ", "সম্পূর্ণ"], stepIcons: [Check, FileText, Package, Check], profileHref: "/customer/login", noun: "সাবস্ক্রিপশন অনুরোধ" },
-  service_application: { banner: "Service Tracking", sub: "আপনার সার্ভিস অনুরোধের বর্তমান অবস্থা", icon: Wrench, chip: "SE Electronics Customer", steps: ["অনুরোধ জমা", "যাচাই প্রক্রিয়া", "সার্ভিস সেন্টার", "সম্পূর্ণ"], stepIcons: [Check, FileText, Wrench, Check], profileHref: "/customer/login", noun: "সার্ভিস অনুরোধ" },
-  vip_card_application: { banner: "VIP Card Tracking", sub: "আপনার ভিআইপি কার্ড আবেদনের বর্তমান অবস্থা", icon: CreditCard, chip: "SE Electronics VIP", steps: ["আবেদন জমা", "যাচাই প্রক্রিয়া", "কার্ড ইস্যু", "সম্পূর্ণ"], stepIcons: [Check, FileText, CreditCard, Check], profileHref: "/customer/login", noun: "ভিআইপি কার্ড আবেদন" },
+  seller_application: { banner: "Seller Tracking", sub: "আপনার সেলার আবেদনের বর্তমান অবস্থা", icon: Truck, chip: "SE Electronics Seller", steps: ["আবেদন জমা", "যাচাই প্রক্রিয়া", "ট্রেড লাইসেন্স", "সম্পূর্ণ"], stepIcons: [Send, Search, FileBadge, BadgeCheck], profileHref: "/seller/login", noun: "সেলার আবেদন" },
+  staff_application: { banner: "Staff Tracking", sub: "আপনার স্টাফ আবেদনের বর্তমান অবস্থা", icon: UserCog, chip: "SE Electronics Staff", steps: ["আবেদন জমা", "যাচাই প্রক্রিয়া", "NID যাচাই", "সম্পূর্ণ"], stepIcons: [Send, Search, IdCard, BadgeCheck], profileHref: "/staff/login", noun: "স্টাফ আবেদন" },
+  subscription_application: { banner: "Subscription Tracking", sub: "আপনার সাবস্ক্রিপশন অনুরোধের বর্তমান অবস্থা", icon: CalendarCheck, chip: "SE Electronics Subscriber", steps: ["আবেদন জমা", "যাচাই প্রক্রিয়া", "প্যাকেজ সেটআপ", "সম্পূর্ণ"], stepIcons: [Send, Search, Package, BadgeCheck], profileHref: "/customer/login", noun: "সাবস্ক্রিপশন অনুরোধ" },
+  service_application: { banner: "Service Tracking", sub: "আপনার সার্ভিস অনুরোধের বর্তমান অবস্থা", icon: Wrench, chip: "SE Electronics Customer", steps: ["অনুরোধ জমা", "যাচাই প্রক্রিয়া", "সার্ভিস সেন্টার", "সম্পূর্ণ"], stepIcons: [Send, Search, Wrench, BadgeCheck], profileHref: "/customer/login", noun: "সার্ভিস অনুরোধ" },
+  vip_card_application: { banner: "VIP Card Tracking", sub: "আপনার ভিআইপি কার্ড আবেদনের বর্তমান অবস্থা", icon: CreditCard, chip: "SE Electronics VIP", steps: ["আবেদন জমা", "যাচাই প্রক্রিয়া", "কার্ড ইস্যু", "সম্পূর্ণ"], stepIcons: [Send, Search, CreditCard, BadgeCheck], profileHref: "/customer/login", noun: "ভিআইপি কার্ড আবেদন" },
 };
 
 const statusMeta: Record<Status, { label: string; chip: string; title: (noun: string) => string }> = {
   pending: { label: "PENDING", chip: "bg-[#fff6e3] text-[#c98a00] border-[#f0c55a]", title: (n) => `আপনার ${n} প্রক্রিয়াধীন` },
   processing: { label: "PROCESSING", chip: "bg-[#e8f1ff] text-[#1b6fd6] border-[#8fbcf7]", title: (n) => `আপনার ${n} যাচাই চলছে` },
-  approved: { label: "APPROVED", chip: "bg-[#e9f9ef] text-[#178a42] border-[#8fd9a8]", title: (n) => `আপনার ${n} অনুমোদিত হয়েছে` },
+  approved: { label: "APPROVED", chip: "bg-[#e8f1ff] text-[#0b3d91] border-[#9cc2f7]", title: (n) => `আপনার ${n} অনুমোদিত হয়েছে` },
   rejected: { label: "REJECTED", chip: "bg-[#ffe9ec] text-[#c81f38] border-[#f3a3ae]", title: (n) => `আপনার ${n} বাতিল হয়েছে` },
   expired: { label: "EXPIRED", chip: "bg-gray-100 text-gray-600 border-gray-300", title: (n) => `আপনার ${n} এর মেয়াদ শেষ` },
 };
@@ -46,6 +46,8 @@ export default function ApplicationTrackView({ type, status, message, applicantN
   // number of completed steps (out of 4)
   const done = status === "approved" ? 4 : status === "processing" ? 2 : 1;
   const active = failed ? -1 : status === "approved" ? -1 : done; // index of the step in progress
+  // latest reached step pulses (like the service tracking page)
+  const latest = status === "approved" ? 3 : failed ? 1 : active;
   const BannerIcon = cfg.icon;
   const displayName = headline || applicantName;
   const initials = displayName.trim().slice(0, 2).toUpperCase();
@@ -95,7 +97,7 @@ export default function ApplicationTrackView({ type, status, message, applicantN
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-[640px] mx-auto px-2 pt-2 pb-14 flex flex-col gap-2.5">
+      <main className="flex-1 w-full max-w-[640px] mx-auto px-2 pt-2 pb-[72px] flex flex-col gap-2.5">
         {/* Banner */}
         <section className="relative overflow-hidden rounded-md bg-[#0a2f70] bg-[linear-gradient(100deg,#0a2f70_0%,#0d3f96_45%,#1b5fd0_70%,#0a2f70_100%)] text-white shadow-[0_10px_30px_rgba(10,47,112,0.35)]">
           <span className="absolute right-[26%] -top-10 h-[200%] w-24 bg-white/10 rotate-[18deg]" />
@@ -141,7 +143,7 @@ export default function ApplicationTrackView({ type, status, message, applicantN
           <div className="flex items-center gap-3 p-3 bg-[#f5f8fd]">
             {photoUrl ? (
               <div className="size-[72px] rounded-full overflow-hidden border-[3px] border-[#1f7cf0] shadow-[0_0_0_3px_#e8f1ff] shrink-0 bg-white">
-                <ImageWithLightbox src={photoUrl} alt="" className="w-full h-full object-cover" />
+                <ImageWithLightbox src={photoUrl} alt="" className="w-full h-full object-cover object-top" />
               </div>
             ) : (
               <span className="size-[72px] rounded-full bg-[#1f7cf0] border-[3px] border-white shadow-[0_0_0_3px_#1f7cf0] flex items-center justify-center text-2xl font-extrabold text-white shrink-0">{initials || "SE"}</span>
@@ -163,9 +165,9 @@ export default function ApplicationTrackView({ type, status, message, applicantN
         </section>
 
         {/* Status + stepper */}
-        <section className={clsx("rounded-md p-3 border shadow-[0_4px_18px_rgba(11,61,145,0.06)]", status === "approved" ? "bg-[#eafaf0] border-[#bfe8cd]" : failed ? "bg-[#fff0f2] border-[#f7c3ca]" : "bg-[#e8f1ff] border-[#cfe0fb]")}>
+        <section className={clsx("rounded-md p-3 border shadow-[0_4px_18px_rgba(11,61,145,0.06)]", status === "approved" ? "bg-[#e8f1ff] border-[#cfe0fb]" : failed ? "bg-[#fff0f2] border-[#f7c3ca]" : "bg-[#e8f1ff] border-[#cfe0fb]")}>
           <div className="flex gap-3.5">
-            <span className={clsx("size-[52px] rounded-full border-[3px] flex items-center justify-center shrink-0", status === "approved" ? "bg-[#d4f3e0] border-[#1a9c4b] text-[#1a9c4b]" : failed ? "bg-[#ffe0e4] border-[#e0243f] text-[#e0243f]" : "bg-[#d6e7ff] border-[#1f7cf0] text-[#1f7cf0]")}>
+            <span className={clsx("size-[52px] rounded-full border-[3px] flex items-center justify-center shrink-0", status === "approved" ? "bg-[#d6e7ff] border-[#1f7cf0] text-[#0b3d91]" : failed ? "bg-[#ffe0e4] border-[#e0243f] text-[#e0243f]" : "bg-[#d6e7ff] border-[#1f7cf0] text-[#1f7cf0]")}>
               {failed ? <X size={30} strokeWidth={2.5} /> : status === "approved" ? <Check size={30} strokeWidth={2.5} /> : <BannerIcon size={30} strokeWidth={2} />}
             </span>
             <div className="flex flex-col gap-1.5 min-w-0">
@@ -174,26 +176,30 @@ export default function ApplicationTrackView({ type, status, message, applicantN
             </div>
           </div>
 
-          <div className="mt-6 flex items-start">
+          <div className="mt-4 flex items-start">
             {cfg.steps.map((label, i) => {
               const StepIcon = cfg.stepIcons[i];
               const isDone = i < done;
               const isActive = i === active;
               const isFailed = failed && i === 1;
+              const isLatest = i === latest;
               return (
                 <div key={label} className="flex items-start flex-1 last:flex-none">
-                  <div className="flex flex-col items-center gap-2 w-[68px] sm:w-24">
-                    <span className={clsx("size-12 rounded-full flex items-center justify-center border-[3px] transition-all",
-                      isFailed ? "bg-[#e0243f] border-[#e0243f] text-white" :
-                      isDone ? "bg-[#1f7cf0] border-[#1f7cf0] text-white shadow-[0_6px_14px_rgba(31,124,240,0.35)]" :
-                      isActive ? "bg-[#1f7cf0] border-[#1f7cf0] text-white shadow-[0_0_0_5px_#cfe0fb]" :
-                      "bg-white border-[#d7deea] text-[#9aa4b8]")}>
-                      {isFailed ? <X size={22} strokeWidth={2.6} /> : isDone && !isActive ? <Check size={22} strokeWidth={2.8} /> : <StepIcon size={22} strokeWidth={2.2} />}
+                  <div className="flex flex-col items-center gap-1 w-[64px] sm:w-24">
+                    <span className="relative size-8 flex items-center justify-center">
+                      {isLatest && <span className={clsx("absolute inset-0 rounded-full animate-ping opacity-60", isFailed ? "bg-[#e0243f]" : "bg-[#1f7cf0]")} />}
+                      <span className={clsx("relative size-8 rounded-full flex items-center justify-center border-2 transition-all",
+                        isLatest && "animate-pulse",
+                        isFailed ? "bg-[#e0243f] border-[#e0243f] text-white" :
+                        isDone || isActive ? "bg-[#1f7cf0] border-[#1f7cf0] text-white shadow-[0_4px_10px_rgba(31,124,240,0.3)]" :
+                        "bg-white border-[#d7deea] text-[#9aa4b8]")}>
+                        {isFailed ? <X size={15} strokeWidth={2.6} /> : <StepIcon size={15} strokeWidth={2.2} />}
+                      </span>
                     </span>
-                    <span className={clsx("text-[13px] font-extrabold text-center leading-tight", isDone || isActive ? "text-[#16213a]" : "text-[#6b7690]")}>{label}</span>
-                    <span className="text-[11px] font-semibold text-[#6b7690] text-center leading-tight -mt-1">{stepSub(i)}</span>
+                    <span className={clsx("text-[12px] font-extrabold text-center leading-tight", isDone || isActive ? "text-[#16213a]" : "text-[#6b7690]")}>{label}</span>
+                    <span className="text-[10.5px] font-semibold text-[#6b7690] text-center leading-tight">{stepSub(i)}</span>
                   </div>
-                  {i < 3 && <span className={clsx("flex-1 h-1 rounded-full mt-[22px] -mx-4", i < done - 1 || (i === done - 1 && active === done) ? "bg-[#1f7cf0]" : "bg-[#d7deea]")} />}
+                  {i < 3 && <span className={clsx("flex-1 h-0.5 rounded-full mt-[15px] -mx-3.5", i < done - 1 || (i === done - 1 && active === done) ? "bg-[#1f7cf0]" : "bg-[#d7deea]")} />}
                 </div>
               );
             })}
@@ -210,10 +216,10 @@ export default function ApplicationTrackView({ type, status, message, applicantN
       </main>
 
       {/* Bottom nav */}
-      <nav className="fixed bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[600px] h-11 bg-white rounded-md shadow-[0_-4px_24px_rgba(11,61,145,0.15)] grid grid-cols-4 items-center px-1 z-50">
+      <nav className="fixed bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[600px] h-14 bg-white rounded-t-[20px] rounded-b-md shadow-[0_-4px_24px_rgba(11,61,145,0.15)] grid grid-cols-4 items-center px-1 z-50">
         {nav.map((n) => (
-          <Link key={n.label} href={n.href} className={clsx("relative flex flex-col items-center justify-center gap-0 h-11", n.current ? "text-[#1f7cf0]" : "text-[#6b7690]")}>
-            <n.icon size={18} strokeWidth={2} />
+          <Link key={n.label} href={n.href} className={clsx("relative flex flex-col items-center justify-center gap-0.5 h-14", n.current ? "text-[#1f7cf0]" : "text-[#6b7690]")}>
+            <n.icon size={20} strokeWidth={2} />
             <span className="text-[10.5px] font-bold leading-tight">{n.label}</span>
             {n.current && <span className="absolute bottom-0.5 w-8 h-0.5 rounded-full bg-[#1f7cf0]" />}
           </Link>

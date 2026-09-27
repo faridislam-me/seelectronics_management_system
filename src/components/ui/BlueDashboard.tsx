@@ -25,7 +25,7 @@ export function BlueHero({ avatar, initials, name, idLabel, id, chips, tagline =
         <div className="relative shrink-0">
           {avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatar} alt="" className="size-[clamp(72px,20vw,92px)] rounded-full object-cover border-[3px] border-white shadow-[0_0_0_3px_#1f7cf0] bg-[#1f7cf0]" />
+            <img src={avatar} alt="" className="size-[clamp(72px,20vw,92px)] rounded-full object-cover object-top border-[3px] border-white shadow-[0_0_0_3px_#1f7cf0] bg-[#1f7cf0]" />
           ) : (
             <span className="size-[clamp(72px,20vw,92px)] rounded-full bg-[#1f7cf0] border-[3px] border-white shadow-[0_0_0_3px_#1f7cf0] flex items-center justify-center text-2xl font-extrabold">{fallback}</span>
           )}
@@ -199,12 +199,12 @@ export function BlueCard({ children, className }: { children: React.ReactNode; c
 /** Floating bottom navigation shared by the staff and seller portals. */
 export function BlueBottomNav({ items, pathname, homeHref }: { items: { label: string; icon: LucideIcon; href: string }[]; pathname: string; homeHref: string }) {
   return (
-    <nav className="fixed bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[414px] h-11 bg-white rounded-md shadow-[0_-4px_24px_rgba(11,61,145,0.15)] grid grid-cols-4 items-center px-1 z-50">
+    <nav className="fixed bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[414px] h-14 bg-white rounded-t-[20px] rounded-b-md shadow-[0_-4px_24px_rgba(11,61,145,0.15)] grid grid-cols-4 items-center px-1 z-50">
       {items.map((item) => {
         const active = item.href === homeHref ? pathname === item.href : pathname.startsWith(item.href);
         return (
-          <Link key={item.href} href={item.href} className={clsx("relative flex flex-col items-center justify-center gap-0 h-11", active ? "text-[#1f7cf0]" : "text-[#6b7690]")}>
-            <item.icon size={18} strokeWidth={2} />
+          <Link key={item.href} href={item.href} className={clsx("relative flex flex-col items-center justify-center gap-0.5 h-14", active ? "text-[#1f7cf0]" : "text-[#6b7690]")}>
+            <item.icon size={20} strokeWidth={2} />
             <span className="text-[clamp(9.5px,2.8vw,11px)] font-bold leading-tight">{item.label}</span>
             {active && <span className="absolute bottom-0.5 w-8 h-0.5 rounded-full bg-[#1f7cf0]" />}
           </Link>

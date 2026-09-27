@@ -37,7 +37,7 @@ export default function CheckWarrantyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-12">
+    <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-16">
       <header className="relative bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] text-white px-3 pt-3 pb-7 rounded-b-[26px] overflow-hidden">
         <span className="absolute -right-10 -top-14 size-56 rounded-full bg-white/10" />
         <div className="relative flex items-center gap-3">
@@ -82,6 +82,18 @@ export default function CheckWarrantyPage() {
               <Search size={20} strokeWidth={2.6} />{loading ? "Checking..." : "Check"}
             </button>
             {error && <p className="rounded-md bg-[#ffe9ec] border border-[#f7c3ca] text-[#c81f38] text-[13px] font-medium p-3 leading-relaxed">{error}</p>}
+          </div>
+          {/* Why check: part of the same box */}
+          <div className="border-t border-[#dfe8f7] bg-[#eef4fd] px-3 py-2.5 flex flex-col gap-3">
+            <span className="flex items-center gap-2"><span className="size-9 rounded-full bg-[#0b3d91] text-white flex items-center justify-center"><Info size={18} /></span><span className="text-[clamp(15px,4.4vw,18px)] font-extrabold">কেন ওয়ারেন্টি চেক করবেন?</span></span>
+          <div className="grid grid-cols-4 divide-x divide-[#eef1f6]">
+              {reasons.map((r) => (
+                <div key={r.text} className="flex flex-col items-center text-center gap-1.5 px-1">
+                  <span className="size-12 rounded-full bg-white text-[#0b3d91] flex items-center justify-center shadow-sm"><r.icon size={24} strokeWidth={2} /></span>
+                  <span className="text-[11px] font-bold leading-tight">{r.text}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -128,18 +140,6 @@ export default function CheckWarrantyPage() {
           </>
         )}
 
-        {/* Why check */}
-        <section className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-3">
-          <span className="flex items-center gap-2"><span className="size-9 rounded-full bg-[#0b3d91] text-white flex items-center justify-center"><Info size={18} /></span><span className="text-[clamp(15px,4.4vw,18px)] font-extrabold">কেন ওয়ারেন্টি চেক করবেন?</span></span>
-          <div className="grid grid-cols-4 divide-x divide-[#eef1f6]">
-            {reasons.map((r) => (
-              <div key={r.text} className="flex flex-col items-center text-center gap-1.5 px-1">
-                <span className="size-12 rounded-full bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center"><r.icon size={24} strokeWidth={2} /></span>
-                <span className="text-[11px] font-bold leading-tight">{r.text}</span>
-              </div>
-            ))}
-          </div>
-        </section>
       </main>
 
       <CustomerAppFooter tagline="আপনার আস্থাই আমাদের শক্তি" />

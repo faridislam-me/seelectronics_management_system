@@ -58,7 +58,7 @@ export default function ImageWithLightbox(
       <img
         onClick={() => setOpenLightbox(true)}
         {...props}
-        className={`w-full h-full object-cover cursor-pointer ${props.className || ""}`}
+        className={`w-full h-full object-cover ${/\bobject-(center|bottom|top|left|right)\b/.test(props.className || "") ? "" : "object-top"} cursor-pointer ${props.className || ""}`}
       />
       {/* <Image
             onClick={() => setOpenLightbox(true)}

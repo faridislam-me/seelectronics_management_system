@@ -31,7 +31,7 @@ export default async function SellerDetailsPage() {
           <div className="-mt-12 relative">
             {seller.ownerPhotoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={seller.ownerPhotoUrl} alt="" className="size-24 rounded-full object-cover border-[4px] border-white shadow-[0_0_0_3px_#1f7cf0] bg-white" />
+              <img src={seller.ownerPhotoUrl} alt="" className="size-24 rounded-full object-cover object-top border-[4px] border-white shadow-[0_0_0_3px_#1f7cf0] bg-white" />
             ) : (
               <span className="size-24 rounded-full bg-[#1f7cf0] border-[4px] border-white shadow-[0_0_0_3px_#1f7cf0] flex items-center justify-center text-2xl font-extrabold text-white">{seller.shopName.slice(0, 2).toUpperCase()}</span>
             )}

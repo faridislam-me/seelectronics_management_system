@@ -58,7 +58,7 @@ export default function StaffDashboardClient({
         <div className="relative flex items-center gap-2.5">
           {staffData.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={staffData.photoUrl} alt="" className="size-9 rounded-full object-cover border-2 border-white shadow-[0_0_0_1.5px_#1f7cf0] shrink-0" />
+            <img src={staffData.photoUrl} alt="" className="size-9 rounded-full object-cover object-top border-2 border-white shadow-[0_0_0_1.5px_#1f7cf0] shrink-0" />
           ) : (
             <span className="size-9 rounded-full bg-[#1f7cf0] border-2 border-white shadow-[0_0_0_1.5px_#1f7cf0] flex items-center justify-center text-white shrink-0"><User size={18} /></span>
           )}
@@ -223,7 +223,7 @@ export default function StaffDashboardClient({
                 bg: "bg-red-50",
               },
               {
-                label: "Emergency Services",
+                label: "Emergency",
                 icon: AlertCircle,
                 href: "/staff/jorori-seba",
                 color: "text-red-500",

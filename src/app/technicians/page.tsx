@@ -117,7 +117,7 @@ export default async function TechniciansPage({
                       src={staff.photoUrl}
                       alt={staff.name}
                       fill
-                      className="object-cover"
+                      className="object-contain object-bottom"
                     />
                   )}
                   <div className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full text-sm font-semibold capitalize">

@@ -657,7 +657,7 @@ export default async function ServiceTrackPage({
                     <ImageWithLightbox
                       src={appointedStaffPhotoUrl}
                       alt="Staff Photo"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-top"
                     />
                   ) : (
                     <User size={30} className="text-[#8fc0ff]" />

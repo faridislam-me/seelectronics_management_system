@@ -3,7 +3,7 @@ import { verifyCustomerSession } from "@/actions/customerActions";
 import { getServiceHistoryById } from "@/actions/serviceActions";
 import { CustomerLayout } from "@/components/layout/CustomerLayout";
 import clsx from "clsx";
-import { Calendar, CheckCircle2, ChevronRight, ClipboardList, Clock, MapPin, MessageSquare, Phone, Plus, Send, Star, User, Wrench } from "lucide-react";
+import { Calendar, CheckCircle2, ChevronRight, ClipboardList, Clock, MapPin, MessageSquare, Phone, Plus, Star, User, Wrench } from "lucide-react";
 import Link from "next/link";
 
 export default async function CustomerFeedbackPage() {
@@ -94,12 +94,6 @@ export default async function CustomerFeedbackPage() {
           })
         )}
 
-        {/* CTA */}
-        <div className="rounded-md bg-[#e8f1ff] border border-[#cfe0fb] p-2.5 flex items-center gap-3">
-          <span className="size-11 rounded-full bg-[#1f7cf0] text-white flex items-center justify-center shrink-0"><Send size={20} /></span>
-          <span className="flex flex-col min-w-0 flex-1 leading-tight"><span className="text-[14px] font-extrabold">আপনারও মতামত দিন</span><span className="text-[11.5px] font-semibold text-[#3d4a63]">আপনার ফিডব্যাক আমাদের আরও ভালো হতে সাহায্য করবে।</span></span>
-          <Link href={pending[0] ? `/service-feedback?serviceId=${pending[0].serviceId}` : "/customer/services"} className="shrink-0 inline-flex items-center gap-1 h-9 px-3 rounded-md bg-[#0b3d91] text-white text-[12px] font-extrabold"><Plus size={14} strokeWidth={3} />ফিডব্যাক দিন<ChevronRight size={13} /></Link>
-        </div>
       </div>
     </CustomerLayout>
   );

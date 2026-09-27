@@ -33,7 +33,7 @@ export function StaffLayout({ children, balance }: StaffLayoutProps) {
 
       <NoticeBanner notifications={notifications} />
 
-      <main className="flex-1 w-full max-w-4xl mx-auto pb-12 sm:pb-4 lg:pb-8 overflow-x-hidden">
+      <main className="flex-1 w-full max-w-4xl mx-auto pb-16 sm:pb-4 lg:pb-8 overflow-x-hidden">
         <div
           key={pathname}
           className="animate-in fade-in slide-in-from-bottom-2 duration-300 w-full"

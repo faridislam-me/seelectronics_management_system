@@ -32,7 +32,7 @@ export function StaffBottomNav() {
   ];
 
   return (
-    <nav className="sm:hidden fixed bottom-0 left-0 w-full bg-white px-1 pt-0.5 pb-[calc(2px+env(safe-area-inset-bottom,0px))] flex items-center justify-around z-50 shadow-[0_-6px_20px_rgba(0,0,0,0.08)] rounded-t-md">
+    <nav className="sm:hidden fixed bottom-0 left-0 w-full bg-white px-1 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom,0px))] flex items-center justify-around z-50 shadow-[0_-6px_20px_rgba(0,0,0,0.08)] rounded-t-[20px]">
       {navItems.map((item) => {
         const isActive = pathname === item.href;
         return (
@@ -49,11 +49,11 @@ export function StaffBottomNav() {
             )}
             <div
               className={clsx(
-                "px-2 py-0.5 rounded-md transition-all duration-300",
+                "px-2.5 py-1 rounded-md transition-all duration-300",
                 isActive ? "bg-brand/10" : "",
               )}
             >
-              <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+              <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
             </div>
             <span
               className={clsx(

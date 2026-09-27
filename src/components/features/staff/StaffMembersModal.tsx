@@ -128,7 +128,7 @@ export default function StaffMembersModal({
                   </div>
                 )}
                 <div className="size-44 rounded-full overflow-hidden __center mx-auto">
-                  <img src={staff.photoUrl || undefined} alt="" />
+                  <img src={staff.photoUrl || undefined} alt="" className="w-full h-full object-cover object-top" />
                 </div>
                 <div className="flex flex-col mt-5">
                   <span className="text-xl font-semibold">{staff.name}</span>

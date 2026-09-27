@@ -99,7 +99,7 @@ export default function ResumeClient({ staffData }: ResumeClientProps) {
                 <img
                   src={staffData.photoUrl}
                   alt="Profile"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-top"
                 />
               ) : (
                 <div className="text-center text-sm font-bold text-gray-800">

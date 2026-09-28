@@ -58,9 +58,9 @@ export default function StaffDashboardClient({
         <div className="relative flex items-center gap-2.5">
           {staffData.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={staffData.photoUrl} alt="" className="size-9 rounded-full object-cover object-top border-2 border-white shadow-[0_0_0_1.5px_#1f7cf0] shrink-0" />
+            <img src={staffData.photoUrl} alt="" className="size-14 rounded-full object-cover object-top border-[3px] border-white shadow-[0_0_0_2px_#1f7cf0] shrink-0" />
           ) : (
-            <span className="size-9 rounded-full bg-[#1f7cf0] border-2 border-white shadow-[0_0_0_1.5px_#1f7cf0] flex items-center justify-center text-white shrink-0"><User size={18} /></span>
+            <span className="size-14 rounded-full bg-[#1f7cf0] border-[3px] border-white shadow-[0_0_0_2px_#1f7cf0] flex items-center justify-center text-white shrink-0"><User size={26} /></span>
           )}
           <div className="flex flex-col gap-1 min-w-0 flex-1">
             <span className="text-[clamp(15px,4.4vw,19px)] font-extrabold text-[#16213a] leading-tight truncate">{staffData.name}</span>
@@ -76,7 +76,7 @@ export default function StaffDashboardClient({
       <div className="flex flex-col gap-2.5 px-2 text-gray-800 pb-2 bg-[#eef3fb] pt-2">
         {/* Banner (admin slides, falls back to default slides) */}
         <div className="w-full overflow-hidden shadow-sm rounded-md">
-          <Banner slides={banners && banners.length > 0 ? banners : undefined} />
+          <Banner slides={banners && banners.length > 0 ? banners : undefined} aspectClass="aspect-[16/5.3] sm:aspect-[16/4.6] md:aspect-[16/3.8]" fit="cover" />
         </div>
 
         {showMarquee && (

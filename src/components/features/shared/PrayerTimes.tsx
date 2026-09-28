@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { MapPin, Moon, Sun, Sunset, Sunrise, Clock, ChevronDown, Coffee } from "lucide-react";
+import { MapPin, MoonStar, Sun, Sunset, Sunrise, CloudSun, ChevronDown, UtensilsCrossed, LucideIcon } from "lucide-react";
 import Link from "next/link";
 import {
   bdLocations,
@@ -29,23 +29,27 @@ const prayerBangla: Record<PrayerName, string> = {
   Isha: "এশা",
 };
 
-const prayerIcons: Record<PrayerName, React.ReactNode> = {
-  Fajr: <Moon size={17} />,
-  Dhuhr: <Sun size={17} />,
-  Asr: <Sunset size={17} />,
-  Maghrib: <Sunset size={17} />,
-  Isha: <Moon size={17} />,
+const prayerIcon: Record<PrayerName, LucideIcon> = {
+  Fajr: Sunrise,
+  Dhuhr: Sun,
+  Asr: CloudSun,
+  Maghrib: Sunset,
+  Isha: MoonStar,
 };
 
-const prayerIconBg: Record<PrayerName, string> = {
-  Fajr: "#1a3c5e",
-  Dhuhr: "#e67e00",
-  Asr: "#c05a00",
-  Maghrib: "#7b3f00",
-  Isha: "#2c1a5e",
+/** Tinted chip + gradient badge colours per prayer. */
+const prayerTone: Record<PrayerName, { chip: string; badge: string }> = {
+  Fajr: { chip: "bg-[#fff1e0] text-[#e0801b]", badge: "bg-[linear-gradient(135deg,#ffb35c,#e0701b)]" },
+  Dhuhr: { chip: "bg-[#fff8db] text-[#d9a100]", badge: "bg-[linear-gradient(135deg,#ffd84d,#f0a500)]" },
+  Asr: { chip: "bg-[#e8f1ff] text-[#1f7cf0]", badge: "bg-[linear-gradient(135deg,#6fb1ff,#1f7cf0)]" },
+  Maghrib: { chip: "bg-[#ffe9e4] text-[#e0522b]", badge: "bg-[linear-gradient(135deg,#ff9a6b,#d9441f)]" },
+  Isha: { chip: "bg-[#ece8ff] text-[#5a3fd1]", badge: "bg-[linear-gradient(135deg,#7f6bff,#2c1a8e)]" },
 };
 
-
+const bnDigits = (v: string | number) => String(v).replace(/[0-9]/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);
+const hijriMonthsBn = ["মুহাররম", "সফর", "রবিউল আউয়াল", "রবিউস সানি", "জমাদিউল আউয়াল", "জমাদিউস সানি", "রজব", "শাবান", "রমজান", "শাওয়াল", "জিলকদ", "জিলহজ"];
+const formatHijriBn = (day: number, month: number, year: number) =>
+  `${bnDigits(day)} ${hijriMonthsBn[month - 1] ?? ""} ${bnDigits(year)} হিজরি`;
 
 // ─── Bangla (Bengali) Calendar ────────────────────────────────────────────────
 function getBanglaDate(): string {
@@ -127,8 +131,8 @@ function getEnglishDate(): string {
 
 // ─── Hijri Date via API ───────────────────────────────────────────────────────
 async function fetchHijriDate(): Promise<string> {
+  const d = new Date();
   try {
-    const d = new Date();
     const dd = String(d.getDate()).padStart(2, "0");
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const yyyy = d.getFullYear();
@@ -136,8 +140,14 @@ async function fetchHijriDate(): Promise<string> {
     const data = await res.json();
     if (data.code === 200) {
       const h = data.data.hijri;
-      return `${h.day} ${h.month.ar}, ${h.year} هجري`;
+      return formatHijriBn(Number(h.day), Number(h.month.number), Number(h.year));
     }
+  } catch (_) {}
+  // Fallback: compute locally (Umm al-Qura)
+  try {
+    const parts = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", { day: "numeric", month: "numeric", year: "numeric" }).formatToParts(d);
+    const get = (t: string) => Number(parts.find((p) => p.type === t)?.value?.replace(/\D/g, "") || 0);
+    return formatHijriBn(get("day"), get("month"), get("year"));
   } catch (_) {}
   return "";
 }
@@ -291,8 +301,9 @@ const PrayerTimes = () => {
             <span>{location}</span>
             <ChevronDown size={18} />
           </div>
-          <div className="text-[13px] text-gray-600">
-            {banglaDate} • {hijriDate}
+          <div className="text-[13px] text-gray-600 leading-snug flex flex-wrap gap-x-1.5">
+            <span className="whitespace-nowrap">{banglaDate}</span>
+            {hijriDate && <><span aria-hidden>•</span><span className="whitespace-nowrap">{hijriDate}</span></>}
           </div>
         </div>
 
@@ -325,43 +336,54 @@ const PrayerTimes = () => {
         )}
 
         {/* ── Suhoor / Iftar Info ── */}
-        <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-4">
-          <div>
-            <span className="text-gray-500 text-[14px]">পরবর্তী সাহরি </span>
-            <span className="text-gray-800 font-medium text-[14px]">{formatTime(timings.Fajr)}</span>
+        <div className="grid grid-cols-2 gap-2 mb-3 border-b border-gray-100 pb-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="size-8 rounded-full bg-[#ece8ff] text-[#5a3fd1] flex items-center justify-center shrink-0"><MoonStar size={16} /></span>
+            <span className="flex flex-col leading-tight min-w-0">
+              <span className="text-gray-500 text-[12px]">পরবর্তী সাহরি</span>
+              <span className="text-gray-800 font-semibold text-[14px]">{formatTime(timings.Fajr)}</span>
+            </span>
           </div>
-          <div>
-            <span className="text-gray-500 text-[14px]">আজকের ইফতার </span>
-            <span className="text-gray-800 font-medium text-[14px]">{formatTime(timings.Maghrib)}</span>
+          <div className="flex items-center gap-2 min-w-0 justify-end">
+            <span className="size-8 rounded-full bg-[#ffe9e4] text-[#d9441f] flex items-center justify-center shrink-0"><UtensilsCrossed size={15} /></span>
+            <span className="flex flex-col leading-tight min-w-0">
+              <span className="text-gray-500 text-[12px]">আজকের ইফতার</span>
+              <span className="text-gray-800 font-semibold text-[14px]">{formatTime(timings.Maghrib)}</span>
+            </span>
           </div>
         </div>
 
         {/* ── 2 Column Layout ── */}
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           {/* Left Column (Countdown) */}
-          <div className="w-[40%] bg-[#f5f5f5] rounded-xl p-3 flex flex-col items-center justify-center text-center">
-            <div className="text-brand mb-3 flex items-center justify-center relative">
-               {["Maghrib", "Isha", "Fajr"].includes(currentPrayer) ? (
-                 <Moon size={36} />
-               ) : (
-                 <Sun size={36} />
-               )}
-            </div>
+          <div className="w-[36%] min-w-0 bg-[#f5f5f5] rounded-md p-2 flex flex-col items-center justify-center text-center">
+            {(() => {
+              const cp = (currentPrayer in prayerIcon ? currentPrayer : "Isha") as PrayerName;
+              const Icon = prayerIcon[cp];
+              return (
+                <span className={`mb-2 size-14 rounded-full text-white flex items-center justify-center shadow-[0_6px_16px_rgba(11,61,145,0.25)] ring-4 ring-white ${prayerTone[cp].badge}`}>
+                  <Icon size={28} strokeWidth={2.2} />
+                </span>
+              );
+            })()}
             <p className="text-gray-800 text-[16px] font-medium mb-1">এখন : {prayerBangla[currentPrayer as PrayerName]}</p>
             <p className="text-gray-600 text-[13px] mb-2 font-medium">ওয়াক্ত বাকি</p>
-            <div className="bg-white text-brand px-2 py-[6px] rounded-full text-[14px] font-semibold w-full whitespace-nowrap overflow-hidden text-ellipsis border border-gray-100">
+            <div className="bg-white text-brand px-1.5 py-[6px] rounded-full text-[clamp(11px,3.4vw,14px)] font-semibold w-full whitespace-nowrap border border-gray-100">
               {timeLeft} মিনিট
             </div>
           </div>
 
           {/* Right Column (Prayers) */}
-          <div className="w-[60%] flex flex-col gap-[6px]">
+          <div className="w-[64%] min-w-0 flex flex-col gap-[6px]">
             {prayers.map((p) => {
               const isActive = currentPrayer === p;
               return (
-                <div key={p} className={`flex justify-between items-center rounded-lg px-3 py-[6px] ${isActive ? "border border-brand bg-brand-50" : "border border-gray-100"}`}>
-                  <span className={`text-[14px] font-medium ${isActive ? "text-brand" : "text-gray-800"}`}>{prayerBangla[p]}</span>
-                  <span className={`text-[12px] ${isActive ? "text-brand font-medium" : "text-gray-600"}`}>{formatTime(timings[p])} - {getEndTime(p)}</span>
+                <div key={p} className={`flex flex-wrap justify-between items-center gap-x-1 rounded-md px-1.5 py-[5px] ${isActive ? "border border-brand bg-brand-50" : "border border-gray-100"}`}>
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    {(() => { const Icon = prayerIcon[p]; return <span className={`size-6 rounded-full flex items-center justify-center shrink-0 ${prayerTone[p].chip}`}><Icon size={13} /></span>; })()}
+                    <span className={`text-[clamp(12px,3.6vw,14px)] font-medium whitespace-nowrap ${isActive ? "text-brand" : "text-gray-800"}`}>{prayerBangla[p]}</span>
+                  </span>
+                  <span className={`text-[clamp(9.5px,2.9vw,11.5px)] whitespace-nowrap ml-auto ${isActive ? "text-brand font-medium" : "text-gray-600"}`}>{formatTime(timings[p])} - {getEndTime(p)}</span>
                 </div>
               );
             })}
@@ -371,11 +393,11 @@ const PrayerTimes = () => {
         {/* ── Footer: Sunrise / Sunset ── */}
         <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-100">
           <div className="flex items-center gap-2 text-[13px] text-gray-700 font-medium">
-            <Sun size={18} className="text-yellow-500" />
+            <span className="size-7 rounded-full bg-[#fff8db] text-[#d9a100] flex items-center justify-center"><Sunrise size={15} /></span>
             <span>সূর্যোদয় {formatTime(timings.Sunrise)}</span>
           </div>
           <div className="flex items-center gap-2 text-[13px] text-gray-700 font-medium">
-            <Sunset size={18} className="text-green-500" />
+            <span className="size-7 rounded-full bg-[#ffe9e4] text-[#d9441f] flex items-center justify-center"><Sunset size={15} /></span>
             <span>সূর্যাস্ত {formatTime(timings.Maghrib)}</span>
           </div>
         </div>

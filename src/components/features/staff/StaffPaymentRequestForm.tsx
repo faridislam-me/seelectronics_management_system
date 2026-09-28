@@ -4,15 +4,24 @@ import { requestPayment } from "@/actions/paymentRequestActions";
 import { Check, FileText, Pencil, Send, X } from "lucide-react";
 import { useActionState, useState } from "react";
 import { toast } from "react-toastify";
+import LowBalancePopup from "@/components/ui/LowBalancePopup";
 
 interface StaffPaymentRequestFormProps {
   staffId: string;
+  balance?: number;
+  name?: string | null;
 }
 
-export function StaffPaymentRequestForm({ staffId }: StaffPaymentRequestFormProps) {
+export function StaffPaymentRequestForm({ staffId, balance, name }: StaffPaymentRequestFormProps) {
   const [showSuccess, setShowSuccess] = useState(false);
+  const [lowBalance, setLowBalance] = useState(false);
   const [, formAction, isPending] = useActionState(
     async (_prev: any, formData: FormData) => {
+      const amount = Number(formData.get("amount") || 0);
+      if (balance !== undefined && (balance <= 0 || amount > balance)) {
+        setLowBalance(true);
+        return _prev;
+      }
       const res = await requestPayment(_prev, formData);
       if (res?.success) setShowSuccess(true);
       else if (res?.success === false) toast.error(res.message);
@@ -26,6 +35,7 @@ export function StaffPaymentRequestForm({ staffId }: StaffPaymentRequestFormProp
   return (
     <form action={formAction} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
       <input type="hidden" name="staffId" value={staffId} />
+      {lowBalance && <LowBalancePopup name={name} balance={balance ?? 0} onClose={() => setLowBalance(false)} />}
 
       <div className="flex items-center gap-2">
         <span className="size-8 rounded-md bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center"><FileText size={17} /></span>

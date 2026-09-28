@@ -13,9 +13,10 @@ interface StaffLayoutProps {
   balance: number;
   /** Header blends into a hero right below it (staff profile page). */
   seamlessHeader?: boolean;
+  roundedHeader?: boolean;
 }
 
-export function StaffLayout({ children, balance, seamlessHeader = false }: StaffLayoutProps) {
+export function StaffLayout({ children, balance, seamlessHeader = false, roundedHeader = false }: StaffLayoutProps) {
   const pathname = usePathname();
   const [notifications, setNotifications] = useState<NoticeRecipientType[]>([]);
 
@@ -31,7 +32,7 @@ export function StaffLayout({ children, balance, seamlessHeader = false }: Staff
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col overflow-x-hidden">
-      <StaffHeader balance={balance} seamless={seamlessHeader} />
+      <StaffHeader balance={balance} seamless={seamlessHeader} rounded={roundedHeader} />
 
       <NoticeBanner notifications={notifications} />
 

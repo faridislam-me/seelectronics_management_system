@@ -42,7 +42,7 @@ export default function CertificateTemplate({
 
       {/* Shop name: larger, one line below "PROUDLY PRESENTED TO SHOP NAME" */}
       <div
-        className="absolute left-[300px] w-[530px] top-[246px] h-[50px] flex items-center justify-center text-[42px] leading-none font-bold text-slate-900 whitespace-nowrap"
+        className="absolute left-[300px] w-[530px] top-[246px] h-[50px] flex items-center justify-center text-[42px] leading-none font-normal text-slate-900 whitespace-nowrap"
         style={{ fontFamily: '"font1", system-ui' }}
       >
         {data.shopName}
@@ -77,6 +77,10 @@ export default function CertificateTemplate({
 
 function Field({ left, line, width, font, size, weight = 400, children }: { left: number; line: number; width: number; font: "font2" | "font3" | "sans"; size: number; weight?: number; children: React.ReactNode }) {
   const h = 40;
+  // Shrink long values so they never run past their dotted line into the next label.
+  const text = typeof children === "string" ? children : String(children ?? "");
+  const avgChar = font === "sans" ? 0.55 : font === "font3" ? 0.5 : 0.4; // approx. glyph width per em
+  size = Math.max(14, Math.min(size, Math.floor(width / Math.max(1, text.length * avgChar))));
   return (
     <div
       className="absolute flex items-end overflow-visible whitespace-nowrap leading-none text-slate-900"

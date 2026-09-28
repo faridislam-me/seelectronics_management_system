@@ -65,7 +65,7 @@ export default async function StaffDetailsPage() {
     : null;
 
   return (
-    <StaffLayout balance={stats?.availableBalance || 0}>
+    <StaffLayout balance={stats?.availableBalance || 0} seamlessHeader>
       {/* <MobilePageHeader
         title="Staff Profile"
         backHref="/staff/profile"
@@ -87,7 +87,7 @@ export default async function StaffDetailsPage() {
           ]}
         />
 
-        <div className="max-w-6xl mx-auto px-2 -mt-4 relative pb-4 flex flex-col gap-2.5">
+        <div className="max-w-6xl mx-auto px-2 pt-2.5 relative pb-4 flex flex-col gap-2.5">
           <BlueBalanceCard
             label="AVAILABLE BALANCE"
             value={`৳ ${Number(stats?.availableBalance || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
@@ -99,7 +99,7 @@ export default async function StaffDetailsPage() {
             layout="row"
           />
 
-          <BlueStatGrid layout="horizontal" cards={[
+          <BlueStatGrid cards={[
             { value: staffData.completedServices ?? 0, label: "সফল সার্ভিস", icon: CheckSquare, tone: "green", href: "/staff/services" },
             { value: staffData.pendingServices ?? 0, label: "পেন্ডিং সার্ভিস", icon: Clock, tone: "blue", href: "/staff/tasks" },
             { value: staffData.repairExperienceYears || staffData.installationExperienceYears || 0, label: "বছরের দক্ষতা", icon: BriefcaseBusiness, tone: "purple", href: "#experience" },

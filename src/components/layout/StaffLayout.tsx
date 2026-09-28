@@ -11,9 +11,11 @@ import { NoticeRecipientType } from "@/types";
 interface StaffLayoutProps {
   children: React.ReactNode;
   balance: number;
+  /** Header blends into a hero right below it (staff profile page). */
+  seamlessHeader?: boolean;
 }
 
-export function StaffLayout({ children, balance }: StaffLayoutProps) {
+export function StaffLayout({ children, balance, seamlessHeader = false }: StaffLayoutProps) {
   const pathname = usePathname();
   const [notifications, setNotifications] = useState<NoticeRecipientType[]>([]);
 
@@ -29,7 +31,7 @@ export function StaffLayout({ children, balance }: StaffLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col overflow-x-hidden">
-      <StaffHeader balance={balance} />
+      <StaffHeader balance={balance} seamless={seamlessHeader} />
 
       <NoticeBanner notifications={notifications} />
 

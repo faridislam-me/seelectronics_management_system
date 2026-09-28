@@ -170,7 +170,7 @@ export default async function StaffDetailsPage() {
             <form action={staffLogout}>
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 px-5 py-2.5 rounded-md bg-red-500 hover:bg-red-600 active:scale-95 transition-all text-white text-sm font-bold shadow-sm"
+                className="flex w-full items-center justify-center gap-2 px-5 py-2.5 rounded-md bg-[linear-gradient(100deg,#0b3d91,#1f7cf0)] active:scale-95 transition-all text-white text-sm font-bold shadow-sm"
               >
                 <LogOut size={18} />
                 Logout

@@ -272,8 +272,13 @@ export default async function generatePDF({
         );
 
         const { qrcode } = await import("@/lib/id-gen");
+        // Scanning opens the staff's public profile when the certificate belongs to a staff.
+        const { getBaseUrl } = await import("@/utils");
+        const certStaffId = (staffInfo as any).staffId as string | undefined;
         const qrCodeData = await qrcode(
-          ((staffInfo as any).staffId || (staffInfo as any).shopId) as string,
+          certStaffId
+            ? `${getBaseUrl()}/team-members?staffId=${encodeURIComponent(certStaffId)}`
+            : ((staffInfo as any).shopId as string),
           1,
         );
 

@@ -37,7 +37,7 @@ export default function CheckWarrantyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-16">
+    <div className="min-h-screen flex flex-col bg-[#eef3fb] text-[#16213a] pb-16">
       <header className="relative bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] text-white px-3 pt-3 pb-7 rounded-b-[26px] overflow-hidden">
         <span className="absolute -right-10 -top-14 size-56 rounded-full bg-white/10" />
         <div className="relative flex items-center gap-3">
@@ -69,14 +69,14 @@ export default function CheckWarrantyPage() {
 
         {/* Form */}
         <section className="rounded-md bg-white border border-[#dfe6f2] overflow-hidden shadow-[0_6px_18px_rgba(11,61,145,0.10)]">
-          <div className="flex items-center gap-3 bg-[#0b3d91] bg-[linear-gradient(100deg,#0a2f70_0%,#1259c9_100%)] text-white px-3 py-3">
-            <span className="size-10 rounded-full bg-white/15 border border-white/25 flex items-center justify-center"><ShieldCheck size={20} /></span>
-            <span className="text-[clamp(16px,4.8vw,20px)] font-extrabold">ওয়ারেন্টি চেক করুন</span>
+          <div className="flex items-center gap-2.5 bg-[#0b3d91] bg-[linear-gradient(100deg,#0a2f70_0%,#1259c9_100%)] text-white px-3 py-1.5">
+            <span className="size-8 rounded-full bg-white/15 border border-white/25 flex items-center justify-center"><ShieldCheck size={17} /></span>
+            <span className="text-[clamp(15px,4.4vw,18px)] font-extrabold">ওয়ারেন্টি চেক করুন</span>
           </div>
-          <div className="p-3 flex flex-col gap-2.5">
+          <div className="px-3 py-4 flex flex-col gap-3">
             <label className="relative block">
-              <span className="absolute left-0 top-0 h-12 w-11 flex items-center justify-center text-[#5b6784]"><FileText size={20} /></span>
-              <input type="text" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="ইনভয়েস / কাস্টমার আইডি / মোবাইল নাম্বার" disabled={loading} className="w-full h-12 rounded-md border border-[#dfe6f2] bg-[#f8fafd] pl-11 pr-3 text-[15px] font-semibold outline-none focus:border-[#1f7cf0] focus:ring-1 focus:ring-[#1f7cf0]" />
+              <span className="absolute left-0 top-0 h-14 w-11 flex items-center justify-center text-[#5b6784]"><FileText size={20} /></span>
+              <input type="text" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="ইনভয়েস / কাস্টমার আইডি / মোবাইল নাম্বার" disabled={loading} className="w-full h-14 rounded-md border border-[#cfdcef] bg-[#f5f8fd] pl-11 pr-3 text-[15px] font-semibold outline-none focus:border-[#1f7cf0] focus:ring-1 focus:ring-[#1f7cf0]" />
             </label>
             <button onClick={handleSubmit} disabled={loading} className="h-12 rounded-md bg-[#0b3d91] text-white text-[16px] font-extrabold inline-flex items-center justify-center gap-2 disabled:opacity-50 shadow-[0_8px_20px_rgba(11,61,145,0.3)] active:scale-[0.98] transition-all">
               <Search size={20} strokeWidth={2.6} />{loading ? "Checking..." : "Check"}
@@ -142,7 +142,7 @@ export default function CheckWarrantyPage() {
 
       </main>
 
-      <CustomerAppFooter tagline="আপনার আস্থাই আমাদের শক্তি" />
+      <div className="mt-auto"><CustomerAppFooter tagline="আপনার আস্থাই আমাদের শক্তি" /></div>
 
       <CustomerAppNav active="/check-warranty" items={[
         { label: "হোম", icon: Home, href: "/customer/profile" },

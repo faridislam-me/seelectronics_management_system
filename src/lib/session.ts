@@ -54,10 +54,15 @@ export const verifySession = cache(async (shouldRedirect = true, expectedRole?: 
 
 
         if (!staff || !staff.isActiveStaff) {
-            const cookieStore = await cookies();
-            cookieStore.delete('session');
+            // Cookies can only be changed in server actions / route handlers; in a
+            // server component this used to throw and show the error screen.
+            // Keep the cookie there so /staff/blocked can show who is blocked; the
+            // blocked screen's button logs out properly.
+            try {
+                (await cookies()).delete('session');
+            } catch { /* rendering a server component: ignore */ }
             if (shouldRedirect) {
-                redirect('/staff/login');
+                redirect(staff ? '/staff/blocked' : '/staff/login');
             }
             return null;
         }

@@ -13,6 +13,35 @@ const MessageSchema = z.object({
   message: z.string().min(1),
 });
 
+/**
+ * Short SMS to the admin/support number (ADMIN_PHONE_NUMBER, as used by the
+ * service and payment-request alerts) when a customer writes in chat support.
+ * Throttled: only the first message of a burst triggers it — skipped when the
+ * customer already has another unreplied message from the last 30 minutes.
+ * Never throws; SMS problems must not block saving the message.
+ */
+async function notifyAdminOfChatMessage(customerId: string, newMessageId: string) {
+  try {
+    const adminPhone = process.env.ADMIN_PHONE_NUMBER;
+    if (!adminPhone) return;
+    const { and, eq, gt, isNull, ne } = await import("drizzle-orm");
+    const since = new Date(Date.now() - 30 * 60 * 1000);
+    const recentPending = await db.query.contactMessages.findFirst({
+      where: and(
+        eq(contactMessages.customerId, customerId),
+        ne(contactMessages.messageId, newMessageId),
+        isNull(contactMessages.adminReply),
+        gt(contactMessages.createdAt, since),
+      ),
+      columns: { messageId: true },
+    });
+    if (recentPending) return;
+    await sendSMS(adminPhone, `SE Electronics: কাস্টমার ${customerId} চ্যাট সাপোর্টে নতুন মেসেজ দিয়েছে। ড্যাশবোর্ডে দেখুন।`);
+  } catch (error) {
+    console.error("Admin chat SMS failed:", error);
+  }
+}
+
 export async function sendContactMessage(_prevState: any, formData: FormData) {
   try {
     const session = await verifySession(false, "customer");
@@ -20,12 +49,14 @@ export async function sendContactMessage(_prevState: any, formData: FormData) {
     const rawData = Object.fromEntries(formData);
     const validated = MessageSchema.parse(rawData);
 
+    const messageId = generateRandomId();
     await db.insert(contactMessages).values({
-      messageId: generateRandomId(),
+      messageId,
       ...validated,
       // Always file the message under the logged-in customer, never a client-sent id.
       customerId: session.userId as string,
     });
+    await notifyAdminOfChatMessage(session.userId as string, messageId);
 
     revalidatePath("/customer/profile");
     return { success: true, message: "Message sent! Admin will respond soon." };
@@ -96,7 +127,8 @@ export async function replyToMessage(
         });
         const phone = (msg as any)?.customer?.phone as string | undefined;
         if (phone) {
-          await sendSMS(phone, `SE Electronics Support: ${adminReply}`.slice(0, 480));
+          // Short notice only (SMS cost): the full reply is read inside the app.
+          await sendSMS(phone, "SE Electronics: সাপোর্ট টিম থেকে আপনার মেসেজের রিপ্লাই দেওয়া হয়েছে। অ্যাপে দেখুন।");
           smsNote = " (SMS sent)";
         } else {
           smsNote = " (no customer phone for SMS)";
@@ -157,10 +189,60 @@ export async function sendMyChatMessage(text: string) {
       link: "/messages",
     });
 
+    await notifyAdminOfChatMessage(customerId, messageId);
+
     revalidatePath("/messages");
     return { success: true, message: "Message sent" };
   } catch (error) {
     console.error(error);
     return { success: false, message: "Something went wrong" };
+  }
+}
+
+/**
+ * Admin reply to a customer's whole chat thread: answers the latest unreplied
+ * message (via replyToMessage, which also sends the short customer SMS when
+ * asked) and marks the customer's older unreplied messages as read without
+ * touching their (empty) adminReply.
+ */
+export async function replyToCustomerThread(
+  customerId: string,
+  adminReply: string,
+  options?: { sendSms?: boolean },
+) {
+  try {
+    const session = await verifySession(false, "admin");
+    if (!session) return { success: false, message: "Unauthorized" };
+    const reply = (adminReply || "").trim();
+    if (!reply) return { success: false, message: "Please provide a reply" };
+
+    const { and, desc, eq, isNull, ne } = await import("drizzle-orm");
+    const latest = await db.query.contactMessages.findFirst({
+      // Only messages still waiting (older ones of a burst are marked read when answered).
+      where: and(eq(contactMessages.customerId, customerId), isNull(contactMessages.adminReply), eq(contactMessages.isRead, false)),
+      orderBy: [desc(contactMessages.createdAt)],
+      columns: { messageId: true },
+    });
+    if (!latest) return { success: false, message: "No unanswered message from this customer" };
+
+    const res = await replyToMessage(latest.messageId, reply, options);
+    if (!res.success) return res;
+
+    await db
+      .update(contactMessages)
+      .set({ isRead: true, updatedAt: new Date() })
+      .where(
+        and(
+          eq(contactMessages.customerId, customerId),
+          isNull(contactMessages.adminReply),
+          ne(contactMessages.messageId, latest.messageId),
+        ),
+      );
+
+    revalidatePath("/messages");
+    return res;
+  } catch (error) {
+    console.error(error);
+    return { success: false, message: "Could not send reply" };
   }
 }

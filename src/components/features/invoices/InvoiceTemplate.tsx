@@ -1,12 +1,18 @@
 import { InvoicesType } from "@/types";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
+import { parseManualDiscount } from "@/lib/invoiceDiscount";
 
 export default function InvoiceTemplate({
   data,
 }: {
   data: InvoicesType & { bgImage: string };
 }) {
+  // Manual admin discount is stored as a note line; the rest of subtotal − total is the referral discount.
+  const manual = parseManualDiscount(data.notes);
+  const totalDiscount = Math.max(0, data.subtotal - data.total);
+  const manualAmount = manual ? Math.min(manual.amount, totalDiscount) : 0;
+  const referralAmount = Math.max(0, totalDiscount - manualAmount);
   return (
     <div
       className="relative w-[210mm] h-[297mm] mx-auto bg-white bg-center bg-no-repeat bg-cover"
@@ -113,21 +119,34 @@ export default function InvoiceTemplate({
               ))}
               <tr>
                 <td colSpan={6} className="py-3 px-3 border border-black">
-                  <div className="flex justify-end items-start">
-                    <div className="text-right space-y-2">
-                      {data.subtotal > data.total && (
-                        <>
-                          <div className="text-base">
-                            <span className="font-semibold">Subtotal : </span>
-                            {data.subtotal.toLocaleString()} Tk
-                          </div>
-                          <div className="text-base text-red-600">
-                            <span className="font-semibold">
-                              Referral Discount :{" "}
-                            </span>
-                            -{(data.subtotal - data.total).toLocaleString()} Tk
-                          </div>
-                        </>
+                  {/* Notes (e.g. referral / discount notes) sit on the left of the totals, inside the table, so they never overlap the notice box below */}
+                  <div className="flex justify-between items-start gap-4">
+                    <div
+                      className="flex-1 min-w-0 text-left text-[13px] leading-snug text-slate-800 pt-0.5"
+                      style={{ fontFamily: "SolaimanLipi, 'Tiro Bangla', sans-serif", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+                    >
+                      {data.notes || ""}
+                    </div>
+                    <div className="text-right space-y-2 shrink-0">
+                      {totalDiscount > 0 && (
+                        <div className="text-base">
+                          <span className="font-semibold">Subtotal : </span>
+                          {data.subtotal.toLocaleString()} Tk
+                        </div>
+                      )}
+                      {referralAmount > 0.5 && (
+                        <div className="text-base text-red-600">
+                          <span className="font-semibold">Referral Discount : </span>
+                          -{Math.round(referralAmount).toLocaleString()} Tk
+                        </div>
+                      )}
+                      {manualAmount > 0 && (
+                        <div className="text-base text-red-600">
+                          <span className="font-semibold">
+                            Discount{manual?.type === "percent" ? ` (${manual.value}%)` : ""} :{" "}
+                          </span>
+                          -{Math.round(manualAmount).toLocaleString()} Tk
+                        </div>
                       )}
                       <div className="text-base">
                         <span className="font-semibold">Total Bill : </span>
@@ -167,20 +186,6 @@ export default function InvoiceTemplate({
               </tr>
             </tbody>
           </table>
-          {data.notes && (
-            <div
-              style={{
-                width: '100%',
-                textAlign: 'center',
-                paddingTop: '12px',
-                paddingBottom: '12px',
-                fontSize: '14px',
-                fontFamily: "SolaimanLipi, 'Tiro Bangla', sans-serif",
-              }}
-            >
-              <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{data.notes}</p>
-            </div>
-          )}
         </div>
       </div>
     </div>

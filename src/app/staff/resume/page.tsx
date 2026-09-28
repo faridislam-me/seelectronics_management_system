@@ -4,6 +4,8 @@ import { getObjectUrl } from "@/lib/s3";
 import { verifySession } from "@/lib";
 import { redirect } from "next/navigation";
 import ResumeClient from "./ResumeClient";
+import QRCode from "qrcode";
+import { getBaseUrl } from "@/utils";
 
 export default async function ResumePage({
   searchParams,
@@ -49,5 +51,13 @@ export default async function ResumePage({
       (await getObjectUrl(staffData.nidBackPhotoKey))
     : null;
 
-  return <ResumeClient staffData={{ ...staffData, nidFrontUrl, nidBackUrl }} />;
+  // QR on the form opens the staff's public profile.
+  let qrDataUrl: string | null = null;
+  try {
+    qrDataUrl = await QRCode.toDataURL(`${getBaseUrl()}/team-members?staffId=${encodeURIComponent(staffData.staffId)}`, { margin: 1, width: 240 });
+  } catch {
+    qrDataUrl = null;
+  }
+
+  return <ResumeClient staffData={{ ...staffData, nidFrontUrl, nidBackUrl }} qrDataUrl={qrDataUrl} backHref={id ? "/staffs" : "/staff/details"} />;
 }

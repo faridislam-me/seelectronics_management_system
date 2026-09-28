@@ -31,19 +31,19 @@ export function BlueHero({ avatar, initials, name, idLabel, id, chips, tagline =
           <div className="relative shrink-0">
             {avatar ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatar} alt="" className="size-[clamp(88px,26vw,112px)] rounded-full object-cover object-top border-[4px] border-white shadow-[0_0_0_4px_rgba(127,180,255,0.55)] bg-[#1f7cf0]" />
+              <img src={avatar} alt="" className="size-[clamp(80px,23vw,112px)] rounded-full object-cover object-top border-[4px] border-white shadow-[0_0_0_4px_rgba(127,180,255,0.55)] bg-[#1f7cf0]" />
             ) : (
-              <span className="size-[clamp(88px,26vw,112px)] rounded-full bg-[#1f7cf0] border-[4px] border-white shadow-[0_0_0_4px_rgba(127,180,255,0.55)] flex items-center justify-center text-3xl font-extrabold">{fallback}</span>
+              <span className="size-[clamp(80px,23vw,112px)] rounded-full bg-[#1f7cf0] border-[4px] border-white shadow-[0_0_0_4px_rgba(127,180,255,0.55)] flex items-center justify-center text-3xl font-extrabold">{fallback}</span>
             )}
             {verified && <span className="absolute bottom-1 right-0 size-8 rounded-full bg-[#1f7cf0] border-[3px] border-white text-white flex items-center justify-center"><BadgeCheck size={16} strokeWidth={2.6} /></span>}
           </div>
           <div className="flex flex-col gap-1 min-w-0 flex-1">
             <span className="text-[clamp(18px,5.6vw,26px)] font-extrabold leading-tight break-words">{name}</span>
             <span className="text-[clamp(12.5px,3.6vw,15px)] text-white/90">{idLabel}: <span className="font-bold text-white">{id}</span></span>
-            <div className="flex flex-wrap gap-1 mt-1">
+            <div className="flex flex-nowrap gap-1 mt-1 min-w-0">
               {chips.map((c) => (
-                <span key={c.label} className={clsx("inline-flex items-center gap-1 px-2 h-6 rounded-full text-[clamp(9px,2.6vw,10.5px)] font-extrabold tracking-wide whitespace-nowrap", chipColors[c.color])}>
-                  {c.dot ? <span className="size-2 rounded-full bg-white" /> : c.icon ? <c.icon size={12} strokeWidth={2.8} /> : null}{c.label}
+                <span key={c.label} className={clsx("inline-flex items-center gap-0.5 px-1.5 h-[22px] rounded-full text-[clamp(8.5px,2.35vw,10.5px)] font-extrabold tracking-normal whitespace-nowrap shrink-0", chipColors[c.color])}>
+                  {c.dot ? <span className="size-1.5 rounded-full bg-white" /> : c.icon ? <c.icon size={11} strokeWidth={2.8} /> : null}{c.label}
                 </span>
               ))}
             </div>

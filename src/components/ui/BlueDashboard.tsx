@@ -2,6 +2,8 @@ import clsx from "clsx";
 import { BadgeCheck, ChevronRight, LucideIcon, Pencil, ShieldCheck, User } from "lucide-react";
 import Link from "next/link";
 
+/** Flat left-to-right gradient shared by the staff header (seamless mode) and the profile hero, so they read as one block. */
+export const profileBlueBg = "bg-[#0b3d91] bg-[linear-gradient(100deg,#0f48aa_0%,#0b3d91_50%,#0a3480_100%)]";
 export const blueBg = "bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)]";
 /** Shared corner radii (kept small on purpose, per client feedback). */
 export const R = { card: "rounded-md", hero: "rounded-b-[16px]", btn: "rounded-md", chip: "rounded", tile: "rounded-md" };
@@ -18,9 +20,14 @@ export function BlueHero({ avatar, initials, name, idLabel, id, chips, tagline =
   const fallback = (initials || name).trim().slice(0, 2).toUpperCase();
   if (variant === "profile") {
     return (
-      <section className={clsx(blueBg, "text-white px-3 pt-2 pb-9 relative overflow-hidden rounded-b-[28px]")}>
-        <span className="absolute -right-12 -top-20 size-72 rounded-full bg-white/10" />
-        <span className="absolute -left-16 bottom-[-70px] size-56 rounded-full bg-[#1f7cf0]/25" />
+      <section className={clsx(profileBlueBg, "text-white px-3 pt-1 pb-12 relative overflow-hidden")}>
+        <span className="absolute -right-16 -top-24 size-80 rounded-full bg-white/[0.07]" />
+        <span className="absolute left-[30%] -top-10 size-56 rounded-full bg-[#1f7cf0]/15 blur-2xl" />
+        {/* soft light wave: rises from the lower-left and sweeps up to the right */}
+        <svg className="absolute inset-x-0 bottom-0 w-full h-[46px]" viewBox="0 0 400 46" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 10 C 70 34, 170 46, 270 40 C 330 36, 372 24, 400 6 L400 46 L0 46 Z" fill="#eef3fb" />
+          <path d="M0 10 C 70 34, 170 46, 270 40 C 330 36, 372 24, 400 6" fill="none" stroke="#7fb4ff" strokeOpacity="0.55" strokeWidth="1.5" />
+        </svg>
         <div className="relative flex justify-end">
           <span className="relative font-script text-[clamp(14px,4vw,19px)] leading-[1.05] text-right text-white/95 rotate-[-7deg] pr-1 pb-3">
             {tagline}
@@ -31,14 +38,14 @@ export function BlueHero({ avatar, initials, name, idLabel, id, chips, tagline =
           <div className="relative shrink-0">
             {avatar ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatar} alt="" className="size-[clamp(80px,23vw,112px)] rounded-full object-cover object-top border-[4px] border-white shadow-[0_0_0_4px_rgba(127,180,255,0.55)] bg-[#1f7cf0]" />
+              <img src={avatar} alt="" className="size-[clamp(92px,28vw,116px)] rounded-full object-cover object-top border-[4px] border-white shadow-[0_0_0_4px_#3d8bff,0_8px_22px_rgba(0,20,70,0.35)] bg-[#1f7cf0]" />
             ) : (
-              <span className="size-[clamp(80px,23vw,112px)] rounded-full bg-[#1f7cf0] border-[4px] border-white shadow-[0_0_0_4px_rgba(127,180,255,0.55)] flex items-center justify-center text-3xl font-extrabold">{fallback}</span>
+              <span className="size-[clamp(92px,28vw,116px)] rounded-full bg-[#1f7cf0] border-[4px] border-white shadow-[0_0_0_4px_#3d8bff,0_8px_22px_rgba(0,20,70,0.35)] flex items-center justify-center text-3xl font-extrabold">{fallback}</span>
             )}
-            {verified && <span className="absolute bottom-1 right-0 size-8 rounded-full bg-[#1f7cf0] border-[3px] border-white text-white flex items-center justify-center"><BadgeCheck size={16} strokeWidth={2.6} /></span>}
+            {verified && <span className="absolute bottom-1 -right-0.5 size-[30px] rounded-full bg-[#1f7cf0] border-[3px] border-white text-white flex items-center justify-center shadow"><BadgeCheck size={16} strokeWidth={2.6} /></span>}
           </div>
           <div className="flex flex-col gap-1 min-w-0 flex-1">
-            <span className="text-[clamp(18px,5.6vw,26px)] font-extrabold leading-tight break-words">{name}</span>
+            <span className="text-[clamp(19px,6vw,27px)] font-extrabold leading-tight break-words">{name}</span>
             <span className="text-[clamp(12.5px,3.6vw,15px)] text-white/90">{idLabel}: <span className="font-bold text-white">{id}</span></span>
             <div className="flex flex-nowrap gap-1 mt-1 min-w-0">
               {chips.map((c) => (
@@ -92,15 +99,17 @@ export function BlueBalanceCard({ label, value, icon: Icon, button, buttonHref, 
 }) {
   if (layout === "row") {
     return (
-      <div className="rounded-[14px] p-3 pr-2 bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2f70_0%,#0d3f96_60%,#0a2f70_100%)] text-white flex items-center gap-3 shadow-[0_10px_30px_rgba(10,47,112,0.35)] relative overflow-hidden">
-        <span className="absolute -right-6 -bottom-12 size-44 rounded-full border-[16px] border-white/5" />
-        <span className="relative size-[clamp(52px,15vw,68px)] rounded-full bg-white/15 border border-white/20 flex items-center justify-center shrink-0"><Icon size={30} strokeWidth={2} /></span>
-        <div className="relative flex flex-col min-w-0 flex-1 gap-1 pr-5">
-          <span className="font-semibold tracking-[1px] text-white/90 text-[clamp(11px,3.1vw,13.5px)]">{label}</span>
+      <div className="rounded-[14px] p-3 pr-2.5 bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2a66_0%,#0d3a8c_55%,#0a2f70_100%)] text-white flex items-center gap-3 shadow-[0_10px_30px_rgba(10,47,112,0.35)] relative overflow-hidden">
+        {/* subtle diagonal light streak */}
+        <span className="pointer-events-none absolute -top-6 left-[42%] h-[180%] w-16 rotate-[28deg] bg-gradient-to-b from-white/0 via-white/[0.07] to-white/0" />
+        <span className="pointer-events-none absolute -top-6 left-[52%] h-[180%] w-4 rotate-[28deg] bg-white/[0.05]" />
+        <span className="relative size-[clamp(56px,16vw,70px)] rounded-full bg-[#1c4fa8] shadow-[inset_0_0_0_6px_rgba(255,255,255,0.08)] flex items-center justify-center shrink-0"><Icon size={30} strokeWidth={2} /></span>
+        <div className="relative flex flex-col min-w-0 flex-1 gap-1.5 pr-4">
+          <span className="font-semibold tracking-[1.2px] text-white/90 text-[clamp(11px,3.1vw,13px)]">{label}</span>
           <div className="flex items-center justify-between gap-2 min-w-0">
-            <span className="font-extrabold leading-none truncate text-[clamp(22px,7.2vw,32px)]">{value}</span>
-            <Link href={buttonHref} className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border-[1.5px] border-[#4c9bff] bg-[#0d3f96]/60 text-[clamp(11px,3.2vw,13px)] font-bold shrink-0 whitespace-nowrap">
-              {ButtonIcon && <ButtonIcon size={14} strokeWidth={2.2} />}{button}
+            <span className="font-extrabold leading-none truncate text-[clamp(23px,7.4vw,32px)]">{value}</span>
+            <Link href={buttonHref} className="inline-flex items-center gap-1 h-8 px-2.5 rounded-full border-[1.5px] border-[#4c9bff] bg-[#0d3f96]/50 text-[clamp(10.5px,3vw,12px)] font-bold shrink-0 whitespace-nowrap">
+              {ButtonIcon && <ButtonIcon size={13} strokeWidth={2.2} />}{button}
             </Link>
           </div>
         </div>

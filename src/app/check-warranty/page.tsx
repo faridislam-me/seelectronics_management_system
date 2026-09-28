@@ -69,22 +69,22 @@ export default function CheckWarrantyPage() {
 
         {/* Form */}
         <section className="rounded-md bg-white border border-[#dfe6f2] overflow-hidden shadow-[0_6px_18px_rgba(11,61,145,0.10)]">
-          <div className="flex items-center gap-2.5 bg-[#0b3d91] bg-[linear-gradient(100deg,#0a2f70_0%,#1259c9_100%)] text-white px-3 py-1.5">
+          <div className="h-11 flex items-center gap-2.5 bg-[#0b3d91] bg-[linear-gradient(100deg,#0a2f70_0%,#1259c9_100%)] text-white px-3">
             <span className="size-8 rounded-full bg-white/15 border border-white/25 flex items-center justify-center"><ShieldCheck size={17} /></span>
             <span className="text-[clamp(15px,4.4vw,18px)] font-extrabold">ওয়ারেন্টি চেক করুন</span>
           </div>
-          <div className="px-3 py-4 flex flex-col gap-3">
+          <div className="px-3 py-5 flex flex-col gap-5">
             <label className="relative block">
               <span className="absolute left-0 top-0 h-14 w-11 flex items-center justify-center text-[#5b6784]"><FileText size={20} /></span>
               <input type="text" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmit()} placeholder="ইনভয়েস / কাস্টমার আইডি / মোবাইল নাম্বার" disabled={loading} className="w-full h-14 rounded-md border border-[#cfdcef] bg-[#f5f8fd] pl-11 pr-3 text-[15px] font-semibold outline-none focus:border-[#1f7cf0] focus:ring-1 focus:ring-[#1f7cf0]" />
             </label>
-            <button onClick={handleSubmit} disabled={loading} className="h-12 rounded-md bg-[#0b3d91] text-white text-[16px] font-extrabold inline-flex items-center justify-center gap-2 disabled:opacity-50 shadow-[0_8px_20px_rgba(11,61,145,0.3)] active:scale-[0.98] transition-all">
+            <button onClick={handleSubmit} disabled={loading} className="h-11 rounded-md bg-[#0b3d91] text-white text-[16px] font-extrabold inline-flex items-center justify-center gap-2 disabled:opacity-50 shadow-[0_8px_20px_rgba(11,61,145,0.3)] active:scale-[0.98] transition-all">
               <Search size={20} strokeWidth={2.6} />{loading ? "Checking..." : "Check"}
             </button>
             {error && <p className="rounded-md bg-[#ffe9ec] border border-[#f7c3ca] text-[#c81f38] text-[13px] font-medium p-3 leading-relaxed">{error}</p>}
           </div>
           {/* Why check: part of the same box */}
-          <div className="border-t border-[#dfe8f7] bg-[#eef4fd] px-3 py-2.5 flex flex-col gap-3">
+          <div className="border-t border-[#dfe8f7] bg-[#eef4fd] px-3 pt-4 pb-5 flex flex-col gap-5">
             <span className="flex items-center gap-2"><span className="size-9 rounded-full bg-[#0b3d91] text-white flex items-center justify-center"><Info size={18} /></span><span className="text-[clamp(15px,4.4vw,18px)] font-extrabold">কেন ওয়ারেন্টি চেক করবেন?</span></span>
           <div className="grid grid-cols-4 divide-x divide-[#eef1f6]">
               {reasons.map((r) => (

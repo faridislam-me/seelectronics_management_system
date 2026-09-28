@@ -42,7 +42,7 @@ export default function PortalLoginShell({
       <div className="relative mx-auto w-full max-w-[480px] min-h-screen flex flex-col" style={bgFor(role)}>
         <div className="relative z-10 px-3 w-full flex-1 flex flex-col" style={{ paddingTop: "calc(min(100vw, 480px) * 0.39)", paddingBottom: "calc(min(100vw, 480px) * 0.12 + 8px)" }}>
           {/* Card stretches down to just above the bottom wave; help + footer sit at its bottom */}
-          <div className="flex-1 flex flex-col justify-center rounded-[14px] bg-white shadow-[0_14px_40px_rgba(11,61,145,0.16)] border border-[#e6ecf6] px-4 py-6">
+          <div className="flex-1 flex flex-col justify-center rounded-[14px] bg-white shadow-[0_0_0_1px_rgba(31,124,240,0.10),0_6px_28px_rgba(31,124,240,0.28),0_2px_10px_rgba(11,61,145,0.12)] border border-[#d6e4fa] px-4 py-6">
             <div className="flex items-center justify-center gap-3">
               <Users size={40} className="text-[#1f5fc9] shrink-0" fill="#1f5fc9" strokeWidth={1.6} />
               <span className="flex flex-col leading-tight">

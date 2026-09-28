@@ -7,6 +7,8 @@ import { StaffBalanceBar } from "../features/staff/StaffBalanceBar";
 
 interface StaffHeaderProps {
   balance: number;
+  /** Flat gradient without shadow so a profile hero below continues it (staff profile page). */
+  seamless?: boolean;
 }
 
 const routeConfig: Record<string, { title: string; showBalance?: boolean }> = {
@@ -73,12 +75,12 @@ function getHeaderConfig(pathname: string): {
   return { title: "Dashboard", showBalance: false };
 }
 
-export function StaffHeader({ balance }: StaffHeaderProps) {
+export function StaffHeader({ balance, seamless = false }: StaffHeaderProps) {
   const pathname = usePathname();
   const isHome = pathname === "/staff/profile";
 
   return (
-    <header className="sticky top-0 z-50 text-white shadow-lg overflow-hidden w-full bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)]">
+    <header className={`sticky top-0 z-50 text-white overflow-hidden w-full bg-[#0b3d91] ${seamless ? "bg-[linear-gradient(100deg,#0f48aa_0%,#0b3d91_50%,#0a3480_100%)]" : "shadow-lg bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)]"}`}>
       <div className="max-w-4xl mx-auto px-3 h-[60px] flex items-center justify-between gap-2">
         {/* Brand block (same on every staff page) */}
         <Link href="/staff/profile" className="flex items-center gap-2 min-w-0 flex-1">

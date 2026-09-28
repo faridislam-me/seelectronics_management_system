@@ -1,5 +1,5 @@
 import { db } from '@/db/drizzle';
-import { sellers, staffs } from '@/db/schema';
+import { sellers, staffs, suppliers } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import 'server-only'
 import { cookies } from "next/headers";
@@ -10,7 +10,7 @@ export { encrypt, decrypt } from "./session-core";
 import { encrypt } from "./session-core";
 import { decrypt } from "./session-core";
 
-export async function createSession({ username, userId, role = 'admin' }: { username: string, userId: string, role?: 'admin' | 'staff' | 'customer' | 'seller' }) {
+export async function createSession({ username, userId, role = 'admin' }: { username: string, userId: string, role?: 'admin' | 'staff' | 'customer' | 'seller' | 'supplier' }) {
     const expiresAt = new Date(Date.now() + parseInt(process.env.SESSION_EXPIRY_DAY!) * 24 * 60 * 60 * 1000)
     const session = await encrypt({ userId, username, role, expiresAt })
     const cookieStore = await cookies()
@@ -24,7 +24,7 @@ export async function createSession({ username, userId, role = 'admin' }: { user
     })
 }
 
-export const verifySession = cache(async (shouldRedirect = true, expectedRole?: 'admin' | 'staff' | 'customer' | 'seller') => {
+export const verifySession = cache(async (shouldRedirect = true, expectedRole?: 'admin' | 'staff' | 'customer' | 'seller' | 'supplier') => {
     const cookie = (await cookies()).get('session')?.value
     const session = await decrypt(cookie)
 
@@ -40,6 +40,7 @@ export const verifySession = cache(async (shouldRedirect = true, expectedRole?: 
             if (session.role === 'staff') redirect('/staff/profile')
             else if (session.role === 'customer') redirect('/customer/profile')
             else if (session.role === 'seller') redirect('/seller/profile')
+            else if (session.role === 'supplier') redirect('/supplier/profile')
             else redirect('/')
         }
         return null
@@ -80,6 +81,24 @@ export const verifySession = cache(async (shouldRedirect = true, expectedRole?: 
             cookieStore.delete('session');
             if (shouldRedirect) {
                 redirect('/seller/login');
+            }
+            return null;
+        }
+    }
+
+    // Active check for deactivated suppliers
+    if (session.role === 'supplier') {
+        const [supplier] = await db.select({ isActive: suppliers.isActive })
+            .from(suppliers)
+            .where(eq(suppliers.supplierId, session.userId as string))
+            .limit(1);
+
+        if (!supplier || !supplier.isActive) {
+            try {
+                (await cookies()).delete('session');
+            } catch { /* rendering a server component: ignore */ }
+            if (shouldRedirect) {
+                redirect('/supplier/login');
             }
             return null;
         }

@@ -57,6 +57,13 @@
       "when": 1790274130822,
       "tag": "0007_seller_drop_payment",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790579451578,
+      "tag": "0008_supplier_module",
+      "breakpoints": true
     }
   ]
 }

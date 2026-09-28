@@ -4,7 +4,7 @@ import { contactDetails } from "@/constants";
 import { Eye, EyeOff, Headset, LucideIcon, Phone, ShieldCheck, Users } from "lucide-react";
 import { useState } from "react";
 
-export type PortalRole = "staff" | "customer" | "seller";
+export type PortalRole = "staff" | "customer" | "seller" | "supplier";
 
 /**
  * Page background from the client's artwork. The top crop holds the logo,

@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/db/drizzle";
+import { computeManualDiscount, ManualDiscount, parseManualDiscount, withManualDiscount } from "@/lib/invoiceDiscount";
 import { customers, invoices, products, referralBonuses } from "@/db/schema";
 import { verifySession } from "@/lib";
 import { SearchParams } from "@/types";
@@ -155,6 +156,33 @@ export const getCustomerById = async (customerId: string) => {
 /**
  * Creates a new customer record with associated invoice and products
  */
+
+/**
+ * Server-side invoice totals: subtotal from the product lines (never the client
+ * total), plus the optional manual admin discount (% or flat) validated here.
+ * Combination: total = subtotal − referralDiscount (4% of subtotal) − manualDiscount,
+ * never below 0. The manual discount is always computed on the subtotal.
+ */
+function invoiceBase(data: any): number {
+  const items = Array.isArray(data?.products) ? data.products : [];
+  if (items.length) {
+    return items.reduce((sum: number, p: any) => sum + (Number(p.unitPrice) || 0) * (Number(p.quantity) || 0), 0);
+  }
+  return Number(data?.invoice?.subtotal) || 0;
+}
+
+function readManualDiscount(data: any, base: number): { ok: true; discount: ManualDiscount | null } | { ok: false; message: string } {
+  const md = data?.invoice?.manualDiscount;
+  if (!md || md.value === undefined || md.value === null || md.value === "" || Number(md.value) === 0) return { ok: true, discount: null };
+  const type = md.type === "flat" ? "flat" : md.type === "percent" ? "percent" : null;
+  const value = Number(md.value);
+  if (!type || !Number.isFinite(value) || value < 0) return { ok: false, message: "Invalid discount" };
+  if (type === "percent" && value > 100) return { ok: false, message: "Discount percent must be between 0 and 100" };
+  if (type === "flat" && value > base) return { ok: false, message: "Flat discount cannot exceed the subtotal" };
+  const amount = computeManualDiscount(base, type, value);
+  return { ok: true, discount: amount > 0 ? { type, value, amount } : null };
+}
+
 export const createCustomer = async (data: any, sendLink = false) => {
   try {
     const session = await verifySession(false);
@@ -176,9 +204,14 @@ export const createCustomer = async (data: any, sendLink = false) => {
       bonusEarned: number;
     } | null = null;
 
+    const base = invoiceBase(data);
+    // Only admins may add a manual discount
+    const manual = session.role === "admin" ? readManualDiscount(data, base) : ({ ok: true, discount: null } as const);
+    if (!manual.ok) return { success: false, message: manual.message };
+
     let discountGiven = 0;
     let bonusEarned = 0;
-    let finalTotal = Number(data.invoice.total) || 0;
+    let finalTotal = base;
     let finalDue = Number(data.invoice.dueAmount) || 0;
     let referrer: any = null;
 
@@ -204,6 +237,10 @@ export const createCustomer = async (data: any, sendLink = false) => {
       }
     }
 
+    // Manual admin discount on top of any referral discount (never below 0)
+    if (manual.discount) finalTotal = Math.max(0, finalTotal - manual.discount.amount);
+    finalDue = Math.min(Math.max(0, finalDue), finalTotal);
+
     // Start a transaction
     // 1. Create customer
     await db.insert(customers).values({
@@ -227,11 +264,11 @@ export const createCustomer = async (data: any, sendLink = false) => {
         customerAddress: data.address,
         date: new Date(data.invoice.date),
         paymentType: data.invoice.paymentType,
-        subtotal: Number(data.invoice.subtotal) || 0,
+        subtotal: base,
         total: finalTotal,
         dueAmount: finalDue,
         dueType: data.invoice.dueType || 'due',
-        notes: data.invoice.notes || '',
+        notes: withManualDiscount(data.invoice.notes, manual.discount),
       })
       .returning();
 
@@ -272,7 +309,7 @@ export const createCustomer = async (data: any, sendLink = false) => {
         referrerVipCard: data.referralVipCard,
         referredCustomerId: customerId,
         referredCustomerName: data.name,
-        purchaseAmount: Number(data.invoice.total) || 0,
+        purchaseAmount: base,
         discountGiven,
         bonusEarned,
       });
@@ -358,9 +395,21 @@ export const updateCustomer = async (
       data = { ...data, sellerId: session.userId };
     }
 
+    const base = invoiceBase(data);
+    // Admins set the manual discount; a seller edit keeps whatever the admin set before.
+    let manual = readManualDiscount(data, base);
+    if (session.role !== "admin") {
+      const prev = parseManualDiscount(customer.invoice?.notes);
+      manual = {
+        ok: true,
+        discount: prev ? { ...prev, amount: computeManualDiscount(base, prev.type, prev.value) } : null,
+      };
+    }
+    if (!manual.ok) return { success: false, message: manual.message };
+
     let discountGiven = 0;
     let bonusEarned = 0;
-    let finalTotal = Number(data.invoice.total) || 0;
+    let finalTotal = base;
     let finalDue = Number(data.invoice.dueAmount) || 0;
 
     if (customer.referredByVipCard) {
@@ -398,7 +447,7 @@ export const updateCustomer = async (
             .update(referralBonuses)
             .set({
               referredCustomerName: data.name,
-              purchaseAmount: Number(data.invoice.total) || 0,
+              purchaseAmount: base,
               discountGiven,
               bonusEarned,
             })
@@ -409,7 +458,7 @@ export const updateCustomer = async (
             referrerVipCard: customer.referredByVipCard,
             referredCustomerId: customerId,
             referredCustomerName: data.name,
-            purchaseAmount: Number(data.invoice.total) || 0,
+            purchaseAmount: base,
             discountGiven,
             bonusEarned,
           });
@@ -423,6 +472,10 @@ export const updateCustomer = async (
         }
       }
     }
+
+    // Manual admin discount on top of any referral discount (never below 0)
+    if (manual.discount) finalTotal = Math.max(0, finalTotal - manual.discount.amount);
+    finalDue = Math.min(Math.max(0, finalDue), finalTotal);
 
     // 1. Update customer
     await db
@@ -444,11 +497,11 @@ export const updateCustomer = async (
         customerAddress: data.address,
         date: new Date(data.invoice.date),
         paymentType: data.invoice.paymentType,
-        subtotal: Number(data.invoice.subtotal) || 0,
+        subtotal: base,
         total: finalTotal,
         dueAmount: finalDue,
         dueType: data.invoice.dueType || 'due',
-        notes: data.invoice.notes || '',
+        notes: withManualDiscount(data.invoice.notes, manual.discount),
       })
       .where(eq(invoices.customerId, customerId));
 

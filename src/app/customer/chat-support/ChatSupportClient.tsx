@@ -82,14 +82,16 @@ export default function ChatSupportClient() {
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-6 text-[12px] font-semibold text-[#5b6784]"><Loader2 size={16} className="animate-spin" />লোডিং হচ্ছে...</div>
         ) : (
-          messages.map((m) => (
+          messages.map((m, i) => (
             <div key={m.messageId} className="flex flex-col gap-2">
               <Bubble side="right" time={time(m.createdAt)}>{m.message}</Bubble>
               {m.adminReply ? (
                 <Bubble side="left" label="SE Support" time={time(m.updatedAt)}>{m.adminReply}</Bubble>
-              ) : (
+              ) : i === messages.length - 1 ? (
+                // Admin answers a burst of messages with one reply on the latest one,
+                // so only the newest unanswered message shows the waiting hint.
                 <span className="self-end text-[10.5px] font-semibold text-[#9aa4b8]">উত্তরের অপেক্ষায়...</span>
-              )}
+              ) : null}
             </div>
           ))
         )}

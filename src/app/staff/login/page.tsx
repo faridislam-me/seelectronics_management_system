@@ -44,15 +44,16 @@ export default function StaffLoginPage() {
   if (showBlocked && blockedInfo) {
     return (
       <div className="relative">
-        <StaffBlockedLoginView name={blockedInfo.name} staffId={blockedInfo.id} />
-        <button
-          type="button"
-          onClick={() => setShowBlocked(false)}
-          className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-white/90 border border-[#dfe6f2] text-[12px] font-bold text-[#0b3d91] shadow-sm"
-        >
-          <ArrowLeft size={16} />
-          Close and Try Again
-        </button>
+        <StaffBlockedLoginView
+          name={blockedInfo.name}
+          staffId={blockedInfo.id}
+          action={
+            <button type="button" onClick={() => setShowBlocked(false)} className="mt-1 inline-flex items-center gap-1.5 h-10 px-4 rounded-md bg-white border border-[#cfe0fb] text-[13px] font-bold text-[#0b3d91] shadow-sm">
+              <ArrowLeft size={16} />
+              Close and Try Again
+            </button>
+          }
+        />
       </div>
     );
   }

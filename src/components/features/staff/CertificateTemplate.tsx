@@ -58,8 +58,8 @@ export default function CertificateTemplate({
 
       {/* Fields: bottom edge 4px above each dotted line */}
       <Field left={342} line={351} width={590} font="font2" size={30}>{data.ownerName}</Field>
-      <Field left={286} line={387} width={245} font="sans" size={20}>{data.shopId}</Field>
-      <Field left={634} line={387} width={298} font="font3" size={30}>{data.phone}</Field>
+      <Field left={286} line={387} width={245} font="font2" size={30}>{data.shopId}</Field>
+      <Field left={634} line={387} width={298} font="font2" size={30}>{data.phone}</Field>
       <Field left={286} line={430} width={322} font="font2" size={30}>{data.address}</Field>
       <Field left={732} line={430} width={200} font="font2" size={30}>{data.district}</Field>
 
@@ -82,15 +82,15 @@ function Field({ left, line, width, font, size, children }: { left: number; line
   const h = 40;
   return (
     <div
-      className="absolute flex items-end overflow-visible whitespace-nowrap leading-none font-semibold text-slate-900"
+      className="absolute flex items-end overflow-visible whitespace-nowrap leading-none text-slate-900"
       style={{
         left,
-        top: line - h - 4,
+        top: line - h + 5, // script font has a deep descent; this puts the baseline just on the dotted line
         width,
         height: h,
         fontSize: size,
         fontFamily: font === "sans" ? "system-ui, sans-serif" : `"${font}", cursive`,
-        fontWeight: font === "sans" ? 500 : 600,
+        fontWeight: 400, // thin script, same for every field
       }}
     >
       {children}

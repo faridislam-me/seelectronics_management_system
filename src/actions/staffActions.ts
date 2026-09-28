@@ -1421,7 +1421,10 @@ export const getCertificatePreviewData = async (token: string) => {
     );
 
     const { qrcode } = await import("@/lib/id-gen");
-    const qrCodeData = await qrcode(payload.staffId || payload.shopId || "", 1);
+    // Scanning opens the staff's public profile (team members page) when we know the staff.
+    const { getBaseUrl } = await import("@/utils");
+    const qrTarget = payload.staffId ? `${getBaseUrl()}/team-members?staffId=${encodeURIComponent(payload.staffId)}` : payload.shopId || "";
+    const qrCodeData = await qrcode(qrTarget, 1);
 
     const issueDate = new Date();
 

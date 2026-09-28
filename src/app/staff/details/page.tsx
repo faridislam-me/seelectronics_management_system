@@ -79,8 +79,9 @@ export default async function StaffDetailsPage() {
           name={staffData.name}
           idLabel="Staff ID"
           id={staffData.staffId}
+          variant="profile"
           chips={[
-            { label: staffData.role === "electrician" ? "ELECTRICIAN" : "TECHNICIAN", color: "navy", icon: User },
+            { label: staffData.role === "electrician" ? "ELECTRICIAN" : "TECHNICIAN", color: "glass", icon: User },
             { label: staffData.isVerified ? "VERIFIED" : "PENDING", color: staffData.isVerified ? "green" : "amber", icon: ShieldCheck },
             { label: staffData.isActiveStaff ? "ACTIVE" : "BLOCKED", color: staffData.isActiveStaff ? "blue" : "red", dot: true },
           ]}
@@ -95,9 +96,10 @@ export default async function StaffDetailsPage() {
             buttonIcon={FileDown}
             buttonHref={`/pdf/download?type=id-card&id=${staffData.staffId}`}
             chevronHref="/staff/payment"
+            layout="row"
           />
 
-          <BlueStatGrid iconStyle="soft" cards={[
+          <BlueStatGrid layout="horizontal" cards={[
             { value: staffData.completedServices ?? 0, label: "সফল সার্ভিস", icon: CheckSquare, tone: "green", href: "/staff/services" },
             { value: staffData.pendingServices ?? 0, label: "পেন্ডিং সার্ভিস", icon: Clock, tone: "blue", href: "/staff/tasks" },
             { value: staffData.repairExperienceYears || staffData.installationExperienceYears || 0, label: "বছরের দক্ষতা", icon: BriefcaseBusiness, tone: "purple", href: "#experience" },
@@ -113,204 +115,32 @@ export default async function StaffDetailsPage() {
             { label: "Address", value: `${staffData.currentStreetAddress}, ${staffData.currentDistrict}`, icon: MapPin, href: "/staff/profile/edit" },
           ]} />
 
-          {/* INFO GRID */}
-          <div id="experience" className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* EXPERIENCE */}
-            <div className="bg-white p-5 rounded-md border border-slate-100 shadow-sm space-y-4">
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2">
-                Experience
-              </h3>
-              <div className="space-y-4">
-                {/* Repair */}
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 shrink-0 shadow-sm border border-slate-200/50">
-                    <Wrench size={18} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-medium text-slate-500">
-                      Repair:
-                    </span>
-                    <span className="text-sm font-extrabold text-[#0a192f] mt-0.5">
-                      {staffData.hasRepairExperience
-                        ? `${staffData.repairExperienceYears} Years`
-                        : "No"}
-                    </span>
-                  </div>
-                </div>
+          <div id="experience" />
+          <BlueContactCard title="Experience" icon={Briefcase} editHref="/staff/profile/edit" rows={[
+            { label: "Repair", value: staffData.hasRepairExperience ? `${staffData.repairExperienceYears} Years` : "No", icon: Wrench },
+            { label: "Installation", value: staffData.hasInstallationExperience ? `${staffData.installationExperienceYears} Years` : "No", icon: Hammer },
+          ]} />
 
-                {/* Installation */}
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 shrink-0 shadow-sm border border-slate-200/50">
-                    <Hammer size={18} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-medium text-slate-500">
-                      Installation:
-                    </span>
-                    <span className="text-sm font-extrabold text-[#0a192f] mt-0.5">
-                      {staffData.hasInstallationExperience
-                        ? `${staffData.installationExperienceYears} Years`
-                        : "No"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <BlueContactCard title="Address" icon={MapPin} editHref="/staff/profile/edit" rows={[
+            { label: "Current Address", value: `${staffData.currentStreetAddress}, ${staffData.currentDistrict}`, icon: MapPin },
+            { label: "Permanent Address", value: `${staffData.permanentStreetAddress}, ${staffData.permanentDistrict}`, icon: Home },
+          ]} />
 
-            {/* ADDRESSES */}
-            <div className="bg-white p-5 rounded-md border border-slate-100 shadow-sm flex items-center gap-3">
-              <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 shrink-0 shadow-sm border border-slate-200/50 mt-1">
-                <MapPin size={18} />
-              </div>
-              <div className="flex flex-col space-y-1.5 w-full">
-                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2">
-                  Current Address
-                </h3>
-                <p className="text-xs text-[#0a192f] font-extrabold leading-relaxed">
-                  {staffData.currentStreetAddress}, {staffData.currentDistrict}
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white p-5 rounded-md border border-slate-100 shadow-sm flex items-center gap-3">
-              <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 shrink-0 shadow-sm border border-slate-200/50 mt-1">
-                <Home size={18} />
-              </div>
-              <div className="flex flex-col space-y-1.5 w-full">
-                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2">
-                  Permanent Address
-                </h3>
-                <p className="text-xs text-[#0a192f] font-extrabold leading-relaxed">
-                  {staffData.permanentStreetAddress},{" "}
-                  {staffData.permanentDistrict}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* PAYMENT */}
-          <div className="bg-white p-5 rounded-md border border-slate-100 shadow-sm flex items-center justify-between">
-            <div className="space-y-1.5">
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2">
-                Payment Method Preference
-              </h3>
-              <p className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">
-                {staffData.paymentPreference}
-              </p>
-              {["bkash", "nagad", "rocket"].includes(
-                staffData.paymentPreference,
-              ) &&
-                staffData.walletNumber && (
-                  <p className="text-xs font-semibold text-slate-500 mt-1">
-                    {staffData.walletNumber}
-                  </p>
-                )}
-              {staffData.paymentPreference === "bank" && staffData.bankInfo && (
-                <div className="text-xs font-semibold text-slate-500 mt-1 space-y-0.5">
-                  <p className="font-bold">{staffData.bankInfo.bankName}</p>
-                  <p className="font-mono">
-                    {staffData.bankInfo.accountNumber}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Icon */}
-            <div className="shrink-0 ml-4">
-              {staffData.paymentPreference === "bkash" && (
-                <div className="w-12 h-12 rounded-md bg-white shadow-sm flex items-center justify-center border border-slate-100">
-                  <svg
-                    className="w-8 h-8"
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="800"
-                    width="1200"
-                    viewBox="-18.0015 -28.3525 156.013 170.115"
-                  >
-                    <g fill="none">
-                      <path
-                        fill="#D12053"
-                        d="M96.58 62.45l-53.03-8.31 7.03 31.6z"
-                      />
-                      <path
-                        fill="#E2136E"
-                        d="M96.58 62.45L56.62 6.93 43.56 54.15z"
-                      />
-                      <path fill="#D12053" d="M42.32 53.51L.45 0l54.83 6.55z" />
-                      <path fill="#9E1638" d="M23.25 31.15L0 9.24h6.12z" />
-                      <path
-                        fill="#D12053"
-                        d="M107.89 35.46l-9.84 26.69L82.1 40.09z"
-                      />
-                      <path
-                        fill="#E2136E"
-                        d="M56.77 84.14l38.61-15.51L97 63.7z"
-                      />
-                      <path
-                        fill="#9E1638"
-                        d="M25.89 113.41l16.54-58.02 8.39 37.75z"
-                      />
-                      <path
-                        fill="#E2136E"
-                        d="M109.43 35.67l-4.06 11.02 14.64-.24z"
-                      />
-                    </g>
-                  </svg>
-                </div>
-              )}
-              {staffData.paymentPreference === "nagad" && (
-                <div className="w-12 h-12 rounded-md bg-[#F15A22] flex items-center justify-center shadow-sm text-white font-extrabold text-xl select-none">
-                  ন
-                </div>
-              )}
-              {staffData.paymentPreference === "rocket" && (
-                <div className="w-12 h-12 rounded-md bg-[#8C3494] flex items-center justify-center shadow-sm text-white font-extrabold text-lg select-none">
-                  🚀
-                </div>
-              )}
-              {staffData.paymentPreference === "bank" && (
-                <div className="w-12 h-12 rounded-md bg-blue-600 flex items-center justify-center shadow-sm text-white">
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                    />
-                  </svg>
-                </div>
-              )}
-              {staffData.paymentPreference === "cash" && (
-                <div className="w-12 h-12 rounded-md bg-emerald-600 flex items-center justify-center shadow-sm text-white">
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    viewBox="0 0 24 24"
-                  >
-                    <rect x="2" y="6" width="20" height="12" rx="2" />
-                    <circle cx="12" cy="12" r="3" />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 12h.01M18 12h.01"
-                    />
-                  </svg>
-                </div>
-              )}
-            </div>
-          </div>
+          <BlueContactCard title="Payment Method" icon={CreditCard} editHref="/staff/payment/settings" rows={[
+            { label: "Payment Method Preference", value: staffData.paymentPreference === "bank" && staffData.bankInfo
+                  ? `${staffData.bankInfo.bankName} · ${staffData.bankInfo.accountNumber}`
+                  : ["bkash", "nagad", "rocket"].includes(staffData.paymentPreference) && staffData.walletNumber
+                    ? `${String(staffData.paymentPreference).toUpperCase()} · ${staffData.walletNumber}`
+                    : String(staffData.paymentPreference || "N/A").toUpperCase(), icon: CreditCard, href: "/staff/payment/settings" },
+          ]} />
 
           {/* NID DOCUMENTS */}
-          <div className="bg-white p-5 rounded-md border border-slate-100 shadow-sm space-y-4">
-            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2">
-              NID Documents front & back
-            </h3>
+          <div className="bg-white p-3.5 rounded-md shadow-[0_4px_18px_rgba(11,61,145,0.06)] flex flex-col gap-3">
+            <span className="flex items-center gap-2.5">
+              <span className="size-9 rounded-full bg-[#1f7cf0] text-white flex items-center justify-center shrink-0"><ShieldCheck size={18} /></span>
+              <span className="font-extrabold text-[#16213a] text-[clamp(16px,4.6vw,20px)]">NID Documents</span>
+              <span className="text-[12px] font-semibold text-[#6b7690]">front &amp; back</span>
+            </span>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-md overflow-hidden border border-slate-100 shadow-sm bg-slate-50">

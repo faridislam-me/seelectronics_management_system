@@ -3,6 +3,8 @@ import { contactDetails } from "@/constants";
 import { AlertCircle, ChevronRight, Headset, Lock, LogIn, Phone, ShieldAlert, ShieldCheck, User, X } from "lucide-react";
 
 type BlockedProps = {
+  /** Optional extra control rendered under "Need Help?" (e.g. a back button). */
+  action?: React.ReactNode;
   name?: string | null;
   staffId?: string | null;
   photoUrl?: string | null;
@@ -40,14 +42,24 @@ function WaveFooter({ spaced }: { spaced?: boolean }) {
  * (A) Blocked view for the staff LOGIN page: red shield, pink identity card,
  * reason card and a big "CALL ADMIN NOW" button.
  */
-export function StaffBlockedLoginView({ name, staffId, photoUrl, reason }: BlockedProps) {
+export function StaffBlockedLoginView({ name, staffId, photoUrl, reason, action }: BlockedProps) {
   const care = contactDetails.customerCare;
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#eef4ff_0%,#f7faff_60%,#e8f1ff_100%)] flex flex-col text-[#16213a]">
-      <div className="w-full max-w-[480px] mx-auto px-3 pt-5 flex flex-col items-center gap-3 text-center">
+    <div className="relative overflow-hidden min-h-screen bg-[linear-gradient(180deg,#eef4ff_0%,#f7faff_60%,#e8f1ff_100%)] flex flex-col text-[#16213a]">
+      {/* light diagonal panels in the background */}
+      <span aria-hidden className="pointer-events-none absolute -left-24 top-24 h-72 w-48 rotate-[28deg] bg-white/60" />
+      <span aria-hidden className="pointer-events-none absolute -right-20 top-40 h-80 w-40 -rotate-[28deg] bg-[#dfeafc]/60" />
+      <header className="relative w-full bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] text-white">
+        <div className="max-w-[480px] mx-auto px-3 h-14 flex items-center">
+          <span className="flex flex-col leading-tight"><span className="text-[17px] font-extrabold">SE Electronics</span><span className="text-[11px] text-white/85 font-medium">Smart Solution &nbsp;Better Life</span></span>
+        </div>
+      </header>
+      <div className="relative w-full max-w-[480px] mx-auto px-3 pt-4 flex flex-col items-center gap-3 text-center">
         {/* Shield */}
-        <div className="relative size-32 flex items-center justify-center">
-          <span className="absolute inset-2 rounded-full bg-[#ffe3e7]" />
+        <div className="relative size-40 flex items-center justify-center">
+          {/* soft pink glow behind the shield */}
+          <span className="absolute -inset-3 rounded-full bg-[radial-gradient(circle,rgba(255,196,205,0.75)_0%,rgba(255,225,230,0.55)_45%,rgba(255,240,242,0)_72%)]" />
+          <span className="absolute inset-4 rounded-full bg-[#ffe3e7] shadow-[0_0_30px_rgba(224,36,63,0.18)]" />
           <span className="absolute left-0 top-1/2 flex flex-col gap-1.5 -translate-y-1/2"><i className="block h-0.5 w-4 bg-[#e0243f] rounded" /><i className="block h-0.5 w-2 bg-[#e0243f] rounded ml-2" /></span>
           <span className="absolute right-0 top-1/2 flex flex-col items-end gap-1.5 -translate-y-1/2"><i className="block h-0.5 w-4 bg-[#e0243f] rounded" /><i className="block h-0.5 w-2 bg-[#e0243f] rounded mr-2" /></span>
           <span className="relative size-24 flex items-center justify-center">
@@ -65,7 +77,7 @@ export function StaffBlockedLoginView({ name, staffId, photoUrl, reason }: Block
           <span className="rounded-full p-1 bg-white border border-[#f1c4cb] shrink-0"><Avatar name={name} photoUrl={photoUrl} className="size-16 rounded-full" /></span>
           <span className="flex flex-col gap-1 min-w-0 flex-1 text-[12px]">
             <span className="text-[#5b6784]">Name<b className="block text-[14px] text-[#16213a] truncate">{name || "N/A"}</b></span>
-            <span className="text-[#5b6784]">ID<b className="block text-[14px] text-[#16213a] truncate">{staffId || "N/A"}</b></span>
+            <span className="text-[#5b6784]">Technician ID<b className="block text-[14px] text-[#16213a] truncate">{staffId || "N/A"}</b></span>
           </span>
           <span className="self-start shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-[#ffe3e7] text-[#c81f38] text-[12px] font-extrabold"><AlertCircle size={14} className="fill-[#e0243f] text-white" />Blocked</span>
         </div>
@@ -91,6 +103,7 @@ export function StaffBlockedLoginView({ name, staffId, photoUrl, reason }: Block
           <ShieldCheck size={26} className="text-[#5b6784] shrink-0" />
           <span className="leading-tight"><span className="block text-[13px] font-bold">Need Help?</span><span className="text-[11px]">Contact Admin for further assistance.</span></span>
         </div>
+        {action}
       </div>
       <WaveFooter />
     </div>
@@ -135,7 +148,7 @@ export function StaffBlockedAppView({ name, staffId }: BlockedProps) {
               <span className="w-px self-stretch bg-[#f1c4cb]" />
               <span className="flex flex-col gap-0.5 min-w-0 text-[13px]">
                 <span className="truncate"><span className="text-[#5b6784]">Name: </span><b>{name || "N/A"}</b></span>
-                <span className="truncate"><span className="text-[#5b6784]">ID: </span><b>{staffId || "N/A"}</b></span>
+                <span className="truncate"><span className="text-[#5b6784]">Technician ID: </span><b>{staffId || "N/A"}</b></span>
               </span>
             </div>
 

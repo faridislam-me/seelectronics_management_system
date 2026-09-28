@@ -10,6 +10,7 @@ import { SellerSelect } from "@/components/features/sellers";
 import { InputField, Modal, Spinner } from "@/components/ui";
 import { paymentTypes, productTypes, warrantyMonths } from "@/constants";
 import { CustomerData, Product } from "@/types";
+import { computeManualDiscount, parseManualDiscount, stripManualDiscount, type ManualDiscountType } from "@/lib/invoiceDiscount";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
@@ -66,7 +67,11 @@ export default function CustomerForm({
       notes?: string | null;
     };
   }>(
-    customerData || {
+    (customerData && {
+      ...customerData,
+      // the manual-discount line is managed by the Discount box, not the notes field
+      invoice: { ...customerData.invoice, notes: stripManualDiscount(customerData.invoice?.notes) },
+    }) || {
       name: "",
       phone: "",
       address: "",
@@ -108,9 +113,19 @@ export default function CustomerForm({
     (mode === "create" && !!vipValidationResult?.success) ||
     (mode === "update" && !!customerData?.referredByVipCard);
 
-  const actualTotal = hasReferral
-    ? Math.floor(totalAmount * 0.96)
-    : totalAmount;
+  // Manual admin discount (% or flat), always on the subtotal; stacks after the referral discount.
+  const initialDiscount = parseManualDiscount(customerData?.invoice?.notes);
+  const [discountType, setDiscountType] = useState<ManualDiscountType>(initialDiscount?.type ?? "percent");
+  const [discountValue, setDiscountValue] = useState<string>(initialDiscount ? String(initialDiscount.value) : "");
+  const discountNum = Number(discountValue) || 0; // sellers can't edit it, but an existing admin discount still applies
+  const discountInvalid =
+    discountNum < 0 || (discountType === "percent" ? discountNum > 100 : discountNum > totalAmount);
+  const manualDiscountAmount = discountInvalid ? 0 : computeManualDiscount(totalAmount, discountType, discountNum);
+
+  const actualTotal = Math.max(
+    0,
+    (hasReferral ? Math.floor(totalAmount * 0.96) : totalAmount) - manualDiscountAmount,
+  );
   const advanceAmount = actualTotal - customerInfo.invoice.dueAmount;
 
   const fetchProducts = async () => {
@@ -177,7 +192,14 @@ export default function CustomerForm({
     }
 
     // 4. Due amount validation
-    const maxTotal = hasReferral ? totalAmount * 0.96 : totalAmount;
+    if (discountInvalid) {
+      return toast.error(
+        discountType === "percent"
+          ? "Discount percent must be between 0 and 100"
+          : "Flat discount cannot exceed the subtotal",
+      );
+    }
+    const maxTotal = actualTotal;
     if (customerInfo.invoice.dueAmount > maxTotal) {
       return toast.error(
         `Due amount cannot exceed the total amount (৳${maxTotal.toLocaleString()})`,
@@ -207,6 +229,7 @@ export default function CustomerForm({
         dueAmount: customerInfo.invoice.dueAmount ?? 0,
         dueType: customerInfo.invoice.dueType ?? "due",
         notes: customerInfo.invoice.notes ?? "",
+        manualDiscount: role === "admin" && discountNum > 0 ? { type: discountType, value: discountNum } : null,
       },
       products: productItems,
     };
@@ -666,6 +689,45 @@ export default function CustomerForm({
                   </p>
                 </div>
               )}
+              {role === "admin" && (
+              <div className="rounded-md border border-[#cfe0fb] bg-[#f5f8fd] p-2 flex flex-col gap-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-medium">Discount:</p>
+                  <div className="flex gap-2 w-64">
+                    <select
+                      className="w-[42%] bg-white border rounded-md outline-none px-2 h-9"
+                      value={discountType}
+                      onChange={(e) => setDiscountType(e.target.value as ManualDiscountType)}
+                      aria-label="Discount type"
+                    >
+                      <option value="percent">%</option>
+                      <option value="flat">৳ Flat</option>
+                    </select>
+                    <input
+                      className="__input w-[58%] h-9"
+                      type="number"
+                      min={0}
+                      max={discountType === "percent" ? 100 : totalAmount}
+                      step="any"
+                      placeholder={discountType === "percent" ? "0 %" : "0 ৳"}
+                      value={discountValue}
+                      onChange={(e) => setDiscountValue(e.target.value)}
+                      aria-label="Discount value"
+                    />
+                  </div>
+                </div>
+                {discountInvalid ? (
+                  <p className="text-xs text-red-600 text-right">
+                    {discountType === "percent" ? "0–100% only" : `Max ৳${totalAmount.toLocaleString()}`}
+                  </p>
+                ) : manualDiscountAmount > 0 ? (
+                  <div className="flex justify-between text-red-600">
+                    <p className="font-medium">Discount{discountType === "percent" ? ` (${discountNum}%)` : ""}:</p>
+                    <p className="font-medium">-{manualDiscountAmount.toLocaleString()} TK</p>
+                  </div>
+                ) : null}
+              </div>
+              )}
               <div className="flex justify-between">
                 <p className=" font-medium">Total:</p>
                 <p className=" font-medium">
@@ -720,6 +782,7 @@ export default function CustomerForm({
             onClick={handleSumbit}
             disabled={
               isSubmitting ||
+              discountInvalid ||
               customerInfo.invoice.dueAmount > actualTotal ||
               !customerInfo.name ||
               !customerInfo.phone ||

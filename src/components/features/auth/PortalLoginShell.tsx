@@ -1,7 +1,7 @@
 "use client";
 
 import { contactDetails } from "@/constants";
-import { Eye, EyeOff, Headset, LogIn, LucideIcon, Phone, ShieldCheck, Users } from "lucide-react";
+import { Eye, EyeOff, Headset, LucideIcon, Phone, ShieldCheck, Users } from "lucide-react";
 import { useState } from "react";
 
 export type PortalRole = "staff" | "customer" | "seller";
@@ -40,8 +40,9 @@ export default function PortalLoginShell({
   return (
     <div className="min-h-screen bg-[#f1f4f9]">
       <div className="relative mx-auto w-full max-w-[480px] min-h-screen flex flex-col" style={bgFor(role)}>
-        <div className="relative z-10 px-3 w-full" style={{ paddingTop: "calc(min(100vw, 480px) * 0.39)", paddingBottom: "calc(min(100vw, 480px) * 0.21 + 8px)" }}>
-          <div className="rounded-[14px] bg-white shadow-[0_14px_40px_rgba(11,61,145,0.16)] border border-[#e6ecf6] px-4 pt-5 pb-4">
+        <div className="relative z-10 px-3 w-full flex-1 flex flex-col" style={{ paddingTop: "calc(min(100vw, 480px) * 0.39)", paddingBottom: "calc(min(100vw, 480px) * 0.12 + 8px)" }}>
+          {/* Card stretches down to just above the bottom wave; help + footer sit at its bottom */}
+          <div className="flex-1 flex flex-col justify-center rounded-[14px] bg-white shadow-[0_14px_40px_rgba(11,61,145,0.16)] border border-[#e6ecf6] px-4 py-6">
             <div className="flex items-center justify-center gap-3">
               <Users size={40} className="text-[#1f5fc9] shrink-0" fill="#1f5fc9" strokeWidth={1.6} />
               <span className="flex flex-col leading-tight">
@@ -50,9 +51,9 @@ export default function PortalLoginShell({
               </span>
             </div>
 
-            <div className="mt-4">{children}</div>
+            <div className="mt-6">{children}</div>
 
-            <div className="mt-4 pt-3 border-t border-[#eef1f6] flex items-center justify-center gap-3">
+            <div className="mt-6 pt-4 border-t border-[#eef1f6] flex items-center justify-center gap-3">
               <Headset size={30} className="text-[#1f5fc9]" />
               <span className="flex flex-col leading-tight">
                 <span className="text-[13px] font-bold text-[#16213a]">Need Help?</span>
@@ -104,7 +105,7 @@ export function PortalInput({
   const v = value ?? inner;
   const isPassword = type === "password";
   return (
-    <label className="relative flex items-stretch h-[54px] rounded-[10px] border border-[#cfdcef] bg-[#f5f8fd] focus-within:border-[#1f7cf0] focus-within:ring-1 focus-within:ring-[#1f7cf0] overflow-hidden">
+    <label className="relative mb-3 flex items-stretch h-[54px] rounded-[10px] border border-[#cfdcef] bg-[#f5f8fd] focus-within:border-[#1f7cf0] focus-within:ring-1 focus-within:ring-[#1f7cf0] overflow-hidden">
       <span className="w-12 shrink-0 flex items-center justify-center text-[#0b2a66] border-r border-[#cfdcef]"><Icon size={20} fill={iconFill ? "currentColor" : "none"} /></span>
       <span className="relative flex-1 min-w-0">
         {!v && (
@@ -137,13 +138,9 @@ export function PortalSubmit({ pending, pendingText = "LOGGING IN..." }: { pendi
     <button
       type="submit"
       disabled={pending}
-      className="mt-1 h-[56px] w-full rounded-[12px] bg-[linear-gradient(100deg,#1f7cf0_0%,#0b4fc2_60%,#0b3d91_100%)] text-white shadow-[0_10px_24px_rgba(31,124,240,0.35)] flex items-center justify-center gap-4 disabled:opacity-60 active:scale-[0.98] transition-all"
+      className="mt-1 h-[46px] w-full rounded-[12px] bg-[linear-gradient(100deg,#1f7cf0_0%,#0b4fc2_60%,#0b3d91_100%)] text-white shadow-[0_10px_24px_rgba(31,124,240,0.35)] flex items-center justify-center gap-4 disabled:opacity-60 active:scale-[0.98] transition-all"
     >
-      <LogIn size={26} />
-      <span className="flex flex-col items-start leading-tight">
-        <span className="text-[16px] font-extrabold tracking-[0.12em]">{pending ? pendingText : "LOGIN"}</span>
-        <span className="text-[13px] font-semibold text-white/90">লগইন করুন</span>
-      </span>
+      <span className="text-[16px] font-extrabold tracking-[0.14em]">{pending ? pendingText : "LOGIN"}</span>
     </button>
   );
 }

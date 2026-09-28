@@ -6,14 +6,52 @@ export const blueBg = "bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5f
 /** Shared corner radii (kept small on purpose, per client feedback). */
 export const R = { card: "rounded-md", hero: "rounded-b-[16px]", btn: "rounded-md", chip: "rounded", tile: "rounded-md" };
 
-const chipColors = { navy: "bg-[#0a2f70]", green: "bg-[#1a9c4b]", blue: "bg-[#1f7cf0]", red: "bg-[#e0243f]", amber: "bg-[#e0a11b]" };
+const chipColors = { glass: "bg-white/20 border border-white/25", navy: "bg-[#0a2f70]", green: "bg-[#1a9c4b]", blue: "bg-[#1f7cf0]", red: "bg-[#e0243f]", amber: "bg-[#e0a11b]" };
 export type ChipColor = keyof typeof chipColors;
 
-export function BlueHero({ avatar, initials, name, idLabel, id, chips, tagline = <>Together for a<br />Better Tomorrow</>, verified = false }: {
+export function BlueHero({ avatar, initials, name, idLabel, id, chips, tagline = <>Together for a<br />Better Tomorrow</>, verified = false, variant = "default" }: {
   avatar?: string | null; initials?: string; name: string; idLabel: string; id: string;
   chips: { label: string; color: ChipColor; icon?: LucideIcon; dot?: boolean }[]; tagline?: React.ReactNode; verified?: boolean;
+  /** "profile" = large photo with verified badge, pill chips and script tagline with swoosh (staff profile mockup). */
+  variant?: "default" | "profile";
 }) {
   const fallback = (initials || name).trim().slice(0, 2).toUpperCase();
+  if (variant === "profile") {
+    return (
+      <section className={clsx(blueBg, "text-white px-3 pt-2 pb-9 relative overflow-hidden rounded-b-[28px]")}>
+        <span className="absolute -right-12 -top-20 size-72 rounded-full bg-white/10" />
+        <span className="absolute -left-16 bottom-[-70px] size-56 rounded-full bg-[#1f7cf0]/25" />
+        <div className="relative flex justify-end">
+          <span className="relative font-script text-[clamp(14px,4vw,19px)] leading-[1.05] text-right text-white/95 rotate-[-7deg] pr-1 pb-3">
+            {tagline}
+            <svg className="absolute right-0 -bottom-1 w-[88%] h-3 text-[#4c9bff]" viewBox="0 0 120 12" fill="none" aria-hidden="true"><path d="M2 10C40 3 80 1 118 2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
+          </span>
+        </div>
+        <div className="relative flex items-center gap-3 mt-1">
+          <div className="relative shrink-0">
+            {avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatar} alt="" className="size-[clamp(88px,26vw,112px)] rounded-full object-cover object-top border-[4px] border-white shadow-[0_0_0_4px_rgba(127,180,255,0.55)] bg-[#1f7cf0]" />
+            ) : (
+              <span className="size-[clamp(88px,26vw,112px)] rounded-full bg-[#1f7cf0] border-[4px] border-white shadow-[0_0_0_4px_rgba(127,180,255,0.55)] flex items-center justify-center text-3xl font-extrabold">{fallback}</span>
+            )}
+            {verified && <span className="absolute bottom-1 right-0 size-8 rounded-full bg-[#1f7cf0] border-[3px] border-white text-white flex items-center justify-center"><BadgeCheck size={16} strokeWidth={2.6} /></span>}
+          </div>
+          <div className="flex flex-col gap-1 min-w-0 flex-1">
+            <span className="text-[clamp(18px,5.6vw,26px)] font-extrabold leading-tight break-words">{name}</span>
+            <span className="text-[clamp(12.5px,3.6vw,15px)] text-white/90">{idLabel}: <span className="font-bold text-white">{id}</span></span>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {chips.map((c) => (
+                <span key={c.label} className={clsx("inline-flex items-center gap-1 px-2 h-6 rounded-full text-[clamp(9px,2.6vw,10.5px)] font-extrabold tracking-wide whitespace-nowrap", chipColors[c.color])}>
+                  {c.dot ? <span className="size-2 rounded-full bg-white" /> : c.icon ? <c.icon size={12} strokeWidth={2.8} /> : null}{c.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className={clsx(blueBg, R.hero, "text-white px-4 pt-3 pb-8 relative overflow-hidden")}>
       <span className="absolute -right-10 -top-16 size-64 rounded-full bg-white/10" />
@@ -47,9 +85,29 @@ export function BlueHero({ avatar, initials, name, idLabel, id, chips, tagline =
   );
 }
 
-export function BlueBalanceCard({ label, value, icon: Icon, button, buttonHref, chevronHref, buttonIcon: ButtonIcon, compact = false }: {
+export function BlueBalanceCard({ label, value, icon: Icon, button, buttonHref, chevronHref, buttonIcon: ButtonIcon, compact = false, layout = "default" }: {
   label: string; value: string; icon: LucideIcon; button: string; buttonHref: string; chevronHref: string; buttonIcon?: LucideIcon; compact?: boolean;
+  /** "row" = big amount with the button on the right of the same row (staff profile mockup). */
+  layout?: "default" | "row";
 }) {
+  if (layout === "row") {
+    return (
+      <div className="rounded-[14px] p-3 pr-2 bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2f70_0%,#0d3f96_60%,#0a2f70_100%)] text-white flex items-center gap-3 shadow-[0_10px_30px_rgba(10,47,112,0.35)] relative overflow-hidden">
+        <span className="absolute -right-6 -bottom-12 size-44 rounded-full border-[16px] border-white/5" />
+        <span className="relative size-[clamp(52px,15vw,68px)] rounded-full bg-white/15 border border-white/20 flex items-center justify-center shrink-0"><Icon size={30} strokeWidth={2} /></span>
+        <div className="relative flex flex-col min-w-0 flex-1 gap-1 pr-5">
+          <span className="font-semibold tracking-[1px] text-white/90 text-[clamp(11px,3.1vw,13.5px)]">{label}</span>
+          <div className="flex items-center justify-between gap-2 min-w-0">
+            <span className="font-extrabold leading-none truncate text-[clamp(22px,7.2vw,32px)]">{value}</span>
+            <Link href={buttonHref} className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border-[1.5px] border-[#4c9bff] bg-[#0d3f96]/60 text-[clamp(11px,3.2vw,13px)] font-bold shrink-0 whitespace-nowrap">
+              {ButtonIcon && <ButtonIcon size={14} strokeWidth={2.2} />}{button}
+            </Link>
+          </div>
+        </div>
+        <Link href={chevronHref} aria-label="More" className="absolute right-2 top-2.5 text-white/90"><ChevronRight size={18} strokeWidth={2.5} /></Link>
+      </div>
+    );
+  }
   return (
     <div className={clsx(compact ? "rounded-md p-2.5 gap-2.5" : clsx(R.card, "p-3.5 sm:p-4 gap-3 sm:gap-4"), "bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2f70_0%,#0d3f96_60%,#0a2f70_100%)] text-white flex items-center shadow-[0_10px_30px_rgba(10,47,112,0.35)] relative overflow-hidden")}>
       <span className="absolute -right-6 -bottom-10 size-40 rounded-full border-[14px] border-white/5" />
@@ -87,10 +145,31 @@ const softTiles = {
   teal: "bg-[#cdeff1] text-[#1aa5b0]",
 };
 
-export function BlueStatGrid({ cards, compact = false, cols = 3, iconStyle = "solid" }: {
+export function BlueStatGrid({ cards, compact = false, cols = 3, iconStyle = "solid", layout = "default" }: {
   cards: { value: string | number; label: string; icon: LucideIcon; tone: StatTone; href: string }[];
   compact?: boolean; cols?: 2 | 3 | 4; iconStyle?: "solid" | "soft";
+  /** "horizontal" = round icon left of the number, label under the number (staff profile mockup). */
+  layout?: "default" | "horizontal";
 }) {
+  if (layout === "horizontal") {
+    return (
+      <div className="grid grid-cols-3 gap-2">
+        {cards.map((c) => {
+          const t = tones[c.tone];
+          return (
+            <Link key={c.label} href={c.href} className={clsx("rounded-[12px] border p-2 pr-4 relative min-h-[76px] flex flex-col justify-center gap-1", t.bg, t.border)}>
+              <span className="absolute right-1.5 top-2 text-[#9aa4b8]"><ChevronRight size={14} strokeWidth={2.5} /></span>
+              <span className="flex items-center gap-1.5 min-w-0">
+                <span className={clsx("size-[clamp(26px,8vw,34px)] rounded-full text-white flex items-center justify-center shrink-0 ring-4 ring-white/70", t.iconBg)}><c.icon size={16} strokeWidth={2.4} /></span>
+                <span className="text-[clamp(16px,5vw,22px)] font-extrabold text-[#16213a] leading-none truncate">{c.value}</span>
+              </span>
+              <span className={clsx("text-[clamp(10px,3vw,12.5px)] font-bold leading-tight pl-0.5", t.text)}>{c.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    );
+  }
   if (compact) {
     return (
       <div className={clsx("grid gap-2", cols === 2 ? "grid-cols-2" : cols === 4 ? "grid-cols-4" : "grid-cols-3")}>
@@ -132,15 +211,15 @@ export function BlueStatGrid({ cards, compact = false, cols = 3, iconStyle = "so
   );
 }
 
-export function BlueContactCard({ title = "Contact Details", editHref, rows, compact = false }: { title?: string; editHref: string; rows: { label: string; value: React.ReactNode; icon: LucideIcon; href?: string }[]; compact?: boolean }) {
+export function BlueContactCard({ title = "Contact Details", editHref, rows, compact = false, icon: TitleIcon = User, hideEdit = false }: { title?: string; editHref: string; rows: { label: string; value: React.ReactNode; icon: LucideIcon; href?: string }[]; compact?: boolean; icon?: LucideIcon; hideEdit?: boolean }) {
   return (
     <div className={clsx(compact ? "rounded-md p-3 gap-1" : clsx(R.card, "p-3.5 sm:p-4 gap-2"), "bg-white shadow-[0_4px_18px_rgba(11,61,145,0.06)] flex flex-col")}>
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2.5 min-w-0">
-          <span className={clsx("rounded-full bg-[#1f7cf0] text-white flex items-center justify-center shrink-0", compact ? "size-7" : "size-9")}><User size={compact ? 15 : 18} strokeWidth={2.2} /></span>
+          <span className={clsx("rounded-full bg-[#1f7cf0] text-white flex items-center justify-center shrink-0", compact ? "size-7" : "size-9")}><TitleIcon size={compact ? 15 : 18} strokeWidth={2.2} /></span>
           <span className={clsx("font-extrabold text-[#16213a] truncate", compact ? "text-[15px]" : "text-[clamp(16px,4.6vw,20px)]")}>{title}</span>
         </span>
-        <Link href={editHref} className={clsx("inline-flex items-center gap-1.5 border-2 border-[#bcd4fb] text-[#1f7cf0] font-bold shrink-0", compact ? "rounded-md px-2.5 h-7 text-xs" : clsx(R.btn, "px-3 h-9 text-sm"))}><Pencil size={compact ? 13 : 15} strokeWidth={2.2} />Edit</Link>
+        {!hideEdit && <Link href={editHref} className={clsx("inline-flex items-center gap-1.5 border-2 border-[#bcd4fb] text-[#1f7cf0] font-bold shrink-0", compact ? "rounded-md px-2.5 h-7 text-xs" : clsx(R.btn, "px-3 h-9 text-sm"))}><Pencil size={compact ? 13 : 15} strokeWidth={2.2} />Edit</Link>}
       </div>
       {rows.map((row) => (
         <Link key={row.label} href={row.href ?? editHref} className={clsx("flex items-center gap-3 border-t border-[#eef1f6] first:border-0", compact ? "py-1.5" : "py-2.5")}>

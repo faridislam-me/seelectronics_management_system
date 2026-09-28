@@ -14,6 +14,7 @@ const adminProtectedRoutes = [
     '/applications',
     '/referral-payments',
     '/sellers',
+    '/suppliers',
 ];
 
 const sellerProtectedRoutes = [
@@ -23,6 +24,10 @@ const sellerProtectedRoutes = [
     '/seller/services',
     '/seller/details',
     '/seller/settings',
+];
+
+const supplierProtectedRoutes = [
+    '/supplier/profile',
 ];
 
 const staffProtectedRoutes = [
@@ -81,6 +86,9 @@ export async function middleware(request: NextRequest) {
         if (session?.role === 'seller') {
             return NextResponse.redirect(new URL('/seller/profile', request.nextUrl));
         }
+        if (session?.role === 'supplier') {
+            return NextResponse.redirect(new URL('/supplier/profile', request.nextUrl));
+        }
         // Otherwise redirect to login
         return NextResponse.redirect(new URL('/login', request.nextUrl));
     }
@@ -103,14 +111,22 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/seller/login', request.nextUrl));
     }
 
+    // Check if trying to access supplier routes without supplier session
+    const isSupplierRoute = supplierProtectedRoutes.some(route => path === route || path.startsWith(route + '/'));
+    if (isSupplierRoute && (!session?.userId || session.role !== 'supplier')) {
+        return NextResponse.redirect(new URL('/supplier/login', request.nextUrl));
+    }
+
     // Redirect logged-in users away from login pages
-    if ((path === '/login' || path === '/staff/login' || path === '/customer/login' || path === '/seller/login') && session?.userId) {
+    if ((path === '/login' || path === '/staff/login' || path === '/customer/login' || path === '/seller/login' || path === '/supplier/login') && session?.userId) {
         if (session.role === 'staff') {
             return NextResponse.redirect(new URL('/staff/profile', request.nextUrl));
         } else if (session.role === 'customer') {
             return NextResponse.redirect(new URL('/customer/profile', request.nextUrl));
         } else if (session.role === 'seller') {
             return NextResponse.redirect(new URL('/seller/profile', request.nextUrl));
+        } else if (session.role === 'supplier') {
+            return NextResponse.redirect(new URL('/supplier/profile', request.nextUrl));
         } else {
             return NextResponse.redirect(new URL('/', request.nextUrl));
         }

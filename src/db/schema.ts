@@ -1153,3 +1153,68 @@ export const sellerPurchasesRelations = relations(
     }),
   }),
 );
+
+// ============================================
+// SUPPLIERS (goods bought from suppliers, payments made, dues)
+// ============================================
+
+export const suppliers = pgTable(
+  "suppliers",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    supplierId: varchar({ length: 255 }).unique().notNull(),
+    name: varchar({ length: 255 }).notNull(),
+    shopName: varchar({ length: 255 }).notNull(),
+    phone: varchar({ length: 255 }).unique().notNull(),
+    address: text(),
+    origin: varchar({ length: 100 }),
+    username: varchar({ length: 255 }).unique().notNull(),
+    password: text().notNull(),
+    isActive: boolean().default(true).notNull(),
+    note: text(),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp({ withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("supplier_id_idx").on(table.supplierId),
+    index("supplier_phone_idx").on(table.phone),
+  ],
+);
+
+export const supplierTransactions = pgTable(
+  "supplierTransactions",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    transactionId: varchar({ length: 255 }).unique().notNull(),
+    supplierId: varchar({ length: 255 })
+      .references(() => suppliers.supplierId, { onDelete: "cascade" })
+      .notNull(),
+    /** 'purchase' = goods received from the supplier, 'payment' = money paid to them */
+    type: varchar({ length: 20 }).$type<"purchase" | "payment">().notNull(),
+    amount: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
+    description: text(),
+    date: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("supplier_tx_supplier_id_idx").on(table.supplierId),
+    index("supplier_tx_date_idx").on(table.date),
+  ],
+);
+
+export const suppliersRelations = relations(suppliers, ({ many }) => ({
+  transactions: many(supplierTransactions),
+}));
+
+export const supplierTransactionsRelations = relations(
+  supplierTransactions,
+  ({ one }) => ({
+    supplier: one(suppliers, {
+      fields: [supplierTransactions.supplierId],
+      references: [suppliers.supplierId],
+    }),
+  }),
+);

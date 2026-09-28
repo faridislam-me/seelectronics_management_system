@@ -24,6 +24,7 @@ import {
   Users,
   Wrench,
   Zap,
+  Truck,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -108,6 +109,12 @@ const links = [
     href: "/sellers",
     icon: Store,
     sectionTitle: "Sellers / Dealers",
+  },
+  {
+    name: "Suppliers",
+    href: "/suppliers",
+    icon: Truck,
+    sectionTitle: "Suppliers",
   },
   {
     name: "VIP Cards",
@@ -338,6 +345,7 @@ export default function DashboardLayout({
                 <span className="font-bold text-2xl">
                   {links.find((link) => link.href === pathname)?.sectionTitle ||
                     links.find((link) => link.href === pathname)?.name ||
+                    (pathname.startsWith("/suppliers/") ? "Supplier Ledger" : null) ||
                     "Dashboard Overview"}
                 </span>
               </div>

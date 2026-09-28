@@ -9,9 +9,13 @@ import img3 from "../../assets/images/banner3.jpg";
 
 interface BannerProps {
   slides?: { img: string | any; url?: string }[];
+  /** Tailwind aspect classes for each slide (default keeps the original height). */
+  aspectClass?: string;
+  /** "fill" stretches (original); "cover" crops to keep proportions when the box is shorter. */
+  fit?: "fill" | "cover";
 }
 
-const Banner = ({ slides: propSlides }: BannerProps) => {
+const Banner = ({ slides: propSlides, aspectClass = "aspect-[16/6] sm:aspect-[16/5] md:aspect-[16/4]", fit = "fill" }: BannerProps) => {
   const defaultSlides = [
     { img: img1 },
     { img: img2 },
@@ -40,14 +44,14 @@ const Banner = ({ slides: propSlides }: BannerProps) => {
         stopOnHover
       >
         {slides.map((slide, index) => (
-          <div key={index} className="relative w-full aspect-[16/6] sm:aspect-[16/5] md:aspect-[16/4]">
+          <div key={index} className={`relative w-full ${aspectClass}`}>
             <Image
               src={slide.img}
               alt={`Slide ${index + 1}`}
               fill
               priority={index === 0}
               sizes="100vw"
-              className="object-fill rounded-md"
+              className={`${fit === "cover" ? "object-cover" : "object-fill"} rounded-md`}
               unoptimized={typeof slide.img === 'string'}
             />
           </div>

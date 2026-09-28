@@ -76,7 +76,7 @@ export default function StaffDashboardClient({
       <div className="flex flex-col gap-2.5 px-2 text-gray-800 pb-2 bg-[#eef3fb] pt-2">
         {/* Banner (admin slides, falls back to default slides) */}
         <div className="w-full overflow-hidden shadow-sm rounded-md">
-          <Banner slides={banners && banners.length > 0 ? banners : undefined} aspectClass="aspect-[16/5.3] sm:aspect-[16/4.6] md:aspect-[16/3.8]" fit="cover" />
+          <Banner slides={banners && banners.length > 0 ? banners : undefined} />
         </div>
 
         {showMarquee && (

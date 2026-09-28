@@ -130,7 +130,7 @@ export default async function StaffPaymentRequestPage() {
           </div>
         )}
 
-        {canRequest && <StaffPaymentRequestForm staffId={userId} />}
+        {canRequest && <StaffPaymentRequestForm staffId={userId} balance={balance} name={staffData?.name} />}
       </div>
     </StaffLayout>
   );

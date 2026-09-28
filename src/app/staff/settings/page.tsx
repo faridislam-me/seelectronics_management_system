@@ -23,7 +23,7 @@ export default async function StaffSettingsPage() {
 
   return (
     <StaffLayout balance={stats?.availableBalance || 0}>
-      <div className="p-4 sm:p-6 lg:p-8 space-y-10">
+      <div className="px-2 pt-2 pb-2">
         <SMSSettingsForm
           initialData={{
             smsNotificationEnabled: staffData.smsNotificationEnabled,

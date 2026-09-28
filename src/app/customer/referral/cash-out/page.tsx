@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "react-toastify";
+import LowBalancePopup from "@/components/ui/LowBalancePopup";
 import { requestReferralPayment } from "@/actions";
 import { methodLogos, methodThemes } from "@/components/features/payments/paymentThemes";
 import clsx from "clsx";
@@ -28,10 +29,12 @@ export default function CashOutPage() {
   const [walletNumber, setWalletNumber] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [lastTxId, setLastTxId] = useState("");
+  const [lowBalance, setLowBalance] = useState(false);
 
   const handleRequest = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!amount || Number(amount) <= 0) return toast.error("সঠিক পরিমাণ দিন");
+    if (Number(data.balance || 0) <= 0 || Number(amount) > Number(data.balance || 0)) return setLowBalance(true);
     if (!walletNumber) return toast.error("ওয়ালেট নম্বর দিন");
 
     startTransition(async () => {
@@ -60,6 +63,7 @@ export default function CashOutPage() {
 
   return (
     <>
+      {lowBalance && <LowBalancePopup name={data?.name} balance={Number(data?.balance || 0)} onClose={() => setLowBalance(false)} />}
       {/* Title */}
       <section className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
         <Link href="/customer/referral" aria-label="Back" className="size-9 rounded-md bg-[#eef3fb] text-[#0b3d91] flex items-center justify-center shrink-0"><ArrowLeft size={18} /></Link>
@@ -133,7 +137,7 @@ export default function CashOutPage() {
       </section>
 
       {/* Request Payment */}
-      <button onClick={() => handleRequest()} disabled={isPending || !amount || Number(amount) > data.balance}
+      <button onClick={() => handleRequest()} disabled={isPending || !amount}
         className="w-full h-11 rounded-md bg-[linear-gradient(90deg,#0b3d91,#1f7cf0)] text-white text-[15px] font-extrabold inline-flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(31,124,240,0.3)] transition-all active:scale-[0.98] disabled:opacity-50 disabled:shadow-none">
         <span>{isPending ? "Sending..." : "Request Payment"}</span>
         {!isPending && <ArrowRight size={17} />}

@@ -1347,7 +1347,9 @@ export const getStaffCertificateToken = async (staffId: string, phone?: string |
       digits.length === 10
         ? or(
             sql`payload->>'staffId' = ${staffId}`,
-            sql`right(regexp_replace(coalesce(payload->>'phone', ''), '\\D', '', 'g'), 10) = ${digits}`,
+            // Phone fallback only for certificates issued without a staff ID;
+            // several staff can share a phone, so never match another staff's certificate.
+            sql`coalesce(payload->>'staffId', '') = '' and right(regexp_replace(coalesce(payload->>'phone', ''), '\\D', '', 'g'), 10) = ${digits}`,
           )
         : sql`payload->>'staffId' = ${staffId}`;
     const tokens = await db

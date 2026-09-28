@@ -28,13 +28,14 @@ export function BlueHero({ avatar, initials, name, idLabel, id, chips, tagline =
           <path d="M0 10 C 70 34, 170 46, 270 40 C 330 36, 372 24, 400 6 L400 46 L0 46 Z" fill="#eef3fb" />
           <path d="M0 10 C 70 34, 170 46, 270 40 C 330 36, 372 24, 400 6" fill="none" stroke="#7fb4ff" strokeOpacity="0.55" strokeWidth="1.5" />
         </svg>
-        <div className="relative flex justify-end">
-          <span className="relative font-script text-[clamp(14px,4vw,19px)] leading-[1.05] text-right text-white/95 rotate-[-7deg] pr-1 pb-3">
+        {/* tagline floats top-right so it takes no vertical space */}
+        <div className="absolute right-3 top-1 z-10">
+          <span className="relative block font-script text-[clamp(13px,3.6vw,17px)] leading-[1.05] text-right text-white/95 rotate-[-7deg] pr-1 pb-2">
             {tagline}
             <svg className="absolute right-0 -bottom-1 w-[88%] h-3 text-[#4c9bff]" viewBox="0 0 120 12" fill="none" aria-hidden="true"><path d="M2 10C40 3 80 1 118 2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
           </span>
         </div>
-        <div className="relative flex items-center gap-3 mt-1">
+        <div className="relative flex items-center gap-3 pt-7">
           <div className="relative shrink-0">
             {avatar ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -246,18 +247,18 @@ export function BlueContactCard({ title = "Contact Details", editHref, rows, com
 
 export function BlueFooterBand({ quote = <>সততা ও দক্ষতাই<br />আমাদের শক্তি</> }: { quote?: React.ReactNode }) {
   return (
-    <div className="relative mt-1 h-[104px] overflow-hidden">
+    <div className="relative mt-1 h-[68px] overflow-hidden">
       {/* soft light wash behind the quote */}
       <div className="absolute inset-0 bg-[linear-gradient(90deg,#f3f7ff_0%,#e6eefc_60%,#dbe7fb_100%)]" />
       {/* blue panel */}
-      <div className="absolute inset-y-0 right-0 w-[60%] bg-[#0b3d91] bg-[radial-gradient(120%_120%_at_100%_0%,#2f7ff0_0%,#0b3d91_45%,#072a66_100%)] rounded-tl-[36px] shadow-[-8px_0_24px_rgba(11,61,145,0.18)] flex items-center pl-7 pr-3">
+      <div className="absolute inset-y-0 right-0 w-[60%] bg-[#0b3d91] bg-[radial-gradient(120%_120%_at_100%_0%,#2f7ff0_0%,#0b3d91_45%,#072a66_100%)] rounded-tl-[26px] shadow-[-8px_0_24px_rgba(11,61,145,0.18)] flex items-center pl-7 pr-3">
         <span className="absolute -right-6 -top-10 size-28 rounded-full bg-white/10" />
         <span className="absolute right-6 bottom-2 size-10 rounded-full bg-white/5" />
         <span className="relative pl-3 border-l-2 border-white/40 flex items-center gap-2.5">
           <span className="flex flex-col leading-tight"><span className="text-[14px] font-extrabold text-white">SE Electronics</span><span className="text-[9.5px] text-white/85 font-medium">Smart Solution &nbsp;Better Life</span></span>
         </span>
         {/* leaf accent */}
-        <svg className="absolute right-1 bottom-0 w-9 h-12 text-[#2ecc71] opacity-90" viewBox="0 0 40 52" fill="none" aria-hidden="true">
+        <svg className="absolute right-1 bottom-0 w-7 h-9 text-[#2ecc71] opacity-90" viewBox="0 0 40 52" fill="none" aria-hidden="true">
           <path d="M20 50C20 30 26 14 38 2c2 14-2 34-18 48Z" fill="currentColor" />
           <path d="M20 50C12 38 6 30 2 20c12 4 18 14 18 30Z" fill="#1a9c4b" />
           <path d="M20 50c1-14 6-26 16-42" stroke="#0f6f33" strokeWidth="1.2" strokeLinecap="round" />

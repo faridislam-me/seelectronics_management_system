@@ -4,6 +4,7 @@ import { ApplicationMessages, ServiceMessages } from "@/constants/messages";
 import { db } from "@/db/drizzle";
 import {
   applications,
+  customers,
   invoices,
   products,
   serviceStatusHistory,
@@ -628,6 +629,11 @@ export const appointStaff = async (
       where: eq(services.serviceId, validatedData.serviceId),
       columns: {
         staffId: true,
+        status: true,
+        type: true,
+        reportedIssue: true,
+        customerId: true,
+        customerName: true,
       },
     });
 
@@ -758,6 +764,26 @@ export const appointStaff = async (
 
     } else {
       promises.push(sendSMS(validatedData.staffPhone, staffMessage));
+    }
+
+    // Seller-requested job approved for the first time → short SMS to the seller.
+    if (existingService?.status === "pending" && existingService.reportedIssue?.includes("সেলার রিকোয়েস্ট") && existingService.customerId) {
+      promises.push(
+        (async () => {
+          const owner = await db.query.customers.findFirst({
+            where: eq(customers.customerId, existingService.customerId!),
+            columns: { sellerId: true, name: true },
+            with: { seller: { columns: { phone: true } } },
+          });
+          const sellerPhone = owner?.seller?.phone;
+          if (!sellerPhone) return;
+          const kindBn = existingService.type === "install" ? "ইন্সটল" : "সার্ভিস";
+          await sendSMS(
+            sellerPhone,
+            `SE Electronics: আপনার ${owner?.name || existingService.customerName} এর ${kindBn} আবেদন অনুমোদিত হয়েছে। সার্ভিস আইডি ${validatedData.serviceId}।`,
+          );
+        })().catch((e) => console.error("seller approval SMS failed:", e)),
+      );
     }
 
     await Promise.all(promises);

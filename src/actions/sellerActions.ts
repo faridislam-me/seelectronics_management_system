@@ -6,6 +6,7 @@ import { db } from "@/db/drizzle";
 import {
   applications,
   customers,
+  products,
   sellerPurchases,
   sellers,
   services,
@@ -644,7 +645,7 @@ export async function getSellerPortalData(sellerId: string) {
           columns: { customerId: true, name: true, phone: true, address: true, invoiceNumber: true, isWarrantyStopped: true, createdAt: true, referredByVipCard: true, sellerId: true },
           with: {
             invoice: { columns: { id: true, total: true, subtotal: true, dueAmount: true, dueType: true, notes: true, paymentType: true, date: true }, with: { products: { columns: { type: true, model: true, quantity: true, warrantyStartDate: true, warrantyDurationMonths: true } } } },
-            services: { columns: { serviceId: true, status: true, type: true, productType: true, productModel: true, staffName: true, createdAt: true }, orderBy: (s, { desc }) => [desc(s.createdAt)] },
+            services: { columns: { serviceId: true, status: true, type: true, productType: true, productModel: true, staffName: true, staffPhone: true, reportedIssue: true, createdAt: true }, orderBy: (s, { desc }) => [desc(s.createdAt)], with: { statusHistory: { columns: { status: true, createdAt: true }, orderBy: (h, { asc }) => [asc(h.createdAt)] } } },
           },
           orderBy: (c, { desc }) => [desc(c.createdAt)],
         },
@@ -704,7 +705,11 @@ export const sellerRequestService = async (input: {
   productType: string;
   productModel: string;
   reportedIssue?: string;
+  /** "install" = installation request, default repair */
+  type?: "install" | "repair";
 }) => {
+  const kind: "install" | "repair" = input.type === "install" ? "install" : "repair";
+  const kindBn = kind === "install" ? "ইন্সটল" : "সার্ভিস";
   try {
     const session = await verifySession(false, "seller");
     if (!session) return { success: false, message: "Unauthorized" };
@@ -731,15 +736,16 @@ export const sellerRequestService = async (input: {
       where: and(
         eq(services.customerId, customer.customerId),
         eq(services.productModel, productModel),
+        eq(services.type, kind),
         inArray(services.status, [...openStatuses]),
       ),
       columns: { serviceId: true },
     });
-    if (existing) return { success: false, message: `এই পণ্যের একটি সার্ভিস (${existing.serviceId}) ইতিমধ্যে চলমান আছে` };
+    if (existing) return { success: false, message: `এই পণ্যের একটি ${kindBn} (${existing.serviceId}) ইতিমধ্যে চলমান আছে` };
 
     const serviceId = generateRandomId();
     const issue = (input.reportedIssue || "").trim();
-    const reportedIssue = `${issue ? issue + "\n" : ""}[সেলার রিকোয়েস্ট: ${seller.shopName} (${seller.sellerId}), মালিক ${seller.ownerName}, ${seller.phone}]`;
+    const reportedIssue = `${issue ? issue + "\n" : ""}[সেলার রিকোয়েস্ট (${kindBn}): ${seller.shopName} (${seller.sellerId}), মালিক ${seller.ownerName}, ${seller.phone}]`;
 
     await db.insert(services).values({
       serviceId,
@@ -747,7 +753,7 @@ export const sellerRequestService = async (input: {
       customerName: customer.name,
       customerPhone: customer.phone,
       customerAddress: customer.address,
-      type: "repair",
+      type: kind,
       productType,
       productModel,
       reportedIssue,
@@ -762,8 +768,8 @@ export const sellerRequestService = async (input: {
       const { notifyAdmin } = await import("./notificationActions");
       await notifyAdmin({
         type: "seller_service_request",
-        message: `সেলার ${seller.shopName} (${seller.sellerId}) কাস্টমার ${customer.name} (${customer.customerId}) এর জন্য সার্ভিস রিকোয়েস্ট করেছে। Service ID: ${serviceId}`,
-        link: `/services/repairs?query=${serviceId}`,
+        message: `সেলার ${seller.shopName} (${seller.sellerId}) কাস্টমার ${customer.name} (${customer.customerId}) এর জন্য ${kindBn} রিকোয়েস্ট করেছে। Service ID: ${serviceId}`,
+        link: kind === "install" ? `/installations?query=${serviceId}` : `/services/repairs?query=${serviceId}`,
       });
     } catch (e) {
       console.error("notifyAdmin failed:", e);
@@ -771,17 +777,70 @@ export const sellerRequestService = async (input: {
     if (process.env.ADMIN_PHONE_NUMBER) {
       sendSMS(
         process.env.ADMIN_PHONE_NUMBER,
-        `সেলার ${seller.shopName} কাস্টমার ${customer.name} (${customer.phone}) এর ${productType.toUpperCase()} ${productModel} এর জন্য সার্ভিস রিকোয়েস্ট করেছে। Service ID: ${serviceId}`,
+        `সেলার ${seller.shopName} কাস্টমার ${customer.name} (${customer.phone}) এর ${productType.toUpperCase()} ${productModel} এর জন্য ${kindBn} রিকোয়েস্ট করেছে। Service ID: ${serviceId}`,
       ).catch((e) => console.error("admin SMS failed:", e));
     }
 
     revalidatePath("/services/repairs");
+    revalidatePath("/installations");
     revalidatePath("/seller/customers");
     revalidatePath("/seller/services");
+    revalidatePath("/seller/installs");
     revalidatePath("/seller/profile");
-    return { success: true, message: `সার্ভিস রিকোয়েস্ট পাঠানো হয়েছে (ID: ${serviceId})`, data: { serviceId } };
+    return { success: true, message: `${kindBn} রিকোয়েস্ট পাঠানো হয়েছে (ID: ${serviceId})`, data: { serviceId } };
   } catch (error) {
     console.error("sellerRequestService error:", error);
-    return { success: false, message: "সার্ভিস রিকোয়েস্ট পাঠানো যায়নি" };
+    return { success: false, message: "রিকোয়েস্ট পাঠানো যায়নি" };
+  }
+};
+
+// ============================================
+// SELLER → BLOCK / UNBLOCK OWN CUSTOMER
+// ============================================
+
+/**
+ * Seller-scoped version of the admin "disable dashboard" toggle
+ * (customers.isWarrantyStopped). Only works on the seller's own customers.
+ * Re-enabling extends each product's warranty end by the blocked duration,
+ * same as the admin action; blocking triggers the same voice call.
+ */
+export const sellerToggleCustomerBlock = async (customerId: string) => {
+  try {
+    const session = await verifySession(false, "seller");
+    if (!session) return { success: false, message: "Unauthorized" };
+
+    const customer = await db.query.customers.findFirst({
+      where: and(eq(customers.customerId, customerId), eq(customers.sellerId, session.userId as string)),
+      with: { invoice: { with: { products: true } } },
+    });
+    if (!customer) return { success: false, message: "এই কাস্টমার আপনার তালিকায় নেই" };
+
+    if (customer.isWarrantyStopped) {
+      const stoppedAt = customer.warrantyStoppedAt ? new Date(customer.warrantyStoppedAt) : new Date();
+      const durationMs = Date.now() - stoppedAt.getTime();
+      for (const prod of customer.invoice?.products ?? []) {
+        const currentEnd = prod.warrantyEndDate ? new Date(prod.warrantyEndDate) : new Date();
+        await db.update(products).set({ warrantyEndDate: new Date(currentEnd.getTime() + durationMs) }).where(eq(products.id, prod.id));
+      }
+      await db.update(customers).set({ isWarrantyStopped: false, warrantyStoppedAt: null }).where(eq(customers.customerId, customerId));
+    } else {
+      await db.update(customers).set({ isWarrantyStopped: true, warrantyStoppedAt: new Date() }).where(eq(customers.customerId, customerId));
+      try {
+        const { sendVoiceCall, getMramBroadcastIds } = await import("@/lib/mram");
+        const ids = getMramBroadcastIds();
+        if (ids?.customer_dashboard_disabled) {
+          sendVoiceCall(customer.phone, ids.customer_dashboard_disabled, `Dashboard Disabled ${customerId}`).catch((e) => console.error(e));
+        }
+      } catch (e) {
+        console.error("Failed to send MRAM voice call:", e);
+      }
+    }
+
+    revalidatePath("/seller/customers");
+    revalidatePath("/customers");
+    return { success: true, message: customer.isWarrantyStopped ? "কাস্টমার আনব্লক করা হয়েছে" : "কাস্টমার ব্লক করা হয়েছে", blocked: !customer.isWarrantyStopped };
+  } catch (error) {
+    console.error("sellerToggleCustomerBlock error:", error);
+    return { success: false, message: "Something went wrong" };
   }
 };

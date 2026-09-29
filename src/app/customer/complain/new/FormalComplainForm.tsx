@@ -43,36 +43,49 @@ export default function FormalComplainForm({
 
   if (state?.success && complaintId) {
     return (
-      <div className="bg-white rounded-md shadow-md border border-gray-200 p-8 sm:p-12 flex flex-col items-center text-center animate-in fade-in zoom-in duration-500 max-w-2xl mx-auto">
-        <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-inner">
-          <CheckCircle2 size={40} />
-        </div>
-        <h2 className="text-2xl font-black text-gray-900 mb-2">
-          অভিযোগ দাখিল হয়েছে!
-        </h2>
-        <p className="text-gray-600 mb-8 max-w-md">
-          আপনার অভিযোগ ট্র্যাকিং নম্বর{" "}
-          <span className="font-mono font-bold text-gray-900 bg-gray-100 px-2 py-0.5 rounded">
-            {complaintId}
-          </span>
-          . দিয়ে আনুষ্ঠানিকভাবে নথিভুক্ত করা হয়েছে। ম্যানেজমেন্ট শীঘ্রই এটি পর্যালোচনা করবে।
-        </p>
+      <div className="relative mx-auto max-w-[440px] px-1 pt-2 pb-4">
+        <div className="rounded-[18px] bg-white border border-[#dfe8f7] shadow-[0_12px_32px_rgba(11,61,145,0.10)] overflow-hidden">
+          <div className="relative h-[150px] bg-[linear-gradient(180deg,#e3edff_0%,#f3f7ff_100%)] flex items-end justify-center overflow-hidden">
+            <span aria-hidden className="absolute -left-10 top-8 w-56 h-24 rounded-[50%] bg-white/60" />
+            <span aria-hidden className="absolute -right-12 top-2 w-48 h-28 rounded-[50%] bg-[#d6e5fd]/70" />
+            <div className="relative mb-3 flex flex-col items-center">
+              <div className="relative size-[96px] flex items-center justify-center">
+                {["-left-7 top-5 rotate-[35deg]", "-left-9 top-[42px]", "-left-7 bottom-4 -rotate-[35deg]", "-right-7 top-5 -rotate-[35deg]", "-right-9 top-[42px]", "-right-7 bottom-4 rotate-[35deg]"].map((c) => (
+                  <span key={c} className={`absolute h-1.5 w-5 rounded-full bg-[#22c55e] ${c}`} />
+                ))}
+                <span className="absolute inset-0 rounded-full bg-gradient-to-b from-[#34d36b] to-[#16a34a] shadow-[0_8px_20px_rgba(22,163,74,0.35)]" />
+                <span className="absolute inset-[11px] rounded-full bg-white" />
+                <CheckCircle2 size={44} strokeWidth={2.6} className="relative text-[#16a34a]" />
+              </div>
+              <span className="-mt-1 h-4 w-36 rounded-[50%] bg-[linear-gradient(180deg,#e8f1ff,#a9c8f5)] shadow-[0_6px_14px_rgba(31,124,240,0.25)]" />
+            </div>
+          </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
-          <Link
-            href={`/customer/complain/doc/${complaintId}`}
-            className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-800 font-bold py-3 px-6 rounded-md hover:bg-gray-50 transition-all"
-          >
-            <ExternalLink size={18} />
-             নথি দেখুন
-          </Link>
-          <Link
-            href={`/customer/complain`}
-            className="flex items-center justify-center gap-2 bg-brand text-white font-bold py-3 px-6 rounded-md hover:bg-brand/90 transition-all shadow-md"
-          >
-            ড্যাশবোর্ডে ফিরুন
-            <ArrowRight size={18} />
-          </Link>
+          <div className="px-3 pt-3 pb-4 flex flex-col gap-3">
+            <div className="rounded-md border border-[#bfe8cd] bg-[#f0fbf4] p-3 flex flex-col gap-1.5 text-center">
+              <h2 className="text-[clamp(18px,5.4vw,22px)] font-extrabold text-[#0b2a66]">অভিযোগ দাখিল হয়েছে!</h2>
+              <p className="text-[13px] leading-relaxed text-[#3d4a63]">
+                আপনার অভিযোগ ট্র্যাকিং নম্বর{" "}
+                <span className="font-mono font-extrabold text-[#0b3d91] bg-white border border-[#cfe0fb] px-2 py-0.5 rounded-md">{complaintId}</span>
+                {" "}দিয়ে আনুষ্ঠানিকভাবে নথিভুক্ত করা হয়েছে। ম্যানেজমেন্ট শীঘ্রই এটি পর্যালোচনা করবে।
+              </p>
+            </div>
+
+            <Link href={`/customer/complain/doc/${complaintId}`} className="h-11 rounded-md border-2 border-[#bcd4fb] bg-white text-[#0b3d91] text-[14px] font-extrabold inline-flex items-center justify-center gap-2">
+              <ExternalLink size={18} />
+              নথি দেখুন
+            </Link>
+            <Link href={`/customer/complain`} className="h-12 rounded-full bg-[linear-gradient(90deg,#1f7cf0,#0b3d91)] text-white text-[15px] font-extrabold inline-flex items-center justify-center gap-2 shadow-[0_10px_24px_rgba(31,124,240,0.35)]">
+              ড্যাশবোর্ডে ফিরুন
+              <ArrowRight size={18} />
+            </Link>
+
+            <div className="flex items-center justify-center gap-3 pt-1">
+              <span className="h-px w-10 bg-[#b9cdee]" />
+              <span className="flex flex-col items-center leading-tight"><span className="text-[13px] font-extrabold tracking-[0.18em] text-[#0b2a66]">SE ELECTRONICS</span><span className="text-[11px] text-[#1f5fc9]">Smart Solution &nbsp;Better Life</span></span>
+              <span className="h-px w-10 bg-[#b9cdee]" />
+            </div>
+          </div>
         </div>
       </div>
     );

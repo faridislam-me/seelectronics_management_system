@@ -101,12 +101,35 @@ export default async function ComplaintDocPage({ params }: { params: Promise<{ c
           </section>
         </div>
 
-        {(isHearing || isCompleted) && complaint.adminNote && (
+        {/* Customer-facing summary. The admin's note to the staff (adminNote) stays on the staff page only. */}
+        {isCompleted ? (
           <section className="rounded-md bg-[#fff6e3] border border-[#f5dfa0] p-3 flex flex-col gap-1.5">
-            <span className="flex items-center gap-2 text-[12px] font-extrabold text-[#b8620b] uppercase tracking-[2px]"><MessageSquare size={15} />{isCompleted ? "নির্বাহী নিষ্পত্তি সারসংক্ষেপ" : "কর্মকর্তার শুনানি নোটিশ"}</span>
-            <p className="text-[13px] font-bold italic text-[#5a3b00] leading-relaxed">&ldquo;{complaint.adminNote}&rdquo;</p>
+            <span className="flex items-center gap-2 text-[12px] font-extrabold text-[#b8620b] uppercase tracking-[1px]"><MessageSquare size={15} />গৃহীত ব্যবস্থার সারসংক্ষেপ</span>
+            {(() => {
+              const PUNISH_BN: Record<string, string> = { warning: "তিরস্কার ও সতর্কীকরণ", fine: "আর্থিক জরিমানা", suspension: "সাময়িক বরখাস্ত", demotion: "পদাবনতি", termination: "চাকুরি অবসান" };
+              const role = complaint.staff?.role === "electrician" ? "ইলেকট্রিশিয়ান" : "টেকনিশিয়ান";
+              const who = `${complaint.staff?.name || ""}${complaint.staffId ? ` (${complaint.staffId})` : ""}`;
+              const t = complaint.punishmentType;
+              if (!t || t === "not_guilty") {
+                return <p className="text-[13px] font-semibold text-[#5a3b00] leading-relaxed">আপনার অভিযোগের প্রেক্ষিতে তদন্ত সম্পন্ন হয়েছে। তদন্তে সংশ্লিষ্ট {role} {who} এর বিরুদ্ধে অভিযোগ প্রমাণিত হয়নি।</p>;
+              }
+              return (
+                <div className="flex flex-col gap-1 text-[13px] text-[#5a3b00] leading-relaxed">
+                  <p className="font-semibold">আপনার অভিযোগের প্রেক্ষিতে তদন্ত সম্পন্ন হয়েছে। সংশ্লিষ্ট {role} {who} এর বিরুদ্ধে <b className="text-[#c81f38]">{PUNISH_BN[t] || t}</b> শাস্তিমূলক ব্যবস্থা গ্রহণ করা হয়েছে।</p>
+                  {t === "fine" && complaint.punishmentFineAmount && <p>জরিমানার পরিমাণ: <b>৳{complaint.punishmentFineAmount}</b></p>}
+                  {complaint.punishmentStartDate && <p>সময়কাল: <b>{complaint.punishmentStartDate}{complaint.punishmentEndDate ? ` - ${complaint.punishmentEndDate}` : ""}</b></p>}
+                  {t === "demotion" && complaint.punishmentNewPosition && <p>নতুন পদ: <b>{complaint.punishmentNewPosition}</b></p>}
+                  {complaint.customerNote && <p className="italic">&ldquo;{complaint.customerNote}&rdquo;</p>}
+                </div>
+              );
+            })()}
           </section>
-        )}
+        ) : isHearing && (complaint.customerNote || complaint.adminNote) ? (
+          <section className="rounded-md bg-[#fff6e3] border border-[#f5dfa0] p-3 flex flex-col gap-1.5">
+            <span className="flex items-center gap-2 text-[12px] font-extrabold text-[#b8620b] uppercase tracking-[1px]"><MessageSquare size={15} />শুনানির তথ্য</span>
+            <p className="text-[13px] font-bold italic text-[#5a3b00] leading-relaxed">&ldquo;{complaint.customerNote || complaint.adminNote}&rdquo;</p>
+          </section>
+        ) : null}
 
         {/* Official document */}
         <section className="rounded-md bg-white border border-[#dfe6f2] p-3.5 flex flex-col gap-3 text-[13.5px] leading-relaxed shadow-[0_4px_14px_rgba(11,61,145,0.06)]" style={{ fontFamily: "'SolaimanLipi', serif" }}>
@@ -137,7 +160,7 @@ export default async function ComplaintDocPage({ params }: { params: Promise<{ c
           <div className="flex items-end justify-between gap-3 pt-2 border-t border-[#eef1f6]">
             <div className="flex flex-col gap-1 text-[12.5px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={eleclogo} alt="" className="w-20" />
+              <img src={eleclogo} alt="" className="w-16" />
               <p><span className="font-semibold">তারিখঃ</span> <span className="font-mono">{new Date(complaint.createdAt).toLocaleDateString("bn-BD")}</span></p>
               <p><span className="font-semibold">অভিযোগ ট্র্যাকিং নাম্বার:</span> <span className="font-mono">{complaint.complaintId}</span></p>
               <p><span className="font-semibold">অভিযোগ গ্রহন নাম্বার:</span> <span className="font-mono">SE {complaint.complaintId.replace(/\D/g, "").slice(0, 5) || "14285"}</span></p>
@@ -147,7 +170,7 @@ export default async function ComplaintDocPage({ params }: { params: Promise<{ c
               <p>{complaint.customer?.name}</p>
               <p>মোবাইল {complaint.customer?.phone}</p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={elecSign} alt="" className="w-24" />
+              <img src={elecSign} alt="" className="w-40 max-w-[48vw]" />
             </div>
           </div>
         </section>

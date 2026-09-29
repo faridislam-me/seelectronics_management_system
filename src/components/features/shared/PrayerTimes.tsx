@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { MapPin, MoonStar, Sun, Sunset, Sunrise, CloudSun, ChevronDown, UtensilsCrossed, LucideIcon } from "lucide-react";
+import { MapPin, Moon, MoonStar, Sun, Sunset, Sunrise, CloudSun, ChevronDown, UtensilsCrossed, LucideIcon } from "lucide-react";
 import Link from "next/link";
 import {
   bdLocations,
@@ -36,6 +36,20 @@ const prayerIcon: Record<PrayerName, LucideIcon> = {
   Maghrib: Sunset,
   Isha: MoonStar,
 };
+
+/** Sehri line icon: glass, rice bowl and crescent (matches lucide stroke style). */
+function SehriIcon() {
+  return (
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 9h5l-.8 11H3.8z" />
+      <path d="M3.4 13h4.2" />
+      <path d="M10 15h11a5.5 4 0 0 1-11 0z" />
+      <path d="M12 15c0-1.4 1-2.2 2-1.8.5-1.1 2.1-1.1 2.6 0 1-.4 2 .4 2 1.8" />
+      <path d="M13.5 20h4" />
+      <path d="M19.5 3.2a2.6 2.6 0 1 0 1.8 4.4 2.1 2.1 0 1 1-1.8-4.4z" />
+    </svg>
+  );
+}
 
 /** Tinted chip + gradient badge colours per prayer. */
 const prayerTone: Record<PrayerName, { chip: string; badge: string }> = {
@@ -356,13 +370,19 @@ const PrayerTimes = () => {
         {/* ── 2 Column Layout ── */}
         <div className="flex gap-2">
           {/* Left Column (Countdown) */}
-          <div className="w-[36%] min-w-0 bg-[#f5f5f5] rounded-md p-2 flex flex-col items-center justify-center text-center">
+          <div className="w-[36%] min-w-0 bg-[#eaf2ff] border border-[#d6e4fa] rounded-md p-2 flex flex-col items-center justify-center text-center">
             {(() => {
-              const cp = (currentPrayer in prayerIcon ? currentPrayer : "Isha") as PrayerName;
-              const Icon = prayerIcon[cp];
+              // Blue line icon by time of day: sun (morning/day), sunset (evening), moon (night), sehri (1 AM until Fajr).
+              const h = new Date().getHours();
+              const cp = currentPrayer as string;
+              const art =
+                cp === "Isha" ? (h >= 1 && h < 12 ? "sehri" : "night")
+                : cp === "Maghrib" ? "evening"
+                : cp === "Fajr" || cp === "Dhuhr" || cp === "Asr" ? "day"
+                : h >= 1 && h < 5 ? "sehri" : h < 17 ? "day" : h < 19 ? "evening" : "night";
               return (
-                <span className={`mb-2 size-14 rounded-full text-white flex items-center justify-center shadow-[0_6px_16px_rgba(11,61,145,0.25)] ring-4 ring-white ${prayerTone[cp].badge}`}>
-                  <Icon size={28} strokeWidth={2.2} />
+                <span className="mb-2 size-16 rounded-full bg-[#dbeafe] ring-4 ring-white text-[#1f5fc9] flex items-center justify-center">
+                  {art === "sehri" ? <SehriIcon /> : art === "night" ? <Moon size={32} strokeWidth={1.8} /> : art === "evening" ? <Sunset size={32} strokeWidth={1.8} /> : <Sun size={32} strokeWidth={1.8} />}
                 </span>
               );
             })()}

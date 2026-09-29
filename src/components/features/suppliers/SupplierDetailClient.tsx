@@ -9,7 +9,7 @@ import {
 } from "@/actions/supplierActions";
 import { Modal } from "@/components/ui";
 import clsx from "clsx";
-import { ArrowLeft, MessageSquare, Pencil, PhoneCall, Trash2 } from "lucide-react";
+import { ArrowLeft, FileText, MessageSquare, Pencil, PhoneCall, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -123,6 +123,7 @@ export default function SupplierDetailClient({ supplier, ledger, totals }: { sup
                   <td className={clsx("px-3 py-2 text-right whitespace-nowrap font-bold", e.type === "payment" && "text-[#178a42]")}>{e.type === "payment" ? "−" : "+"}{taka(e.amount)}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap font-extrabold">{taka(e.balance)}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
+                    <Link href={`/supplier-receipt/${e.transactionId}`} target="_blank" className="text-[#0b3d91] mr-3 inline-flex items-center gap-1 text-[12px] font-bold" title="Receipt"><FileText size={14} />Receipt</Link>
                     <button onClick={() => openSms(e.transactionId)} className="text-[#1f7cf0] mr-3 inline-flex items-center gap-1 text-[12px] font-bold" title="Send SMS about this entry"><MessageSquare size={14} />SMS</button>
                     <button onClick={() => remove(e)} className="text-[#c81f38]" aria-label="Delete entry"><Trash2 size={16} /></button>
                   </td>
@@ -169,7 +170,7 @@ function EntryForm({ supplierId, type, onDone }: { supplierId: string; type: "pu
     const form = e.currentTarget;
     const fd = Object.fromEntries(new FormData(form));
     setPending(true);
-    const res = await addSupplierTransaction({ ...fd, supplierId, type });
+    const res = await addSupplierTransaction({ ...fd, supplierId, type, sendSms: type === "payment" ? fd.sendSms === "on" : false });
     setPending(false);
     if (!res.success) return void toast.error(res.message);
     toast.success(res.message);
@@ -185,6 +186,12 @@ function EntryForm({ supplierId, type, onDone }: { supplierId: string; type: "pu
         <input name="date" type="date" defaultValue={today} className={inputCls} />
       </div>
       <input name="description" placeholder={isPurchase ? "কী মাল / চালান নম্বর (optional)" : "কীভাবে দেওয়া হয়েছে (optional)"} className={inputCls} />
+      {!isPurchase && (
+        <label className="flex items-center gap-2 text-[12.5px] font-semibold text-[#178a42]">
+          <input type="checkbox" name="sendSms" defaultChecked className="size-4 accent-[#1a9c4b]" />
+          Send SMS with receipt link to supplier
+        </label>
+      )}
       <button type="submit" disabled={pending} className={clsx("h-10 rounded-md text-white font-bold disabled:opacity-60", isPurchase ? "bg-[#e0a11b]" : "bg-[#1a9c4b]")}>{pending ? "Saving..." : isPurchase ? "Add Purchase" : "Add Payment"}</button>
     </form>
   );

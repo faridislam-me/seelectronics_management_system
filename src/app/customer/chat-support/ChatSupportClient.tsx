@@ -84,7 +84,8 @@ export default function ChatSupportClient() {
         ) : (
           messages.map((m, i) => (
             <div key={m.messageId} className="flex flex-col gap-2">
-              <Bubble side="right" time={time(m.createdAt)}>{m.message}</Bubble>
+              {/* Admin-initiated messages have no customer text */}
+              {m.message ? <Bubble side="right" time={time(m.createdAt)}>{m.message}</Bubble> : null}
               {m.adminReply ? (
                 <Bubble side="left" label="SE Support" time={time(m.updatedAt)}>{m.adminReply}</Bubble>
               ) : i === messages.length - 1 ? (

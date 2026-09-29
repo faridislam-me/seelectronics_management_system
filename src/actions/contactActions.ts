@@ -205,6 +205,9 @@ export async function sendMyChatMessage(text: string) {
  * asked) and marks the customer's older unreplied messages as read without
  * touching their (empty) adminReply.
  */
+/** Subject used for messages the admin starts (no customer text). */
+const ADMIN_MESSAGE_SUBJECT = "Admin Message";
+
 export async function replyToCustomerThread(
   customerId: string,
   adminReply: string,
@@ -223,7 +226,26 @@ export async function replyToCustomerThread(
       orderBy: [desc(contactMessages.createdAt)],
       columns: { messageId: true },
     });
-    if (!latest) return { success: false, message: "No unanswered message from this customer" };
+    if (!latest) {
+      // Nothing waiting: store an admin-initiated message (empty customer text) so the
+      // admin can always write to the customer. Renderers skip the empty customer bubble.
+      const customer = await db.query.customers.findFirst({
+        where: eq(customers.customerId, customerId),
+        columns: { customerId: true },
+      });
+      if (!customer) return { success: false, message: "Customer not found" };
+      const messageId = generateRandomId();
+      await db.insert(contactMessages).values({
+        messageId,
+        customerId,
+        subject: ADMIN_MESSAGE_SUBJECT,
+        message: "",
+        adminReply: reply,
+        isRead: true,
+      });
+      // Reuses the normal reply path for the optional short SMS.
+      return await replyToMessage(messageId, reply, options);
+    }
 
     const res = await replyToMessage(latest.messageId, reply, options);
     if (!res.success) return res;

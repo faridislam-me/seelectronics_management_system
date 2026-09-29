@@ -4,7 +4,7 @@ import { db } from "@/db/drizzle";
 import { suppliers, supplierTransactions } from "@/db/schema";
 import { createSession, decrypt, deleteSession, sendSMS, verifySession } from "@/lib";
 import { sendVoiceCall } from "@/lib/mram";
-import { generateRandomId } from "@/utils";
+import { generateRandomId, getBaseUrl } from "@/utils";
 import bcrypt from "bcrypt";
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -261,7 +261,23 @@ export const addSupplierTransaction = async (input: Record<string, unknown>) => 
     await db.insert(supplierTransactions).values({ transactionId, ...data });
     const totals = await totalsFor(data.supplierId);
     revalidateSupplierPaths(data.supplierId);
-    return { success: true, message: data.type === "purchase" ? "মাল গ্রহণ যোগ হয়েছে" : "পেমেন্ট যোগ হয়েছে", data: { transactionId, totals } };
+
+    // Payments notify the supplier by SMS with a receipt link (admin can untick it).
+    let smsNote = "";
+    if (data.type === "payment" && input.sendSms !== false && input.sendSms !== "false") {
+      try {
+        const [s] = await db.select({ phone: suppliers.phone }).from(suppliers).where(eq(suppliers.supplierId, data.supplierId)).limit(1);
+        if (s?.phone) {
+          const link = `${getBaseUrl()}/supplier-receipt/${transactionId}`;
+          await sendSMS(s.phone, `SE Electronics: ${taka(data.amount)} পরিশোধ করা হয়েছে। বাকি পাওনা ${taka(totals.due)}। রসিদ: ${link}`);
+          smsNote = " · SMS পাঠানো হয়েছে";
+        }
+      } catch (err) {
+        console.error("supplier payment SMS failed:", err);
+        smsNote = " · SMS পাঠানো যায়নি";
+      }
+    }
+    return { success: true, message: (data.type === "purchase" ? "মাল গ্রহণ যোগ হয়েছে" : "পেমেন্ট যোগ হয়েছে") + smsNote, data: { transactionId, totals } };
   } catch (error) {
     if (error instanceof ZodError) return { success: false, message: firstIssue(error) };
     console.error("addSupplierTransaction failed:", error);
@@ -402,5 +418,46 @@ export const getMySupplierLedger = async () => {
   } catch (error) {
     console.error("getMySupplierLedger failed:", error);
     return { success: false as const, message: "Could not load data" };
+  }
+};
+
+// ============================================
+// Receipts (admin, or the supplier who owns the entry)
+// ============================================
+
+/**
+ * One ledger entry with the supplier and the account totals right after that
+ * entry. Allowed for an admin, or for the logged-in supplier who owns it.
+ */
+export const getSupplierReceipt = async (transactionId: string) => {
+  try {
+    const session = await decrypt((await cookies()).get("session")?.value);
+    const role = session?.role as string | undefined;
+    if (!session?.userId || (role !== "admin" && role !== "supplier")) return { success: false as const, message: "Unauthorized" };
+
+    const [tx] = await db.select().from(supplierTransactions).where(eq(supplierTransactions.transactionId, transactionId)).limit(1);
+    if (!tx) return { success: false as const, message: "Not found" };
+    if (role === "supplier" && tx.supplierId !== session.userId) return { success: false as const, message: "Not found" };
+
+    const res = await loadSupplierLedger(tx.supplierId);
+    if (!res.success) return res;
+    if (role === "supplier" && !res.data.supplier.isActive) return { success: false as const, message: "Inactive" };
+
+    // Totals up to and including this entry (ledger is oldest first).
+    let purchased = 0;
+    let paid = 0;
+    for (const e of res.data.ledger) {
+      if (e.type === "purchase") purchased += e.amount;
+      else paid += e.amount;
+      if (e.transactionId === transactionId) break;
+    }
+    const { username: _u, ...supplier } = res.data.supplier;
+    return {
+      success: true as const,
+      data: { supplier, transaction: tx, totals: { purchased, paid, due: purchased - paid }, viewer: role as "admin" | "supplier" },
+    };
+  } catch (error) {
+    console.error("getSupplierReceipt failed:", error);
+    return { success: false as const, message: "Could not load receipt" };
   }
 };

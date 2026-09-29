@@ -45,11 +45,36 @@ export function getBaseUrl() {
     : process.env.NEXT_PUBLIC_BASE_URL || "https://seelectronicspro.vercel.app";
 }
 
+/**
+ * Optional per-portal domains (e.g. https://staff.seelectronicsbd.com). When an
+ * env var is not set, links fall back to the main base URL, so nothing changes
+ * until the subdomains are live.
+ */
+const PORTAL_URL_ENV: Record<string, string | undefined> = {
+  staff: process.env.STAFF_APP_URL,
+  customer: process.env.CUSTOMER_APP_URL,
+  seller: process.env.SELLER_APP_URL,
+};
+const LINK_PORTAL: Record<string, "staff" | "customer" | "seller"> = {
+  registration: "staff",
+  "service-report": "staff",
+  "id-card-download": "staff",
+  "certificate-download": "staff",
+  "seller-registration": "seller",
+  "seller-login": "seller",
+  "customer-login": "customer",
+  feedback: "customer",
+  "service-tracking": "customer",
+  "application-tracking": "customer",
+  "invoice-download": "customer",
+};
+
 export const generateUrl = <T extends UrlConfig["type"]>(
   type: T,
   params: Extract<UrlConfig, { type: T }>["params"],
 ) => {
-  const baseUrl = getBaseUrl();
+  const portal = LINK_PORTAL[type as string];
+  const baseUrl = ((portal && PORTAL_URL_ENV[portal]) || getBaseUrl())?.replace(/\/$/, "");
 
   if (!baseUrl) {
     throw new Error("Base URL is not defined");

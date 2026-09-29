@@ -223,6 +223,14 @@ export async function updateComplaintStatus(
       .set(updateData)
       .where(eq(staffComplaints.complaintId, complaintId));
 
+    // Notify the parties by SMS on every status change (and the officer when assigned).
+    // Failures are logged only; they must never block the status update.
+    try {
+      await notifyComplaintStatusSMS(complaintId, newStatus, extraData?.hearingOfficer);
+    } catch (smsError) {
+      console.error("complaint status SMS failed:", smsError);
+    }
+
     revalidatePath("/complaints");
     revalidatePath(`/customer/complain/doc/${complaintId}`);
     return {
@@ -290,4 +298,62 @@ export async function getComplaintsByStaff(staffId: string, all: boolean = false
     console.error(error);
     return { success: false, message: "Could not fetch staff complaints" };
   }
+}
+
+
+/** Bangla digits → ASCII (officer phones are stored with Bangla numerals). */
+function toAsciiDigits(v: string) {
+  return v.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d))).replace(/[^\d+]/g, "");
+}
+
+const PUNISHMENT_BN: Record<string, string> = {
+  warning: "তিরস্কার ও সতর্কীকরণ",
+  fine: "আর্থিক জরিমানা",
+  suspension: "সাময়িক বরখাস্ত",
+  demotion: "পদাবনতি",
+  termination: "চাকুরি অবসান",
+  not_guilty: "দোষী সাব্যস্ত হননি",
+};
+
+async function notifyComplaintStatusSMS(
+  complaintId: string,
+  newStatus: "under_trial" | "processing" | "hearing" | "completed",
+  officer?: { name: string; phone: string; designation: string },
+) {
+  const { sendSMS } = await import("@/lib");
+  const c = await db.query.staffComplaints.findFirst({
+    where: (t, { eq }) => eq(t.complaintId, complaintId),
+    with: {
+      customer: { columns: { name: true, phone: true } },
+      staff: { columns: { name: true, phone: true, staffId: true } },
+    },
+  });
+  if (!c) return;
+  const customerPhone = c.customer?.phone;
+  const staffPhone = c.staff?.phone;
+  const staffName = c.staff?.name || "";
+  const sends: Promise<unknown>[] = [];
+  const send = (phone: string | null | undefined, msg: string) => {
+    if (phone) sends.push(sendSMS(toAsciiDigits(phone), msg).catch((e) => console.error("SMS error:", e)));
+  };
+
+  if (newStatus === "processing") {
+    send(customerPhone, `SE Electronics: আপনার অভিযোগ (${complaintId}) প্রক্রিয়াধীন রয়েছে। শীঘ্রই তদন্ত শুরু হবে।`);
+    send(staffPhone, `SE Electronics: আপনার বিরুদ্ধে একটি অভিযোগ (${complaintId}) প্রক্রিয়াধীন রয়েছে। অ্যাপে বিস্তারিত দেখুন।`);
+  } else if (newStatus === "hearing") {
+    const off = officer || (c.hearingOfficerPhone ? { name: c.hearingOfficerName || "", phone: c.hearingOfficerPhone, designation: c.hearingOfficerDesignation || "" } : undefined);
+    if (off) {
+      send(off.phone, `SE Electronics: অভিযোগ ${complaintId} এর তদন্ত/শুনানির দায়িত্ব আপনাকে দেওয়া হয়েছে। অভিযুক্ত: ${staffName} (${c.staffId})। ড্যাশবোর্ডে বিস্তারিত দেখুন।`);
+    }
+    const offText = off ? ` দায়িত্বপ্রাপ্ত কর্মকর্তা: ${off.name}, ${toAsciiDigits(off.phone)}` : "";
+    send(customerPhone, `SE Electronics: আপনার অভিযোগ (${complaintId}) এর শুনানি চলছে।${offText}`);
+    send(staffPhone, `SE Electronics: অভিযোগ ${complaintId} এর শুনানি শুরু হয়েছে।${offText}`);
+  } else if (newStatus === "completed") {
+    const p = c.punishmentType ? PUNISHMENT_BN[c.punishmentType] || c.punishmentType : "";
+    send(customerPhone, `SE Electronics: আপনার অভিযোগ (${complaintId}) নিষ্পত্তি হয়েছে।${p ? ` গৃহীত ব্যবস্থা: ${p}।` : ""} অ্যাপে বিস্তারিত দেখুন।`);
+    send(staffPhone, `SE Electronics: অভিযোগ ${complaintId} নিষ্পত্তি হয়েছে।${p ? ` সিদ্ধান্ত: ${p}।` : ""} অ্যাপে বিস্তারিত দেখুন।`);
+  } else if (newStatus === "under_trial") {
+    send(customerPhone, `SE Electronics: আপনার অভিযোগ (${complaintId}) বিচারাধীন রয়েছে।`);
+  }
+  await Promise.all(sends);
 }

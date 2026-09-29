@@ -56,6 +56,13 @@ export default async function StaffComplaintDetailsPage({
     { title: "নিষ্পত্তি", sub: isCompleted ? "সমাধান হয়েছে" : "চূড়ান্তকরণ", done: isCompleted, iconDone: isCompleted, final: true },
   ];
   const lastDone = steps.reduce((acc, st, i) => (st.done ? i : acc), 0);
+  // Only createdAt and updatedAt are stored: the first step uses createdAt, every
+  // later reached step uses updatedAt (the latest known change); pending steps show none.
+  const bnDay = (d: Date | string) => {
+    const dt = new Date(d);
+    return `${dt.toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric" })}, ${dt.toLocaleDateString("bn-BD", { weekday: "long" })}`;
+  };
+  const stepDate = (i: number) => (i === 0 ? bnDay(complaint.createdAt) : steps[i].done ? bnDay(complaint.updatedAt) : null);
 
   return (
     <StaffLayout balance={stats?.availableBalance || 0}>
@@ -102,7 +109,10 @@ export default async function StaffComplaintDetailsPage({
                     {i < steps.length - 1 && <span className={clsx("w-0.5 flex-1 min-h-3", steps[i + 1].done ? "bg-[#1a9c4b]" : "bg-[#e3e8f1]")} />}
                   </span>
                   <div className={clsx("flex-1 mb-2 rounded-md border px-2.5 py-1.5", st.done ? (st.final ? "bg-[#1a9c4b] border-[#1a9c4b] text-white" : "bg-[#f3fbf6] border-[#cdeedb]") : "bg-[#f7f9fc] border-[#eef1f6] opacity-70")}>
-                    <h4 className={clsx("text-[13px] font-extrabold leading-tight", st.done ? (st.final ? "text-white" : "text-[#146c36]") : "text-[#9aa4b8]")}>{st.title}</h4>
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className={clsx("text-[13px] font-extrabold leading-tight", st.done ? (st.final ? "text-white" : "text-[#146c36]") : "text-[#9aa4b8]")}>{st.title}</h4>
+                      {stepDate(i) && <span className={clsx("text-[10.5px] font-bold text-right leading-tight shrink-0 max-w-[58%]", st.final ? "text-white/90" : "text-[#5b6784]")}>{stepDate(i)}</span>}
+                    </div>
                     <span className={clsx("mt-0.5 inline-flex items-center gap-1 text-[12px] font-bold", st.done ? (st.final ? "text-white/90" : "text-[#178a42]") : "text-[#b3bccb]")}><Calendar size={12} />{st.sub}</span>
                   </div>
                 </li>

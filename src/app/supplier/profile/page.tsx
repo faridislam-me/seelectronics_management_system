@@ -73,6 +73,7 @@ export default async function SupplierProfilePage() {
                     <span className="flex flex-col items-end leading-tight shrink-0">
                       <span className={clsx("text-[15px] font-extrabold", purchase ? "text-[#16213a]" : "text-[#178a42]")}>{purchase ? "+" : "−"}{taka(e.amount)}</span>
                       <span className="text-[10.5px] text-[#5b6784]">বাকি {taka(e.balance)}</span>
+                      <a href={`/supplier-receipt/${e.transactionId}`} className="mt-1 text-[11px] font-bold text-[#1f5fc9] underline underline-offset-2">রসিদ দেখুন</a>
                     </span>
                   </div>
                 );

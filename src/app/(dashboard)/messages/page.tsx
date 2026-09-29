@@ -229,11 +229,14 @@ export default function MessagesPage() {
               <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2 bg-gray-50 max-h-[60vh]">
                 {selected.messages.map((m) => (
                   <div key={m.messageId} className="flex flex-col gap-1.5">
-                    <div className="self-start max-w-[85%] rounded-md rounded-tl-none bg-white border border-gray-200 px-3 py-2 shadow-sm">
-                      {m.subject && m.subject !== "Chat Support" && <p className="text-[11px] font-bold text-gray-500 mb-0.5">{m.subject}</p>}
-                      <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">{m.message}</p>
-                      <p className="mt-1 text-[10px] text-gray-400 flex items-center gap-1">{fmt(m.createdAt)}{!m.isRead && <span className="text-blue-600 font-bold">· new</span>}</p>
-                    </div>
+                    {/* Admin-initiated rows have no customer text: show only the SE Support bubble */}
+                    {m.message && (
+                      <div className="self-start max-w-[85%] rounded-md rounded-tl-none bg-white border border-gray-200 px-3 py-2 shadow-sm">
+                        {m.subject && m.subject !== "Chat Support" && <p className="text-[11px] font-bold text-gray-500 mb-0.5">{m.subject}</p>}
+                        <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">{m.message}</p>
+                        <p className="mt-1 text-[10px] text-gray-400 flex items-center gap-1">{fmt(m.createdAt)}{!m.isRead && <span className="text-blue-600 font-bold">· new</span>}</p>
+                      </div>
+                    )}
                     {m.adminReply && (
                       <div className="self-end max-w-[85%] rounded-md rounded-tr-none bg-blue-600 text-white px-3 py-2 shadow-sm">
                         <p className="text-[10px] font-bold text-blue-100 mb-0.5">SE Support</p>
@@ -247,13 +250,14 @@ export default function MessagesPage() {
               </div>
 
               <div className="border-t border-gray-100 p-2.5 flex flex-col gap-2">
-                {selected.pending ? (
-                  <>
+                {!selected.pending && (
+                  <p className="text-xs text-gray-500 flex items-center gap-1.5"><Clock size={13} />All messages are answered. You can still send a new message to this customer.</p>
+                )}
                     <div className="flex items-end gap-2">
                       <textarea
                         rows={2}
                         className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-md outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
-                        placeholder="Type your reply..."
+                        placeholder={selected.pending ? "Type your reply..." : "Write a message to this customer..."}
                         value={adminReply}
                         onChange={(e) => setAdminReply(e.target.value)}
                       />
@@ -270,10 +274,6 @@ export default function MessagesPage() {
                       Also send as SMS to customer
                       <span className="text-xs font-medium text-gray-400">({selected.phone || "customer phone"})</span>
                     </label>
-                  </>
-                ) : (
-                  <p className="text-sm text-gray-500 flex items-center gap-2"><Clock size={15} />All messages from this customer have been answered. A reply box appears when they write again.</p>
-                )}
               </div>
             </>
           )}

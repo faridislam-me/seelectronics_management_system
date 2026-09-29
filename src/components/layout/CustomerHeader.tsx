@@ -58,9 +58,6 @@ export function CustomerHeader() {
         {/* NOTIFICATIONS */}
         <div className="flex items-center gap-1 shrink-0">
           <CustomerNotificationBell variant="header" />
-          {isHome && (
-            <Link href="/customer/invoice" aria-label="My account" className="size-10 rounded-full bg-white/15 flex items-center justify-center"><User size={20} /></Link>
-          )}
         </div>
       </div>
       {/* Light content background with rounded top corners, sitting on the blue header */}

@@ -49,6 +49,16 @@ const customerProtectedRoutes = [
 ];
 
 export async function middleware(request: NextRequest) {
+    // Portal subdomains (staff./customer./seller./supplier.): the bare root opens
+    // that portal instead of the admin dashboard.
+    {
+        const host = (request.headers.get('host') || '').toLowerCase();
+        const sub = host.split('.')[0];
+        const portalHome: Record<string, string> = { staff: '/staff/profile', customer: '/customer/profile', seller: '/seller/profile', supplier: '/supplier/profile' };
+        if (portalHome[sub] && request.nextUrl.pathname === '/') {
+            return NextResponse.redirect(new URL(portalHome[sub], request.url));
+        }
+    }
     // Block bots from generating link previews
     const userAgent = request.headers.get("user-agent")?.toLowerCase() || "";
     const botUserAgents = [

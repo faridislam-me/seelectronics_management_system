@@ -164,14 +164,30 @@ export const sendCertificateLink = async (formData: FormData) => {
     if (!phone) return { success: false, message: "Phone number is required" };
 
     const token = crypto.randomBytes(16).toString("hex");
-    const expiresAt = new Date(
-      Date.now() +
-        parseInt(process.env.DOWNLOAD_LINK_EXPIRY_DAY!) * 24 * 60 * 60 * 1000,
-    );
+    // A certificate belongs in the staff account permanently (expired tokens are
+    // purged), so it gets a long life instead of the short download-link expiry.
+    const expiresAt = new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000);
+
+    // Resolve the owner: use the given staff ID only if it is a real staff; if
+    // it isn't (e.g. a shop ID typed by mistake) fall back to the staff with this phone.
+    let ownerStaffId: string | undefined;
+    const typedId = (staffId || "").trim().toUpperCase();
+    if (typedId) {
+      const s = await db.query.staffs.findFirst({ where: eq(staffs.staffId, typedId), columns: { staffId: true } });
+      if (s) ownerStaffId = s.staffId;
+    }
+    if (!ownerStaffId) {
+      const digits = String(phone).replace(/\D/g, "").slice(-10);
+      const matches = await db
+        .select({ staffId: staffs.staffId })
+        .from(staffs)
+        .where(sql`right(regexp_replace(${staffs.phone}, '\\D', '', 'g'), 10) = ${digits}`);
+      if (matches.length === 1) ownerStaffId = matches[0].staffId;
+    }
 
     const payload = {
       type: "certificate",
-      staffId: staffId || undefined,
+      staffId: ownerStaffId,
       memberNumber,
       shopName,
       shopId,
@@ -189,16 +205,13 @@ export const sendCertificateLink = async (formData: FormData) => {
 
     let notified = false;
     // Only create notification if staff exists in database
-    if (staffId && staffId.trim() !== "") {
-      const staffExists = await db.query.staffs.findFirst({
-        where: eq(staffs.staffId, staffId),
-        columns: { staffId: true },
-      });
+    if (ownerStaffId) {
+      const staffExists = true;
 
       if (staffExists) {
         const { notifyStaff } = await import("./notificationActions");
         await notifyStaff({
-          staffId: staffId,
+          staffId: ownerStaffId,
           phoneNumber: phone,
           type: "certificate",
           message: message,
@@ -1349,7 +1362,7 @@ export const getStaffCertificateToken = async (staffId: string, phone?: string |
             sql`payload->>'staffId' = ${staffId}`,
             // Phone fallback only for certificates issued without a staff ID;
             // several staff can share a phone, so never match another staff's certificate.
-            sql`coalesce(payload->>'staffId', '') = '' and right(regexp_replace(coalesce(payload->>'phone', ''), '\\D', '', 'g'), 10) = ${digits}`,
+            sql`(coalesce(payload->>'staffId', '') = '' or not exists (select 1 from staffs s where s."staffId" = ${authTokens.payload}->>'staffId')) and right(regexp_replace(coalesce(payload->>'phone', ''), '\\D', '', 'g'), 10) = ${digits}`,
           )
         : sql`payload->>'staffId' = ${staffId}`;
     const tokens = await db
@@ -1357,7 +1370,6 @@ export const getStaffCertificateToken = async (staffId: string, phone?: string |
       .from(authTokens)
       .where(
         and(
-          gt(authTokens.expiresAt, new Date()),
           sql`payload->>'type' = 'certificate'`,
           owner,
         ),

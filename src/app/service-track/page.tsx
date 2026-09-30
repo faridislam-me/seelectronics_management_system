@@ -437,9 +437,10 @@ export default async function ServiceTrackPage({
         ? "/staff/profile"
         : null;
 
-  const isWarrantyValid = serviceData?.warrantyExpiryDate
+  const isWarrantyCancelled = Boolean(serviceData?.customer?.isWarrantyStopped);
+  const isWarrantyValid = !isWarrantyCancelled && (serviceData?.warrantyExpiryDate
     ? new Date(serviceData.warrantyExpiryDate) >= new Date()
-    : false;
+    : false);
   const isInstall = serviceData.type === "install";
   const staffPhone = serviceData.appointedStaff?.phone || serviceData.staffPhone;
   const chip =
@@ -483,7 +484,7 @@ export default async function ServiceTrackPage({
           </div>
           <div className="grid grid-cols-3 divide-x divide-white/10 border-t border-white/10 pt-2.5 text-[11px]">
             <span className="flex items-center gap-1.5 pr-1.5 min-w-0"><span className="size-7 rounded-md bg-[#1f7cf0]/20 text-[#5aa2ff] flex items-center justify-center shrink-0"><Calendar size={15} /></span><span className="flex flex-col min-w-0"><span className="text-white/70">নিবন্ধন তারিখ</span><b className="text-[12px] truncate">{formatDate(serviceData.createdAt)}</b></span></span>
-            <span className="flex items-center gap-1.5 px-1.5 min-w-0"><span className="size-7 rounded-md bg-[#1f7cf0]/20 text-[#5aa2ff] flex items-center justify-center shrink-0"><ShieldCheck size={15} /></span><span className="flex flex-col min-w-0"><span className="text-white/70">পণ্য ওয়ারেন্টি</span><b className={clsx("text-[11px] inline-flex items-center gap-0.5", isWarrantyValid ? "text-[#34d36b]" : "text-[#ff5a6e]")}>{!isWarrantyValid && <AlertTriangle className="size-3 shrink-0" />}{isWarrantyValid ? "ওয়ারেন্টি চালু আছে" : "ওয়ারেন্টি শেষ"}</b></span></span>
+            <span className="flex items-center gap-1.5 px-1.5 min-w-0"><span className="size-7 rounded-md bg-[#1f7cf0]/20 text-[#5aa2ff] flex items-center justify-center shrink-0"><ShieldCheck size={15} /></span><span className="flex flex-col min-w-0"><span className="text-white/70">পণ্য ওয়ারেন্টি</span><b className={clsx("text-[11px] inline-flex items-center gap-0.5", isWarrantyValid ? "text-[#34d36b]" : "text-[#ff5a6e]")}>{!isWarrantyValid && <AlertTriangle className="size-3 shrink-0" />}{isWarrantyValid ? "ওয়ারেন্টি চালু আছে" : isWarrantyCancelled ? "ওয়ারেন্টি বাতিল" : "ওয়ারেন্টি শেষ"}</b></span></span>
             <span className="flex items-center gap-1.5 pl-1.5 min-w-0"><span className="size-7 rounded-md bg-[#1f7cf0]/20 text-[#5aa2ff] flex items-center justify-center shrink-0"><Wrench size={15} /></span><span className="flex flex-col min-w-0"><span className="text-white/70">সার্ভিস টাইপ</span><b className="text-[12px] uppercase truncate">{serviceData.productType}</b></span></span>
           </div>
           <div className="rounded-md bg-white/5 border border-white/10 px-2.5 py-2 flex flex-col gap-1 text-[12px]">

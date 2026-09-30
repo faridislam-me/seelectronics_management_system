@@ -128,6 +128,17 @@ function CustomerViewModal({
                 <span className="mr-4 flex-shrink-0">:</span>
                 <span className="font-semibold">{customerData.name}</span>
               </div>
+              {customerData.isWarrantyStopped && (
+                <div className="flex border-b py-1">
+                  <span className="w-32 flex-shrink-0">Block</span>
+                  <span className="mr-4 flex-shrink-0">:</span>
+                  {customerData.warrantyStopReason === "misuse" ? (
+                    <span className="px-2 py-0.5 rounded-md bg-red-100 text-red-700 border border-red-200 text-[12px] font-bold">অপব্যবহার/নষ্ট প্রমাণিত — ওয়ারেন্টি বাতিল</span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200 text-[12px] font-bold">বকেয়া টাকা পরিশোধ না করা</span>
+                  )}
+                </div>
+              )}
               <div className="flex border-b py-1">
                 <span className="w-32 flex-shrink-0">Phone</span>
                 <span className="mr-4 flex-shrink-0">:</span>

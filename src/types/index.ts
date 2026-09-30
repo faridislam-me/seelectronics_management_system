@@ -55,6 +55,7 @@ export type CustomerData = {
   referralBalance?: number | null;
   isWarrantyStopped: boolean;
   warrantyStoppedAt?: Date | null;
+  warrantyStopReason?: string | null;
   createdAt: Date;
   updatedAt: Date;
   invoice: InvoicesType;

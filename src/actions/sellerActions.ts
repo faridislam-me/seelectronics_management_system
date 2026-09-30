@@ -642,7 +642,7 @@ export async function getSellerPortalData(sellerId: string) {
       with: {
         purchases: { orderBy: (p, { desc }) => [desc(p.date)] },
         customers: {
-          columns: { customerId: true, name: true, phone: true, address: true, invoiceNumber: true, isWarrantyStopped: true, createdAt: true, referredByVipCard: true, sellerId: true },
+          columns: { customerId: true, name: true, phone: true, address: true, invoiceNumber: true, isWarrantyStopped: true, warrantyStopReason: true, createdAt: true, referredByVipCard: true, sellerId: true },
           with: {
             invoice: { columns: { id: true, total: true, subtotal: true, dueAmount: true, dueType: true, notes: true, paymentType: true, date: true }, with: { products: { columns: { type: true, model: true, quantity: true, warrantyStartDate: true, warrantyDurationMonths: true } } } },
             services: { columns: { serviceId: true, status: true, type: true, productType: true, productModel: true, staffName: true, staffPhone: true, reportedIssue: true, createdAt: true }, orderBy: (s, { desc }) => [desc(s.createdAt)], with: { statusHistory: { columns: { status: true, createdAt: true }, orderBy: (h, { asc }) => [asc(h.createdAt)] } } },
@@ -804,7 +804,7 @@ export const sellerRequestService = async (input: {
  * Re-enabling extends each product's warranty end by the blocked duration,
  * same as the admin action; blocking triggers the same voice call.
  */
-export const sellerToggleCustomerBlock = async (customerId: string) => {
+export const sellerToggleCustomerBlock = async (customerId: string, reason?: "due" | "misuse") => {
   try {
     const session = await verifySession(false, "seller");
     if (!session) return { success: false, message: "Unauthorized" };
@@ -815,26 +815,8 @@ export const sellerToggleCustomerBlock = async (customerId: string) => {
     });
     if (!customer) return { success: false, message: "এই কাস্টমার আপনার তালিকায় নেই" };
 
-    if (customer.isWarrantyStopped) {
-      const stoppedAt = customer.warrantyStoppedAt ? new Date(customer.warrantyStoppedAt) : new Date();
-      const durationMs = Date.now() - stoppedAt.getTime();
-      for (const prod of customer.invoice?.products ?? []) {
-        const currentEnd = prod.warrantyEndDate ? new Date(prod.warrantyEndDate) : new Date();
-        await db.update(products).set({ warrantyEndDate: new Date(currentEnd.getTime() + durationMs) }).where(eq(products.id, prod.id));
-      }
-      await db.update(customers).set({ isWarrantyStopped: false, warrantyStoppedAt: null }).where(eq(customers.customerId, customerId));
-    } else {
-      await db.update(customers).set({ isWarrantyStopped: true, warrantyStoppedAt: new Date() }).where(eq(customers.customerId, customerId));
-      try {
-        const { sendVoiceCall, getMramBroadcastIds } = await import("@/lib/mram");
-        const ids = getMramBroadcastIds();
-        if (ids?.customer_dashboard_disabled) {
-          sendVoiceCall(customer.phone, ids.customer_dashboard_disabled, `Dashboard Disabled ${customerId}`).catch((e) => console.error(e));
-        }
-      } catch (e) {
-        console.error("Failed to send MRAM voice call:", e);
-      }
-    }
+    const { toggleCustomerBlockCore, blockReasonOf } = await import("@/lib/customerBlock");
+    await toggleCustomerBlockCore(customer, blockReasonOf(reason));
 
     revalidatePath("/seller/customers");
     revalidatePath("/customers");

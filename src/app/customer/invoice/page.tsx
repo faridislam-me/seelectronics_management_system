@@ -89,6 +89,15 @@ export default async function CustomerInvoicePage() {
           <a href={`/pdf/download?type=invoice&id=${session.customer.invoiceNumber}`} target="_blank" className="shrink-0 h-10 px-3 rounded-md bg-[#0b3d91] text-white text-[12px] font-extrabold uppercase inline-flex items-center gap-1.5"><Download size={15} />Download PDF</a>
         </section>
 
+        {/* Block notice (two kinds: unpaid due / warranty void for misuse) */}
+        {session.customer.isWarrantyStopped && (
+          <section className={(session.customer as any).warrantyStopReason === "misuse" ? "rounded-md border p-2.5 text-[12.5px] leading-relaxed font-semibold bg-[#fff1f2] border-[#f7c3ca] text-[#c81f38]" : "rounded-md border p-2.5 text-[12.5px] leading-relaxed font-semibold bg-[#fff8ea] border-[#f5dfa0] text-[#8a4a05]"}>
+            {(session.customer as any).warrantyStopReason === "misuse"
+              ? "ওয়ারেন্টি বাতিল: পণ্যের অপব্যবহার/ক্ষতি প্রমাণিত হওয়ায় এস ই ইলেকট্রনিক্স আপনার ওয়ারেন্টি বাতিল করেছে।"
+              : "ওয়ারেন্টি সাময়িক বন্ধ: বকেয়া টাকা পরিশোধ না করায় আপনার ওয়ারেন্টি বন্ধ আছে।"}
+          </section>
+        )}
+
         {/* Customer info + summary */}
         <section className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col gap-2 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
           <div className="flex items-center gap-2.5">

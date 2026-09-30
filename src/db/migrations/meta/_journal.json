@@ -64,6 +64,13 @@
       "when": 1790579451578,
       "tag": "0008_supplier_module",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790735295895,
+      "tag": "0009_customer_block_reason",
+      "breakpoints": true
     }
   ]
 }

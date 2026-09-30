@@ -1,4 +1,5 @@
 "use client";
+import { contactDetails } from "@/constants";
 import { customerLogout } from "@/actions/customerActions";
 import { CustomerLayout } from "@/components/layout";
 import Banner from "@/components/ui/Banner";
@@ -38,6 +39,7 @@ interface CustomerDashboardClientProps {
     vipCardNumber?: string | null;
     referralBalance?: number | string | null;
     isWarrantyStopped?: boolean;
+    warrantyStopReason?: string | null;
     warrantyExpiryDate?: string | null;
   };
   stats: {
@@ -71,6 +73,9 @@ export default function CustomerDashboardClient({
   // ✅ Dashboard and Warranty logic
   const isWarrantyExpired = stats?.isWarrantyExpired ?? false;
   const isDashboardDisabled = customer.isWarrantyStopped ?? false;
+  // Two block kinds: unpaid due (legacy/default) vs proven misuse (warranty void)
+  const isMisuse = isDashboardDisabled && customer.warrantyStopReason === "misuse";
+  const misuseNotice = `প্রিয় গ্রাহক ${customer?.name} (${customer.customerId}), আপনার পণ্যের অপব্যবহার/ক্ষতি প্রমাণিত হওয়ায় এস ই ইলেকট্রনিক্স কোম্পানির নীতিমালা অনুযায়ী আপনার পণ্যের ওয়ারেন্টি বাতিল করা হয়েছে। বিস্তারিত জানতে কাস্টমার কেয়ার ${contactDetails.customerCare}`;
 
   const Actions = [
     {
@@ -192,7 +197,7 @@ export default function CustomerDashboardClient({
 
   const dueAmount = Number(stats?.dueAmount || 0);
   const referralBalance = Number(customer?.referralBalance || 0);
-  const statusLabel = isDashboardDisabled ? "Warranty Canceled" : isWarrantyExpired ? "Warranty Expired" : "Active";
+  const statusLabel = isMisuse ? "ওয়ারেন্টি বাতিল" : isDashboardDisabled ? "Warranty Canceled" : isWarrantyExpired ? "Warranty Expired" : "Active";
   const statusOk = !isDashboardDisabled && !isWarrantyExpired;
 
   return (
@@ -210,7 +215,7 @@ export default function CustomerDashboardClient({
               {isDashboardDisabled ? (
                 <div className="flex items-center gap-2 text-red-600 font-semibold text-sm px-6 py-2">
                   <AlertTriangle size={18} />
-                  {`প্রিয়  গ্রাহক ${customer?.name} (${customer.customerId}) আপনার পন্যের বকেয়া টাকা পরিশোধের জন্য বিভিন্ন সময় কল ও এসএমএস, ভয়েস এস এম এস দিয়েও আপনার সারা পাওয়া যায়নি দীর্ঘ সময় টাকা ও পরিশোধ করেননি তাই সেইলার কোম্পানির কাছে কাস্টমার আই ডি তে অভিযোগ জমা করায় আপনার ওয়ারেন্টি বাতিল  করেছে পুনরায় ওয়ারেন্টি বহাল রাখতে সেইলারের সাথে যোগাযোগ করুন অথবা কোম্পানিতে সরাসরি টাকা পরিশোধ করে ওয়ারেন্টি চালু করুন কাস্টমার কেয়ার ০৯৬৪৯৩৫৫৫৫৫ অথবা ০৯৬৩৯৬৭৩৬০০`}
+                  {isMisuse ? misuseNotice : `প্রিয়  গ্রাহক ${customer?.name} (${customer.customerId}) আপনার পন্যের বকেয়া টাকা পরিশোধের জন্য বিভিন্ন সময় কল ও এসএমএস, ভয়েস এস এম এস দিয়েও আপনার সারা পাওয়া যায়নি দীর্ঘ সময় টাকা ও পরিশোধ করেননি তাই সেইলার কোম্পানির কাছে কাস্টমার আই ডি তে অভিযোগ জমা করায় আপনার ওয়ারেন্টি বাতিল  করেছে পুনরায় ওয়ারেন্টি বহাল রাখতে সেইলারের সাথে যোগাযোগ করুন অথবা কোম্পানিতে সরাসরি টাকা পরিশোধ করে ওয়ারেন্টি চালু করুন কাস্টমার কেয়ার ০৯৬৪৯৩৫৫৫৫৫ অথবা ০৯৬৩৯৬৭৩৬০০`}
                 </div>
               ) : (
                 <div className="flex items-center gap-2 text-red-600 font-semibold text-sm px-6 py-2">
@@ -403,7 +408,7 @@ export default function CustomerDashboardClient({
               ওয়ারেন্টি বাতিল
             </h3>
             <p className="text-gray-600 text-sm leading-relaxed mb-6 font-semibold">
-              {`প্রিয়  গ্রাহক ${customer?.name} (${customer.customerId}) আপনার পন্যের বকেয়া টাকা পরিশোধের জন্য বিভিন্ন সময় কল ও এসএমএস, ভয়েস এস এম এস দিয়েও আপনার সারা পাওয়া যায়নি দীর্ঘ সময় টাকা ও পরিশোধ করেননি তাই সেইলার কোম্পানির কাছে কাস্টমার আই ডি তে অভিযোগ জমা করায় আপনার ওয়ারেন্টি বাতিল  করেছে পুনরায় ওয়ারেন্টি বহাল রাখতে সেইলারের সাথে যোগাযোগ করুন অথবা কোম্পানিতে সরাসরি টাকা পরিশোধ করে ওয়ারেন্টি চালু করুন কাস্টমার কেয়ার ০৯৬৪৯৩৫৫৫৫৫ অথবা ০৯৬৩৯৬৭৩৬০০`}
+              {isMisuse ? misuseNotice : `প্রিয়  গ্রাহক ${customer?.name} (${customer.customerId}) আপনার পন্যের বকেয়া টাকা পরিশোধের জন্য বিভিন্ন সময় কল ও এসএমএস, ভয়েস এস এম এস দিয়েও আপনার সারা পাওয়া যায়নি দীর্ঘ সময় টাকা ও পরিশোধ করেননি তাই সেইলার কোম্পানির কাছে কাস্টমার আই ডি তে অভিযোগ জমা করায় আপনার ওয়ারেন্টি বাতিল  করেছে পুনরায় ওয়ারেন্টি বহাল রাখতে সেইলারের সাথে যোগাযোগ করুন অথবা কোম্পানিতে সরাসরি টাকা পরিশোধ করে ওয়ারেন্টি চালু করুন কাস্টমার কেয়ার ০৯৬৪৯৩৫৫৫৫৫ অথবা ০৯৬৩৯৬৭৩৬০০`}
             </p>
             <button
               onClick={() => setShowPopup(false)}

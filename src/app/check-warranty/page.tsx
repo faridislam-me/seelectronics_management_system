@@ -114,11 +114,18 @@ export default function CheckWarrantyPage() {
                 </div>
               ))}
             </section>
+            {warrantyData.blockReason && (
+              <section className={clsx("rounded-md border p-3 text-[13px] leading-relaxed font-semibold", warrantyData.blockReason === "misuse" ? "bg-[#fff1f2] border-[#f7c3ca] text-[#c81f38]" : "bg-[#fff8ea] border-[#f5dfa0] text-[#8a4a05]")}>
+                {warrantyData.blockReason === "misuse"
+                  ? `পণ্যের অপব্যবহার/ক্ষতি প্রমাণিত হওয়ায় এস ই ইলেকট্রনিক্স এই গ্রাহকের ওয়ারেন্টি বাতিল করেছে। বিস্তারিত জানতে ${contactDetails.customerCare}`
+                  : "বকেয়া টাকা পরিশোধ না করায় এই গ্রাহকের ওয়ারেন্টি সাময়িকভাবে বন্ধ আছে। বকেয়া পরিশোধ করলে পুনরায় চালু হবে।"}
+              </section>
+            )}
             <section className="flex flex-col gap-2">
               <span className="text-[15px] font-extrabold px-0.5">ক্রয়কৃত পণ্য</span>
               {warrantyData.products.map((product: any, index: number) => {
                 const has = product.warrantyDurationMonths > 0;
-                const valid = has && isWarrantyValid(product.warrantyStartDate, product.warrantyDurationMonths);
+                const valid = !warrantyData.blockReason && has && isWarrantyValid(product.warrantyStartDate, product.warrantyDurationMonths);
                 const end = has ? calculateWarrantyEndDate(product.warrantyStartDate, product.warrantyDurationMonths) : null;
                 return (
                   <div key={index} className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-2">

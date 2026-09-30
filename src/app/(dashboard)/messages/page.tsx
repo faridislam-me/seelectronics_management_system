@@ -125,7 +125,7 @@ export default function MessagesPage() {
   const counts = { all: threads.length, pending: threads.filter((t) => t.pending).length, replied: threads.filter((t) => !t.pending).length };
 
   return (
-    <div className="flex flex-col gap-3 p-3 max-w-7xl mx-auto">
+    <div className="flex flex-col gap-2 p-1.5 -mx-2 sm:mx-auto sm:p-3 sm:gap-3 max-w-7xl min-w-0">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
@@ -253,10 +253,10 @@ export default function MessagesPage() {
                 {!selected.pending && (
                   <p className="text-xs text-gray-500 flex items-center gap-1.5"><Clock size={13} />All messages are answered. You can still send a new message to this customer.</p>
                 )}
-                    <div className="flex items-end gap-2">
+                    <div className="flex items-stretch gap-2">
                       <textarea
-                        rows={2}
-                        className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-md outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                        rows={1}
+                        className="flex-1 min-w-0 h-11 px-2.5 py-2.5 bg-gray-50 border border-gray-200 rounded-md outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
                         placeholder={selected.pending ? "Type your reply..." : "Write a message to this customer..."}
                         value={adminReply}
                         onChange={(e) => setAdminReply(e.target.value)}

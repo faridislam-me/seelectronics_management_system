@@ -316,7 +316,7 @@ export const getSupplierMessageTemplates = async (supplierId: string, transactio
       .limit(1);
     if (!supplier) return { success: false as const, message: "Supplier not found" };
     const t = await totalsFor(supplierId);
-    const summary = `প্রিয় ${supplier.name} (${supplier.shopName}), এস ই ইলেকট্রনিক্স থেকে আপনার মোট পাওনা ${taka(t.due)}। এ পর্যন্ত পরিশোধ ${taka(t.paid)}। ধন্যবাদ।`;
+    const summary = `প্রিয় ${supplier.name} (${supplier.shopName}), এস ই ইলেকট্রনিক্স থেকে আপনার মোট পাওনা ${taka(t.due)}। এ পর্যন্ত পরিশোধ ${taka(t.paid)}। হিসাব দেখুন: ${getBaseUrl()}/supplier/login`;
 
     let entry: string | null = null;
     if (transactionId) {
@@ -328,8 +328,8 @@ export const getSupplierMessageTemplates = async (supplierId: string, transactio
       if (tx) {
         entry =
           tx.type === "purchase"
-            ? `প্রিয় ${supplier.name}, ${taka(tx.amount)} এর মাল গ্রহণ করা হয়েছে। মোট পাওনা ${taka(t.due)}। - এস ই ইলেকট্রনিক্স`
-            : `প্রিয় ${supplier.name}, ${taka(tx.amount)} পরিশোধ করা হয়েছে। বাকি ${taka(t.due)}। - এস ই ইলেকট্রনিক্স`;
+            ? `প্রিয় ${supplier.name}, ${taka(tx.amount)} এর মাল গ্রহণ করা হয়েছে। মোট পাওনা ${taka(t.due)}। রসিদ: ${getBaseUrl()}/supplier-receipt/${transactionId}`
+            : `প্রিয় ${supplier.name}, ${taka(tx.amount)} পরিশোধ করা হয়েছে। বাকি ${taka(t.due)}। রসিদ: ${getBaseUrl()}/supplier-receipt/${transactionId}`;
       }
     }
     const voiceBroadcastId = Number(process.env.MRAM_VOICE_SUPPLIER_BROADCAST_ID || 0) || null;

@@ -210,7 +210,7 @@ export default function CustomerDashboardClient({
 
         {/* Warranty Notice Marquee */}
         {(isWarrantyExpired || isDashboardDisabled) && (
-          <div className="bg-red-50 border border-red-200 rounded-[10px] overflow-hidden">
+          <div className="bg-red-50 border border-red-200 rounded-md overflow-hidden">
             <Marquee speed={45} pauseOnHover={true} gradient={false}>
               {isDashboardDisabled ? (
                 <div className="flex items-center gap-2 text-red-600 font-semibold text-sm px-6 py-2">

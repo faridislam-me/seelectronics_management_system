@@ -316,7 +316,14 @@ export const getSupplierMessageTemplates = async (supplierId: string, transactio
       .limit(1);
     if (!supplier) return { success: false as const, message: "Supplier not found" };
     const t = await totalsFor(supplierId);
-    const summary = `প্রিয় ${supplier.name} (${supplier.shopName}), এস ই ইলেকট্রনিক্স থেকে আপনার মোট পাওনা ${taka(t.due)}। এ পর্যন্ত পরিশোধ ${taka(t.paid)}। হিসাব দেখুন: ${getBaseUrl()}/supplier/login`;
+    const [latest] = await db
+      .select({ transactionId: supplierTransactions.transactionId })
+      .from(supplierTransactions)
+      .where(eq(supplierTransactions.supplierId, supplierId))
+      .orderBy(desc(supplierTransactions.date), desc(supplierTransactions.createdAt))
+      .limit(1);
+    const statementLink = latest ? `${getBaseUrl()}/supplier-receipt/${latest.transactionId}` : `${getBaseUrl()}/supplier/login`;
+    const summary = `প্রিয় ${supplier.name} (${supplier.shopName}), এস ই ইলেকট্রনিক্স থেকে আপনার মোট পাওনা ${taka(t.due)}। এ পর্যন্ত পরিশোধ ${taka(t.paid)}। হিসাব দেখুন: ${statementLink}`;
 
     let entry: string | null = null;
     if (transactionId) {
@@ -431,17 +438,17 @@ export const getMySupplierLedger = async () => {
  */
 export const getSupplierReceipt = async (transactionId: string) => {
   try {
+    // The receipt link (random 10-char id) works without a login so a supplier
+    // can open it straight from the SMS; an admin/supplier session only changes the Back link.
     const session = await decrypt((await cookies()).get("session")?.value);
     const role = session?.role as string | undefined;
-    if (!session?.userId || (role !== "admin" && role !== "supplier")) return { success: false as const, message: "Unauthorized" };
 
     const [tx] = await db.select().from(supplierTransactions).where(eq(supplierTransactions.transactionId, transactionId)).limit(1);
     if (!tx) return { success: false as const, message: "Not found" };
-    if (role === "supplier" && tx.supplierId !== session.userId) return { success: false as const, message: "Not found" };
 
     const res = await loadSupplierLedger(tx.supplierId);
     if (!res.success) return res;
-    if (role === "supplier" && !res.data.supplier.isActive) return { success: false as const, message: "Inactive" };
+    if (role !== "admin" && !res.data.supplier.isActive) return { success: false as const, message: "Inactive" };
 
     // Totals up to and including this entry (ledger is oldest first).
     let purchased = 0;
@@ -452,9 +459,17 @@ export const getSupplierReceipt = async (transactionId: string) => {
       if (e.transactionId === transactionId) break;
     }
     const { username: _u, ...supplier } = res.data.supplier;
+    const viewer = role === "admin" ? "admin" : role === "supplier" && session?.userId === tx.supplierId ? "supplier" : "public";
     return {
       success: true as const,
-      data: { supplier, transaction: tx, totals: { purchased, paid, due: purchased - paid }, viewer: role as "admin" | "supplier" },
+      data: {
+        supplier,
+        transaction: tx,
+        totals: { purchased, paid, due: purchased - paid },
+        ledger: res.data.ledger,
+        overall: res.data.totals,
+        viewer: viewer as "admin" | "supplier" | "public",
+      },
     };
   } catch (error) {
     console.error("getSupplierReceipt failed:", error);

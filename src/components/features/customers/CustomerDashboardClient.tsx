@@ -74,6 +74,9 @@ export default function CustomerDashboardClient({
   const isWarrantyExpired = stats?.isWarrantyExpired ?? false;
   const isDashboardDisabled = customer.isWarrantyStopped ?? false;
   // Two block kinds: unpaid due (legacy/default) vs proven misuse (warranty void)
+  const Tile: any = isDashboardDisabled ? "button" : Link;
+  const tileProps = (href: string) => (isDashboardDisabled ? { type: "button", onClick: () => setShowPopup(true) } : { href });
+  const tileDisabled = isDashboardDisabled ? "opacity-50 cursor-not-allowed" : "";
   const isMisuse = isDashboardDisabled && customer.warrantyStopReason === "misuse";
   const misuseNotice = `প্রিয় গ্রাহক ${customer?.name} (${customer.customerId}), আপনার পণ্যের অপব্যবহার/ক্ষতি প্রমাণিত হওয়ায় এস ই ইলেকট্রনিক্স কোম্পানির নীতিমালা অনুযায়ী আপনার পণ্যের ওয়ারেন্টি বাতিল করা হয়েছে। বিস্তারিত জানতে কাস্টমার কেয়ার ${contactDetails.customerCare}`;
 
@@ -283,22 +286,23 @@ export default function CustomerDashboardClient({
 
         {/* Services / Subscription cards */}
         <div className="grid grid-cols-2 gap-2.5">
-          <Link href="/customer/services" className="rounded-md border border-[#bfe8cd] bg-[#e9f9ef] p-3 flex items-center gap-3 min-h-[72px]">
+          {/* Blocked customers get the same faded, tap-for-notice tiles as Quick Actions */}
+          <Tile {...tileProps("/customer/services")} className={`rounded-md text-left border border-[#bfe8cd] bg-[#e9f9ef] p-3 flex items-center gap-3 min-h-[72px] ${tileDisabled}`}>
             <span className="size-11 rounded-full bg-[#d4f3e0] text-[#1a9c4b] flex items-center justify-center shrink-0"><Boxes size={22} strokeWidth={2.2} /></span>
             <span className="flex flex-col min-w-0 flex-1">
               <span className="text-[clamp(18px,5vw,22px)] font-extrabold text-[#178a42] leading-none">{stats?.totalServices || 0}</span>
               <span className="text-[clamp(10px,3vw,12px)] font-extrabold text-[#178a42] uppercase tracking-wide">Services</span>
             </span>
             <span className="text-[#178a42]">›</span>
-          </Link>
-          <Link href="/customer/plans" className="rounded-md border border-[#dcc6fb] bg-[#f3e9ff] p-3 flex items-center gap-3 min-h-[72px]">
+          </Tile>
+          <Tile {...tileProps("/customer/plans")} className={`rounded-md text-left border border-[#dcc6fb] bg-[#f3e9ff] p-3 flex items-center gap-3 min-h-[72px] ${tileDisabled}`}>
             <span className="size-11 rounded-full bg-[#e6d6fb] text-[#8b3fe8] flex items-center justify-center shrink-0"><Zap size={22} strokeWidth={2.2} /></span>
             <span className="flex flex-col min-w-0 flex-1">
               <span className="text-[clamp(18px,5vw,22px)] font-extrabold text-[#7a35d2] leading-none">{stats?.activeSubscriptions || 0}</span>
               <span className="text-[clamp(10px,3vw,12px)] font-extrabold text-[#7a35d2] uppercase tracking-wide">Subscription</span>
             </span>
             <span className="text-[#7a35d2]">›</span>
-          </Link>
+          </Tile>
         </div>
 
         {/* Secondary Grid */}

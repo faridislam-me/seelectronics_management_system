@@ -21,6 +21,7 @@ type SellerCustomer = {
   address: string;
   invoiceNumber: string;
   isWarrantyStopped: boolean | null;
+  warrantyStopReason?: string | null;
   createdAt: Date;
   referredByVipCard: string | null;
   sellerId: string | null;
@@ -51,12 +52,15 @@ export default function SellerCustomersClient({ customers, inWarranty, counts }:
   const [pay, setPay] = useState<"all" | PayKind>("all");
   const [war, setWar] = useState<"all" | "yes" | "no">("all");
   const [blockBusy, setBlockBusy] = useState<string | null>(null);
+  const [blockFor, setBlockFor] = useState<SellerCustomer | null>(null);
 
-  const toggleBlock = async (c: SellerCustomer) => {
+  const toggleBlock = async (c: SellerCustomer, reason?: "due" | "misuse") => {
     const blocking = !c.isWarrantyStopped;
-    if (blocking && !window.confirm(`${c.name} কে ব্লক করবেন? ব্লক করলে কাস্টমারের ড্যাশবোর্ড ও ওয়ারেন্টি বন্ধ থাকবে।`)) return;
+    // Blocking needs a reason: open the chooser first
+    if (blocking && !reason) return setBlockFor(c);
+    setBlockFor(null);
     setBlockBusy(c.customerId);
-    const res = await sellerToggleCustomerBlock(c.customerId);
+    const res = await sellerToggleCustomerBlock(c.customerId, reason);
     setBlockBusy(null);
     toast(res.message, { type: res.success ? "success" : "error" });
     if (res.success) router.refresh();
@@ -177,7 +181,7 @@ export default function SellerCustomersClient({ customers, inWarranty, counts }:
                   <span className="text-xs font-semibold text-[#6b7690] truncate">{products.map((p) => `${p.type.toUpperCase()} ${p.model}`).join(", ") || "—"} · {c.phone}</span>
                 </span>
                 <span className="flex flex-col items-end gap-1 shrink-0">
-                  {c.isWarrantyStopped ? <BlueChip tone="red">BLOCKED</BlueChip> : active ? <BlueChip tone="blue">IN SERVICE</BlueChip> : warranty ? <BlueChip tone="green">WARRANTY</BlueChip> : <BlueChip tone="red">EXPIRED</BlueChip>}
+                  {c.isWarrantyStopped ? (c.warrantyStopReason === "misuse" ? <BlueChip tone="red">ওয়ারেন্টি বাতিল</BlueChip> : <BlueChip tone="amber">বকেয়া ব্লক</BlueChip>) : active ? <BlueChip tone="blue">IN SERVICE</BlueChip> : warranty ? <BlueChip tone="green">WARRANTY</BlueChip> : <BlueChip tone="red">EXPIRED</BlueChip>}
                   <span className="text-[10px] font-bold text-[#6b7690]">{payLabel[payKind(c.invoice)]}</span>
                 </span>
               </summary>
@@ -205,6 +209,22 @@ export default function SellerCustomersClient({ customers, inWarranty, counts }:
           );
         })}
       </BlueCard>
+      {blockFor && (
+        <div className="fixed inset-0 z-[100] bg-black/40 flex items-end sm:items-center justify-center p-2" onClick={() => setBlockFor(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[400px] rounded-md bg-white p-3 flex flex-col gap-2.5">
+            <span className="text-[14.5px] font-extrabold text-[#16213a]">{blockFor.name} — ব্লক করার কারণ</span>
+            <button type="button" onClick={() => toggleBlock(blockFor, "due")} className="rounded-md border border-[#f5dfa0] bg-[#fff8ea] p-2.5 text-left">
+              <span className="block text-[13px] font-extrabold text-[#8a4a05]">বকেয়া টাকা পরিশোধ না করা</span>
+              <span className="block text-[11.5px] text-[#8a4a05]/80">ড্যাশবোর্ড বন্ধ থাকবে, বকেয়ার নোটিশ যাবে</span>
+            </button>
+            <button type="button" onClick={() => toggleBlock(blockFor, "misuse")} className="rounded-md border border-[#f7c3ca] bg-[#fff1f2] p-2.5 text-left">
+              <span className="block text-[13px] font-extrabold text-[#c81f38]">অপব্যবহার/নষ্ট প্রমাণিত — ওয়ারেন্টি বাতিল</span>
+              <span className="block text-[11.5px] text-[#c81f38]/80">ওয়ারেন্টি বাতিলের নোটিশ ও SMS যাবে</span>
+            </button>
+            <button type="button" onClick={() => setBlockFor(null)} className="h-9 rounded-md border border-[#dfe6f2] text-[13px] font-bold text-[#5b6784]">বাতিল</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

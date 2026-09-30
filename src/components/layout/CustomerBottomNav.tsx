@@ -19,12 +19,14 @@ export function CustomerBottomNav() {
   const pathname = usePathname();
   const [isDashboardDisabled, setIsDashboardDisabled] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+  const [isMisuse, setIsMisuse] = useState(false);
 
   useEffect(() => {
     const fetchStatus = async () => {
       const res = await getCustomerDashboardStatus();
       if (res.success && res.isWarrantyStopped) {
         setIsDashboardDisabled(true);
+        setIsMisuse((res as any).warrantyStopReason === "misuse");
       }
     };
     fetchStatus();
@@ -128,9 +130,9 @@ export function CustomerBottomNav() {
                 ওয়ারেন্টি বাতিল
               </h3>
               <p className="text-gray-600 text-sm leading-relaxed mb-6 font-semibold whitespace-pre-line">
-                প্রিয় গ্রাহক আপনার পন্যের বকেয়া টাকা পরিশোধ না করায় আপনার
-                পন্যটির ওয়ারেন্টি বাতিল করা হয়েছে । পুনারায় ওয়ারেন্টি বহাল রাখতে
-                সেইলার এর সাথে যোগাযোগ করুন।
+                {isMisuse
+                  ? "প্রিয় গ্রাহক আপনার পণ্যের অপব্যবহার/ক্ষতি প্রমাণিত হওয়ায় আপনার পণ্যটির ওয়ারেন্টি বাতিল করা হয়েছে। বিস্তারিত জানতে কাস্টমার কেয়ারে যোগাযোগ করুন।"
+                  : "প্রিয় গ্রাহক আপনার পন্যের বকেয়া টাকা পরিশোধ না করায় আপনার পন্যটির ওয়ারেন্টি বাতিল করা হয়েছে । পুনারায় ওয়ারেন্টি বহাল রাখতে সেইলার এর সাথে যোগাযোগ করুন।"}
               </p>
               <button
                 onClick={() => setShowPopup(false)}

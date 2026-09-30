@@ -170,6 +170,8 @@ export const customers = pgTable(
     }).default(0),
     isWarrantyStopped: boolean().default(false).notNull(),
     warrantyStoppedAt: timestamp({ withTimezone: true }),
+    /** Why the customer is blocked: 'due' (unpaid due) | 'misuse' (warranty void). null = legacy, treated as 'due'. */
+    warrantyStopReason: varchar({ length: 20 }),
     sellerId: varchar({ length: 255 }).references(() => sellers.sellerId, {
       onDelete: "set null",
     }),

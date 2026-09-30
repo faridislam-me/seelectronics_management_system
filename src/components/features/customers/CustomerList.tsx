@@ -86,6 +86,13 @@ export default async function CustomerList(
               VIP
             </span>
           )}
+          {customer.isWarrantyStopped && (
+            customer.warrantyStopReason === "misuse" ? (
+              <span className="px-2 py-0.5 rounded-md bg-red-100 text-red-700 border border-red-200 text-[10px] font-black uppercase tracking-wide">ওয়ারেন্টি বাতিল</span>
+            ) : (
+              <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-black uppercase tracking-wide">বকেয়া ব্লক</span>
+            )
+          )}
         </div>
       </td>
       <td className="py-3 px-4 whitespace-nowrap text-gray-700 font-bold text-sm sm:text-base">

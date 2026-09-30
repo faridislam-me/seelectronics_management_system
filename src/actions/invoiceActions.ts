@@ -227,9 +227,16 @@ export const getWarrantyInfo = async (query: string) => {
     const phone = invoice.customerPhone || "";
     const maskedPhone = phone.length > 5 ? `${phone.slice(0, 3)}${"*".repeat(Math.max(phone.length - 6, 3))}${phone.slice(-3)}` : phone;
 
+    const owner = await db.query.customers.findFirst({
+      where: eq(customers.customerId, invoice.customerId),
+      columns: { isWarrantyStopped: true, warrantyStopReason: true },
+    });
+    const blockReason = owner?.isWarrantyStopped ? (owner.warrantyStopReason === "misuse" ? "misuse" : "due") : null;
+
     return {
       success: true,
       data: {
+        blockReason,
         invoiceNumber: invoice.invoiceNumber,
         customerId: invoice.customerId,
         customerName: invoice.customerName,

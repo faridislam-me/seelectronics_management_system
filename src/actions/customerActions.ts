@@ -435,7 +435,7 @@ export async function getCustomerDashboardStatus() {
 
         if (!customer) return { success: false };
 
-        return { success: true, isWarrantyStopped: customer.isWarrantyStopped };
+        return { success: true, isWarrantyStopped: customer.isWarrantyStopped, warrantyStopReason: customer.isWarrantyStopped ? (customer.warrantyStopReason === 'misuse' ? 'misuse' : 'due') : null };
     } catch (error) {
         return { success: false };
     }

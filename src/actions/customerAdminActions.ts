@@ -574,7 +574,7 @@ export const deleteCustomer = async (id: string) => {
  * When disabling: sets isWarrantyStopped = true, warrantyStoppedAt = now()
  * When enabling: adds the disabled duration to all products' warrantyEndDate, resets fields.
  */
-export const toggleCustomerDashboard = async (customerId: string) => {
+export const toggleCustomerDashboard = async (customerId: string, reason?: "due" | "misuse") => {
   try {
     const session = await verifySession(false, "admin");
     if (!session) return { success: false, message: "Unauthorized" };
@@ -592,49 +592,8 @@ export const toggleCustomerDashboard = async (customerId: string) => {
 
     if (!customer) return { success: false, message: "Customer not found" };
 
-    if (customer.isWarrantyStopped) {
-      // ENABLING DASHBOARD
-      const stoppedAt = customer.warrantyStoppedAt ? new Date(customer.warrantyStoppedAt) : new Date();
-      const now = new Date();
-      const durationMs = now.getTime() - stoppedAt.getTime();
-
-      // Update all products to extend warrantyEndDate
-      if (customer.invoice && customer.invoice.products && customer.invoice.products.length > 0) {
-        for (const prod of customer.invoice.products) {
-          const currentEndDate = prod.warrantyEndDate ? new Date(prod.warrantyEndDate) : new Date();
-          const newEndDate = new Date(currentEndDate.getTime() + durationMs);
-          await db.update(products)
-            .set({ warrantyEndDate: newEndDate })
-            .where(eq(products.id, prod.id));
-        }
-      }
-
-      await db.update(customers)
-        .set({
-          isWarrantyStopped: false,
-          warrantyStoppedAt: null,
-        })
-        .where(eq(customers.customerId, customerId));
-
-    } else {
-      // DISABLING DASHBOARD
-      await db.update(customers)
-        .set({
-          isWarrantyStopped: true,
-          warrantyStoppedAt: new Date(),
-        })
-        .where(eq(customers.customerId, customerId));
-
-      try {
-        const { sendVoiceCall, getMramBroadcastIds } = await import("@/lib/mram");
-        const broadcastIds = getMramBroadcastIds();
-        if (broadcastIds && broadcastIds.customer_dashboard_disabled) {
-           sendVoiceCall(customer.phone, broadcastIds.customer_dashboard_disabled, `Dashboard Disabled ${customerId}`).catch(e => console.error(e));
-        }
-      } catch (e) {
-        console.error("Failed to send MRAM voice call:", e);
-      }
-    }
+    const { toggleCustomerBlockCore, blockReasonOf } = await import("@/lib/customerBlock");
+    await toggleCustomerBlockCore(customer, blockReasonOf(reason));
 
     revalidatePath("/customers");
     revalidatePath(`/staff/customers/${customerId}`);

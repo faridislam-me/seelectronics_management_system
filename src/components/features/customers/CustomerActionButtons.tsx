@@ -21,6 +21,7 @@ export default function CustomerActionButtons({
   const [showEditModal, setShowEditModal] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
   const [showVoiceSmsModal, setShowVoiceSmsModal] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [isProductsLoading, setIsProductsLoading] = useState(true);
   const toastId = useRef<Id | null>(null);
@@ -236,10 +237,42 @@ export default function CustomerActionButtons({
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 7.343l4.243-4.243a2 2 0 012.828 0l2.122 2.122a2 2 0 010 2.828l-4.243 4.243M12 7.343L7.757 3.1a2 2 0 00-2.828 0L2.807 5.222a2 2 0 000 2.828l4.243 4.243" />
         </svg>
       </button>
+      {showBlockModal && (
+        <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-3" onClick={() => setShowBlockModal(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[380px] rounded-md bg-white p-4 flex flex-col gap-3 text-left shadow-xl">
+            <span className="text-[15px] font-extrabold text-[#16213a]">{customerData.name} — ব্লক করার কারণ</span>
+            {([
+              { r: "due", t: "বকেয়া টাকা পরিশোধ না করা", d: "ড্যাশবোর্ড বন্ধ থাকবে, বকেয়ার নোটিশ ও ভয়েস কল যাবে", c: "border-amber-300 bg-amber-50 text-amber-800" },
+              { r: "misuse", t: "অপব্যবহার/নষ্ট প্রমাণিত — ওয়ারেন্টি বাতিল", d: "ওয়ারেন্টি বাতিলের নোটিশ ও SMS যাবে", c: "border-red-300 bg-red-50 text-red-700" },
+            ] as const).map((o) => (
+              <button
+                key={o.r}
+                type="button"
+                onClick={async () => {
+                  setShowBlockModal(false);
+                  toastId.current = toast("Updating...", { autoClose: false });
+                  const res = await toggleCustomerDashboard(customerData.customerId, o.r);
+                  toast.update(toastId.current, { type: res.success ? "success" : "error", render: res.message, autoClose: 1500 });
+                }}
+                className={clsx("rounded-md border p-2.5 text-left", o.c)}
+              >
+                <span className="block text-[13.5px] font-extrabold">{o.t}</span>
+                <span className="block text-[11.5px] opacity-80">{o.d}</span>
+              </button>
+            ))}
+            <button type="button" onClick={() => setShowBlockModal(false)} className="h-9 rounded-md border border-gray-200 text-[13px] font-bold text-gray-600">বাতিল</button>
+          </div>
+        </div>
+      )}
       <button
         title={customerData.isWarrantyStopped ? "Enable Dashboard" : "Disable Dashboard"}
         onClick={async () => {
-          if (confirm(`Are you sure you want to ${customerData.isWarrantyStopped ? 'enable' : 'disable'} dashboard for ${customerData.name}?`)) {
+          if (!customerData.isWarrantyStopped) {
+            // Blocking: ask for the reason first
+            setShowBlockModal(true);
+            return;
+          }
+          if (confirm(`Are you sure you want to enable dashboard for ${customerData.name}?`)) {
             toastId.current = toast("Updating...", { autoClose: false });
             const res = await toggleCustomerDashboard(customerData.customerId);
             toast.update(toastId.current, {

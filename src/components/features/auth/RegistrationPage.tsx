@@ -73,8 +73,8 @@ export default function RegistrationPage({ token }: { token: string }) {
       <div className="relative flex items-center gap-3">
         <span className="size-12 rounded-full bg-white/15 border border-white/25 flex items-center justify-center shrink-0"><ClipboardList size={24} /></span>
         <span className="flex flex-col leading-tight min-w-0">
-          <span className="text-[12px] font-bold text-white/85">টেকনিশিয়ান / ইলেকট্রিশিয়ান নিবন্ধন ফর্ম</span>
-          <span className="text-[clamp(16px,4.8vw,20px)] font-extrabold">এস ই ইলেকট্রনিকস সার্ভিস এজেন্ট নিয়োগ আবেদন</span>
+          <span className="text-[13px] font-medium text-white/85">টেকনিশিয়ান / ইলেকট্রিশিয়ান নিবন্ধন ফর্ম</span>
+          <span className="text-[clamp(16px,4.8vw,20px)] font-medium">এস ই ইলেকট্রনিকস সার্ভিস এজেন্ট নিয়োগ আবেদন</span>
         </span>
       </div>
     </section>
@@ -106,7 +106,7 @@ export default function RegistrationPage({ token }: { token: string }) {
           <section className="rounded-md bg-white border border-[#dfe6f2] overflow-hidden shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
             <div className="flex items-center gap-2.5 px-2.5 py-2 bg-[#eef4fd] border-b border-[#dfe8f7]">
               <span className="size-7 rounded-full bg-[#0b3d91] text-white flex items-center justify-center"><ClipboardList size={15} /></span>
-              <span className="text-[15px] font-extrabold text-[#0b3d91]">রেজিস্ট্রেশন নির্দেশিকা</span>
+              <span className="text-[16px] font-medium text-[#0b3d91]">রেজিস্ট্রেশন নির্দেশিকা</span>
             </div>
             <div className="p-2.5 flex flex-col gap-2">
               <p className="text-[12.5px] leading-relaxed text-[#3d4a63]">এস ই ইলেকট্রনিকস সার্ভিস এজেন্ট হিসেবে যোগ দিতে নিচের প্রয়োজনীয় তথ্য ও নথিগুলো সাথে রাখুন।</p>
@@ -114,7 +114,7 @@ export default function RegistrationPage({ token }: { token: string }) {
                 {requirementsList.map((item) => (
                   <div key={item.id} className="flex items-start gap-2 p-2 rounded-md bg-[#f5f8fd] border border-[#eef1f6]">
                     <span className="size-5 rounded-full bg-[#1f7cf0] text-white flex items-center justify-center shrink-0 mt-0.5"><Check size={12} strokeWidth={3} /></span>
-                    <span className="text-[12.5px] font-bold text-[#16213a] leading-snug">{item.text}</span>
+                    <span className="text-[13.5px] font-medium text-[#16213a] leading-snug">{item.text}</span>
                   </div>
                 ))}
               </div>
@@ -123,7 +123,7 @@ export default function RegistrationPage({ token }: { token: string }) {
 
           <label className="rounded-md bg-[#e8f1ff] border border-[#cfe0fb] p-2.5 flex items-start gap-3 cursor-pointer">
             <input type="checkbox" className="size-5 mt-0.5 accent-[#1f7cf0] shrink-0" checked={isAgreed} onChange={(e) => setIsAgreed(e.target.checked)} />
-            <span className="text-[13px] font-extrabold leading-snug">আমি সকল নিয়ম ও শর্তগুলোতে সম্মত আছি এবং সঠিক তথ্য প্রদানে অঙ্গীকার করছি।</span>
+            <span className="text-[14px] font-medium leading-snug">আমি সকল নিয়ম ও শর্তগুলোতে সম্মত আছি এবং সঠিক তথ্য প্রদানে অঙ্গীকার করছি।</span>
           </label>
 
           <button
@@ -147,7 +147,7 @@ export default function RegistrationPage({ token }: { token: string }) {
       <div className="px-2 pt-2 flex flex-col gap-2.5 max-w-[720px] mx-auto">
         {hero}
         {contact}
-        <p className="rounded-md bg-white border border-[#dfe6f2] px-2.5 py-2 text-[12px] font-bold text-[#3d4a63] text-center">দয়া করে নিচের প্রতিটি ফিল্ড সঠিক তথ্য দিয়ে পূরণ করুন</p>
+        <p className="rounded-md bg-white border border-[#dfe6f2] px-2.5 py-2 text-[13px] font-medium text-[#3d4a63] text-center">দয়া করে নিচের প্রতিটি ফিল্ড সঠিক তথ্য দিয়ে পূরণ করুন</p>
         <PublicRegistrationForm
           token={token}
           onRegistrationComplete={(n) => {

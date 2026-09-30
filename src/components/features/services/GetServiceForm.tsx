@@ -224,9 +224,9 @@ export default function GetServiceForm({ preferredStaffId, customerId, customerD
           <section className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-3 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
             <span className="size-12 rounded-md bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><ClipboardList size={26} /></span>
             <span className="flex flex-col leading-tight min-w-0 flex-1">
-              <span className="text-[clamp(16px,4.8vw,19px)] font-extrabold text-[#0b3d91]">অনলাইনে সার্ভিস কন্ডিশন</span>
-              <span className="text-[12px] font-bold text-[#1f7cf0]">Terms &amp; Conditions</span>
-              <span className="text-[11.5px] font-semibold text-[#3d4a63]">অনলাইন সার্ভিসের জন্য নিচের শর্তাবলী সমূহ প্রযোজ্য।</span>
+              <span className="text-[clamp(16px,4.8vw,19px)] font-medium text-[#0b3d91]">অনলাইনে সার্ভিস কন্ডিশন</span>
+              <span className="text-[13px] font-medium text-[#1f7cf0]">Terms &amp; Conditions</span>
+              <span className="text-[12.5px] font-medium text-[#3d4a63]">অনলাইন সার্ভিসের জন্য নিচের শর্তাবলী সমূহ প্রযোজ্য।</span>
             </span>
             <span className="hidden min-[360px]:block shrink-0 text-right text-[11px] font-extrabold leading-snug text-[#0b3d91]">আপনার সন্তুষ্টিই<br />আমাদের<br />প্রধান লক্ষ্য</span>
           </section>
@@ -238,8 +238,8 @@ export default function GetServiceForm({ preferredStaffId, customerId, customerD
               <summary className="list-none cursor-pointer p-2.5 flex items-center gap-3">
                 <span className="size-12 rounded-full bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center shrink-0"><item.icon size={24} /></span>
                 <span className="flex flex-col min-w-0 flex-1 leading-tight">
-                  <span className="text-[14px] font-extrabold">{item.title}</span>
-                  <span className="text-[11.5px] font-medium text-[#3d4a63] line-clamp-2">{item.description.trim()}</span>
+                  <span className="text-[15px] font-medium">{item.title}</span>
+                  <span className="text-[12.5px] font-normal text-[#3d4a63] line-clamp-2">{item.description.trim()}</span>
                 </span>
                 <ChevronRight size={18} className="text-[#1f7cf0] shrink-0 transition-transform [details[open]_&]:rotate-90" />
               </summary>
@@ -249,7 +249,7 @@ export default function GetServiceForm({ preferredStaffId, customerId, customerD
 
           <label className="rounded-md bg-[#e8f1ff] border border-[#cfe0fb] p-2.5 flex items-start gap-3 cursor-pointer">
             <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="size-5 mt-0.5 accent-[#1f7cf0] shrink-0" />
-            <span className="flex flex-col leading-snug"><span className="text-[13px] font-extrabold">আমি উপরের সকল শর্তাবলী পড়েছি এবং সম্মত আছি।</span><span className="text-[11.5px] font-medium text-[#3d4a63]">উপরোক্ত &quot;এস ই ইলেকট্রনিকস অনলাইন সার্ভিসিং-এর শর্তাবলী ও নির্দেশিকা&quot; আমি মনোযোগ সহকারে পড়েছি এবং এতে সম্মত হয়ে, আমার সার্ভিসিং আবেদন প্রক্রিয়া শুরু করতে চাই।</span></span>
+            <span className="flex flex-col leading-snug"><span className="text-[14px] font-medium">আমি উপরের সকল শর্তাবলী পড়েছি এবং সম্মত আছি।</span><span className="text-[11.5px] font-medium text-[#3d4a63]">উপরোক্ত &quot;এস ই ইলেকট্রনিকস অনলাইন সার্ভিসিং-এর শর্তাবলী ও নির্দেশিকা&quot; আমি মনোযোগ সহকারে পড়েছি এবং এতে সম্মত হয়ে, আমার সার্ভিসিং আবেদন প্রক্রিয়া শুরু করতে চাই।</span></span>
           </label>
           <button disabled={!agreed} onClick={() => setShowToC(false)} className="h-12 rounded-md bg-[#1f7cf0] text-white text-[15px] font-extrabold inline-flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(31,124,240,0.35)] disabled:opacity-40 active:scale-[0.98] transition-all"><Send size={18} />সার্ভিস অনুরোধ করুন</button>
           <p className="text-center text-[11px] font-bold text-[#9aa4b8]">© SEIPSBD, All Rights Reserved.</p>

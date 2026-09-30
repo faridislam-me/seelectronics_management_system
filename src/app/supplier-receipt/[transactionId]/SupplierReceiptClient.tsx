@@ -3,6 +3,7 @@
 import { contactDetails } from "@/constants";
 import { ArrowLeft, Printer } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
 const NAVY = "#0b3d91";
 const bn = (n: number | string) => String(n).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);
@@ -15,8 +16,12 @@ type Props = {
   totals: { purchased: number; paid: number; due: number };
   qrDataUrl: string | null;
   barcodeSvg: string;
-  backHref: string;
+  ledger: { transactionId: string; type: string; amount: number; description: string | null; date: string; balance: number }[];
+  overall: { purchased: number; paid: number; due: number };
+  backHref: string | null;
 };
+
+const A4_PX = 794; // 21cm at 96dpi
 
 function SectionTitle({ n, bnTitle, enTitle }: { n: number; bnTitle: string; enTitle: string }) {
   return (
@@ -42,18 +47,39 @@ function Row({ label, en, value, i, strong }: { label: string; en?: string; valu
   );
 }
 
-export default function SupplierReceiptClient({ supplier, transaction, totals, qrDataUrl, barcodeSvg, backHref }: Props) {
+export default function SupplierReceiptClient({ supplier, transaction, totals, qrDataUrl, barcodeSvg, ledger, overall, backHref }: Props) {
   const isPayment = transaction.type === "payment";
   const printedOn = new Date().toLocaleDateString("en-GB");
 
+  // Fit the A4 sheet to the screen width (pinch-zoom still works for a closer look).
+  const [scale, setScale] = useState(1);
+  const [sheetH, setSheetH] = useState<number | null>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const fit = () => {
+      setScale(Math.min(1, window.innerWidth / A4_PX));
+      if (sheetRef.current) setSheetH(sheetRef.current.offsetHeight);
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    const t = setTimeout(fit, 300);
+    return () => {
+      window.removeEventListener("resize", fit);
+      clearTimeout(t);
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-100 py-4 sm:py-8 print:bg-white print:py-0 font-sans text-black overflow-x-auto">
-      <div className="w-[21cm] shrink-0 mx-auto bg-white shadow-xl print:shadow-none">
+    <div className="min-h-screen bg-gray-100 py-0 sm:py-8 print:bg-white print:py-0 font-sans text-black overflow-x-hidden">
+      <div className="sr-fit mx-auto" style={{ width: A4_PX * scale, height: sheetH ? sheetH * scale : undefined }}>
+      <div ref={sheetRef} className="sr-sheet w-[21cm] bg-white shadow-xl print:shadow-none origin-top-left" style={{ transform: `scale(${scale})` }}>
         <div className="px-6 py-3 flex flex-wrap gap-2 items-center justify-between print:hidden border-b border-gray-200">
-          <Link href={backHref} className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md shadow-sm text-sm font-medium">
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </Link>
+          {backHref ? (
+            <Link href={backHref} className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md shadow-sm text-sm font-medium">
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </Link>
+          ) : <span />}
           <button onClick={() => window.print()} className="inline-flex items-center gap-2 px-6 py-2 text-white rounded-md shadow-sm text-sm font-medium" style={{ background: NAVY }}>
             <Printer className="w-4 h-4" />
             Download / Print Receipt
@@ -137,9 +163,41 @@ export default function SupplierReceiptClient({ supplier, transaction, totals, q
               </div>
             </div>
 
-            {/* 4. Signatures */}
+            {/* 4. Full account statement */}
             <div className="border border-[#c9d4e6]">
-              <SectionTitle n={4} bnTitle="স্বাক্ষর" enTitle="Signatures" />
+              <SectionTitle n={4} bnTitle="সম্পূর্ণ হিসাব" enTitle="Full Account Statement" />
+              <table className="w-full border-collapse text-[10.5px]">
+                <thead>
+                  <tr className="bg-[#eaf0fa] text-[#16213a]">
+                    <th className="border border-[#c9d4e6] px-1.5 py-1 text-left font-bold">তারিখ</th>
+                    <th className="border border-[#c9d4e6] px-1.5 py-1 text-left font-bold">ধরন</th>
+                    <th className="border border-[#c9d4e6] px-1.5 py-1 text-left font-bold">বিবরণ</th>
+                    <th className="border border-[#c9d4e6] px-1.5 py-1 text-right font-bold">টাকা</th>
+                    <th className="border border-[#c9d4e6] px-1.5 py-1 text-right font-bold">বাকি</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ledger.map((e, i) => (
+                    <tr key={e.transactionId} className={e.transactionId === transaction.transactionId ? "bg-[#fff8e1]" : i % 2 ? "bg-[#f4f7fc]" : "bg-white"}>
+                      <td className="border border-[#c9d4e6] px-1.5 py-[3px] whitespace-nowrap">{fmtDate(e.date)}</td>
+                      <td className="border border-[#c9d4e6] px-1.5 py-[3px] whitespace-nowrap font-semibold">{e.type === "purchase" ? "মাল গ্রহণ" : "পরিশোধ"}</td>
+                      <td className="border border-[#c9d4e6] px-1.5 py-[3px]">{e.description || "—"}</td>
+                      <td className={`border border-[#c9d4e6] px-1.5 py-[3px] text-right whitespace-nowrap font-bold ${e.type === "payment" ? "text-[#178a42]" : ""}`}>{e.type === "payment" ? "−" : "+"}{taka(e.amount)}</td>
+                      <td className="border border-[#c9d4e6] px-1.5 py-[3px] text-right whitespace-nowrap font-bold">{taka(e.balance)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="grid grid-cols-3 text-center border-t border-[#c9d4e6] bg-[#f4f7fc]">
+                <div className="border-r border-[#c9d4e6] py-1.5"><div className="text-[10px] font-semibold text-[#5b6784]">মোট মাল গ্রহণ</div><div className="text-[13px] font-extrabold">{taka(overall.purchased)}</div></div>
+                <div className="border-r border-[#c9d4e6] py-1.5"><div className="text-[10px] font-semibold text-[#5b6784]">মোট পরিশোধ</div><div className="text-[13px] font-extrabold text-[#178a42]">{taka(overall.paid)}</div></div>
+                <div className="py-1.5"><div className="text-[10px] font-semibold text-[#5b6784]">বর্তমান বাকি</div><div className={`text-[13px] font-extrabold ${overall.due > 0 ? "text-[#c81f38]" : "text-[#178a42]"}`}>{taka(overall.due)}</div></div>
+              </div>
+            </div>
+
+            {/* 5. Signatures */}
+            <div className="border border-[#c9d4e6]">
+              <SectionTitle n={5} bnTitle="স্বাক্ষর" enTitle="Signatures" />
               <div className="px-3 pt-10 pb-3 grid grid-cols-2 gap-10 text-center text-[10.5px] font-semibold">
                 <div className="border-t border-[#16213a] pt-1">{isPayment ? "গ্রহীতা / সাপ্লায়ারের স্বাক্ষর" : "সাপ্লায়ারের স্বাক্ষর"}<br />Receiver / Supplier Signature</div>
                 <div className="border-t border-[#16213a] pt-1">সিলমোহর যুক্ত অনুমোদিত স্বাক্ষর<br />Authorized Signature (SE Electronics)</div>
@@ -157,12 +215,15 @@ export default function SupplierReceiptClient({ supplier, transaction, totals, q
           </div>
         </div>
       </div>
+      </div>
 
       <style
         dangerouslySetInnerHTML={{
           __html: `
         @media print {
           @page { size: A4 portrait; margin: 6mm; }
+          .sr-fit { width: auto !important; height: auto !important; }
+          .sr-sheet { transform: none !important; width: 100% !important; }
           body { background-color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           body * { visibility: hidden; }
           #supplier-receipt, #supplier-receipt * { visibility: visible; }

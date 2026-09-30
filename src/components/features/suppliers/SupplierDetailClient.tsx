@@ -118,7 +118,7 @@ export default function SupplierDetailClient({ supplier, ledger, totals }: { sup
               {ledger.map((e) => (
                 <tr key={e.transactionId} className="border-t border-[#eef1f6]">
                   <td className="px-3 py-2 whitespace-nowrap">{fmtDate(e.date)}</td>
-                  <td className="px-3 py-2"><span className={clsx("h-6 px-2 rounded-md text-[11px] font-extrabold inline-flex items-center", e.type === "purchase" ? "bg-[#fff6e3] text-[#b8620b]" : "bg-[#e9f9ef] text-[#178a42]")}>{e.type === "purchase" ? "মাল গ্রহণ" : "পরিশোধ"}</span></td>
+                  <td className="px-3 py-2"><span className={clsx("h-6 px-2 rounded-md text-[11px] font-extrabold inline-flex items-center whitespace-nowrap", e.type === "purchase" ? "bg-[#fff6e3] text-[#b8620b]" : "bg-[#e9f9ef] text-[#178a42]")}>{e.type === "purchase" ? "মাল গ্রহণ" : "পরিশোধ"}</span></td>
                   <td className="px-3 py-2 text-[#3d4a63]">{e.description || "—"}</td>
                   <td className={clsx("px-3 py-2 text-right whitespace-nowrap font-bold", e.type === "payment" && "text-[#178a42]")}>{e.type === "payment" ? "−" : "+"}{taka(e.amount)}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap font-extrabold">{taka(e.balance)}</td>

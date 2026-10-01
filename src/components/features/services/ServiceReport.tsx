@@ -251,7 +251,7 @@ export default function ServiceReport({
   // }
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="flex flex-col gap-2.5 pb-4">
       {currentScreen === "success" && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[999] px-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm text-center shadow-xl relative animate-in zoom-in-95 duration-300">
@@ -326,13 +326,13 @@ export default function ServiceReport({
         </div>
       )}
       {/* Service Identity Card */}
-      <div className="bg-brand rounded-md p-5 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-[linear-gradient(110deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] rounded-md p-3 text-white shadow-[0_8px_22px_rgba(10,47,112,0.28)] relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10">
           <Navigation size={120} />
         </div>
         <div className="relative z-10 flex flex-col gap-1">
           <div className="flex items-center gap-2 mb-2">
-            <span className="bg-white/20 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest">
+            <span className="bg-white/20 border border-white/25 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-widest">
               Active Order
             </span>
             <span className="text-white/90 font-mono text-sm">
@@ -341,7 +341,7 @@ export default function ServiceReport({
           </div>
           <h2 className="text-xl font-bold">{customerName}</h2>
           <p className="text-white/70 text-sm font-medium">{customerPhone}</p>
-          <div className="flex gap-4 mt-4 pt-4 border-t border-white/10 text-[10px] font-bold uppercase tracking-wider text-white/90">
+          <div className="flex gap-4 mt-3 pt-3 border-t border-white/15 text-[10px] font-bold uppercase tracking-wider text-white/90">
             <div className="flex items-center gap-1.5">
               <HelpCircle size={12} />
               Support: {contactDetails.customerCare}
@@ -350,14 +350,31 @@ export default function ServiceReport({
         </div>
       </div>
 
+      {/* Progress: departed → arrived → report */}
+      <div className="rounded-md bg-white border border-[#dfe6f2] px-3 py-2.5 flex items-start shadow-[0_2px_8px_rgba(11,61,145,0.05)]">
+        {[
+          { t: "রওনা", done: statusArray.includes("staff_departed") || statusArray.includes("staff_arrived") || journeyStatus === "staff_departed" },
+          { t: "পৌঁছানো", done: statusArray.includes("staff_arrived") || currentScreen === "report" },
+          { t: "রিপোর্ট", done: currentScreen === "success" },
+        ].map((st, i, arr) => (
+          <div key={st.t} className="flex items-start flex-1 last:flex-none">
+            <div className="flex flex-col items-center gap-1 w-[64px]">
+              <span className={clsx("size-8 rounded-full text-[12px] font-extrabold flex items-center justify-center border-2", st.done ? "bg-[#0b3d91] border-[#0b3d91] text-white" : "bg-white border-[#d7deea] text-[#5b6784]")}>{st.done ? <CheckCircle2 size={16} /> : i + 1}</span>
+              <span className={clsx("text-[11px] font-bold", st.done ? "text-[#0b3d91]" : "text-[#5b6784]")}>{st.t}</span>
+            </div>
+            {i < arr.length - 1 && <span className={clsx("flex-1 h-0.5 mt-4 -mx-2.5", st.done ? "bg-[#0b3d91]" : "bg-[#e3e8f1]")} />}
+          </div>
+        ))}
+      </div>
+
       <div>
         {/* Screen 1: Journey Status */}
         {currentScreen === "journey" && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="bg-white rounded-md p-6 shadow-sm border border-gray-100 space-y-4">
-              <div className="flex gap-3 p-3 bg-blue-50/50 rounded-md border border-blue-100/50 mb-2">
-                <Info size={16} className="text-blue-500 shrink-0 mt-0.5" />
-                <p className="text-[11px] font-medium text-blue-700/80 leading-relaxed">
+          <div className="space-y-2.5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="bg-white rounded-md p-3 shadow-[0_4px_14px_rgba(11,61,145,0.06)] border border-[#dfe6f2] space-y-4">
+              <div className="flex gap-3 p-2.5 bg-[#eef4fd] rounded-md border border-[#dfe8f7]">
+                <Info size={16} className="text-[#1f7cf0] shrink-0 mt-0.5" />
+                <p className="text-[12.5px] font-medium text-[#1f5fc9] leading-relaxed">
                   রওনা দেওয়ার সময় "আমি রওনা দিয়েছি" এবং পৌঁছানোর পর "আমি
                   পৌঁছেছি" সিলেক্ট করুন।
                 </p>
@@ -370,8 +387,8 @@ export default function ServiceReport({
                   className={clsx(
                     "py-4 rounded-md font-bold flex flex-col items-center justify-center gap-2 transition-all active:scale-95 border-2",
                     journeyStatus === "staff_departed"
-                      ? "bg-brand text-white border-brand shadow-lg"
-                      : "bg-white text-gray-700 border-gray-100 hover:border-brand/30",
+                      ? "bg-[linear-gradient(90deg,#1f7cf0,#0b3d91)] text-white border-[#1f7cf0] shadow-[0_8px_20px_rgba(31,124,240,0.35)]"
+                      : "bg-white text-[#16213a] border-[#dfe6f2]",
                     disableDepartedButton &&
                       "opacity-50 grayscale cursor-not-allowed",
                   )}
@@ -381,7 +398,7 @@ export default function ServiceReport({
                       "size-10 rounded-full flex items-center justify-center",
                       journeyStatus === "staff_departed"
                         ? "bg-white/20"
-                        : "bg-gray-50 text-gray-400",
+                        : "bg-[#e8f1ff] text-[#1f7cf0]",
                     )}
                   >
                     <Navigation size={20} />
@@ -395,8 +412,8 @@ export default function ServiceReport({
                   className={clsx(
                     "py-4 rounded-md font-bold flex flex-col items-center justify-center gap-2 transition-all active:scale-95 border-2",
                     journeyStatus === "staff_arrived"
-                      ? "bg-brand text-white border-brand shadow-lg"
-                      : "bg-white text-gray-700 border-gray-100 hover:border-brand/30",
+                      ? "bg-[linear-gradient(90deg,#1f7cf0,#0b3d91)] text-white border-[#1f7cf0] shadow-[0_8px_20px_rgba(31,124,240,0.35)]"
+                      : "bg-white text-[#16213a] border-[#dfe6f2]",
                   )}
                 >
                   <div
@@ -404,7 +421,7 @@ export default function ServiceReport({
                       "size-10 rounded-full flex items-center justify-center",
                       journeyStatus === "staff_arrived"
                         ? "bg-white/20"
-                        : "bg-gray-50 text-gray-400",
+                        : "bg-[#e8f1ff] text-[#1f7cf0]",
                     )}
                   >
                     <UserCheck size={20} />
@@ -418,7 +435,7 @@ export default function ServiceReport({
               <button
                 disabled={isSubmitting || !journeyStatus}
                 onClick={handleJourneyNext}
-                className="w-full bg-brand text-white py-4 rounded-md font-bold flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:grayscale transition-all active:scale-95 mt-4"
+                className="w-full bg-[linear-gradient(90deg,#1f7cf0,#0b3d91)] text-white h-12 rounded-md font-extrabold shadow-[0_8px_20px_rgba(31,124,240,0.35)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:grayscale transition-all active:scale-95 mt-4"
               >
                 {isSubmitting ? (
                   "প্রসেসিং হচ্ছে..."
@@ -437,9 +454,9 @@ export default function ServiceReport({
 
         {/* Screen 2: Service Report */}
         {currentScreen === "report" && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="space-y-2.5 animate-in fade-in slide-in-from-bottom-4 duration-300">
             {showNoteForm ? (
-              <div className="bg-white rounded-md p-6 shadow-sm border border-gray-100 space-y-4">
+              <div className="bg-white rounded-md p-3 shadow-[0_4px_14px_rgba(11,61,145,0.06)] border border-[#dfe6f2] space-y-4">
                 <div className="flex items-center gap-3 mb-2">
                   <button
                     onClick={handleNoteBack}
@@ -470,14 +487,14 @@ export default function ServiceReport({
                 <button
                   disabled={isSubmitting}
                   onClick={handleNoteSubmit}
-                  className="w-full bg-brand text-white py-4 rounded-md font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform"
+                  className="w-full bg-[linear-gradient(90deg,#1f7cf0,#0b3d91)] text-white h-12 rounded-md font-extrabold shadow-[0_8px_20px_rgba(31,124,240,0.35)] flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform"
                 >
                   <Send size={18} />
                   {isSubmitting ? "সেভ হচ্ছে..." : "সাবমিট করুন"}
                 </button>
               </div>
             ) : (
-              <div className="bg-white rounded-md p-6 shadow-sm border border-gray-100 space-y-6">
+              <div className="bg-white rounded-md p-3 shadow-[0_4px_14px_rgba(11,61,145,0.06)] border border-[#dfe6f2] space-y-6">
                 <div className="flex justify-between items-center px-1">
                   <h3 className="text-sm font-bold text-gray-800">
                     রিপোর্ট বিস্তারিত
@@ -607,7 +624,7 @@ export default function ServiceReport({
                       <button
                         disabled={isSubmitting}
                         onClick={handleFinalSubmit}
-                        className="w-full bg-brand text-white py-4 rounded-md font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all mt-2"
+                        className="w-full bg-[linear-gradient(90deg,#1f7cf0,#0b3d91)] text-white h-12 rounded-md font-extrabold shadow-[0_8px_20px_rgba(31,124,240,0.35)] flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all mt-2"
                       >
                         <Send size={18} />
                         {isSubmitting ? "সেভ হচ্ছে..." : "রিপোর্ট সাবমিট করুন"}
@@ -668,7 +685,7 @@ export default function ServiceReport({
                       <button
                         disabled={isSubmitting}
                         onClick={handleFinalSubmit}
-                        className="w-full bg-brand text-white py-4 rounded-md font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all mt-2"
+                        className="w-full bg-[linear-gradient(90deg,#1f7cf0,#0b3d91)] text-white h-12 rounded-md font-extrabold shadow-[0_8px_20px_rgba(31,124,240,0.35)] flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all mt-2"
                       >
                         <Send size={18} />
                         {isSubmitting ? "সেভ হচ্ছে..." : "আপডেট সাবমিট করুন"}

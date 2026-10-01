@@ -133,13 +133,14 @@ export default async function ServiceReportPage({ searchParams }: { searchParams
     if (session.isAuth) {
         return (
             <StaffLayout balance={stats?.availableBalance || 0}>
-                <div className="p-4 space-y-6">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-brand/10 rounded-md text-brand">
-                            <Wrench size={20} />
-                        </div>
-                        <h1 className="text-xl font-bold text-gray-800">Submit Service Report</h1>
-                    </div>
+                <div className="px-2 pt-2 pb-2 flex flex-col gap-2.5 text-[#16213a]">
+                    <section className="rounded-md bg-[linear-gradient(110deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(10,47,112,0.28)]">
+                        <span className="size-12 rounded-md bg-white/15 border border-white/25 flex items-center justify-center shrink-0"><Wrench size={24} /></span>
+                        <span className="flex flex-col min-w-0 flex-1 leading-tight">
+                            <span className="text-[clamp(17px,5vw,20px)] font-extrabold">Submit Service Report</span>
+                            <span className="text-[12px] font-semibold text-white/85">সার্ভিসের অবস্থা ও রিপোর্ট জানান</span>
+                        </span>
+                    </section>
 
                     <ServiceReport
                         isUnregistered={false}

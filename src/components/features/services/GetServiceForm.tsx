@@ -170,6 +170,8 @@ export default function GetServiceForm({ preferredStaffId, customerId, customerD
   const [issueLen, setIssueLen] = useState(0);
   const [activeStep, setActiveStep] = useState(0);
   const lockUntil = useRef(0);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [completed, setCompleted] = useState<boolean[]>(() => sectionIds.map(() => false));
   const [selectedDistrict, setSelectedDistrict] = useState(customerData?.district || "");
   const [selectedProductType, setSelectedProductType] = useState("");
   const districts = Object.keys(geoData);
@@ -180,6 +182,27 @@ export default function GetServiceForm({ preferredStaffId, customerId, customerD
   useEffect(() => {
     if (!isPending && response && !response.success) toast.error(response.message);
   }, [isPending]);
+
+  // A step turns "done" once its required fields (or photos / confirmation) are filled.
+  const recompute = () => {
+    const next = sectionIds.map((id, i) => {
+      const el = document.getElementById(id);
+      if (!el) return false;
+      if (i === 4) return (el.querySelector('input[type="checkbox"]') as HTMLInputElement | null)?.checked ?? false;
+      if (i === 3) {
+        const files = Array.from(el.querySelectorAll<HTMLInputElement>('input[type="file"]'));
+        return files.length > 0 && files.every((f) => (f.files?.length ?? 0) > 0);
+      }
+      const reqs = Array.from(el.querySelectorAll<HTMLInputElement>("input[required], select[required], textarea[required]"));
+      return reqs.length > 0 && reqs.every((r) => r.value.trim() !== "");
+    });
+    setCompleted((prev) => (prev.every((v, i) => v === next[i]) ? prev : next));
+  };
+  useEffect(() => {
+    if (showToC) return;
+    const t = setTimeout(recompute, 50);
+    return () => clearTimeout(t);
+  }, [showToC, selectedProductType, selectedDistrict, issueLen, confirmed]);
 
   // Highlight the step whose section is currently under the sticky step bar.
   useEffect(() => {
@@ -274,8 +297,8 @@ export default function GetServiceForm({ preferredStaffId, customerId, customerD
         <nav className="sticky top-0 z-30 -mx-2 px-2 py-1.5 bg-[#eef3fb]/95 backdrop-blur-sm">
           <div className="rounded-md bg-white border border-[#dfe6f2] px-1.5 py-2 flex items-start shadow-[0_2px_8px_rgba(11,61,145,0.05)]">
             {steps.map((st, i) => {
-              const active = i === activeStep;
-              const done = i < activeStep;
+              const done = completed[i];
+              const active = i === activeStep && !done;
               return (
                 <div key={st} className="flex items-start flex-1 last:flex-none">
                   <button type="button" onClick={() => goToStep(i)} className="flex flex-col items-center gap-1 w-[58px]">
@@ -289,7 +312,7 @@ export default function GetServiceForm({ preferredStaffId, customerId, customerD
           </div>
         </nav>
 
-        <form action={createServiceAction} className="flex flex-col gap-2.5">
+        <form ref={formRef} action={createServiceAction} onChange={recompute} onClick={() => setTimeout(recompute, 0)} className="flex flex-col gap-2.5">
           <input type="hidden" name="staffId" value={preferredStaffId || ""} />
           <input type="hidden" name="customerId" value={customerId || ""} />
 

@@ -44,6 +44,8 @@ const taka = (n: number) => `৳${Math.round(n).toLocaleString("en-IN")}`;
 
 const normalizePhone = (p: string) => p.replace(/\s|-/g, "").trim();
 
+const optionalText = (max: number) => z.string().trim().max(max).optional().transform((v) => v || null);
+
 const SupplierSchema = z.object({
   name: z.string().trim().min(2, "নাম দিন"),
   shopName: z.string().trim().min(1, "দোকানের নাম দিন"),
@@ -55,6 +57,27 @@ const SupplierSchema = z.object({
   address: z.string().trim().optional().transform((v) => v || null),
   origin: z.string().trim().optional().transform((v) => v || null),
   note: z.string().trim().optional().transform((v) => v || null),
+  email: optionalText(255),
+  altPhone: optionalText(50),
+  nidNumber: optionalText(50),
+  tradeLicenseNumber: optionalText(100),
+  contactPersonName: optionalText(255),
+  contactPersonPhone: optionalText(50),
+  bkashNumber: optionalText(50),
+  nagadNumber: optionalText(50),
+  bankName: optionalText(255),
+  bankAccountName: optionalText(255),
+  bankAccountNumber: optionalText(100),
+  productCategories: z
+    .string()
+    .optional()
+    .transform((v) =>
+      (v || "")
+        .split(",")
+        .map((x) => x.trim())
+        .filter((x) => ["ips", "battery", "stabilizer", "others"].includes(x))
+        .join(",") || null,
+    ),
 });
 
 const TransactionSchema = z.object({
@@ -251,6 +274,18 @@ const loadSupplierLedger = async (supplierId: string) => {
       username: suppliers.username,
       isActive: suppliers.isActive,
       note: suppliers.note,
+      email: suppliers.email,
+      altPhone: suppliers.altPhone,
+      nidNumber: suppliers.nidNumber,
+      tradeLicenseNumber: suppliers.tradeLicenseNumber,
+      contactPersonName: suppliers.contactPersonName,
+      contactPersonPhone: suppliers.contactPersonPhone,
+      bkashNumber: suppliers.bkashNumber,
+      nagadNumber: suppliers.nagadNumber,
+      bankName: suppliers.bankName,
+      bankAccountName: suppliers.bankAccountName,
+      bankAccountNumber: suppliers.bankAccountNumber,
+      productCategories: suppliers.productCategories,
       createdAt: suppliers.createdAt,
     })
     .from(suppliers)

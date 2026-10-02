@@ -29,6 +29,18 @@ type Supplier = {
   username: string;
   isActive: boolean;
   note: string | null;
+  email: string | null;
+  altPhone: string | null;
+  nidNumber: string | null;
+  tradeLicenseNumber: string | null;
+  contactPersonName: string | null;
+  contactPersonPhone: string | null;
+  bkashNumber: string | null;
+  nagadNumber: string | null;
+  bankName: string | null;
+  bankAccountName: string | null;
+  bankAccountNumber: string | null;
+  productCategories: string | null;
 };
 type Entry = { transactionId: string; type: "purchase" | "payment"; amount: number; description: string | null; productType?: string | null; photoUrl?: string | null; date: string | Date; balance: number };
 type Totals = { purchased: number; paid: number; due: number; entries: number };

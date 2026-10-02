@@ -3,7 +3,8 @@ import { BlueFooterBand, BlueStatGrid } from "@/components/ui";
 import { contactDetails } from "@/constants";
 import { supplierProductLabel } from "@/lib/supplierProduct";
 import clsx from "clsx";
-import { ArrowDownLeft, ArrowUpRight, Banknote, CheckCircle2, FileText, ListChecks, LogOut, MapPin, Package, Phone, Truck } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Banknote, CalendarDays, CheckCircle2, ChevronRight, FileText, ListChecks, LogOut, Mail, MapPin, Package, Phone, Truck } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,11 @@ export default async function SupplierProfilePage() {
   if (!res.success) redirect("/supplier/login");
   const { supplier, ledger, totals } = res.data;
   const recent = [...ledger].reverse();
+  const lastPayment = recent.find((e) => e.type === "payment");
+  const lastPurchase = recent.find((e) => e.type === "purchase");
+  const purchaseCount = ledger.filter((e) => e.type === "purchase").length;
+  const paymentCount = ledger.length - purchaseCount;
+  const paidPct = totals.purchased > 0 ? Math.min(100, Math.round((totals.paid / totals.purchased) * 100)) : 0;
 
   return (
     <div className="min-h-screen bg-[#eef3fb] text-[#16213a]">
@@ -75,12 +81,37 @@ export default async function SupplierProfilePage() {
           <BlueStatGrid cards={[
             { value: taka(totals.purchased), label: "মোট মাল", icon: Package, tone: "blue", href: "#ledger" },
             { value: totals.entries, label: "এন্ট্রি", icon: ListChecks, tone: "purple", href: "#ledger" },
+            { value: lastPayment ? taka(lastPayment.amount) : "—", label: lastPayment ? `শেষ পরিশোধ · ${fmtDate(lastPayment.date)}` : "শেষ পরিশোধ", icon: Banknote, tone: "amber", href: "#ledger" },
           ]} />
 
           <section className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-1.5 text-[13px]">
             <span className="font-extrabold text-[15px]">{supplier.shopName}</span>
             <span className="flex items-center gap-2 text-[#3d4a63]"><Phone size={14} className="text-[#1f7cf0]" />{supplier.phone}</span>
             {supplier.address && <span className="flex items-start gap-2 text-[#3d4a63]"><MapPin size={14} className="text-[#1f7cf0] mt-0.5 shrink-0" />{supplier.address}</span>}
+          </section>
+
+          {/* Account summary */}
+          <section className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-2.5">
+            <span className="flex items-center justify-between">
+              <span className="text-[15px] font-extrabold">হিসাবের সারসংক্ষেপ</span>
+              <span className="text-[12px] font-extrabold text-[#178a42]">{paidPct}% পরিশোধিত</span>
+            </span>
+            <span className="h-2.5 rounded-full bg-[#ffe9ec] overflow-hidden"><span className="block h-full rounded-full bg-[linear-gradient(90deg,#1a9c4b,#34d36b)]" style={{ width: `${paidPct}%` }} /></span>
+            <span className="grid grid-cols-2 gap-2 text-[12.5px]">
+              <span className="rounded-md bg-[#f4f7fc] p-2 flex flex-col"><span className="text-[#5b6784] text-[11px] font-semibold">মাল গ্রহণ</span><b>{purchaseCount} বার</b></span>
+              <span className="rounded-md bg-[#f4f7fc] p-2 flex flex-col"><span className="text-[#5b6784] text-[11px] font-semibold">পরিশোধ</span><b>{paymentCount} বার</b></span>
+              <span className="rounded-md bg-[#f4f7fc] p-2 flex flex-col"><span className="text-[#5b6784] text-[11px] font-semibold">শেষ মাল গ্রহণ</span><b>{lastPurchase ? fmtDate(lastPurchase.date) : "—"}</b></span>
+              <span className="rounded-md bg-[#f4f7fc] p-2 flex flex-col"><span className="text-[#5b6784] text-[11px] font-semibold">শেষ পরিশোধ</span><b>{lastPayment ? fmtDate(lastPayment.date) : "—"}</b></span>
+            </span>
+            <span className="flex items-center gap-2 text-[12px] text-[#5b6784]"><CalendarDays size={14} className="text-[#1f7cf0]" />অ্যাকাউন্ট খোলা হয়েছে {fmtDate(supplier.createdAt)}</span>
+          </section>
+
+          {/* SE Electronics contact */}
+          <section className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-1.5 text-[13px]">
+            <span className="font-extrabold text-[15px]">SE Electronics যোগাযোগ</span>
+            <a href={`tel:${contactDetails.customerCare}`} className="flex items-center gap-2 text-[#3d4a63]"><Phone size={14} className="text-[#1f7cf0]" />হেল্পলাইন: {contactDetails.customerCare}</a>
+            <a href={`mailto:${contactDetails.email}`} className="flex items-center gap-2 text-[#3d4a63]"><Mail size={14} className="text-[#1f7cf0]" />{contactDetails.email}</a>
+            <span className="flex items-start gap-2 text-[#3d4a63]"><MapPin size={14} className="text-[#1f7cf0] mt-0.5 shrink-0" />হেড অফিস: {contactDetails.headOffice.trim()}</span>
           </section>
 
           <section id="ledger" className="scroll-mt-16 flex flex-col gap-2">
@@ -91,12 +122,13 @@ export default async function SupplierProfilePage() {
               recent.map((e) => {
                 const purchase = e.type === "purchase";
                 return (
-                  <div key={e.transactionId} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.05)]">
+                  <div key={e.transactionId} className="relative rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.05)] active:bg-[#f4f7fc]">
+                    <Link href={`/supplier/entry/${e.transactionId}`} aria-label="বিস্তারিত দেখুন" className="absolute inset-0 rounded-md" />
                     {e.photoUrl ? (
-                      <a href={e.photoUrl} target="_blank" rel="noreferrer" className="shrink-0">
+                      <span className="shrink-0">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={e.photoUrl} alt="মালের ছবি" className="size-12 rounded-md object-cover border border-[#dfe6f2]" />
-                      </a>
+                      </span>
                     ) : (
                       <span className={clsx("size-10 rounded-full flex items-center justify-center shrink-0", purchase ? "bg-[#fff6e3] text-[#b8620b]" : "bg-[#e9f9ef] text-[#178a42]")}>{purchase ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}</span>
                     )}
@@ -108,7 +140,7 @@ export default async function SupplierProfilePage() {
                     <span className="flex flex-col items-end leading-tight shrink-0">
                       <span className={clsx("text-[15px] font-extrabold", purchase ? "text-[#16213a]" : "text-[#178a42]")}>{purchase ? "+" : "−"}{taka(e.amount)}</span>
                       <span className="text-[10.5px] text-[#5b6784]">বাকি {taka(e.balance)}</span>
-                      <a href={`/supplier-receipt/${e.transactionId}`} className="mt-1 text-[11px] font-bold text-[#1f5fc9] underline underline-offset-2">রসিদ দেখুন</a>
+                      <span className="mt-1 inline-flex items-center gap-0.5 text-[11px] font-bold text-[#1f5fc9]">বিস্তারিত<ChevronRight size={12} /></span>
                     </span>
                   </div>
                 );

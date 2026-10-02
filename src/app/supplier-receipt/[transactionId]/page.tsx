@@ -1,6 +1,6 @@
 import { getSupplierReceipt } from "@/actions/supplierActions";
 import { code128Svg } from "@/lib/code128";
-import { getBaseUrl } from "@/utils";
+import { supplierBaseUrl } from "@/utils";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import SupplierReceiptClient from "./SupplierReceiptClient";
@@ -13,7 +13,7 @@ export default async function SupplierReceiptPage({ params }: { params: Promise<
   const res = await getSupplierReceipt(transactionId);
   if (!res.success) notFound();
 
-  const url = `${getBaseUrl()}/supplier-receipt/${transactionId}`;
+  const url = `${supplierBaseUrl()}/supplier-receipt/${transactionId}`;
   let qrDataUrl: string | null = null;
   try {
     qrDataUrl = await QRCode.toDataURL(url, { margin: 1, width: 240 });

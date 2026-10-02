@@ -43,7 +43,7 @@ export function SellerLayout({ children, badge = 0 }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-[#eef3fb] flex flex-col overflow-x-hidden">
-      <header className="sticky top-0 z-50 bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] text-white">
+      <header className={clsx("sticky top-0 z-50 bg-[#0b3d91] text-white", isHome ? "bg-[linear-gradient(100deg,#0f48aa_0%,#0b3d91_50%,#0a3480_100%)]" : "bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)]")}>
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
           {isHome ? <Link href="/seller/profile"><SELogo /></Link> : (
             <div className="flex items-center gap-3 min-w-0">

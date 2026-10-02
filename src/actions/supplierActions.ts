@@ -5,7 +5,7 @@ import { suppliers, supplierTransactions } from "@/db/schema";
 import { createSession, decrypt, deleteSession, sendSMS, verifySession } from "@/lib";
 import { sendVoiceCall } from "@/lib/mram";
 import { getObjectUrl, putObject } from "@/lib/s3";
-import { generateRandomId, getBaseUrl } from "@/utils";
+import { generateRandomId, supplierBaseUrl } from "@/utils";
 import bcrypt from "bcrypt";
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -306,7 +306,7 @@ export const addSupplierTransaction = async (input: Record<string, unknown>) => 
       try {
         const [s] = await db.select({ phone: suppliers.phone }).from(suppliers).where(eq(suppliers.supplierId, data.supplierId)).limit(1);
         if (s?.phone) {
-          const link = `${getBaseUrl()}/supplier-receipt/${transactionId}`;
+          const link = `${supplierBaseUrl()}/supplier-receipt/${transactionId}`;
           await sendSMS(s.phone, `SE Electronics: ${taka(data.amount)} পরিশোধ করা হয়েছে। বাকি পাওনা ${taka(totals.due)}। রসিদ: ${link}`);
           smsNote = " · SMS পাঠানো হয়েছে";
         }
@@ -360,7 +360,7 @@ export const getSupplierMessageTemplates = async (supplierId: string, transactio
       .where(eq(supplierTransactions.supplierId, supplierId))
       .orderBy(desc(supplierTransactions.date), desc(supplierTransactions.createdAt))
       .limit(1);
-    const statementLink = latest ? `${getBaseUrl()}/supplier-receipt/${latest.transactionId}` : `${getBaseUrl()}/supplier/login`;
+    const statementLink = latest ? `${supplierBaseUrl()}/supplier-receipt/${latest.transactionId}` : `${supplierBaseUrl()}/supplier/login`;
     const summary = `প্রিয় ${supplier.name} (${supplier.shopName}), এস ই ইলেকট্রনিক্স থেকে আপনার মোট পাওনা ${taka(t.due)}। এ পর্যন্ত পরিশোধ ${taka(t.paid)}। হিসাব দেখুন: ${statementLink}`;
 
     let entry: string | null = null;
@@ -373,8 +373,8 @@ export const getSupplierMessageTemplates = async (supplierId: string, transactio
       if (tx) {
         entry =
           tx.type === "purchase"
-            ? `প্রিয় ${supplier.name}, ${taka(tx.amount)} এর মাল গ্রহণ করা হয়েছে। মোট পাওনা ${taka(t.due)}। রসিদ: ${getBaseUrl()}/supplier-receipt/${transactionId}`
-            : `প্রিয় ${supplier.name}, ${taka(tx.amount)} পরিশোধ করা হয়েছে। বাকি ${taka(t.due)}। রসিদ: ${getBaseUrl()}/supplier-receipt/${transactionId}`;
+            ? `প্রিয় ${supplier.name}, ${taka(tx.amount)} এর মাল গ্রহণ করা হয়েছে। মোট পাওনা ${taka(t.due)}। রসিদ: ${supplierBaseUrl()}/supplier-receipt/${transactionId}`
+            : `প্রিয় ${supplier.name}, ${taka(tx.amount)} পরিশোধ করা হয়েছে। বাকি ${taka(t.due)}। রসিদ: ${supplierBaseUrl()}/supplier-receipt/${transactionId}`;
       }
     }
     const voiceBroadcastId = Number(process.env.MRAM_VOICE_SUPPLIER_BROADCAST_ID || 0) || null;

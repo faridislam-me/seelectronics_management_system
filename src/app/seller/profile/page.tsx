@@ -1,5 +1,5 @@
 import { SellerLayout } from "@/components/layout";
-import { BlueBalanceCard, BlueCard, BlueChip, BlueContactCard, BlueFooterBand, BlueStatGrid } from "@/components/ui";
+import { BlueBalanceCard, BlueCard, BlueChip, BlueContactCard, BlueFooterBand, BlueHero, BlueStatGrid } from "@/components/ui";
 import { loadSellerPortal } from "@/lib/sellerPortal";
 import { formatDate } from "@/utils";
 import { Banknote, CheckCircle2, FileText, MapPin, Package, Phone, ShieldCheck, Store, User, Users, Wrench } from "lucide-react";
@@ -11,28 +11,20 @@ export default async function SellerProfilePage() {
 
   return (
     <SellerLayout badge={stats.inService}>
-      {/* Compact welcome strip */}
-      <div className="relative overflow-hidden bg-[#eef3fb] px-3 pt-2 pb-0">
-        <span className="absolute -top-10 left-0 right-0 h-12 bg-[#0b3d91] bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] rounded-b-[60%_100%]" />
-        <div className="relative flex items-center gap-2.5">
-          {seller.ownerPhotoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={seller.ownerPhotoUrl} alt="" className="size-9 rounded-full object-cover object-top border-2 border-white shadow-[0_0_0_1.5px_#1f7cf0] shrink-0 bg-[#1f7cf0]" />
-          ) : (
-            <span className="size-9 rounded-full bg-[#1f7cf0] border-2 border-white shadow-[0_0_0_1.5px_#1f7cf0] flex items-center justify-center text-white text-xs font-extrabold shrink-0">{seller.shopName.slice(0, 2).toUpperCase()}</span>
-          )}
-          <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-            <span className="text-[clamp(14px,4vw,17px)] font-extrabold text-[#16213a] leading-tight truncate">{seller.shopName}</span>
-            <span className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[10.5px] font-semibold text-[#6b7690] leading-none">ID {seller.sellerId}</span>
-              <span className="inline-flex items-center gap-1 px-1.5 h-[18px] rounded bg-[#0b3d91] text-white text-[9px] font-extrabold"><Store size={10} />SELLER</span>
-              <span className="inline-flex items-center gap-1 px-1.5 h-[18px] rounded bg-[#1a9c4b] text-white text-[9px] font-extrabold"><ShieldCheck size={10} />VERIFIED</span>
-              {due > 0 && <span className="inline-flex items-center px-1.5 h-[18px] rounded bg-[#e0a11b] text-white text-[9px] font-extrabold">DUE</span>}
-            </span>
-          </div>
-          <span className="font-script text-[clamp(12px,3.2vw,15px)] leading-[0.9] text-right text-[#0b3d91] rotate-[-8deg] shrink-0 hidden min-[360px]:block">Together for a<br />Better Tomorrow</span>
-        </div>
-      </div>
+      <BlueHero
+        variant="profile"
+        avatar={seller.ownerPhotoUrl}
+        verified
+        initials={seller.shopName}
+        name={seller.shopName}
+        idLabel="ID"
+        id={seller.sellerId}
+        chips={[
+          { label: "SELLER", color: "glass", icon: Store },
+          { label: "VERIFIED", color: "green", icon: ShieldCheck },
+          ...(due > 0 ? [{ label: "DUE", color: "amber" as const }] : []),
+        ]}
+      />
       <div className="flex flex-col gap-2.5 px-2.5 pt-2 relative">
         <BlueBalanceCard compact label="DUE BALANCE" value={`৳ ${due.toLocaleString("en-US", { minimumFractionDigits: 2 })}`} icon={Banknote} button="Purchases" buttonIcon={FileText} buttonHref="/seller/purchases" chevronHref="/seller/purchases" />
         <BlueStatGrid compact cards={[

@@ -15,3 +15,10 @@ export function brandUrl(portal: Portal, envUrl?: string): string | undefined {
   if (process.env.NODE_ENV === "production") return `https://${portal}.${BRAND_DOMAIN}`;
   return envUrl ? envUrl.replace(/\/$/, "") : undefined;
 }
+
+/**
+ * Flip to true once supplier.seelectronicsbd.com resolves and is added to the
+ * Vercel project (Cloudflare CNAME + Vercel Domains). Until then supplier links
+ * keep using the admin domain so no SMS link breaks.
+ */
+export const SUPPLIER_SUBDOMAIN_LIVE = false;

@@ -1,4 +1,4 @@
-import { brandUrl } from "@/constants/domains";
+import { brandUrl, SUPPLIER_SUBDOMAIN_LIVE } from "@/constants/domains";
 import { UrlConfig } from "@/types";
 import { randomBytes } from "crypto";
 
@@ -46,6 +46,14 @@ export function getBaseUrl() {
     : process.env.NEXT_PUBLIC_BASE_URL || "https://seelectronicspro.vercel.app";
   // Production links use the brand domain instead of the vercel.app address.
   return brandUrl("admin", raw) ?? raw;
+}
+
+/** Base URL for supplier links (receipt, portal login): supplier subdomain once it is live. */
+export function supplierBaseUrl() {
+  const env = process.env.SUPPLIER_APP_URL;
+  if (env && !/\.vercel\.app/i.test(env)) return env.replace(/\/$/, "");
+  if (SUPPLIER_SUBDOMAIN_LIVE && process.env.NODE_ENV === "production") return brandUrl("supplier") ?? getBaseUrl();
+  return getBaseUrl();
 }
 
 /**

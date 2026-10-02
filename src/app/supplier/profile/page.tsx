@@ -1,5 +1,5 @@
 import { getMySupplierLedger, supplierLogout } from "@/actions/supplierActions";
-import { BlueBalanceCard, BlueFooterBand, BlueHero, BlueStatGrid } from "@/components/ui";
+import { BlueFooterBand, BlueStatGrid } from "@/components/ui";
 import { contactDetails } from "@/constants";
 import clsx from "clsx";
 import { ArrowDownLeft, ArrowUpRight, Banknote, CheckCircle2, FileText, ListChecks, LogOut, MapPin, Package, Phone, Truck } from "lucide-react";
@@ -29,20 +29,48 @@ export default async function SupplierProfilePage() {
       </header>
 
       <main className="max-w-[480px] mx-auto flex flex-col gap-2.5 pb-4">
-        <BlueHero
-          name={supplier.name}
-          idLabel="Supplier ID"
-          id={supplier.supplierId}
-          initials={supplier.name.slice(0, 2).toUpperCase()}
-          chips={[
-            { label: "SUPPLIER", color: "glass", icon: Truck },
-            ...(supplier.origin ? [{ label: supplier.origin.toUpperCase(), color: "blue" as const }] : []),
-          ]}
-          tagline={<>Trusted Partner<br />Better Tomorrow</>}
-        />
+        <div className="px-2 pt-2 flex flex-col gap-2.5">
+          {/* Profile card (same layout as the customer home) */}
+          <div className="rounded-md bg-white p-3 shadow-[0_4px_18px_rgba(11,61,145,0.06)] border border-[#e3e8f1] flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <span className="size-[52px] rounded-full bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><Truck size={26} strokeWidth={2.2} /></span>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-[clamp(16px,4.8vw,20px)] font-extrabold text-[#16213a] leading-tight truncate">{supplier.name}</span>
+                <span className="text-[13px] font-semibold text-[#6b7690] truncate">ID: {supplier.supplierId}</span>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-md text-[12px] font-extrabold whitespace-nowrap shrink-0 bg-[#e8f1ff] text-[#1b6fd6]">
+                <span className="size-1.5 rounded-full bg-[#1f7cf0]" />SUPPLIER
+              </span>
+            </div>
 
-        <div className="px-2 flex flex-col gap-2.5 -mt-4 relative">
-          <BlueBalanceCard label="আপনার পাওনা (DUE)" value={`৳ ${totals.due.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`} icon={Banknote} button="Ledger" buttonIcon={FileText} buttonHref="#ledger" chevronHref="#ledger" />
+            <div className="grid grid-cols-2 gap-2.5">
+              <a href={`tel:${supplier.phone}`} className="flex items-center gap-2.5 p-2.5 rounded-md border border-[#e3e8f1] bg-white min-w-0">
+                <span className="size-10 rounded-full bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><Phone size={18} /></span>
+                <span className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-semibold text-[#6b7690]">Phone</span>
+                  <span className="text-[clamp(13px,3.8vw,15px)] font-extrabold text-[#16213a] truncate">{supplier.phone}</span>
+                </span>
+              </a>
+              <a href="#ledger" className={clsx("flex items-center gap-2.5 p-2.5 rounded-md border min-w-0", totals.due > 0 ? "bg-[#ffe9ec] border-[#f7c3ca]" : "bg-[#e9f9ef] border-[#bfe8cd]")}>
+                <span className={clsx("size-10 rounded-full flex items-center justify-center shrink-0 text-white", totals.due > 0 ? "bg-[#e0243f] shadow-[0_0_0_4px_rgba(224,36,63,0.2)]" : "bg-[#1a9c4b]")}><Banknote size={18} /></span>
+                <span className="flex flex-col min-w-0 flex-1">
+                  <span className={clsx("text-[clamp(13px,3.8vw,15px)] font-extrabold truncate", totals.due > 0 ? "text-[#c81f38]" : "text-[#178a42]")}>{taka(totals.due)}</span>
+                  <span className="text-[11px] font-bold tracking-wide text-[#6b7690] uppercase">{totals.due > 0 ? "পাওনা (Due)" : "No due"}</span>
+                </span>
+                <span className="text-[#9aa4b8] shrink-0">›</span>
+              </a>
+            </div>
+
+            <a href="#ledger" className="rounded-md bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2f70_0%,#0d3f96_60%,#0a2f70_100%)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(10,47,112,0.3)] relative overflow-hidden">
+              <span className="absolute -right-6 -bottom-10 size-32 rounded-full border-[12px] border-white/5" />
+              <span className="size-10 rounded-md bg-[#f5c542] text-[#0a2f70] flex items-center justify-center shrink-0"><FileText size={22} strokeWidth={2.4} /></span>
+              <span className="flex flex-col min-w-0 flex-1">
+                <span className="text-[15px] font-extrabold tracking-wide text-[#f5c542]">LEDGER</span>
+                <span className="text-[12px] font-semibold text-white/90 truncate">{supplier.shopName}{supplier.origin ? ` · ${supplier.origin}` : ""}</span>
+              </span>
+              <span className="shrink-0 inline-flex items-center px-3 h-9 rounded-md bg-[#f5c542] text-[#0a2f70] text-[12px] font-extrabold">হিসাব দেখুন ›</span>
+            </a>
+          </div>
 
           <BlueStatGrid cards={[
             { value: taka(totals.purchased), label: "মোট মাল", icon: Package, tone: "blue", href: "#ledger" },

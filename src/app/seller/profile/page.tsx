@@ -13,6 +13,7 @@ export default async function SellerProfilePage() {
     <SellerLayout badge={stats.inService}>
       <BlueHero
         variant="profile"
+        compact
         avatar={seller.ownerPhotoUrl}
         verified
         initials={seller.shopName}

@@ -28,6 +28,7 @@ const sellerProtectedRoutes = [
 
 const supplierProtectedRoutes = [
     '/supplier/profile',
+    '/supplier/entry',
 ];
 
 const staffProtectedRoutes = [

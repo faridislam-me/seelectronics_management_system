@@ -1,9 +1,9 @@
 import { getMySupplierLedger, supplierLogout } from "@/actions/supplierActions";
 import { BlueFooterBand, BlueStatGrid } from "@/components/ui";
 import { contactDetails } from "@/constants";
-import { supplierProductLabel } from "@/lib/supplierProduct";
+import { SUPPLIER_PRODUCT_LABEL, supplierProductLabel } from "@/lib/supplierProduct";
 import clsx from "clsx";
-import { ArrowDownLeft, ArrowUpRight, Banknote, CalendarDays, CheckCircle2, ChevronRight, FileText, ListChecks, LogOut, Mail, MapPin, Package, Phone, Truck } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Banknote, CalendarDays, CheckCircle2, ChevronRight, CreditCard, FileText, IdCard, ListChecks, LogOut, Mail, MapPin, Package, Phone, Truck, User } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -22,6 +22,23 @@ export default async function SupplierProfilePage() {
   const lastPurchase = recent.find((e) => e.type === "purchase");
   const purchaseCount = ledger.filter((e) => e.type === "purchase").length;
   const paymentCount = ledger.length - purchaseCount;
+  const categories = (supplier.productCategories || "").split(",").filter(Boolean);
+  const mask = (v: string) => (v.length > 4 ? `${"•".repeat(Math.min(v.length - 4, 8))}${v.slice(-4)}` : v);
+  const infoRows: { icon: React.ElementType; label: string; value: string | null }[] = [
+    { icon: User, label: "মালিক / নাম", value: supplier.name },
+    { icon: Phone, label: "বিকল্প মোবাইল", value: supplier.altPhone },
+    { icon: Mail, label: "Email", value: supplier.email },
+    { icon: IdCard, label: "NID", value: supplier.nidNumber ? mask(supplier.nidNumber) : null },
+    { icon: FileText, label: "Trade License", value: supplier.tradeLicenseNumber },
+    { icon: User, label: "যোগাযোগকারী ব্যক্তি", value: [supplier.contactPersonName, supplier.contactPersonPhone].filter(Boolean).join(" · ") || null },
+  ].filter((r) => r.value);
+  const payRows = [
+    { label: "bKash", value: supplier.bkashNumber },
+    { label: "Nagad", value: supplier.nagadNumber },
+    { label: "Bank", value: supplier.bankName },
+    { label: "Account name", value: supplier.bankAccountName },
+    { label: "Account no.", value: supplier.bankAccountNumber },
+  ].filter((r) => r.value);
   const paidPct = totals.purchased > 0 ? Math.min(100, Math.round((totals.paid / totals.purchased) * 100)) : 0;
 
   return (
@@ -89,6 +106,35 @@ export default async function SupplierProfilePage() {
             <span className="flex items-center gap-2 text-[#3d4a63]"><Phone size={14} className="text-[#1f7cf0]" />{supplier.phone}</span>
             {supplier.address && <span className="flex items-start gap-2 text-[#3d4a63]"><MapPin size={14} className="text-[#1f7cf0] mt-0.5 shrink-0" />{supplier.address}</span>}
           </section>
+
+          {infoRows.length > 0 && (
+            <section className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-1.5 text-[13px]">
+              <span className="font-extrabold text-[15px]">আপনার তথ্য</span>
+              {infoRows.map((r) => (
+                <span key={r.label} className="flex items-start gap-2.5 text-[#3d4a63]">
+                  <r.icon size={14} className="text-[#1f7cf0] mt-0.5 shrink-0" />
+                  <span className="flex flex-col leading-tight"><span className="text-[10.5px] font-semibold text-[#6b7690]">{r.label}</span><b className="text-[#16213a] break-words">{r.value}</b></span>
+                </span>
+              ))}
+              {categories.length > 0 && (
+                <span className="flex flex-wrap gap-1.5 pt-1">
+                  {categories.map((c) => <span key={c} className="px-2 h-6 rounded-md bg-[#e8f1ff] text-[#1b6fd6] text-[11.5px] font-extrabold inline-flex items-center">{SUPPLIER_PRODUCT_LABEL[c] ?? c}</span>)}
+                </span>
+              )}
+            </section>
+          )}
+
+          {payRows.length > 0 && (
+            <section className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-1.5 text-[13px]">
+              <span className="font-extrabold text-[15px] inline-flex items-center gap-1.5"><CreditCard size={16} className="text-[#1f7cf0]" />পেমেন্ট অ্যাকাউন্ট</span>
+              {payRows.map((r) => (
+                <span key={r.label} className="flex items-center justify-between gap-3 border-t border-[#eef1f6] pt-1.5 first:border-t-0 first:pt-0">
+                  <span className="text-[#6b7690] font-semibold">{r.label}</span><b className="text-[#16213a] break-all text-right">{r.value}</b>
+                </span>
+              ))}
+              <span className="text-[11px] text-[#6b7690]">তথ্য ভুল থাকলে SE Electronics এ জানান।</span>
+            </section>
+          )}
 
           {/* Account summary */}
           <section className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-2.5">

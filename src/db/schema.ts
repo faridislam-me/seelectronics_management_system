@@ -1174,6 +1174,20 @@ export const suppliers = pgTable(
     password: text().notNull(),
     isActive: boolean().default(true).notNull(),
     note: text(),
+    email: varchar({ length: 255 }),
+    altPhone: varchar({ length: 50 }),
+    nidNumber: varchar({ length: 50 }),
+    tradeLicenseNumber: varchar({ length: 100 }),
+    contactPersonName: varchar({ length: 255 }),
+    contactPersonPhone: varchar({ length: 50 }),
+    /** Where SE Electronics sends the money */
+    bkashNumber: varchar({ length: 50 }),
+    nagadNumber: varchar({ length: 50 }),
+    bankName: varchar({ length: 255 }),
+    bankAccountName: varchar({ length: 255 }),
+    bankAccountNumber: varchar({ length: 100 }),
+    /** comma separated: ips,battery,stabilizer,others */
+    productCategories: text(),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp({ withTimezone: true })
       .defaultNow()

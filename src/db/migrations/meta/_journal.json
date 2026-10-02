@@ -78,6 +78,13 @@
       "when": 1790911619713,
       "tag": "0010_supplier_tx_product_photo",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790952645159,
+      "tag": "0011_supplier_profile_info",
+      "breakpoints": true
     }
   ]
 }

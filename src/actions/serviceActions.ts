@@ -133,8 +133,10 @@ export const getServicesMetadata = async ({
 
 export const getServiceById = async (serviceId: string) => {
   try {
+    // The tracking link in the customer's SMS (random service id) opens without a
+    // login, so a missing session is allowed; a logged-in customer still can only
+    // open their own service.
     const session = await verifySession(false);
-    if (!session) return { success: false, message: "Unauthorized" };
 
     const serviceData = await db.query.services.findFirst({
       where: eq(services.serviceId, serviceId),
@@ -169,6 +171,7 @@ export const getServiceById = async (serviceId: string) => {
 
     // Prevent customers from viewing others' services
     if (
+      session &&
       session.role === "customer" &&
       serviceData.customerId !== session.userId
     ) {

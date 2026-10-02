@@ -1,3 +1,4 @@
+import { brandUrl } from "@/constants/domains";
 import { UrlConfig } from "@/types";
 import { randomBytes } from "crypto";
 
@@ -40,9 +41,11 @@ export function generateVipCardNumber(): string {
 }
 
 export function getBaseUrl() {
-  return process.env.APP_URL
+  const raw = process.env.APP_URL
     ? `https://${process.env.APP_URL}`
     : process.env.NEXT_PUBLIC_BASE_URL || "https://seelectronicspro.vercel.app";
+  // Production links use the brand domain instead of the vercel.app address.
+  return brandUrl("admin", raw) ?? raw;
 }
 
 /**
@@ -74,7 +77,7 @@ export const generateUrl = <T extends UrlConfig["type"]>(
   params: Extract<UrlConfig, { type: T }>["params"],
 ) => {
   const portal = LINK_PORTAL[type as string];
-  const baseUrl = ((portal && PORTAL_URL_ENV[portal]) || getBaseUrl())?.replace(/\/$/, "");
+  const baseUrl = ((portal && brandUrl(portal, PORTAL_URL_ENV[portal])) || getBaseUrl())?.replace(/\/$/, "");
 
   if (!baseUrl) {
     throw new Error("Base URL is not defined");

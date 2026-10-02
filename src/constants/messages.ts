@@ -1,5 +1,6 @@
 import "server-only";
 import { contactDetails } from ".";
+import { brandUrl } from "./domains";
 
 export const ApplicationMessages = {
   staff: {
@@ -8,7 +9,7 @@ export const ApplicationMessages = {
     SUBMISSION: `প্রিয় {applicant_name},\nআপনার আবেদনটি সফলভাবে টেকনিশিয়ান সার্ভিস পয়েন্ট-এ জমা দেওয়া হয়েছে। আমরা আপনার তথ্য যাচাই করছি। যাচাই প্রক্রিয়া সম্পন্ন না হওয়া পর্যন্ত আমাদের সঙ্গে থাকার জন্য ধন্যবাদ।\nআবেদনটির স্ট্যাটাস ট্র্যাক করতে ভিজিট করুন\n{tracking_link}`,
     APPROVAL: `প্রিয় {applicant_name},\nঅভিনন্দন! আপনার আবেদনটি সফলভাবে যাচাই করা হয়েছে এবং টেকনিশিয়ান সার্ভিস পয়েন্ট-এ অনুমোদিত হয়েছে।\nযেকোনো তথ্যের জন্য ${contactDetails.customerCare}`,
     REJECTION: `প্রিয় {applicant_name},\nদুঃখিত,এনআইডি যাচাই সংক্রান্ত তথ্য ভুল থাকার কারণে আপনার আবেদনটি বাতিল করা হয়েছে।\nঅনুগ্রহ করে সঠিক তথ্য দিয়ে পুনরায় আবেদন করুন।`,
-    CREDENTIALS: `প্রিয় {staff_name},\nআপনার লগইন ক্রেডেনশিয়াল সেট করা হয়েছে।\nইউজারনেম: {username}\nপাসওয়ার্ড: {password}\nলগইন করতে ভিজিট করুন: ${contactDetails.baseUrl + "/staff/login"}`,
+    CREDENTIALS: `প্রিয় {staff_name},\nআপনার লগইন ক্রেডেনশিয়াল সেট করা হয়েছে।\nইউজারনেম: {username}\nপাসওয়ার্ড: {password}\nলগইন করতে ভিজিট করুন: ${brandUrl("staff", process.env.STAFF_APP_URL) ?? contactDetails.baseUrl}/staff/login`,
   },
   service: {
     ADMIN_NOTIF: `অনলাই সার্ভিসিং এর জন্য অনুরোধ করেছে তথ্য যাচাই করুন`,
@@ -45,10 +46,10 @@ export const SellerMessages = {
 export const MediaDownloadMessages = {
   CUSTOMER_INVOICE: `স্বাগতম প্রিয় গ্রাহক {name},
 এস ই ইলেকট্রনিকস থেকে পন্য ক্রয় করার জন্য আপনাকে ধন্যবাদ। আপনার একটি প্রোফাইল তৈরি হয়েছে।
-কাস্টমার আইডি: {customer_id} দিয়ে লগইন করতে নিচের লিংকটি ক্লিক করুন। পণ্যের তথ্য, সার্ভিসসহ যাবতীয় সকল কিছু দেখতে লগইন করে হোম পেজে প্রবেশ করুন। লগইন লিংক: ${contactDetails?.baseUrl + "/customer/login"} , ইনভয়েস ডাউনলোড লিংক: {download_link}
+কাস্টমার আইডি: {customer_id} দিয়ে লগইন করতে নিচের লিংকটি ক্লিক করুন। পণ্যের তথ্য, সার্ভিসসহ যাবতীয় সকল কিছু দেখতে লগইন করে হোম পেজে প্রবেশ করুন। লগইন লিংক: ${brandUrl("customer", process.env.CUSTOMER_APP_URL) ?? contactDetails.baseUrl}/customer/login , ইনভয়েস ডাউনলোড লিংক: {download_link}
 কাস্টমার কেয়ার: ${contactDetails.customerCare}`,
   CUSTOMER_REGISTRATION: `স্বাগতম প্রিয় গ্রাহক {name}, \nএস ই ইলেকট্রনিকস থেকে পন্য ক্রয় করার জন্য আপনাকে ধন্যবাদ। আপনার একটি প্রোফাইল তৈরি হয়েছে। কাস্টমার আই ডি : {customer_id} এবং ইনভয়েস নম্বর: {invoice_number} দিয়ে লগিং করতে লিংকটি ক্লিক করুন। পন্যের তথ্য , সার্ভিস যাবতীয় সকল কিছু  দেখতে লগিং করে হোম পেইজে রাখুন।\n
-লগইন করে ইনভয়েস ডাউনলোড করতে ভিজিট করুন: ${contactDetails?.baseUrl + "/customer/login"}। কাস্টমার কেয়ার ${contactDetails.customerCare}
+লগইন করে ইনভয়েস ডাউনলোড করতে ভিজিট করুন: ${brandUrl("customer", process.env.CUSTOMER_APP_URL) ?? contactDetails.baseUrl}/customer/login। কাস্টমার কেয়ার ${contactDetails.customerCare}
   `,
   INSTALL_PAYMENT_INVOICE: `প্রিয় {name},\nSEELECTRONICS আপনার IPS ইনস্টল এর পেমেন্ট করা হয়েছে। নিচে ইনভয়েস সম্পর্কিত তথ্য দেওয়া হলো:\nইনভয়েস নম্বর: {invoice_number}\nতারিখ: {date}\nমোট পরিমাণ: {total_price}\nইনভয়েসটি দেখতে বা ডাউনলোড করতে এই লিঙ্কটি ব্যবহার করুন: {download_link}\nকাস্টমার কেয়ার ${contactDetails.customerCare}।`,
   REPAIR_PAYMENT_INVOICE: `প্রিয় {name},\nSEELECTRONICS আপনার IPS সার্ভিসিং এর পেমেন্ট করা হয়েছে। নিচে ইনভয়েস সম্পর্কিত তথ্য দেওয়া হলো:\nইনভয়েস নম্বর: {invoice_number}\nতারিখ: {date}\nমোট পরিমাণ: {total_price}\nইনভয়েসটি দেখতে বা ডাউনলোড করতে এই লিঙ্কটি ব্যবহার করুন: {download_link}\nকাস্টমার কেয়ার ${contactDetails.customerCare}।`,

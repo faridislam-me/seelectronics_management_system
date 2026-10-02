@@ -447,9 +447,10 @@ export async function createService(prevState: any, formData: FormData) {
       ...serviceData,
       serviceId: serviceId,
       createdFrom: originSource,
-      // Services created from both dashboard and public form
-      // should appear in the admin list
-      isActive: true,
+      // Dashboard-created services are live immediately. Online (public form)
+      // requests stay hidden until the admin approves the application, which
+      // flips isActive (see updateApplicationStatus).
+      isActive: originSource === "dashboard",
       ipAddress: ipAddress,
       userAgent: userAgent,
       productBackPhotoKey,

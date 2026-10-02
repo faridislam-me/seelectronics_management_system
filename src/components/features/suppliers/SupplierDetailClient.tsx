@@ -6,10 +6,13 @@ import {
   getSupplierMessageTemplates,
   sendSupplierSms,
   sendSupplierVoiceCall,
+  uploadSupplierPhoto,
 } from "@/actions/supplierActions";
+import { SUPPLIER_PRODUCT_LABEL, SUPPLIER_PRODUCT_TYPES, supplierProductLabel } from "@/lib/supplierProduct";
+import { compressImage } from "./compressImage";
 import { Modal } from "@/components/ui";
 import clsx from "clsx";
-import { ArrowLeft, FileText, MessageSquare, Pencil, PhoneCall, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, FileText, MessageSquare, Pencil, PhoneCall, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -27,7 +30,7 @@ type Supplier = {
   isActive: boolean;
   note: string | null;
 };
-type Entry = { transactionId: string; type: "purchase" | "payment"; amount: number; description: string | null; date: string | Date; balance: number };
+type Entry = { transactionId: string; type: "purchase" | "payment"; amount: number; description: string | null; productType?: string | null; photoUrl?: string | null; date: string | Date; balance: number };
 type Totals = { purchased: number; paid: number; due: number; entries: number };
 
 const taka = (n: number) => `৳${Math.round(n).toLocaleString("en-IN")}`;
@@ -119,7 +122,20 @@ export default function SupplierDetailClient({ supplier, ledger, totals }: { sup
                 <tr key={e.transactionId} className="border-t border-[#eef1f6]">
                   <td className="px-3 py-2 whitespace-nowrap">{fmtDate(e.date)}</td>
                   <td className="px-3 py-2"><span className={clsx("h-6 px-2 rounded-md text-[11px] font-extrabold inline-flex items-center whitespace-nowrap", e.type === "purchase" ? "bg-[#fff6e3] text-[#b8620b]" : "bg-[#e9f9ef] text-[#178a42]")}>{e.type === "purchase" ? "মাল গ্রহণ" : "পরিশোধ"}</span></td>
-                  <td className="px-3 py-2 text-[#3d4a63]">{e.description || "—"}</td>
+                  <td className="px-3 py-2 text-[#3d4a63]">
+                    <div className="flex items-center gap-2">
+                      {e.photoUrl && (
+                        <a href={e.photoUrl} target="_blank" rel="noreferrer" className="shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={e.photoUrl} alt="মালের ছবি" className="size-11 rounded-md object-cover border border-[#dfe6f2]" />
+                        </a>
+                      )}
+                      <span className="flex flex-col leading-tight">
+                        {supplierProductLabel(e.productType) && <span className="text-[11px] font-extrabold text-[#b8620b]">{supplierProductLabel(e.productType)}</span>}
+                        <span>{e.description || "—"}</span>
+                      </span>
+                    </div>
+                  </td>
                   <td className={clsx("px-3 py-2 text-right whitespace-nowrap font-bold", e.type === "payment" && "text-[#178a42]")}>{e.type === "payment" ? "−" : "+"}{taka(e.amount)}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap font-extrabold">{taka(e.balance)}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
@@ -168,9 +184,23 @@ function EntryForm({ supplierId, type, onDone }: { supplierId: string; type: "pu
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
-    const fd = Object.fromEntries(new FormData(form));
+    const raw = new FormData(form);
+    const photo = raw.get("photo");
+    const fd = Object.fromEntries(raw);
+    delete (fd as Record<string, unknown>).photo;
     setPending(true);
-    const res = await addSupplierTransaction({ ...fd, supplierId, type, sendSms: type === "payment" ? fd.sendSms === "on" : false });
+    let photoKey = "";
+    if (type === "purchase" && photo instanceof File && photo.size > 0) {
+      const up = new FormData();
+      up.append("file", await compressImage(photo));
+      const uploaded = await uploadSupplierPhoto(up);
+      if (!uploaded.success) {
+        setPending(false);
+        return void toast.error(uploaded.message);
+      }
+      photoKey = uploaded.key;
+    }
+    const res = await addSupplierTransaction({ ...fd, photoKey, supplierId, type, sendSms: type === "payment" ? fd.sendSms === "on" : false });
     setPending(false);
     if (!res.success) return void toast.error(res.message);
     toast.success(res.message);
@@ -185,7 +215,20 @@ function EntryForm({ supplierId, type, onDone }: { supplierId: string; type: "pu
         <input name="amount" type="number" min="1" step="0.01" required placeholder="Amount ৳" className={inputCls} />
         <input name="date" type="date" defaultValue={today} className={inputCls} />
       </div>
+      {isPurchase && (
+        <select name="productType" defaultValue="" className={inputCls}>
+          <option value="">পণ্যের ধরন (ব্যাটারি / আইপিএস ...)</option>
+          {SUPPLIER_PRODUCT_TYPES.map((t) => <option key={t} value={t}>{SUPPLIER_PRODUCT_LABEL[t]}</option>)}
+        </select>
+      )}
       <input name="description" placeholder={isPurchase ? "কী মাল / চালান নম্বর (optional)" : "কীভাবে দেওয়া হয়েছে (optional)"} className={inputCls} />
+      {isPurchase && (
+        <label className="flex items-center gap-2 h-10 px-2.5 rounded-md border border-dashed border-[#e0b95a] bg-white text-[13px] font-semibold text-[#8a5a0a]">
+          <Camera size={16} className="shrink-0" />
+          <span className="shrink-0">মালের ছবি (optional)</span>
+          <input name="photo" type="file" accept="image/*" capture="environment" className="min-w-0 flex-1 text-[12px] file:hidden" />
+        </label>
+      )}
       {!isPurchase && (
         <label className="flex items-center gap-2 text-[12.5px] font-semibold text-[#178a42]">
           <input type="checkbox" name="sendSms" defaultChecked className="size-4 accent-[#1a9c4b]" />

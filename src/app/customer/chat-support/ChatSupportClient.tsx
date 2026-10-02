@@ -61,7 +61,7 @@ export default function ChatSupportClient() {
   };
 
   return (
-    <div className="flex flex-col gap-2 px-2 pt-2 pb-2 text-[#16213a]">
+    <div className="flex flex-col gap-2 px-2 pt-2 pb-0 min-h-[calc(100dvh-190px)] text-[#16213a]">
       {/* Header card */}
       <section className="rounded-md bg-[linear-gradient(110deg,#0a2f70_0%,#1259c9_100%)] text-white p-2.5 flex items-center gap-2.5">
         <span className="size-11 rounded-full bg-white/15 border border-white/25 flex items-center justify-center shrink-0"><MessageSquare size={22} /></span>
@@ -73,7 +73,7 @@ export default function ChatSupportClient() {
       </section>
 
       {/* Thread */}
-      <section className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col gap-2 min-h-[50vh]">
+      <section className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col gap-2 flex-1 min-h-[30vh]">
         {/* Greeting */}
         <Bubble side="left" label="SE Support">
           আসসালামু আলাইকুম! SE Electronics সাপোর্টে আপনাকে স্বাগতম। আপনার প্রশ্ন বা সমস্যা লিখুন, আমাদের টিম দ্রুত উত্তর দেবে।
@@ -119,7 +119,7 @@ export default function ChatSupportClient() {
           {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
         </button>
       </div>
-      <p className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-[#5b6784]"><Headset size={13} />জরুরি প্রয়োজনে কল করুন <a href={`tel:${contactDetails.customerCare}`} className="font-bold text-[#1f5fc9]">{contactDetails.customerCare}</a></p>
+      <p className="-mt-0.5 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-[#5b6784]"><Headset size={13} />জরুরি প্রয়োজনে কল করুন <a href={`tel:${contactDetails.customerCare}`} className="font-bold text-[#1f5fc9]">{contactDetails.customerCare}</a></p>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { db } from "@/db/drizzle";
 import { suppliers, supplierTransactions } from "@/db/schema";
 import { createSession, decrypt, deleteSession, sendSMS, verifySession } from "@/lib";
 import { sendVoiceCall } from "@/lib/mram";
+import { getObjectUrl, putObject } from "@/lib/s3";
 import { generateRandomId, getBaseUrl } from "@/utils";
 import bcrypt from "bcrypt";
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
@@ -66,7 +67,37 @@ const TransactionSchema = z.object({
     .optional()
     .transform((v) => (v ? new Date(v) : new Date()))
     .refine((d) => !isNaN(d.getTime()), "সঠিক তারিখ দিন"),
+  productType: z.enum(["ips", "battery", "stabilizer", "others"]).optional().or(z.literal("")).transform((v) => v || null),
+  photoKey: z.string().startsWith("supplier-photos/").max(300).optional().or(z.literal("")).transform((v) => v || null),
 });
+
+/** Signed URL for a stored photo; never throws (a missing photo must not break the ledger). */
+const photoUrlFor = async (key: string | null | undefined) => {
+  if (!key) return null;
+  try {
+    return await getObjectUrl(key);
+  } catch {
+    return null;
+  }
+};
+
+/** Admin: uploads one (already compressed) goods photo and returns its storage key. */
+export const uploadSupplierPhoto = async (formData: FormData) => {
+  try {
+    if (!(await requireAdmin())) return { success: false as const, message: "Unauthorized" };
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size === 0) return { success: false as const, message: "ছবি নির্বাচন করুন" };
+    if (!file.type.startsWith("image/")) return { success: false as const, message: "শুধু ছবি আপলোড করা যাবে" };
+    if (file.size > 6 * 1024 * 1024) return { success: false as const, message: "ছবি ৬ MB এর বেশি হতে পারবে না" };
+    const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+    const key = `supplier-photos/${Date.now()}-${generateRandomId(6)}.${ext}`;
+    await putObject({ Key: key, Body: Buffer.from(await file.arrayBuffer()), ContentType: file.type });
+    return { success: true as const, key };
+  } catch (error) {
+    console.error("uploadSupplierPhoto failed:", error);
+    return { success: false as const, message: "ছবি আপলোড করা যায়নি" };
+  }
+};
 
 const firstIssue = (e: ZodError) => e.issues[0]?.message || "তথ্য সঠিক নয়";
 
@@ -233,10 +264,11 @@ const loadSupplierLedger = async (supplierId: string) => {
     .where(eq(supplierTransactions.supplierId, supplierId))
     .orderBy(asc(supplierTransactions.date), asc(supplierTransactions.createdAt));
 
+  const photoUrls = await Promise.all(rows.map((r) => photoUrlFor(r.photoKey)));
   let balance = 0;
-  const ledger = rows.map((r) => {
+  const ledger = rows.map((r, i) => {
     balance += r.type === "purchase" ? r.amount : -r.amount;
-    return { ...r, balance };
+    return { ...r, balance, photoUrl: photoUrls[i] };
   });
   const totals = await totalsFor(supplierId);
   return { success: true as const, data: { supplier, ledger, totals } };
@@ -258,7 +290,13 @@ export const addSupplierTransaction = async (input: Record<string, unknown>) => 
     if (!supplier) return { success: false, message: "Supplier not found" };
 
     const transactionId = generateRandomId(10);
-    await db.insert(supplierTransactions).values({ transactionId, ...data });
+    const isPurchase = data.type === "purchase";
+    await db.insert(supplierTransactions).values({
+      transactionId,
+      ...data,
+      productType: isPurchase ? data.productType : null,
+      photoKey: isPurchase ? data.photoKey : null,
+    });
     const totals = await totalsFor(data.supplierId);
     revalidateSupplierPaths(data.supplierId);
 
@@ -464,7 +502,7 @@ export const getSupplierReceipt = async (transactionId: string) => {
       success: true as const,
       data: {
         supplier,
-        transaction: tx,
+        transaction: { ...tx, photoUrl: await photoUrlFor(tx.photoKey) },
         totals: { purchased, paid, due: purchased - paid },
         ledger: res.data.ledger,
         overall: res.data.totals,

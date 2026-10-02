@@ -1,6 +1,7 @@
 "use client";
 
 import { contactDetails } from "@/constants";
+import { supplierProductLabel } from "@/lib/supplierProduct";
 import { ArrowLeft, Printer } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -12,11 +13,11 @@ const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "2
 
 type Props = {
   supplier: { supplierId: string; name: string; shopName: string; phone: string; address: string | null; origin: string | null };
-  transaction: { transactionId: string; type: string; amount: number; description: string | null; date: string };
+  transaction: { transactionId: string; type: string; amount: number; description: string | null; productType?: string | null; photoUrl?: string | null; date: string };
   totals: { purchased: number; paid: number; due: number };
   qrDataUrl: string | null;
   barcodeSvg: string;
-  ledger: { transactionId: string; type: string; amount: number; description: string | null; date: string; balance: number }[];
+  ledger: { transactionId: string; type: string; amount: number; description: string | null; productType?: string | null; date: string; balance: number }[];
   overall: { purchased: number; paid: number; due: number };
   backHref: string | null;
 };
@@ -148,7 +149,14 @@ export default function SupplierReceiptClient({ supplier, transaction, totals, q
                   <Row i={1} label="ধরন" en="Type" value={isPayment ? "পরিশোধ (Payment)" : "মাল গ্রহণ (Goods Received)"} />
                   <Row i={2} label="তারিখ" en="Date" value={fmtDate(transaction.date)} />
                   <Row i={3} label={isPayment ? "পরিশোধিত টাকা" : "মালের মূল্য"} en="Amount" value={taka(transaction.amount)} strong />
-                  <Row i={4} label="বিবরণ" en="Description" value={transaction.description} />
+                  {!isPayment && <Row i={4} label="পণ্যের ধরন" en="Product" value={supplierProductLabel(transaction.productType)} />}
+                  <Row i={5} label="বিবরণ" en="Description" value={transaction.description} />
+                  {!isPayment && transaction.photoUrl && (
+                    <Row i={6} label="মালের ছবি" en="Photo" value={
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={transaction.photoUrl} alt="মালের ছবি" className="h-24 w-auto rounded-[3px] border border-[#c9d4e6] object-cover" />
+                    } />
+                  )}
                 </tbody>
               </table>
             </div>
@@ -181,7 +189,7 @@ export default function SupplierReceiptClient({ supplier, transaction, totals, q
                     <tr key={e.transactionId} className={e.transactionId === transaction.transactionId ? "bg-[#fff8e1]" : i % 2 ? "bg-[#f4f7fc]" : "bg-white"}>
                       <td className="border border-[#c9d4e6] px-1.5 py-[3px] whitespace-nowrap">{fmtDate(e.date)}</td>
                       <td className="border border-[#c9d4e6] px-1.5 py-[3px] whitespace-nowrap font-semibold">{e.type === "purchase" ? "মাল গ্রহণ" : "পরিশোধ"}</td>
-                      <td className="border border-[#c9d4e6] px-1.5 py-[3px]">{e.description || "—"}</td>
+                      <td className="border border-[#c9d4e6] px-1.5 py-[3px]">{[supplierProductLabel(e.productType), e.description].filter(Boolean).join(" · ") || "—"}</td>
                       <td className={`border border-[#c9d4e6] px-1.5 py-[3px] text-right whitespace-nowrap font-bold ${e.type === "payment" ? "text-[#178a42]" : ""}`}>{e.type === "payment" ? "−" : "+"}{taka(e.amount)}</td>
                       <td className="border border-[#c9d4e6] px-1.5 py-[3px] text-right whitespace-nowrap font-bold">{taka(e.balance)}</td>
                     </tr>

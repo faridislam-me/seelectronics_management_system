@@ -173,6 +173,10 @@ export const ServiceDataSchema = z.object({
 
   memoNumber: z.string().optional().nullable(),
   createdFrom: z.enum(createdFromTypesEnum.enumValues).optional(),
+
+  // Customer's pinned location from the request form (optional)
+  customerLat: z.preprocess((v) => (v === "" || v == null ? undefined : Number(v)), z.number().min(-90).max(90).optional()),
+  customerLng: z.preprocess((v) => (v === "" || v == null ? undefined : Number(v)), z.number().min(-180).max(180).optional()),
 });
 
 export const UpdateServiceDataSchema = ServiceDataSchema.extend({

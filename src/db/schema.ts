@@ -399,6 +399,13 @@ export const services = pgTable(
     isActive: boolean().default(false).notNull(),
     ipAddress: varchar({ length: 255 }),
     userAgent: text(),
+    /** Customer's pinned location (optional, from the request form) */
+    customerLat: doublePrecision(),
+    customerLng: doublePrecision(),
+    /** Live position of the technician while status = staff_departed */
+    staffLat: doublePrecision(),
+    staffLng: doublePrecision(),
+    staffLocationAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp({ withTimezone: true })
       .defaultNow()

@@ -11,42 +11,44 @@ export const R = { card: "rounded-md", hero: "rounded-b-[16px]", btn: "rounded-m
 const chipColors = { glass: "bg-white/20 border border-white/25", navy: "bg-[#0a2f70]", green: "bg-[#1a9c4b]", blue: "bg-[#1f7cf0]", red: "bg-[#e0243f]", amber: "bg-[#e0a11b]" };
 export type ChipColor = keyof typeof chipColors;
 
-export function BlueHero({ avatar, initials, name, idLabel, id, chips, tagline = <>Together for a<br />Better Tomorrow</>, verified = false, variant = "default" }: {
+export function BlueHero({ avatar, initials, name, idLabel, id, chips, tagline = <>Together for a<br />Better Tomorrow</>, verified = false, variant = "default", compact = false }: {
   avatar?: string | null; initials?: string; name: string; idLabel: string; id: string;
   chips: { label: string; color: ChipColor; icon?: LucideIcon; dot?: boolean }[]; tagline?: React.ReactNode; verified?: boolean;
   /** "profile" = large photo with verified badge, pill chips and script tagline with swoosh (staff profile mockup). */
   variant?: "default" | "profile";
+  /** profile variant only: medium photo and a short band (seller home). */
+  compact?: boolean;
 }) {
   const fallback = (initials || name).trim().slice(0, 2).toUpperCase();
   if (variant === "profile") {
     return (
-      <section className={clsx(profileBlueBg, "text-white px-3 pt-1 pb-12 relative overflow-hidden")}>
+      <section className={clsx(profileBlueBg, "text-white px-3 relative overflow-hidden", compact ? "pt-0 pb-7" : "pt-1 pb-12")}>
         <span className="absolute -right-16 -top-24 size-80 rounded-full bg-white/[0.07]" />
         <span className="absolute left-[30%] -top-10 size-56 rounded-full bg-[#1f7cf0]/15 blur-2xl" />
         {/* soft light wave: rises from the lower-left and sweeps up to the right */}
-        <svg className="absolute inset-x-0 bottom-0 w-full h-[46px]" viewBox="0 0 400 46" preserveAspectRatio="none" aria-hidden="true">
+        <svg className={clsx("absolute inset-x-0 bottom-0 w-full", compact ? "h-[22px]" : "h-[46px]")} viewBox="0 0 400 46" preserveAspectRatio="none" aria-hidden="true">
           <path d="M0 10 C 70 34, 170 46, 270 40 C 330 36, 372 24, 400 6 L400 46 L0 46 Z" fill="#eef3fb" />
           <path d="M0 10 C 70 34, 170 46, 270 40 C 330 36, 372 24, 400 6" fill="none" stroke="#7fb4ff" strokeOpacity="0.55" strokeWidth="1.5" />
         </svg>
         {/* tagline floats top-right so it takes no vertical space */}
-        <div className="absolute right-3 top-1 z-10">
+        <div className={clsx("absolute right-3 z-10", compact ? "top-0 scale-90 origin-top-right" : "top-1")}>
           <span className="relative block font-script text-[clamp(13px,3.6vw,17px)] leading-[1.05] text-right text-white/95 rotate-[-7deg] pr-1 pb-2">
             {tagline}
             <svg className="absolute right-0 -bottom-1 w-[88%] h-3 text-[#4c9bff]" viewBox="0 0 120 12" fill="none" aria-hidden="true"><path d="M2 10C40 3 80 1 118 2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
           </span>
         </div>
-        <div className="relative flex items-center gap-3 pt-7">
+        <div className={clsx("relative flex items-center gap-3", compact ? "pt-3" : "pt-7")}>
           <div className="relative shrink-0">
             {avatar ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatar} alt="" className="size-[clamp(92px,28vw,116px)] rounded-full object-cover object-top border-[4px] border-white shadow-[0_0_0_4px_#3d8bff,0_8px_22px_rgba(0,20,70,0.35)] bg-[#1f7cf0]" />
+              <img src={avatar} alt="" className={clsx(compact ? "size-[clamp(58px,17vw,68px)] border-[3px] shadow-[0_0_0_3px_#3d8bff,0_6px_14px_rgba(0,20,70,0.3)]" : "size-[clamp(92px,28vw,116px)] border-[4px] shadow-[0_0_0_4px_#3d8bff,0_8px_22px_rgba(0,20,70,0.35)]", "rounded-full object-cover object-top border-white bg-[#1f7cf0]")} />
             ) : (
-              <span className="size-[clamp(92px,28vw,116px)] rounded-full bg-[#1f7cf0] border-[4px] border-white shadow-[0_0_0_4px_#3d8bff,0_8px_22px_rgba(0,20,70,0.35)] flex items-center justify-center text-3xl font-extrabold">{fallback}</span>
+              <span className={clsx(compact ? "size-[clamp(58px,17vw,68px)] border-[3px] text-xl" : "size-[clamp(92px,28vw,116px)] border-[4px] shadow-[0_0_0_4px_#3d8bff,0_8px_22px_rgba(0,20,70,0.35)] text-3xl", "rounded-full bg-[#1f7cf0] border-white flex items-center justify-center font-extrabold")}>{fallback}</span>
             )}
             {verified && <span className="absolute bottom-1 -right-0.5 size-[30px] rounded-full bg-[#1f7cf0] border-[3px] border-white text-white flex items-center justify-center shadow"><BadgeCheck size={16} strokeWidth={2.6} /></span>}
           </div>
           <div className="flex flex-col gap-1 min-w-0 flex-1">
-            <span className="text-[clamp(19px,6vw,27px)] font-extrabold leading-tight break-words">{name}</span>
+            <span className={clsx("font-extrabold leading-tight break-words", compact ? "text-[clamp(16px,5vw,20px)]" : "text-[clamp(19px,6vw,27px)]")}>{name}</span>
             <span className="text-[clamp(12.5px,3.6vw,15px)] text-white/90">{idLabel}: <span className="font-bold text-white">{id}</span></span>
             <div className="flex flex-nowrap gap-1 mt-1 min-w-0">
               {chips.map((c) => (

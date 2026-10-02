@@ -124,6 +124,40 @@ function SelectField({ icon: Icon, label, req = true, options, format, className
   );
 }
 
+/** "Share my location" pin so the technician's live route can end at the customer. */
+function LocationPin() {
+  const [loc, setLoc] = useState<{ lat: number; lng: number } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const get = () => {
+    if (!("geolocation" in navigator)) return setErr("এই ফোনে লোকেশন সাপোর্ট নেই");
+    setBusy(true);
+    setErr("");
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        setLoc({ lat: p.coords.latitude, lng: p.coords.longitude });
+        setBusy(false);
+      },
+      () => {
+        setErr("লোকেশন পাওয়া যায়নি, পারমিশন চেক করুন");
+        setBusy(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000 },
+    );
+  };
+  return (
+    <div className="flex flex-col gap-1">
+      <input type="hidden" name="customerLat" value={loc?.lat ?? ""} />
+      <input type="hidden" name="customerLng" value={loc?.lng ?? ""} />
+      <button type="button" onClick={get} disabled={busy} className={clsx("h-10 rounded-md border text-[13px] font-bold inline-flex items-center justify-center gap-2", loc ? "bg-[#e9f9ef] border-[#bfe8cd] text-[#178a42]" : "bg-[#eef4fd] border-[#cfe0fb] text-[#1f5fc9]")}>
+        <MapPin size={16} />
+        {busy ? "লোকেশন নেওয়া হচ্ছে..." : loc ? "আপনার লোকেশন নেওয়া হয়েছে ✓ (আবার নিতে চাপুন)" : "আমার বর্তমান লোকেশন দিন (ঐচ্ছিক)"}
+      </button>
+      <span className="text-[11px] text-[#5b6784] leading-snug">{err || "লোকেশন দিলে টেকনিশিয়ান কোথায় আছে ও কতক্ষণে পৌঁছাবে ম্যাপে দেখতে পাবেন।"}</span>
+    </div>
+  );
+}
+
 /** Compact dashed upload tile with preview. */
 function UploadBox({ name, label }: { name: string; label: string }) {
   const [preview, setPreview] = useState<string | null>(null);
@@ -322,6 +356,7 @@ export default function GetServiceForm({ preferredStaffId, customerId, customerD
               <Field icon={Phone} label="মোবাইল নাম্বার" name="customerPhone" type="tel" placeholder="মোবাইল নাম্বার লিখুন" defaultValue={customerData?.phone || ""} />
             </div>
             <Field icon={MapPin} label="বর্তমান ঠিকানা" name="customerAddress" placeholder="বাড়ি/এলাকা/জেলা লিখুন" defaultValue={customerData?.address || ""} />
+            <LocationPin />
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <SelectField icon={MapIcon} label="জেলা" name="customerAddressDistrict" value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)} options={districts} format={cap} />
               <SelectField icon={Building2} label="থানা" name="customerAddressPoliceStation" defaultValue={customerData?.policeStation || ""} options={thanas} format={cap} />

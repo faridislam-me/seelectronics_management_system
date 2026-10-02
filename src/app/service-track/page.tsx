@@ -9,6 +9,7 @@ import { verifySession } from "@/lib";
 import { AppError, formatDate, renderText } from "@/utils";
 import clsx from "clsx";
 import { AlertTriangle, ArrowLeft, Calendar, CheckCircle2, ChevronRight, Clock, History, IdCard, MapPin, Package, Phone, ShieldCheck, Truck, User, Wrench, XCircle } from "lucide-react";
+import LiveTrackingMap from "@/components/features/tracking/LiveTrackingMap";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -495,6 +496,9 @@ export default async function ServiceTrackPage({
             )}
           </div>
         </section>
+
+        {/* Live technician position while he is on the way */}
+        {currentStatus === "staff_departed" && <LiveTrackingMap serviceId={serviceData.serviceId} dark />}
 
         {/* History header */}
         <section className={clsx(cardCls, "p-2.5 flex items-center gap-2.5")}>

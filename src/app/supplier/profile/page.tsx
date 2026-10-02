@@ -1,6 +1,7 @@
 import { getMySupplierLedger, supplierLogout } from "@/actions/supplierActions";
 import { BlueFooterBand, BlueStatGrid } from "@/components/ui";
 import { contactDetails } from "@/constants";
+import { supplierProductLabel } from "@/lib/supplierProduct";
 import clsx from "clsx";
 import { ArrowDownLeft, ArrowUpRight, Banknote, CheckCircle2, FileText, ListChecks, LogOut, MapPin, Package, Phone, Truck } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -44,20 +45,19 @@ export default async function SupplierProfilePage() {
             </div>
 
             <div className="grid grid-cols-2 gap-2.5">
-              <a href={`tel:${supplier.phone}`} className="flex items-center gap-2.5 p-2.5 rounded-md border border-[#e3e8f1] bg-white min-w-0">
-                <span className="size-10 rounded-full bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><Phone size={18} /></span>
-                <span className="flex flex-col min-w-0">
-                  <span className="text-[11px] font-semibold text-[#6b7690]">Phone</span>
-                  <span className="text-[clamp(13px,3.8vw,15px)] font-extrabold text-[#16213a] truncate">{supplier.phone}</span>
-                </span>
-              </a>
               <a href="#ledger" className={clsx("flex items-center gap-2.5 p-2.5 rounded-md border min-w-0", totals.due > 0 ? "bg-[#ffe9ec] border-[#f7c3ca]" : "bg-[#e9f9ef] border-[#bfe8cd]")}>
                 <span className={clsx("size-10 rounded-full flex items-center justify-center shrink-0 text-white", totals.due > 0 ? "bg-[#e0243f] shadow-[0_0_0_4px_rgba(224,36,63,0.2)]" : "bg-[#1a9c4b]")}><Banknote size={18} /></span>
                 <span className="flex flex-col min-w-0 flex-1">
                   <span className={clsx("text-[clamp(13px,3.8vw,15px)] font-extrabold truncate", totals.due > 0 ? "text-[#c81f38]" : "text-[#178a42]")}>{taka(totals.due)}</span>
-                  <span className="text-[11px] font-bold tracking-wide text-[#6b7690] uppercase">{totals.due > 0 ? "পাওনা (Due)" : "No due"}</span>
+                  <span className="text-[11px] font-bold tracking-wide text-[#6b7690]">মোট ডিউ</span>
                 </span>
-                <span className="text-[#9aa4b8] shrink-0">›</span>
+              </a>
+              <a href="#ledger" className="flex items-center gap-2.5 p-2.5 rounded-md border min-w-0 bg-[#e9f9ef] border-[#bfe8cd]">
+                <span className="size-10 rounded-full flex items-center justify-center shrink-0 text-white bg-[#1a9c4b]"><CheckCircle2 size={18} /></span>
+                <span className="flex flex-col min-w-0 flex-1">
+                  <span className="text-[clamp(13px,3.8vw,15px)] font-extrabold truncate text-[#178a42]">{taka(totals.paid)}</span>
+                  <span className="text-[11px] font-bold tracking-wide text-[#6b7690]">মোট পরিশোধ</span>
+                </span>
               </a>
             </div>
 
@@ -74,7 +74,6 @@ export default async function SupplierProfilePage() {
 
           <BlueStatGrid cards={[
             { value: taka(totals.purchased), label: "মোট মাল", icon: Package, tone: "blue", href: "#ledger" },
-            { value: taka(totals.paid), label: "মোট পরিশোধ", icon: CheckCircle2, tone: "green", href: "#ledger" },
             { value: totals.entries, label: "এন্ট্রি", icon: ListChecks, tone: "purple", href: "#ledger" },
           ]} />
 
@@ -93,10 +92,18 @@ export default async function SupplierProfilePage() {
                 const purchase = e.type === "purchase";
                 return (
                   <div key={e.transactionId} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.05)]">
-                    <span className={clsx("size-10 rounded-full flex items-center justify-center shrink-0", purchase ? "bg-[#fff6e3] text-[#b8620b]" : "bg-[#e9f9ef] text-[#178a42]")}>{purchase ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}</span>
+                    {e.photoUrl ? (
+                      <a href={e.photoUrl} target="_blank" rel="noreferrer" className="shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={e.photoUrl} alt="মালের ছবি" className="size-12 rounded-md object-cover border border-[#dfe6f2]" />
+                      </a>
+                    ) : (
+                      <span className={clsx("size-10 rounded-full flex items-center justify-center shrink-0", purchase ? "bg-[#fff6e3] text-[#b8620b]" : "bg-[#e9f9ef] text-[#178a42]")}>{purchase ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}</span>
+                    )}
                     <span className="flex flex-col min-w-0 flex-1 leading-tight">
-                      <span className="text-[14px] font-extrabold">{purchase ? "মাল গ্রহণ" : "পরিশোধ করা হয়েছে"}</span>
-                      <span className="text-[11.5px] text-[#5b6784] truncate">{fmtDate(e.date)}{e.description ? ` · ${e.description}` : ""}</span>
+                      <span className="text-[14px] font-extrabold">{purchase ? `মাল গ্রহণ${supplierProductLabel(e.productType) ? ` · ${supplierProductLabel(e.productType)}` : ""}` : "পরিশোধ করা হয়েছে"}</span>
+                      {e.description && <span className="text-[13px] font-bold text-[#16213a] break-words">{purchase ? "পণ্য" : "মাধ্যম"}: {e.description}</span>}
+                      <span className="text-[11.5px] text-[#5b6784]">{fmtDate(e.date)}</span>
                     </span>
                     <span className="flex flex-col items-end leading-tight shrink-0">
                       <span className={clsx("text-[15px] font-extrabold", purchase ? "text-[#16213a]" : "text-[#178a42]")}>{purchase ? "+" : "−"}{taka(e.amount)}</span>

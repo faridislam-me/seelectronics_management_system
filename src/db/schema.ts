@@ -1198,6 +1198,10 @@ export const supplierTransactions = pgTable(
     type: varchar({ length: 20 }).$type<"purchase" | "payment">().notNull(),
     amount: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
     description: text(),
+    /** For purchases: ips | battery | stabilizer | others */
+    productType: varchar({ length: 30 }),
+    /** For purchases: optional photo of the received goods (R2 object key) */
+    photoKey: text(),
     date: timestamp({ withTimezone: true }).defaultNow().notNull(),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   },

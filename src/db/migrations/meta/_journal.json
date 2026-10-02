@@ -71,6 +71,13 @@
       "when": 1790735295895,
       "tag": "0009_customer_block_reason",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790911619713,
+      "tag": "0010_supplier_tx_product_photo",
+      "breakpoints": true
     }
   ]
 }

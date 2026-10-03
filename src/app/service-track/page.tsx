@@ -498,7 +498,7 @@ export default async function ServiceTrackPage({
         </section>
 
         {/* Live technician position while he is on the way */}
-        {currentStatus === "staff_departed" && <LiveTrackingMap serviceId={serviceData.serviceId} dark />}
+        {currentStatus === "staff_departed" && <LiveTrackingMap serviceId={serviceData.serviceId} />}
 
         {/* History header */}
         <section className={clsx(cardCls, "p-2.5 flex items-center gap-2.5")}>

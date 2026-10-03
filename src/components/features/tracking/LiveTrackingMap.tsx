@@ -32,7 +32,8 @@ export default function LiveTrackingMap({ serviceId, dark = false }: { serviceId
   const [eta, setEta] = useState<{ minutes: number; km: number } | null>(null);
   const mapEl = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
-  const layers = useRef<{ staff?: any; dest?: any; route?: any; fitted?: boolean }>({});
+  const layers = useRef<{ staff?: any; dest?: any; origin?: any; route?: any; fitted?: boolean }>({});
+  const originPos = useRef<{ lat: number; lng: number } | null>(null);
   const lastRouteKey = useRef("");
 
   // Poll the public tracking endpoint.
@@ -75,24 +76,24 @@ export default function LiveTrackingMap({ serviceId, dark = false }: { serviceId
       }
       const map = mapRef.current;
 
+      const GREEN = "#16a34a";
+      const pinSvg = (fill: string) => `<svg width="34" height="42" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 3px 4px rgba(0,0,0,.35))"><path d="M12 0C5.9 0 1 4.9 1 11c0 8.2 11 19 11 19s11-10.8 11-19C23 4.9 18.1 0 12 0z" fill="${fill}" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="11" r="4.2" fill="#fff"/></svg>`;
       const staffIcon = L.divIcon({
         className: "",
-        html: '<div style="width:38px;height:38px;border-radius:9999px;background:#1f7cf0;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h-3l-3 6 3 3h5"/><circle cx="15" cy="5" r="1"/></svg></div>',
-        iconSize: [38, 38],
-        iconAnchor: [19, 19],
+        html: `<div style="width:46px;height:46px;border-radius:9999px;background:#fff;border:3px solid ${GREEN};box-shadow:0 4px 12px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="${GREEN}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h-3l-3 6 3 3h5"/><circle cx="15" cy="5" r="1"/></svg></div>`,
+        iconSize: [46, 46],
+        iconAnchor: [23, 23],
       });
-      const destIcon = L.divIcon({
-        className: "",
-        html: '<div style="width:30px;height:30px;border-radius:9999px 9999px 9999px 0;transform:rotate(-45deg);background:#e0243f;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.35)"></div>',
-        iconSize: [30, 30],
-        iconAnchor: [8, 28],
-      });
+      const destIcon = L.divIcon({ className: "", html: pinSvg("#e0243f"), iconSize: [34, 42], iconAnchor: [17, 41] });
+      const originIcon = L.divIcon({ className: "", html: pinSvg(GREEN), iconSize: [34, 42], iconAnchor: [17, 41] });
 
       if (start) {
         if (layers.current.staff) layers.current.staff.setLatLng([start.lat, start.lng]);
         else layers.current.staff = L.marker([start.lat, start.lng], { icon: staffIcon }).addTo(map);
       }
       if (dest && !layers.current.dest) layers.current.dest = L.marker([dest.lat, dest.lng], { icon: destIcon }).addTo(map);
+      if (start && !originPos.current) originPos.current = { lat: start.lat, lng: start.lng };
+      if (originPos.current && !layers.current.origin) layers.current.origin = L.marker([originPos.current.lat, originPos.current.lng], { icon: originIcon }).addTo(map);
 
       if (start && dest) {
         // Re-route only when the technician moved ~50m or more.
@@ -108,7 +109,7 @@ export default function LiveTrackingMap({ serviceId, dark = false }: { serviceId
             if (cancelled) return;
             const coords = route.geometry.coordinates.map(([lng, lat]: number[]) => [lat, lng]);
             if (layers.current.route) layers.current.route.setLatLngs(coords);
-            else layers.current.route = L.polyline(coords, { color: "#1f7cf0", weight: 5, opacity: 0.9 }).addTo(map);
+            else layers.current.route = L.polyline(coords, { color: "#16a34a", weight: 6, opacity: 0.95 }).addTo(map);
             setEta({ minutes: Math.max(1, Math.round(route.duration / 60)), km: route.distance / 1000 });
           } catch {
             setEta({ minutes: Math.max(1, Math.round((straightKm / 20) * 60)), km: straightKm });
@@ -128,6 +129,15 @@ export default function LiveTrackingMap({ serviceId, dark = false }: { serviceId
     };
   }, [data]);
 
+  const recenter = async () => {
+    const map = mapRef.current;
+    if (!map || !data) return;
+    const L = (await import("leaflet")).default;
+    const pts = [data.staffPos, data.customerPos].filter(Boolean) as { lat: number; lng: number }[];
+    if (pts.length > 1) map.fitBounds(L.latLngBounds(pts.map((p) => [p.lat, p.lng] as [number, number])), { padding: [40, 40] });
+    else if (pts.length === 1) map.setView([pts[0].lat, pts[0].lng], 16);
+  };
+
   // Tear the map down when the component unmounts.
   useEffect(() => {
     return () => {
@@ -146,19 +156,28 @@ export default function LiveTrackingMap({ serviceId, dark = false }: { serviceId
   return (
     <section className={clsx("rounded-md border overflow-hidden shadow-[0_6px_18px_rgba(0,0,0,0.2)]", base)}>
       <div className="flex items-center gap-2.5 p-2.5">
-        <span className="size-10 rounded-full bg-[#1f7cf0] text-white flex items-center justify-center shrink-0"><Navigation size={20} /></span>
+        <span className="size-10 rounded-full bg-[#16a34a] text-white flex items-center justify-center shrink-0"><Navigation size={20} /></span>
         <span className="flex flex-col leading-tight min-w-0 flex-1">
           <span className="text-[15px] font-bold">লাইভ ট্র্যাকিং</span>
           <span className={clsx("text-[12px]", sub)}>{data.staff?.role === "electrician" ? "ইলেকট্রিশিয়ান" : "টেকনিশিয়ান"} আপনার ঠিকানার দিকে আসছেন</span>
         </span>
         <span className={clsx("shrink-0 rounded-md px-2.5 py-1 text-center leading-tight", dark ? "bg-white/10 border border-white/15" : "bg-[#e8f1ff]")}>
           <span className={clsx("block text-[10px] font-semibold", sub)}>আনুমানিক সময়</span>
-          <span className="block text-[15px] font-extrabold text-[#34d36b]">{eta ? `${bn(eta.minutes)} মিনিট` : "—"}</span>
+          <span className="block text-[15px] font-extrabold text-[#16a34a]">{eta ? `${bn(eta.minutes)} মিনিট` : "—"}</span>
         </span>
       </div>
 
       {data.staffPos || data.customerPos ? (
-        <div ref={mapEl} className="h-[260px] w-full bg-[#dbe6f5] z-0" />
+        <div className="relative">
+          <div ref={mapEl} className="h-[280px] w-full bg-[#dbe6f5] z-0" />
+          {eta && (
+            <span className="absolute left-2.5 bottom-6 z-[1000] rounded-md bg-white shadow-[0_4px_14px_rgba(0,0,0,0.25)] px-2.5 py-1.5 flex items-center gap-2 text-[#16213a] pointer-events-none">
+              <MapPin size={16} className="text-[#16a34a]" />
+              <span className="flex flex-col leading-tight"><span className="text-[10.5px] font-semibold text-[#5b6784]">আনুমানিক পৌঁছাবেন</span><span className="text-[14px] font-extrabold">{bn(eta.minutes)} মিনিট</span></span>
+            </span>
+          )}
+          <button type="button" onClick={recenter} aria-label="মাঝখানে আনুন" className="absolute right-2.5 bottom-6 z-[1000] size-10 rounded-full bg-white shadow-[0_4px_14px_rgba(0,0,0,0.25)] flex items-center justify-center text-[#16213a]"><LocateFixed size={20} /></button>
+        </div>
       ) : (
         <div className={clsx("h-[120px] flex flex-col items-center justify-center gap-1 text-[13px]", sub)}>
           <LocateFixed size={22} />
@@ -184,7 +203,7 @@ export default function LiveTrackingMap({ serviceId, dark = false }: { serviceId
             <span className="text-[14px] font-bold truncate">{data.staff.name}</span>
             <span className={clsx("text-[12px]", sub)}>{data.staff.phone}</span>
           </span>
-          <a href={`tel:${data.staff.phone}`} className="h-9 px-3 rounded-md bg-[#1a9c4b] text-white text-[13px] font-bold inline-flex items-center gap-1.5"><Phone size={14} />কল</a>
+          <a href={`tel:${data.staff.phone}`} className="h-9 px-3 rounded-md bg-[#16a34a] text-white text-[13px] font-bold inline-flex items-center gap-1.5"><Phone size={14} />কল</a>
         </div>
       )}
     </section>

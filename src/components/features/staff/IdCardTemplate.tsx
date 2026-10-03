@@ -18,7 +18,8 @@ interface IdCardProps {
         qrcode: string,
         barcode: string
         createdAt: Date;
-        issueDate: Date
+        issueDate: Date;
+        signatureUrl?: string | null;
     };
 }
 
@@ -108,6 +109,16 @@ export default function IdCardTemplate({ data, variant = "a4" }: IdCardProps & {
                                 <span className="font-semibold">{formatDate(data.createdAt)}</span>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Holder's signature (right of the ID / Joined rows) */}
+                    <div className="absolute flex flex-col items-center leading-none" style={{ right: '12px', top: '124px', width: '80px' }}>
+                        <div style={{ height: '28px', width: '80px' }} className="flex items-end justify-center">
+                            {data.signatureUrl ? (
+                                <img src={data.signatureUrl} alt="Signature" style={{ maxHeight: '28px', maxWidth: '80px', objectFit: 'contain' }} />
+                            ) : null}
+                        </div>
+                        <div style={{ width: '80px', borderTop: '1px solid #000', marginTop: '1px', paddingTop: '2px', textAlign: 'center', fontSize: '7.5px' }} className="font-semibold">ধারকের স্বাক্ষর</div>
                     </div>
 
                     {/* Bottom address section */}

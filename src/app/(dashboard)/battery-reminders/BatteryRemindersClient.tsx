@@ -4,9 +4,9 @@ import {
   sendBatteryReminderToSelected,
   sendUserManualSmsToSelected,
 } from "@/actions";
-import { sendBulkVoiceCallToSelected } from "@/actions/voiceReminderActions";
+import { sendBulkVoiceCallToSelected, sendCustomVoiceCallToSelected } from "@/actions/voiceReminderActions";
 import Modal from "@/components/ui/Modal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 type CustomerRow = {
@@ -24,8 +24,16 @@ export default function BatteryRemindersClient({
   allCustomerIds: string[];
 }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [openMenu, setOpenMenu] = useState<"sms" | "voice" | null>(null);
+  const [openMenu, setOpenMenu] = useState<"sms" | "voice" | "custom" | null>(null);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [customVoiceId, setCustomVoiceId] = useState("");
+
+  // Remember the last voice ID typed on this device.
+  useEffect(() => {
+    try {
+      setCustomVoiceId(localStorage.getItem("se-custom-voice-id") || "");
+    } catch {}
+  }, []);
 
   const visibleIds = customers.map((customer) => customer.customerId);
   const allMatchingSelected =
@@ -52,7 +60,7 @@ export default function BatteryRemindersClient({
     setSelectedIds((current) => (allMatchingSelected ? [] : allCustomerIds));
   };
 
-  const openCampaignMenu = (menu: "sms" | "voice") => {
+  const openCampaignMenu = (menu: "sms" | "voice" | "custom") => {
     if (!selectedIds.length) {
       toast.error("Please select at least one customer first.");
       return;
@@ -102,6 +110,13 @@ export default function BatteryRemindersClient({
             className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 text-white rounded-md disabled:bg-gray-400 font-medium whitespace-nowrap text-sm sm:text-base"
           >
             Send Voice call
+          </button>
+          <button
+            onClick={() => openCampaignMenu("custom")}
+            disabled={loadingAction !== null}
+            className="flex-1 sm:flex-none px-4 py-2 bg-purple-600 text-white rounded-md disabled:bg-gray-400 font-medium whitespace-nowrap text-sm sm:text-base"
+          >
+            Voice ID দিয়ে কল
           </button>
         </div>
       </div>
@@ -177,6 +192,39 @@ export default function BatteryRemindersClient({
             {loadingAction === "maintenance-voice"
               ? "Sending..."
               : "ব্যাটারির পানি চেকের ভয়েস কল"}
+          </button>
+        </div>
+      </Modal>
+
+      <Modal
+        title="অন্য ভয়েস আইডি দিয়ে কল"
+        isVisible={openMenu === "custom"}
+        onClose={() => setOpenMenu(null)}
+        width="500"
+      >
+        <div className="grid gap-3 py-3">
+          <p className="text-sm text-gray-600">সিলেক্ট করা {selectedIds.length} জন গ্রাহকের কাছে এই আইডির ভয়েস কল যাবে।</p>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            value={customVoiceId}
+            onChange={(e) => setCustomVoiceId(e.target.value)}
+            placeholder="ভয়েস আইডি নম্বর লিখুন (যেমন 3316)"
+            className="w-full h-12 rounded-md border border-purple-200 bg-white px-3 text-base outline-none focus:border-purple-500"
+            autoFocus
+          />
+          <button
+            disabled={loadingAction !== null || !customVoiceId.trim()}
+            onClick={() => {
+              try {
+                localStorage.setItem("se-custom-voice-id", customVoiceId.trim());
+              } catch {}
+              sendCampaign("custom-voice", () => sendCustomVoiceCallToSelected(selectedIds, Number(customVoiceId)));
+            }}
+            className="w-full rounded-md bg-purple-600 px-4 py-3 font-bold text-white disabled:bg-gray-400"
+          >
+            {loadingAction === "custom-voice" ? "Sending..." : `${selectedIds.length} জনকে ভয়েস কল পাঠান`}
           </button>
         </div>
       </Modal>

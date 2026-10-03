@@ -555,6 +555,8 @@ export const staffs = pgTable(
     photoKey: varchar({ length: 255 }).notNull(),
     nidFrontPhotoKey: varchar({ length: 255 }).notNull(),
     nidBackPhotoKey: varchar({ length: 255 }).notNull(),
+    /** Hand-drawn signature (PNG with transparent background) taken on the online form */
+    signatureKey: varchar({ length: 255 }),
     skills: text(), // JSON array of skills as text
     bio: text(), // Short biography/summary
     hasRepairExperience: boolean().default(false).notNull(),

@@ -260,3 +260,62 @@ export const sendBulkVoiceCallToAll = async (
     return { success: false, message: "Something went wrong" };
   }
 };
+
+/**
+ * Admin types any MRAM voice broadcast ID and sends it to the selected customers
+ * (the existing buttons only cover the pre-set broadcasts).
+ */
+export const sendCustomVoiceCallToSelected = async (customerIds: string[], broadcastId: number) => {
+  try {
+    const session = await verifySession(false, "admin");
+    if (!session) return { success: false, message: "Unauthorized" };
+
+    const id = Number(broadcastId);
+    if (!Number.isInteger(id) || id <= 0 || id > 999999999) {
+      return { success: false, message: "সঠিক ভয়েস আইডি নম্বর দিন" };
+    }
+    if (!customerIds.length) return { success: false, message: "No customers selected" };
+
+    // 1-1000 numbers per MRAM request; keep the DB lookup in chunks too.
+    const phones: string[] = [];
+    for (let i = 0; i < customerIds.length; i += 1000) {
+      const rows = await db.query.customers.findMany({
+        where: inArray(customers.customerId, customerIds.slice(i, i + 1000)),
+        columns: { phone: true },
+      });
+      for (const r of rows) if (r.phone) phones.push(r.phone);
+    }
+    if (!phones.length) return { success: false, message: "No valid phone numbers found" };
+
+    let sent = 0;
+    let mocked = 0;
+    let failedChunks = 0;
+    let lastError = "";
+    for (let i = 0; i < phones.length; i += 1000) {
+      const chunk = phones.slice(i, i + 1000);
+      const res = await sendVoiceCall(chunk, id, `Custom Voice ${id}`);
+      if (res.success) {
+        if ((res as { mocked?: boolean }).mocked) mocked += chunk.length;
+        else sent += chunk.length;
+      } else {
+        failedChunks++;
+        lastError = (res as { error?: string }).error || "";
+        console.error("Custom voice chunk failed:", lastError);
+      }
+    }
+
+    if (failedChunks > 0 && sent === 0 && mocked === 0) {
+      return { success: false, message: lastError || "ভয়েস কল পাঠানো যায়নি" };
+    }
+    return {
+      success: failedChunks === 0,
+      message:
+        mocked > 0
+          ? `ভয়েস কল সিমুলেশন হয়েছে (${mocked} জন), আসল কল পাঠাতে MRAM সেট করুন।`
+          : `ভয়েস আইডি ${id} দিয়ে ${sent} জনকে কল পাঠানো হয়েছে${failedChunks ? `; ${failedChunks} টি ব্যাচ ব্যর্থ` : ""}।`,
+    };
+  } catch (error) {
+    console.error(error);
+    return { success: false, message: "Something went wrong" };
+  }
+};

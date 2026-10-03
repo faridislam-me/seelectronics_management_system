@@ -14,6 +14,7 @@ const SEND_EVERY_MS = 12000;
 export default function StaffLocationSharer({ serviceId }: { serviceId: string }) {
   const [state, setState] = useState<"starting" | "sharing" | "denied" | "unsupported" | "stopped">("starting");
   const lastSent = useRef(0);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!("geolocation" in navigator)) {
@@ -43,7 +44,7 @@ export default function StaffLocationSharer({ serviceId }: { serviceId: string }
       stopped = true;
       navigator.geolocation.clearWatch(id);
     };
-  }, [serviceId]);
+  }, [serviceId, attempt]);
 
   if (state === "stopped") return null;
   const bad = state === "denied" || state === "unsupported";
@@ -52,13 +53,16 @@ export default function StaffLocationSharer({ serviceId }: { serviceId: string }
       {bad ? <TriangleAlert size={18} className="shrink-0 mt-0.5" /> : <LocateFixed size={18} className={clsx("shrink-0 mt-0.5", state === "sharing" && "animate-pulse")} />}
       <span className="leading-snug font-semibold">
         {state === "denied"
-          ? "লোকেশন পারমিশন বন্ধ আছে। কাস্টমার আপনাকে ম্যাপে দেখতে পাবে না। ব্রাউজারের সেটিংস থেকে লোকেশন চালু করুন।"
+          ? "লোকেশন বন্ধ আছে, তাই গ্রাহক আপনাকে ম্যাপে দেখতে পাবে না। ফোনের Settings → Apps → এই অ্যাপ (বা Chrome) → Permissions → Location → Allow করুন, তারপর নিচের বাটনে চাপ দিন।"
           : state === "unsupported"
             ? "এই ফোনে লোকেশন সাপোর্ট নেই।"
             : state === "starting"
               ? "লোকেশন চালু করা হচ্ছে... (পারমিশন চাইলে Allow দিন)"
               : "লাইভ লোকেশন শেয়ার চলছে। কাস্টমার আপনাকে ম্যাপে দেখছে। এই পেজ খোলা রাখুন।"}
       </span>
+      {state === "denied" && (
+        <button type="button" onClick={() => { setState("starting"); setAttempt((n) => n + 1); }} className="shrink-0 self-center h-9 px-3 rounded-md bg-[#c81f38] text-white text-[12px] font-extrabold">আবার চেষ্টা</button>
+      )}
     </div>
   );
 }

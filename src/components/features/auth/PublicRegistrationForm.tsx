@@ -1,6 +1,7 @@
 "use client";
 
 import { createStaff, getTOSContent } from "@/actions";
+import SignaturePad from "@/components/features/staff/SignaturePad";
 import geoData from "@/assets/data/geo-data.json";
 import clsx from "clsx";
 import {
@@ -319,6 +320,10 @@ export default function PublicRegistrationForm({ token, onRegistrationComplete }
             <UploadBox name="photo" label="আপনার ছবি" />
             <UploadBox name="nidFrontPhoto" label="জাতীয় পরিচয়পত্রের ছবি" hint="সামনের দিকের" />
             <UploadBox name="nidBackPhoto" label="জাতীয় পরিচয়পত্রের ছবি" hint="পেছনের দিকের" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label text="আপনার স্বাক্ষর" />
+            <SignaturePad />
           </div>
         </SectionCard>
 

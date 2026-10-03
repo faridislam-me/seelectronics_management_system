@@ -1,10 +1,25 @@
 "use server";
 
 import { db } from "@/db/drizzle";
-import { services } from "@/db/schema";
+import { serviceStatusHistory, services } from "@/db/schema";
 import { verifySession } from "@/lib";
 import { getObjectUrl } from "@/lib/s3";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
+
+/**
+ * "আমি রওনা দিয়েছি" only adds a status-history row (services.status is updated
+ * with the final report), so "on the way" is read from the latest history row,
+ * the same way the tracking page decides its current step.
+ */
+const latestStatus = async (serviceId: string, fallback: string | null) => {
+  const [row] = await db
+    .select({ status: serviceStatusHistory.status })
+    .from(serviceStatusHistory)
+    .where(eq(serviceStatusHistory.serviceId, serviceId))
+    .orderBy(desc(serviceStatusHistory.createdAt))
+    .limit(1);
+  return row?.status ?? fallback;
+};
 
 const validCoord = (lat: unknown, lng: unknown) =>
   typeof lat === "number" && typeof lng === "number" && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
@@ -25,7 +40,7 @@ export async function updateStaffLocation(serviceId: string, lat: number, lng: n
       .where(eq(services.serviceId, serviceId))
       .limit(1);
     if (!row || row.staffId !== session.userId) return { success: false as const, stop: true, message: "Not your service" };
-    if (row.status !== "staff_departed") return { success: true as const, stop: true };
+    if ((await latestStatus(serviceId, row.status)) !== "staff_departed") return { success: true as const, stop: true };
 
     await db
       .update(services)
@@ -60,7 +75,8 @@ export async function getLiveTracking(serviceId: string) {
     });
     if (!row) return { success: false as const };
 
-    const active = row.status === "staff_departed";
+    const currentStatus = await latestStatus(serviceId, row.status);
+    const active = currentStatus === "staff_departed";
     let photoUrl: string | null = null;
     if (row.appointedStaff?.photoKey) {
       try {
@@ -73,7 +89,7 @@ export async function getLiveTracking(serviceId: string) {
       success: true as const,
       data: {
         active,
-        status: row.status,
+        status: currentStatus,
         type: row.type,
         staff: row.appointedStaff ? { name: row.appointedStaff.name, phone: row.appointedStaff.phone, role: row.appointedStaff.role, photoUrl } : null,
         staffPos: active && row.staffLat != null && row.staffLng != null ? { lat: row.staffLat, lng: row.staffLng, at: row.staffLocationAt?.toISOString() ?? null } : null,

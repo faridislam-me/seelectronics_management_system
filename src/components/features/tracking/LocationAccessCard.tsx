@@ -12,12 +12,22 @@ type Props = {
   serviceId?: string;
   /** dark = tracking page (navy), otherwise light card */
   dark?: boolean;
+  /** called after the location was given / saved */
+  onDone?: () => void;
 };
+
+/** The Flutter apps expose this channel so a button can jump straight to the phone's app settings. */
+export function openAppSettings(): boolean {
+  const ch = (window as unknown as { SEApp?: { postMessage: (m: string) => void } }).SEApp;
+  if (!ch) return false;
+  ch.postMessage("openSettings");
+  return true;
+}
 
 const COPY = {
   customer: {
     title: "টেকনিশিয়ান কোথায় আছে দেখতে চান?",
-    body: "নিচের বাটনে চাপ দিয়ে লোকেশন এক্সেস দিন (Allow চাপুন)। তাহলে টেকনিশিয়ান রওনা দিলে ম্যাপে তাঁকে দেখতে পাবেন এবং কতক্ষণে পৌঁছাবেন জানতে পারবেন।",
+    body: "আপনার ঠিকানা ম্যাপে বসাতে এবং টেকনিশিয়ান কতক্ষণে পৌঁছাবেন তা হিসাব করতে আপনার লোকেশন দরকার। নিচের বাটনে চাপ দিয়ে ফোন যা জিজ্ঞেস করবে তাতে \"Allow\" দিন। আপনার লোকেশন শুধু এই সার্ভিসের জন্য ব্যবহার হবে, অন্য কোথাও দেখানো হবে না।",
     button: "লোকেশন দিন",
     done: "আপনার লোকেশন নেওয়া হয়েছে। টেকনিশিয়ান রওনা দিলে এখানে ম্যাপ দেখতে পাবেন।",
   },
@@ -30,7 +40,7 @@ const COPY = {
 } as const;
 
 /** One big, plain-language "give location access" box (customer tracking page and technician report page). */
-export default function LocationAccessCard({ role, serviceId, dark = false }: Props) {
+export default function LocationAccessCard({ role, serviceId, dark = false, onDone }: Props) {
   const router = useRouter();
   const t = COPY[role];
   const [state, setState] = useState<"idle" | "asking" | "granted" | "denied">("idle");
@@ -72,8 +82,10 @@ export default function LocationAccessCard({ role, serviceId, dark = false }: Pr
           }
           setState("granted");
           router.refresh();
+          onDone?.();
         } else {
           setState("granted");
+          onDone?.();
         }
       },
       (err) => {
@@ -113,8 +125,9 @@ export default function LocationAccessCard({ role, serviceId, dark = false }: Pr
       </div>
 
       {denied && (
-        <div className={clsx("rounded-md px-2.5 py-2 text-[12px] leading-relaxed font-semibold", dark ? "bg-white/10 text-white/90" : "bg-white text-[#c81f38] border border-[#f7c3ca]")}>
-          লোকেশন বন্ধ করা আছে। ফোনের <b>Settings → Apps → এই অ্যাপ (বা Chrome) → Permissions → Location → Allow</b> করুন, তারপর নিচের বাটনে আবার চাপ দিন।
+        <div className={clsx("rounded-md px-2.5 py-2 text-[12px] leading-relaxed font-semibold flex flex-col gap-2", dark ? "bg-white/10 text-white/90" : "bg-white text-[#c81f38] border border-[#f7c3ca]")}>
+          <span>লোকেশন বন্ধ করা আছে। ফোনের সেটিংসে গিয়ে <b>Permissions → Location → Allow</b> করুন, তারপর ফিরে এসে নিচের বাটনে আবার চাপ দিন।</span>
+          <button type="button" onClick={() => { if (!openAppSettings()) setError("Chrome এ: ঠিকানার পাশের তালা (🔒) আইকনে চাপ দিয়ে Permissions → Location → Allow করুন।"); }} className="h-10 rounded-md bg-[#e0243f] text-white text-[13px] font-extrabold">ফোনের সেটিংস খুলুন</button>
         </div>
       )}
       {error && <span className="text-[12px] font-semibold text-[#e0243f]">{error}</span>}

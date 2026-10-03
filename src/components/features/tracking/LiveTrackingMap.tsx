@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import "leaflet/dist/leaflet.css";
 import { Clock, LocateFixed, MapPin, Navigation, Phone, Route } from "lucide-react";
+import LocationAccessCard from "./LocationAccessCard";
 import { useEffect, useRef, useState } from "react";
 
 type Pos = { lat: number; lng: number; at?: string | null };
@@ -30,6 +31,7 @@ const bn = (n: number | string) => String(n).replace(/\d/g, (d) => "০১২৩
 export default function LiveTrackingMap({ serviceId, dark = false }: { serviceId: string; dark?: boolean }) {
   const [data, setData] = useState<Data | null>(null);
   const [eta, setEta] = useState<{ minutes: number; km: number } | null>(null);
+  const [tick, setTick] = useState(0);
   const mapEl = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const layers = useRef<{ staff?: any; dest?: any; origin?: any; route?: any; fitted?: boolean }>({});
@@ -54,7 +56,7 @@ export default function LiveTrackingMap({ serviceId, dark = false }: { serviceId
       stop = true;
       clearInterval(t);
     };
-  }, [serviceId]);
+  }, [serviceId, tick]);
 
   // Draw / update the map.
   useEffect(() => {
@@ -93,7 +95,10 @@ export default function LiveTrackingMap({ serviceId, dark = false }: { serviceId
       }
       if (dest && !layers.current.dest) layers.current.dest = L.marker([dest.lat, dest.lng], { icon: destIcon }).addTo(map);
       if (start && !originPos.current) originPos.current = { lat: start.lat, lng: start.lng };
-      if (originPos.current && !layers.current.origin) layers.current.origin = L.marker([originPos.current.lat, originPos.current.lng], { icon: originIcon }).addTo(map);
+      // Start pin only once the technician has actually moved away from where he started.
+      if (originPos.current && start && !layers.current.origin && haversineKm(originPos.current, start) > 0.08) {
+        layers.current.origin = L.marker([originPos.current.lat, originPos.current.lng], { icon: originIcon }).addTo(map);
+      }
 
       if (start && dest) {
         // Re-route only when the technician moved ~50m or more.
@@ -188,8 +193,13 @@ export default function LiveTrackingMap({ serviceId, dark = false }: { serviceId
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-2.5 py-2 text-[12px]">
         {eta && <span className={clsx("inline-flex items-center gap-1", sub)}><Route size={13} />প্রায় {bn(eta.km.toFixed(1))} কিমি দূরে</span>}
         {updatedAgo != null && <span className={clsx("inline-flex items-center gap-1", sub)}><Clock size={13} />{updatedAgo === 0 ? "এইমাত্র আপডেট" : `${bn(updatedAgo)} মিনিট আগে আপডেট`}</span>}
-        {!data.customerPos && <span className={clsx("inline-flex items-center gap-1", sub)}><MapPin size={13} />আপনার লোকেশন পিন দেওয়া নেই, তাই সময় দেখানো যাচ্ছে না</span>}
       </div>
+
+      {!data.customerPos && (
+        <div className="px-2.5 pb-2.5">
+          <LocationAccessCard role="customer" serviceId={serviceId} dark={dark} onDone={() => setTick((n) => n + 1)} />
+        </div>
+      )}
 
       {data.staff && (
         <div className={clsx("flex items-center gap-2.5 border-t p-2.5", dark ? "border-white/10" : "border-[#eef1f6]")}>

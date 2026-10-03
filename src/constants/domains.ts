@@ -21,4 +21,4 @@ export function brandUrl(portal: Portal, envUrl?: string): string | undefined {
  * Vercel project (Cloudflare CNAME + Vercel Domains). Until then supplier links
  * keep using the admin domain so no SMS link breaks.
  */
-export const SUPPLIER_SUBDOMAIN_LIVE = false;
+export const SUPPLIER_SUBDOMAIN_LIVE = true;

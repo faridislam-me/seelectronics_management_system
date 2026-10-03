@@ -429,11 +429,12 @@ export const getStaffById = async (staffId: string) => {
 
     if (!staffData) return { success: false, message: "Staff not found" };
 
-    const [photoUrl, nidFrontPhotoUrl, nidBackPhotoUrl, complaintsCountResult] =
+    const [photoUrl, nidFrontPhotoUrl, nidBackPhotoUrl, signatureUrl, complaintsCountResult] =
       await Promise.all([
         getObjectUrl(staffData.photoKey),
         getObjectUrl(staffData.nidFrontPhotoKey),
         getObjectUrl(staffData.nidBackPhotoKey),
+        staffData.signatureKey ? getObjectUrl(staffData.signatureKey).catch(() => null) : Promise.resolve(null),
         db
           .select({ count: sql<number>`count(*)`.mapWith(Number) })
           .from(staffComplaints)
@@ -449,6 +450,7 @@ export const getStaffById = async (staffId: string) => {
         photoUrl,
         nidFrontPhotoUrl,
         nidBackPhotoUrl,
+        signatureUrl,
         complaintsCount,
         completedServices: staffData.successfulServices || 0,
         pendingServices: staffData.pendingServices || 0,
@@ -497,12 +499,24 @@ export const createStaff = async (_prevState: any, formData: FormData) => {
       photo,
       nidFrontPhoto,
       nidBackPhoto,
+      signatureData,
       agreed,
       token,
       sendConfirmationSMS,
       bankInfo,
       ...restStaffData
     } = validatedStaffData.data;
+
+    // Hand-drawn signature from the online form (optional PNG data URL, max ~400KB).
+    let signatureBuffer: Buffer | null = null;
+    if (signatureData) {
+      const m = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/.exec(signatureData);
+      if (!m) return { success: false, message: "স্বাক্ষরটি সঠিক নয়, আবার করুন।" };
+      signatureBuffer = Buffer.from(m[1], "base64");
+      if (signatureBuffer.length < 200 || signatureBuffer.length > 400 * 1024 || signatureBuffer.subarray(0, 4).toString("hex") !== "89504e47") {
+        return { success: false, message: "স্বাক্ষরটি সঠিক নয়, আবার করুন।" };
+      }
+    }
 
     const originSource = token ? "public_form" : "dashboard";
 
@@ -538,6 +552,7 @@ export const createStaff = async (_prevState: any, formData: FormData) => {
     const photoKey = `media/staff/${staffId}/profile_${uuidv4()}.webp`;
     const nidFrontPhotoKey = `media/staff/${staffId}/nid-front_${uuidv4()}.webp`;
     const nidBackPhotoKey = `media/staff/${staffId}/nid-back_${uuidv4()}.webp`;
+    const signatureKey = signatureBuffer ? `media/staff/${staffId}/signature_${uuidv4()}.png` : null;
 
     let applicationId: string | undefined;
 
@@ -560,6 +575,7 @@ export const createStaff = async (_prevState: any, formData: FormData) => {
       photoKey,
       nidFrontPhotoKey,
       nidBackPhotoKey,
+      signatureKey,
       bankInfo: bankInfo || null,
       walletNumber: restStaffData.walletNumber || null,
       docs: restStaffData.docs ? JSON.stringify(restStaffData.docs) : "[]",
@@ -625,6 +641,9 @@ export const createStaff = async (_prevState: any, formData: FormData) => {
         Body: nidBackPhotoBuffer,
         ContentType: "image/webp",
       }),
+      ...(signatureKey && signatureBuffer
+        ? [putObject({ Key: signatureKey, Body: signatureBuffer, ContentType: "image/png" })]
+        : []),
     ]);
 
     if (sendConfirmationSMS) {

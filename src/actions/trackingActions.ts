@@ -101,3 +101,26 @@ export async function getLiveTracking(serviceId: string) {
     return { success: false as const };
   }
 }
+
+/**
+ * Customer gives their location from the tracking page (link from the SMS, no login) so the
+ * technician's route can end at them. Only while the job is open, and only if no pin exists yet.
+ */
+export async function saveCustomerLocation(serviceId: string, lat: number, lng: number) {
+  try {
+    if (!validCoord(lat, lng)) return { success: false as const, message: "লোকেশন সঠিক নয়" };
+    const [row] = await db
+      .select({ status: services.status, customerLat: services.customerLat })
+      .from(services)
+      .where(eq(services.serviceId, serviceId))
+      .limit(1);
+    if (!row) return { success: false as const, message: "সার্ভিস পাওয়া যায়নি" };
+    if (row.status === "completed" || row.status === "canceled") return { success: false as const, message: "এই সার্ভিস শেষ হয়ে গেছে" };
+    if (row.customerLat != null) return { success: true as const };
+    await db.update(services).set({ customerLat: lat, customerLng: lng }).where(eq(services.serviceId, serviceId));
+    return { success: true as const };
+  } catch (error) {
+    console.error("saveCustomerLocation failed:", error);
+    return { success: false as const, message: "লোকেশন সেভ করা যায়নি" };
+  }
+}

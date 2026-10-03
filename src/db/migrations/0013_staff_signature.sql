@@ -1,0 +1,1 @@
+ALTER TABLE "staffs" ADD COLUMN "signatureKey" varchar(255);

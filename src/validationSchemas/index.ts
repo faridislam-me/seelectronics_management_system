@@ -62,6 +62,7 @@ const BaseStaffDataSchema = z.object({
   photo: z.any(),
   nidFrontPhoto: z.any(),
   nidBackPhoto: z.any(),
+  signatureData: z.string().optional(),
 
   hasRepairExperience: formBool(),
   repairExperienceYears: z.coerce.number().optional(),
@@ -107,6 +108,7 @@ export const UpdateStaffDataSchema = BaseStaffDataSchema.extend({
   photo: z.any().optional(),
   nidFrontPhoto: z.any().optional(),
   nidBackPhoto: z.any().optional(),
+  signatureData: z.string().optional(),
   docs: z.array(z.string()).optional(),
 }).transform((data) => {
   const {
@@ -114,6 +116,7 @@ export const UpdateStaffDataSchema = BaseStaffDataSchema.extend({
     accountHolderName,
     accountNumber,
     branchName,
+    signatureData: _signatureData,
     photo,
     nidFrontPhoto,
     nidBackPhoto,

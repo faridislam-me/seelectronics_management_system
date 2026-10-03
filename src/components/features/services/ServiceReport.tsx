@@ -20,6 +20,7 @@ import {
   Send,
   UserCheck,
 } from "lucide-react";
+import LocationAccessCard from "@/components/features/tracking/LocationAccessCard";
 import StaffLocationSharer from "@/components/features/tracking/StaffLocationSharer";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -372,6 +373,7 @@ export default function ServiceReport({
         {/* Screen 1: Journey Status */}
         {currentScreen === "journey" && (
           <div className="space-y-2.5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            {!isUnregistered && !disableDepartedButton && <LocationAccessCard role="staff" />}
             {disableDepartedButton && !isUnregistered && <StaffLocationSharer serviceId={serviceId} />}
             <div className="bg-white rounded-md p-3 shadow-[0_4px_14px_rgba(11,61,145,0.06)] border border-[#dfe6f2] space-y-4">
               <div className="flex gap-3 p-2.5 bg-[#eef4fd] rounded-md border border-[#dfe8f7]">

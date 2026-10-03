@@ -10,6 +10,7 @@ import { AppError, formatDate, renderText } from "@/utils";
 import clsx from "clsx";
 import { AlertTriangle, ArrowLeft, Calendar, CheckCircle2, ChevronRight, Clock, History, IdCard, MapPin, Package, Phone, ShieldCheck, Truck, User, Wrench, XCircle } from "lucide-react";
 import LiveTrackingMap from "@/components/features/tracking/LiveTrackingMap";
+import LocationAccessCard from "@/components/features/tracking/LocationAccessCard";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -497,9 +498,6 @@ export default async function ServiceTrackPage({
           </div>
         </section>
 
-        {/* Live technician position while he is on the way */}
-        {currentStatus === "staff_departed" && <LiveTrackingMap serviceId={serviceData.serviceId} />}
-
         {/* History header */}
         <section className={clsx(cardCls, "p-2.5 flex items-center gap-2.5")}>
           <span className="size-10 rounded-full bg-[#1f7cf0] flex items-center justify-center shrink-0"><History size={20} /></span>
@@ -689,6 +687,23 @@ export default async function ServiceTrackPage({
             )}
           </section>
         )}
+
+        {/* Live technician position: the map while he is on the way, otherwise a hint that explains when it appears */}
+        {currentStatus === "staff_departed" ? (
+          <LiveTrackingMap serviceId={serviceData.serviceId} />
+        ) : currentStatus !== "completed" && currentStatus !== "canceled" && currentStatus !== "staff_arrived" ? (
+          (serviceData as { customerLat?: number | null }).customerLat == null ? (
+            <LocationAccessCard role="customer" serviceId={serviceData.serviceId} dark />
+          ) : (
+            <section className={clsx(cardCls, "p-2.5 flex items-center gap-2.5")}>
+              <span className="size-10 rounded-full bg-[#16a34a]/25 text-[#34d36b] flex items-center justify-center shrink-0"><MapPin size={20} /></span>
+              <span className="flex flex-col leading-tight">
+                <span className="text-[15px] font-extrabold">লাইভ ট্র্যাকিং</span>
+                <span className="text-[12px] text-[#8fc0ff]">আপনার লোকেশন নেওয়া আছে। টেকনিশিয়ান রওনা দিলে এখানে ম্যাপে তাঁকে দেখতে পাবেন।</span>
+              </span>
+            </section>
+          )
+        ) : null}
 
         <p className="text-center text-[11px] font-semibold text-white/50 mt-1">SE Electronics · Sylhet, Bangladesh</p>
       </div>

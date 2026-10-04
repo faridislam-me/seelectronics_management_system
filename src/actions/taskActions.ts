@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/db/drizzle";
+import { pushToUser } from "@/lib/push";
 import { smsLogs, staffNotifications, staffs, tasks } from "@/db/schema";
 import { sendSMS, verifySession } from "@/lib";
 import { TaskStatus } from "@/types";
@@ -101,6 +102,7 @@ export async function createTask(data: any) {
       message: `You have been assigned a new task: ${validated.title}`,
       link: "/staff/tasks",
     });
+    void pushToUser("staff", validated.staffId, { title: "নতুন টাস্ক", body: validated.title, link: "/staff/tasks" });
 
     // Trigger SMS notification
     await sendTaskNotificationSMS(

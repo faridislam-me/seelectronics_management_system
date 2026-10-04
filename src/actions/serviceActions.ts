@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { SMSError, sendEmail, sendSMS, verifySession } from "@/lib";
 import { deleteObject, getObjectUrl, putObject } from "@/lib/s3";
+import { pushToUser } from "@/lib/push";
 import { compressImage } from "@/lib/sharp";
 import { SearchParams } from "@/types";
 import { generateRandomId, generateUrl, getBaseUrl, renderText } from "@/utils";
@@ -1137,6 +1138,26 @@ export const reportService = async ({
     }
 
     await db.insert(serviceStatusHistory).values(serviceStatus);
+
+    // Customer's phone app: "technician is on the way" with the live map link.
+    if (serviceStatus.status === "staff_departed" || serviceStatus.status === "staff_arrived") {
+      try {
+        const svc = await db.query.services.findFirst({
+          where: eq(services.serviceId, serviceStatus.serviceId),
+          columns: { customerId: true },
+        });
+        if (svc?.customerId) {
+          const departed = serviceStatus.status === "staff_departed";
+          void pushToUser("customer", svc.customerId, {
+            title: departed ? "টেকনিশিয়ান রওনা দিয়েছেন" : "টেকনিশিয়ান পৌঁছে গেছেন",
+            body: departed ? "ম্যাপে লাইভ লোকেশন ও কতক্ষণে পৌঁছাবেন দেখুন।" : "আপনার সার্ভিসের কাজ শুরু হচ্ছে।",
+            link: `/service-track?trackingId=${serviceStatus.serviceId}`,
+          });
+        }
+      } catch (e) {
+        console.error("push on status change failed:", e);
+      }
+    }
 
     if (serviceReport) {
       const serviceRecord = await db.query.services.findFirst({

@@ -1247,3 +1247,22 @@ export const supplierTransactionsRelations = relations(
     }),
   }),
 );
+
+// ============================================
+// PUSH NOTIFICATION DEVICE TOKENS (Firebase Cloud Messaging)
+// ============================================
+
+export const devicePushTokens = pgTable(
+  "devicePushTokens",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    token: text().unique().notNull(),
+    /** customer | staff | seller */
+    role: varchar({ length: 20 }).notNull(),
+    userId: varchar({ length: 255 }).notNull(),
+    platform: varchar({ length: 20 }).default("android").notNull(),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    lastSeenAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("device_push_user_idx").on(table.role, table.userId)],
+);

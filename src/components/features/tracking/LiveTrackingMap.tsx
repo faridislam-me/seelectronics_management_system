@@ -80,11 +80,13 @@ export default function LiveTrackingMap({ serviceId, dark = false }: { serviceId
 
       const GREEN = "#16a34a";
       const pinSvg = (fill: string) => `<svg width="34" height="42" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 3px 4px rgba(0,0,0,.35))"><path d="M12 0C5.9 0 1 4.9 1 11c0 8.2 11 19 11 19s11-10.8 11-19C23 4.9 18.1 0 12 0z" fill="${fill}" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="11" r="4.2" fill="#fff"/></svg>`;
+      const personSvg = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="${GREEN}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>`;
+      const photo = data.staff?.photoUrl ? String(data.staff.photoUrl).replace(/"/g, "&quot;") : "";
       const staffIcon = L.divIcon({
         className: "",
-        html: `<div style="width:46px;height:46px;border-radius:9999px;background:#fff;border:3px solid ${GREEN};box-shadow:0 4px 12px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="${GREEN}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h-3l-3 6 3 3h5"/><circle cx="15" cy="5" r="1"/></svg></div>`,
-        iconSize: [46, 46],
-        iconAnchor: [23, 23],
+        html: `<div style="position:relative;width:50px;height:50px;border-radius:9999px;background:#fff;border:3px solid ${GREEN};box-shadow:0 4px 12px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;overflow:hidden">${personSvg}${photo ? `<img src="${photo}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top" onerror="this.style.display='none'" />` : ""}</div>`,
+        iconSize: [50, 50],
+        iconAnchor: [25, 25],
       });
       const destIcon = L.divIcon({ className: "", html: pinSvg("#e0243f"), iconSize: [34, 42], iconAnchor: [17, 41] });
       const originIcon = L.divIcon({ className: "", html: pinSvg(GREEN), iconSize: [34, 42], iconAnchor: [17, 41] });

@@ -79,13 +79,13 @@ export async function pushToUser(role: PushRole, userId: string, msg: { title: s
               token,
               notification: { title: msg.title, body: msg.body },
               data: { link: msg.link || "" },
-              android: { priority: "HIGH", notification: { channel_id: "se_default", sound: "default" } },
+              android: { priority: "HIGH", notification: { sound: "default" } },
             },
           }),
         });
         if (!res.ok) {
           const text = await res.text();
-          if (res.status === 404 || /UNREGISTERED|INVALID_ARGUMENT/.test(text)) dead.push(token);
+          if (res.status === 404 || /UNREGISTERED|not a valid FCM registration token/i.test(text)) dead.push(token);
           else console.error("FCM send failed:", res.status, text.slice(0, 200));
         }
       }),

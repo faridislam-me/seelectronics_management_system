@@ -33,44 +33,39 @@ export default function DocDownloadPage() {
         }
 
         const blob = new Blob([response.pdfBuffer as any], { type: 'application/pdf' })
-        const url = URL.createObjectURL(blob)
 
-        const a = document.createElement('a')
-        a.href = url
-
-        switch (response.docType) {
-            case 'id-card':
-                a.download = 'ID_CARD.pdf'
-                break
-            case 'payment':
-                a.download = 'SE_ELECTRONICS_PAYMENT_RECEIPT.pdf'
-                break
-            case 'invoice':
-                a.download = 'SE_ELECTRONICS_INVOICE.pdf'
-                break
-            case 'certificate':
-                a.download = 'SE_ELECTRONICS_CERTIFICATE.pdf'
-                break
-            case 'complaint':
-                a.download = 'SE_ELECTRONICS_COMPLAINT.pdf'
-                break
-            case 'hearing-notice':
-                a.download = 'SE_ELECTRONICS_HEARING_NOTICE.pdf'
-                break
-            case 'completion-notice':
-                a.download = 'SE_ELECTRONICS_RESOLUTION_LETTER.pdf'
-                break
-            case 'complaint_customer':
-                a.download = 'SE_ELECTRONICS_CUSTOMER_COMPLAINT_COPY.pdf'
-                break
-            case 'staff-not-guilty':
-                a.download = 'SE_ELECTRONICS_RESOLUTION_NOTICE.pdf'
-                break
+        const fileNames: Record<string, string> = {
+            'id-card': 'ID_CARD.pdf',
+            'payment': 'SE_ELECTRONICS_PAYMENT_RECEIPT.pdf',
+            'invoice': 'SE_ELECTRONICS_INVOICE.pdf',
+            'certificate': 'SE_ELECTRONICS_CERTIFICATE.pdf',
+            'complaint': 'SE_ELECTRONICS_COMPLAINT.pdf',
+            'hearing-notice': 'SE_ELECTRONICS_HEARING_NOTICE.pdf',
+            'completion-notice': 'SE_ELECTRONICS_RESOLUTION_LETTER.pdf',
+            'complaint_customer': 'SE_ELECTRONICS_CUSTOMER_COMPLAINT_COPY.pdf',
+            'staff-not-guilty': 'SE_ELECTRONICS_RESOLUTION_NOTICE.pdf',
         }
+        const fileName = fileNames[response.docType as string] || 'SE_ELECTRONICS.pdf'
 
-        a.click()
-
-        URL.revokeObjectURL(url)
+        // Inside the SE mobile apps (Android WebView) blob downloads are not supported,
+        // so the app gets the file as base64 and opens its share / save sheet instead.
+        const appChannel = (window as unknown as { SEFile?: { postMessage: (m: string) => void } }).SEFile
+        if (appChannel) {
+            const dataUrl: string = await new Promise((resolve, reject) => {
+                const reader = new FileReader()
+                reader.onload = () => resolve(String(reader.result))
+                reader.onerror = () => reject(reader.error)
+                reader.readAsDataURL(blob)
+            })
+            appChannel.postMessage(JSON.stringify({ name: fileName, mime: 'application/pdf', data: dataUrl.split(',')[1] }))
+        } else {
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = fileName
+            a.click()
+            URL.revokeObjectURL(url)
+        }
         setFinishedDownload(true)
     }
 

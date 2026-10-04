@@ -2,6 +2,7 @@
 
 import { updateStaffLocation } from "@/actions/trackingActions";
 import clsx from "clsx";
+import { openAppSettings } from "./LocationAccessCard";
 import { LocateFixed, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -61,7 +62,10 @@ export default function StaffLocationSharer({ serviceId }: { serviceId: string }
               : "লাইভ লোকেশন শেয়ার চলছে। কাস্টমার আপনাকে ম্যাপে দেখছে। এই পেজ খোলা রাখুন।"}
       </span>
       {state === "denied" && (
-        <button type="button" onClick={() => { setState("starting"); setAttempt((n) => n + 1); }} className="shrink-0 self-center h-9 px-3 rounded-md bg-[#c81f38] text-white text-[12px] font-extrabold">আবার চেষ্টা</button>
+        <span className="shrink-0 self-center flex flex-col gap-1.5">
+          <button type="button" onClick={() => { if (!openAppSettings()) window.alert("Chrome এ: ঠিকানার পাশের তালা আইকনে চাপ দিয়ে Permissions → Location → Allow করুন।"); }} className="h-9 px-3 rounded-md bg-[#c81f38] text-white text-[12px] font-extrabold">সেটিংস খুলুন</button>
+          <button type="button" onClick={() => { setState("starting"); setAttempt((n) => n + 1); }} className="h-9 px-3 rounded-md border border-[#c81f38] text-[#c81f38] text-[12px] font-extrabold">আবার চেষ্টা</button>
+        </span>
       )}
     </div>
   );

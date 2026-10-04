@@ -253,7 +253,15 @@ export default function ResumeClient({ staffData, qrDataUrl, backHref = "/staff/
                 <div className="mt-5 grid grid-cols-4 gap-3 items-end text-center text-[10px] font-semibold">
                   <div><div className="border-t border-[#16213a] pt-1">সিলমোহর যুক্ত<br />এস ই বিডি চেয়ারম্যানের স্বাক্ষর</div></div>
                   <div><div className="border-t border-[#16213a] pt-1">সিলমোহর যুক্ত<br />অফিস সহকারির স্বাক্ষর</div></div>
-                  <div><div className="border-t border-[#16213a] pt-1">প্রার্থীর স্বাক্ষর<br />Staff Signature</div></div>
+                  <div>
+                    <div className="h-[44px] flex items-end justify-center mb-0.5">
+                      {staffData.signatureUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={staffData.signatureUrl} alt="Signature" className="max-h-[44px] max-w-full object-contain" />
+                      ) : null}
+                    </div>
+                    <div className="border-t border-[#16213a] pt-1">প্রার্থীর স্বাক্ষর<br />Staff Signature</div>
+                  </div>
                   <div><div className="border border-[#16213a] h-[44px] mb-1" /><div className="border-t border-[#16213a] pt-1">টিপসহি</div></div>
                 </div>
               </div>

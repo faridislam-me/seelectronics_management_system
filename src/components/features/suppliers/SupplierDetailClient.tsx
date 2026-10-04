@@ -2,6 +2,7 @@
 
 import {
   addSupplierTransaction,
+  deleteSupplier,
   deleteSupplierTransaction,
   getSupplierMessageTemplates,
   sendSupplierSms,
@@ -76,6 +77,17 @@ export default function SupplierDetailClient({ supplier, ledger, totals }: { sup
     setMsg(null);
   };
 
+  const removeSupplier = async () => {
+    const hasLedger = ledger.length > 0;
+    if (!confirm(`"${supplier.name}" (${supplier.shopName}) কে মুছে ফেলবেন?${hasLedger ? `\nতার সব হিসাব (${ledger.length} টি এন্ট্রি) মুছে যাবে এবং আর ফেরত আনা যাবে না।` : ""}`)) return;
+    if (totals.due > 0 && !confirm(`এই সাপ্লায়ারের বাকি পাওনা ${taka(totals.due)} আছে। তবুও মুছে ফেলবেন?`)) return;
+    const res = await deleteSupplier(supplier.supplierId);
+    if (!res.success) return void toast.error(res.message);
+    toast.success("সাপ্লায়ার মুছে ফেলা হয়েছে");
+    router.push("/suppliers");
+    router.refresh();
+  };
+
   const remove = async (e: Entry) => {
     if (!confirm(`Delete this ${e.type} entry of ${taka(e.amount)}?`)) return;
     const res = await deleteSupplierTransaction(e.transactionId);
@@ -99,6 +111,7 @@ export default function SupplierDetailClient({ supplier, ledger, totals }: { sup
           <button onClick={() => openSms()} className="h-9 px-3 rounded-md bg-[#0b3d91] text-white text-[13px] font-bold inline-flex items-center gap-1.5"><MessageSquare size={16} />Send SMS</button>
           <button onClick={openVoice} className="h-9 px-3 rounded-md bg-[#1a9c4b] text-white text-[13px] font-bold inline-flex items-center gap-1.5"><PhoneCall size={16} />Voice Call</button>
           <button onClick={() => setEdit(true)} className="h-9 px-3 rounded-md border border-[#d9e2f0] bg-white text-[13px] font-bold inline-flex items-center gap-1.5"><Pencil size={15} />Edit</button>
+          <button onClick={removeSupplier} className="h-9 px-3 rounded-md border border-[#f7c3ca] bg-white text-[13px] font-bold text-[#c81f38] inline-flex items-center gap-1.5"><Trash2 size={15} />Delete</button>
         </div>
       </div>
 

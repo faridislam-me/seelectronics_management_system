@@ -3,6 +3,7 @@
 import { db } from "@/db/drizzle";
 import { customerNotifications, staffNotifications } from "@/db/schema";
 import { sendSMS } from "@/lib";
+import { pushToUser } from "@/lib/push";
 import { generateUrl } from "@/utils";
 import { revalidatePath } from "next/cache";
 import { and, gt, sql } from "drizzle-orm";
@@ -55,6 +56,9 @@ export async function notifyCustomer({
       message,
       link,
     });
+
+    // Push to the customer's phone app (no-op when push is not configured)
+    void pushToUser("customer", customerId, { title: "SE Electronics", body: (shortMessage || message).slice(0, 160), link });
 
     // 2. Send SMS
     const smsContent = message || `প্রিয় গ্রাহক, আপনার ড্যাশবোর্ডে একটি নতুন বার্তা আছে। বিস্তারিত দেখুন: ${generateUrl("customer-login", {})}`;
@@ -117,6 +121,8 @@ export async function notifyStaff({
       message,
       link,
     });
+
+    void pushToUser("staff", staffId, { title: "SE Electronics", body: (shortMessage || message).slice(0, 160), link });
 
     // 2. Send SMS
     const smsContent = shortMessage || message || `Dear Staff, you have a new notification. Check your portal for details.`;

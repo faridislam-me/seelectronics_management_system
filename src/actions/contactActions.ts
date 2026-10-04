@@ -3,6 +3,7 @@
 import { db } from "@/db/drizzle";
 import { adminNotifications, contactMessages, customers } from "@/db/schema";
 import { sendSMS, verifySession } from "@/lib";
+import { pushToUser } from "@/lib/push";
 import { generateRandomId } from "@/utils";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -126,6 +127,8 @@ export async function replyToMessage(
           with: { customer: { columns: { phone: true } } },
         });
         const phone = (msg as any)?.customer?.phone as string | undefined;
+        const customerIdForPush = (msg as any)?.customerId as string | undefined;
+        if (customerIdForPush) void pushToUser("customer", customerIdForPush, { title: "সাপোর্ট টিম", body: "আপনার মেসেজের রিপ্লাই এসেছে। অ্যাপে দেখুন।", link: "/customer/chat-support" });
         if (phone) {
           // Short notice only (SMS cost): the full reply is read inside the app.
           await sendSMS(phone, "SE Electronics: সাপোর্ট টিম থেকে আপনার মেসেজের রিপ্লাই দেওয়া হয়েছে। অ্যাপে দেখুন।");

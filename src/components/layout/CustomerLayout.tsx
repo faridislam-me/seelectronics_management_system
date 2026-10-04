@@ -4,6 +4,7 @@ import { getCustomerNotices } from "@/actions";
 import { NoticeRecipientType } from "@/types";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import PushTokenRegistrar from "../features/PushTokenRegistrar";
 import { NoticeBanner } from "../features/notices";
 import { CustomerBottomNav } from "./CustomerBottomNav";
 import { CustomerHeader } from "./CustomerHeader";
@@ -28,6 +29,7 @@ export function CustomerLayout({ children }: CustomerLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col overflow-x-hidden">
+      <PushTokenRegistrar />
       <CustomerHeader />
 
       <NoticeBanner notifications={notifications} />

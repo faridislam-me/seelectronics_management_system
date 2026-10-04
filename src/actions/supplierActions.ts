@@ -42,9 +42,23 @@ const totalsFor = async (supplierId: string) => {
 
 const taka = (n: number) => `৳${Math.round(n).toLocaleString("en-IN")}`;
 
-const normalizePhone = (p: string) => p.replace(/\s|-/g, "").trim();
+/** Pasted text often carries invisible direction marks / zero-width characters and Bangla digits. */
+const BANGLA_DIGITS = "০১২৩৪৫৬৭৮৯";
+const cleanText = (v: string) =>
+  v
+    .replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/g, "")
+    .replace(/[০-৯]/g, (d) => String(BANGLA_DIGITS.indexOf(d)))
+    .trim();
 
-const optionalText = (max: number) => z.string().trim().max(max).optional().transform((v) => v || null);
+const normalizePhone = (p: string) => cleanText(p).replace(/\s|-/g, "");
+
+const optionalText = (max: number) =>
+  z
+    .string()
+    .optional()
+    .transform((v) => cleanText(v || ""))
+    .refine((v) => v.length <= max, `সর্বোচ্চ ${max} অক্ষর`)
+    .transform((v) => v || null);
 
 const SupplierSchema = z.object({
   name: z.string().trim().min(2, "নাম দিন"),
@@ -75,7 +89,7 @@ const SupplierSchema = z.object({
       (v || "")
         .split(",")
         .map((x) => x.trim())
-        .filter((x) => ["ips", "battery", "stabilizer", "others"].includes(x))
+        .filter((x) => ["ips", "battery", "stabilizer", "parts", "others"].includes(x))
         .join(",") || null,
     ),
 });
@@ -90,7 +104,7 @@ const TransactionSchema = z.object({
     .optional()
     .transform((v) => (v ? new Date(v) : new Date()))
     .refine((d) => !isNaN(d.getTime()), "সঠিক তারিখ দিন"),
-  productType: z.enum(["ips", "battery", "stabilizer", "others"]).optional().or(z.literal("")).transform((v) => v || null),
+  productType: z.enum(["ips", "battery", "stabilizer", "parts", "others"]).optional().or(z.literal("")).transform((v) => v || null),
   photoKey: z.string().startsWith("supplier-photos/").max(300).optional().or(z.literal("")).transform((v) => v || null),
 });
 

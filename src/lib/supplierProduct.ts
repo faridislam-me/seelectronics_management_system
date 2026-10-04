@@ -1,9 +1,10 @@
-export const SUPPLIER_PRODUCT_TYPES = ["ips", "battery", "stabilizer", "others"] as const;
+export const SUPPLIER_PRODUCT_TYPES = ["ips", "battery", "stabilizer", "parts", "others"] as const;
 
 export const SUPPLIER_PRODUCT_LABEL: Record<string, string> = {
   ips: "আইপিএস",
   battery: "ব্যাটারি",
   stabilizer: "স্ট্যাবিলাইজার",
+  parts: "ইলেকট্রনিকস পার্টস, যন্ত্রপাতি",
   others: "অন্যান্য",
 };
 

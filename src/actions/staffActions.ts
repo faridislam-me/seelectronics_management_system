@@ -1173,7 +1173,8 @@ export async function getStaffProfileStats(staffId: string) {
         recentPayments: staffPayments,
         totalEarnings,
         pendingPayments,
-        availableBalance: totalEarnings - pendingPayments,
+        // Never negative: payouts recorded without a matching earnings credit must not show as debt.
+        availableBalance: Math.max(0, totalEarnings - pendingPayments),
       },
     };
   } catch (error) {

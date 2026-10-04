@@ -3,6 +3,7 @@
 import { StaffHeader } from "./StaffHeader";
 import { StaffBottomNav } from "./StaffBottomNav";
 import { usePathname } from "next/navigation";
+import PushTokenRegistrar from "../features/PushTokenRegistrar";
 import { NoticeBanner } from "../features/notices";
 import { useEffect, useState } from "react";
 import { getStaffNotices } from "@/actions";
@@ -32,6 +33,7 @@ export function StaffLayout({ children, balance, seamlessHeader = false, rounded
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col overflow-x-hidden">
+      <PushTokenRegistrar />
       <StaffHeader balance={balance} seamless={seamlessHeader} rounded={roundedHeader} />
 
       <NoticeBanner notifications={notifications} />

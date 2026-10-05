@@ -56,6 +56,34 @@ async function accessToken(acc: ServiceAccount): Promise<string> {
 
 export type PushRole = "customer" | "staff" | "seller";
 
+async function sendToTokens(acc: ServiceAccount, tokens: string[], msg: { title: string; body: string; link?: string }) {
+  if (!tokens.length) return;
+  const bearer = await accessToken(acc);
+  const dead: string[] = [];
+  const send = async (token: string) => {
+    const res = await fetch(`https://fcm.googleapis.com/v1/projects/${acc.project_id}/messages:send`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${bearer}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: {
+          token,
+          notification: { title: msg.title, body: msg.body },
+          data: { link: msg.link || "" },
+          android: { priority: "HIGH", notification: { sound: "default" } },
+        },
+      }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      if (res.status === 404 || /UNREGISTERED|not a valid FCM registration token/i.test(text)) dead.push(token);
+      else console.error("FCM send failed:", res.status, text.slice(0, 200));
+    }
+  };
+  // modest parallelism so a notice to hundreds of devices does not open hundreds of sockets at once
+  for (let i = 0; i < tokens.length; i += 20) await Promise.all(tokens.slice(i, i + 20).map(send));
+  if (dead.length) await db.delete(devicePushTokens).where(inArray(devicePushTokens.token, dead));
+}
+
 /** Sends a push to every device of one user. Never throws. */
 export async function pushToUser(role: PushRole, userId: string, msg: { title: string; body: string; link?: string }) {
   try {
@@ -65,33 +93,27 @@ export async function pushToUser(role: PushRole, userId: string, msg: { title: s
       .select({ token: devicePushTokens.token })
       .from(devicePushTokens)
       .where(and(eq(devicePushTokens.role, role), eq(devicePushTokens.userId, userId)));
-    if (!rows.length) return;
-
-    const bearer = await accessToken(acc);
-    const dead: string[] = [];
-    await Promise.all(
-      rows.map(async ({ token }) => {
-        const res = await fetch(`https://fcm.googleapis.com/v1/projects/${acc.project_id}/messages:send`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${bearer}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: {
-              token,
-              notification: { title: msg.title, body: msg.body },
-              data: { link: msg.link || "" },
-              android: { priority: "HIGH", notification: { sound: "default" } },
-            },
-          }),
-        });
-        if (!res.ok) {
-          const text = await res.text();
-          if (res.status === 404 || /UNREGISTERED|not a valid FCM registration token/i.test(text)) dead.push(token);
-          else console.error("FCM send failed:", res.status, text.slice(0, 200));
-        }
-      }),
-    );
-    if (dead.length) await db.delete(devicePushTokens).where(inArray(devicePushTokens.token, dead));
+    await sendToTokens(acc, rows.map((r) => r.token), msg);
   } catch (error) {
     console.error("pushToUser failed:", error);
+  }
+}
+
+/** Same for many users at once (one token lookup). Never throws. */
+export async function pushToUsers(role: PushRole, userIds: string[], msg: { title: string; body: string; link?: string }) {
+  try {
+    const acc = account();
+    if (!acc || !userIds.length) return;
+    const tokens: string[] = [];
+    for (let i = 0; i < userIds.length; i += 500) {
+      const rows = await db
+        .select({ token: devicePushTokens.token })
+        .from(devicePushTokens)
+        .where(and(eq(devicePushTokens.role, role), inArray(devicePushTokens.userId, userIds.slice(i, i + 500))));
+      tokens.push(...rows.map((r) => r.token));
+    }
+    await sendToTokens(acc, tokens, msg);
+  } catch (error) {
+    console.error("pushToUsers failed:", error);
   }
 }

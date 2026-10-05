@@ -361,6 +361,7 @@ export const NoticeSchema = z.object({
   content: z.string().min(1, "Content is required"),
   priority: z.enum(noticePriorityEnum.enumValues),
   targetType: z.enum(noticeTargetEnum.enumValues),
+  audience: z.enum(["staff", "technician", "electrician", "customer"]).default("staff"),
   isDraft: z.boolean().default(false),
   scheduledAt: z.coerce.date().nullable().optional(),
   expiresAt: z.coerce.date().nullable().optional(),

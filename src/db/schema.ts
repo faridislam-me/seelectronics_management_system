@@ -987,6 +987,8 @@ export const notices = pgTable("notices", {
   content: text().notNull(), // Rich-text
   priority: noticePriorityEnum().default("normal").notNull(),
   targetType: noticeTargetEnum().default("all").notNull(),
+  /** Who the notice is for: staff (all staff) | technician | electrician | customer */
+  audience: varchar({ length: 20 }).default("staff").notNull(),
   isDraft: boolean().default(false).notNull(),
   scheduledAt: timestamp({ withTimezone: true }),
   expiresAt: timestamp({ withTimezone: true }),

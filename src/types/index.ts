@@ -390,6 +390,7 @@ export type NoticeType = {
   content: string;
   priority: NoticePriority;
   targetType: NoticeTarget;
+  audience?: "staff" | "technician" | "electrician" | "customer";
   isDraft: boolean;
   scheduledAt: Date | null;
   expiresAt: Date | null;
@@ -403,6 +404,8 @@ export type NoticeRecipientType = {
   id: string;
   noticeId: string;
   staffId: string;
+  customerId?: string | null;
+  customer?: { name: string; customerId: string } | null;
   isRead: boolean;
   readAt: Date | null;
   isAcknowledged: boolean;

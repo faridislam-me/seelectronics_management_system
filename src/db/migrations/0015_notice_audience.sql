@@ -1,0 +1,1 @@
+ALTER TABLE "notices" ADD COLUMN "audience" varchar(20) DEFAULT 'staff' NOT NULL;

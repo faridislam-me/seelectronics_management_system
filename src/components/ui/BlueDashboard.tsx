@@ -102,21 +102,21 @@ export function BlueBalanceCard({ label, value, icon: Icon, button, buttonHref, 
 }) {
   if (layout === "row") {
     return (
-      <div className="rounded-[14px] p-3 pr-2.5 bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2a66_0%,#0d3a8c_55%,#0a2f70_100%)] text-white flex items-center gap-3 shadow-[0_10px_30px_rgba(10,47,112,0.35)] relative overflow-hidden">
+      <div className={clsx(compact ? "rounded-md p-2 pr-2 gap-2.5 shadow-[0_6px_18px_rgba(10,47,112,0.3)]" : "rounded-[14px] p-3 pr-2.5 gap-3 shadow-[0_10px_30px_rgba(10,47,112,0.35)]", "bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2a66_0%,#0d3a8c_55%,#0a2f70_100%)] text-white flex items-center relative overflow-hidden")}>
         {/* subtle diagonal light streak */}
         <span className="pointer-events-none absolute -top-6 left-[42%] h-[180%] w-16 rotate-[28deg] bg-gradient-to-b from-white/0 via-white/[0.07] to-white/0" />
         <span className="pointer-events-none absolute -top-6 left-[52%] h-[180%] w-4 rotate-[28deg] bg-white/[0.05]" />
-        <span className="relative size-[clamp(56px,16vw,70px)] rounded-full bg-[#1c4fa8] shadow-[inset_0_0_0_6px_rgba(255,255,255,0.08)] flex items-center justify-center shrink-0"><Icon size={30} strokeWidth={2} /></span>
-        <div className="relative flex flex-col min-w-0 flex-1 gap-1.5 pr-4">
-          <span className="font-semibold tracking-[1.2px] text-white/90 text-[clamp(11px,3.1vw,13px)]">{label}</span>
+        <span className={clsx("relative rounded-full bg-[#1c4fa8] flex items-center justify-center shrink-0", compact ? "size-10 shadow-[inset_0_0_0_4px_rgba(255,255,255,0.08)]" : "size-[clamp(56px,16vw,70px)] shadow-[inset_0_0_0_6px_rgba(255,255,255,0.08)]")}><Icon size={compact ? 20 : 30} strokeWidth={2} /></span>
+        <div className={clsx("relative flex flex-col min-w-0 flex-1", compact ? "gap-0.5 pr-3" : "gap-1.5 pr-4")}>
+          <span className={clsx("font-semibold tracking-[1.2px] text-white/90", compact ? "text-[10px]" : "text-[clamp(11px,3.1vw,13px)]")}>{label}</span>
           <div className="flex items-center justify-between gap-2 min-w-0">
-            <span className="font-extrabold leading-none truncate text-[clamp(23px,7.4vw,32px)]">{value}</span>
-            <Link href={buttonHref} className="inline-flex items-center gap-1 h-8 px-2.5 rounded-full border-[1.5px] border-[#4c9bff] bg-[#0d3f96]/50 text-[clamp(10.5px,3vw,12px)] font-bold shrink-0 whitespace-nowrap">
+            <span className={clsx("font-extrabold leading-none truncate", compact ? "text-[clamp(17px,5.2vw,22px)]" : "text-[clamp(23px,7.4vw,32px)]")}>{value}</span>
+            <Link href={buttonHref} className={clsx("inline-flex items-center gap-1 px-2.5 border-[1.5px] border-[#4c9bff] bg-[#0d3f96]/50 font-bold shrink-0 whitespace-nowrap", compact ? "h-7 rounded-md text-[11px]" : "h-8 rounded-full text-[clamp(10.5px,3vw,12px)]")}>
               {ButtonIcon && <ButtonIcon size={13} strokeWidth={2.2} />}{button}
             </Link>
           </div>
         </div>
-        <Link href={chevronHref} aria-label="More" className="absolute right-2 top-2.5 text-white/90"><ChevronRight size={18} strokeWidth={2.5} /></Link>
+        <Link href={chevronHref} aria-label="More" className={clsx("absolute right-2 text-white/90", compact ? "top-1.5" : "top-2.5")}><ChevronRight size={compact ? 15 : 18} strokeWidth={2.5} /></Link>
       </div>
     );
   }

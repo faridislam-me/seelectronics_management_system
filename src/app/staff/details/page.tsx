@@ -80,6 +80,7 @@ export default async function StaffDetailsPage() {
           idLabel="Staff ID"
           id={staffData.staffId}
           variant="profile"
+          compact
           chips={[
             { label: staffData.role === "electrician" ? "ELECTRICIAN" : "TECHNICIAN", color: "glass", icon: User },
             { label: staffData.isVerified ? "VERIFIED" : "PENDING", color: staffData.isVerified ? "green" : "amber", icon: ShieldCheck },
@@ -97,14 +98,15 @@ export default async function StaffDetailsPage() {
             buttonHref={`/pdf/download?type=id-card&id=${staffData.staffId}`}
             chevronHref="/staff/payment"
             layout="row"
+            compact
           />
 
           <BlueStatGrid cards={[
             { value: staffData.completedServices ?? 0, label: "সফল সার্ভিস", icon: CheckSquare, tone: "green", href: "/staff/services" },
             { value: staffData.pendingServices ?? 0, label: "পেন্ডিং সার্ভিস", icon: Clock, tone: "blue", href: "/staff/tasks" },
             { value: staffData.repairExperienceYears || staffData.installationExperienceYears || 0, label: "বছরের দক্ষতা", icon: BriefcaseBusiness, tone: "purple", href: "#experience" },
-            { value: staffData.canceledServices ?? 0, label: "রিজেক্টেড সার্ভিস", icon: XCircle, tone: "amber", href: "/staff/tracking" },
-            { value: staffData.serviceCenterServices ?? 0, label: "সার্ভিস সেন্টার", icon: Building2, tone: "red", href: "/staff/tracking" },
+            { value: staffData.canceledServices ?? 0, label: "রিজেক্টেড সার্ভিস", icon: XCircle, tone: "red", href: "/staff/tracking" },
+            { value: staffData.serviceCenterServices ?? 0, label: "সার্ভিস সেন্টার", icon: Building2, tone: "amber", href: "/staff/tracking" },
             { value: staffData.rating ?? 0, label: "রেটিং", icon: Star, tone: "teal", href: "/staff/feedbacks" },
           ]} />
 

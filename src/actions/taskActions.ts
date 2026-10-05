@@ -102,7 +102,7 @@ export async function createTask(data: any) {
       message: `You have been assigned a new task: ${validated.title}`,
       link: "/staff/tasks",
     });
-    void pushToUser("staff", validated.staffId, { title: "নতুন টাস্ক", body: validated.title, link: "/staff/tasks" });
+    await pushToUser("staff", validated.staffId, { title: "নতুন টাস্ক", body: validated.title, link: "/staff/tasks" });
 
     // Trigger SMS notification
     await sendTaskNotificationSMS(

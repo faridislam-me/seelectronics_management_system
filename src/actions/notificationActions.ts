@@ -58,7 +58,7 @@ export async function notifyCustomer({
     });
 
     // Push to the customer's phone app (no-op when push is not configured)
-    void pushToUser("customer", customerId, { title: "SE Electronics", body: (shortMessage || message).slice(0, 160), link });
+    await pushToUser("customer", customerId, { title: "SE Electronics", body: (shortMessage || message).slice(0, 160), link });
 
     // 2. Send SMS
     const smsContent = message || `প্রিয় গ্রাহক, আপনার ড্যাশবোর্ডে একটি নতুন বার্তা আছে। বিস্তারিত দেখুন: ${generateUrl("customer-login", {})}`;
@@ -122,7 +122,7 @@ export async function notifyStaff({
       link,
     });
 
-    void pushToUser("staff", staffId, { title: "SE Electronics", body: (shortMessage || message).slice(0, 160), link });
+    await pushToUser("staff", staffId, { title: "SE Electronics", body: (shortMessage || message).slice(0, 160), link });
 
     // 2. Send SMS
     const smsContent = shortMessage || message || `Dear Staff, you have a new notification. Check your portal for details.`;

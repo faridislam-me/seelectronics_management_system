@@ -32,7 +32,7 @@ export function StaffBottomNav() {
   ];
 
   return (
-    <nav className="sm:hidden fixed bottom-0 left-0 w-full bg-white px-1 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom,0px))] flex items-center justify-around z-50 shadow-[0_-6px_20px_rgba(0,0,0,0.08)] rounded-t-[20px]">
+    <nav className="sm:hidden fixed bottom-0 left-0 w-full bg-white px-1 pt-1.5 pb-[calc(6px+var(--sab))] flex items-center justify-around z-50 shadow-[0_-6px_20px_rgba(0,0,0,0.08)] rounded-t-[20px]">
       {navItems.map((item) => {
         const isActive = pathname === item.href;
         return (

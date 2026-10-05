@@ -27,6 +27,9 @@
    CSS VARIABLES
    ============================================ */
 :root {
+  /* Bottom safe area. Inside the SE mobile apps the app shell already keeps the page above the system bar,
+     so the page must not add that space a second time (html.se-app, set from the user agent). */
+  --sab: env(safe-area-inset-bottom, 0px);
   --brand: #0a1a3a;
   --brand-light: #1f386b;
   --brand-lighter: #3b5ca3;
@@ -222,4 +225,8 @@ html body {
 /* If Google wraps the whole page in a span with class 'skiptranslate' */
 html > body > .skiptranslate {
   display: none !important;
+}
+
+html.se-app {
+  --sab: 0px;
 }

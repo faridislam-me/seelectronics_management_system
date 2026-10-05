@@ -30,17 +30,28 @@ export default async function StaffTrackingPage() {
     .filter((p: any) => p.status === "pending" || p.status === "processing")
     .reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
 
+  // One colour per status (same palette as the staff services list); "appointment_retry" means the staff cancelled.
   const getStatusStyle = (status: string) => {
     switch (status) {
       case "completed":
-        return { cls: "bg-[#1a9c4b] text-white", Icon: CheckCircle };
+        return { cls: "bg-[#1a9c4b] text-white", Icon: CheckCircle, label: "COMPLETED" };
       case "canceled":
-        return { cls: "bg-[#e0243f] text-white", Icon: XCircle };
-      case "processing":
+      case "appointment_retry":
+        return { cls: "bg-[#e0243f] text-white", Icon: XCircle, label: "CANCELED" };
       case "pending":
-        return { cls: "bg-[#f08a1c] text-white", Icon: Clock };
+        return { cls: "bg-[#f08a1c] text-white", Icon: Clock, label: "PENDING" };
+      case "processing":
+      case "in_progress":
+        return { cls: "bg-[#1f7cf0] text-white", Icon: Clock, label: "IN PROGRESS" };
+      case "staff_departed":
+        return { cls: "bg-[#7a3fd0] text-white", Icon: Clock, label: "ON THE WAY" };
+      case "staff_arrived":
+        return { cls: "bg-[#4b3fd0] text-white", Icon: Clock, label: "ARRIVED" };
+      case "service_center":
+      case "service_center_received":
+        return { cls: "bg-[#0e7c8c] text-white", Icon: Clock, label: "SERVICE CENTER" };
       default:
-        return { cls: "bg-[#8a94a8] text-white", Icon: Clock };
+        return { cls: "bg-[#8a94a8] text-white", Icon: Clock, label: status.replace(/_/g, " ").toUpperCase() };
     }
   };
 
@@ -102,7 +113,7 @@ export default async function StaffTrackingPage() {
             const st = getStatusStyle(status);
             return (
               <article key={service.id} className="relative rounded-md bg-white border border-[#dfe6f2] p-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] flex flex-col gap-2">
-                <span className={clsx("absolute top-2.5 right-2.5 inline-flex items-center gap-1 h-7 px-2 rounded-md text-[10.5px] font-extrabold", st.cls)}><st.Icon size={13} />{status.toUpperCase()}</span>
+                <span className={clsx("absolute top-2.5 right-2.5 inline-flex items-center gap-1 h-7 px-2 rounded-md text-[10.5px] font-extrabold", st.cls)}><st.Icon size={13} />{st.label}</span>
                 {rows(service).map((r) => (
                   <div key={r.label} className="flex items-center gap-2.5 min-w-0">
                     <span className={clsx("size-9 rounded-md flex items-center justify-center shrink-0", r.tint)}><r.Icon size={17} /></span>

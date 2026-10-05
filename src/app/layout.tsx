@@ -37,6 +37,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Marks pages opened inside the SE mobile apps (see --sab in globals.css) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "try{if(/SE (Technician|Electrician|Customer|Seller)App/.test(navigator.userAgent))document.documentElement.classList.add('se-app')}catch(e){}",
+          }}
+        />
+      </head>
       <body
         className={`${ubuntu.variable} ${displayFont.variable} ${scriptFont.variable} font-sans`}
         suppressHydrationWarning

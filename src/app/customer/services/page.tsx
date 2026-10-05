@@ -55,9 +55,21 @@ export default async function CustomerServicesPage() {
             const status = service.statusHistory?.[0]?.status || "pending";
             const done = status === "completed";
             const canceled = status === "canceled";
+            const STYLES: Record<string, { cls: string; label: string }> = {
+              completed: { cls: "bg-[#e9f9ef] text-[#178a42] border-[#bfe8cd]", label: "COMPLETED" },
+              canceled: { cls: "bg-[#ffe9ec] text-[#c81f38] border-[#f7c3ca]", label: "CANCELED" },
+              pending: { cls: "bg-[#fff6e3] text-[#b8620b] border-[#f5dfa0]", label: "PENDING" },
+              in_progress: { cls: "bg-[#e8f1ff] text-[#1b6fd6] border-[#cfe0fb]", label: "PROCESSING" },
+              staff_departed: { cls: "bg-[#f3e9ff] text-[#7a3fd0] border-[#e2cffb]", label: "ON THE WAY" },
+              staff_arrived: { cls: "bg-[#ecebff] text-[#4b3fd0] border-[#d6d3fb]", label: "ARRIVED" },
+              appointment_retry: { cls: "bg-[#fff0e6] text-[#d9480f] border-[#ffd9bf]", label: "RESCHEDULING" },
+              service_center: { cls: "bg-[#e3f8fb] text-[#0e7c8c] border-[#bdeaf1]", label: "SERVICE CENTER" },
+              service_center_received: { cls: "bg-[#e3f8fb] text-[#0e7c8c] border-[#bdeaf1]", label: "SERVICE CENTER" },
+            };
+            const style = STYLES[status] ?? { cls: "bg-[#e8f1ff] text-[#1b6fd6] border-[#cfe0fb]", label: "PROCESSING" };
             const StatusIcon = done ? CheckCircle2 : canceled ? XCircle : Clock;
-            const statusCls = done ? "bg-[#e9f9ef] text-[#178a42] border-[#bfe8cd]" : canceled ? "bg-[#ffe9ec] text-[#c81f38] border-[#f7c3ca]" : "bg-[#fff6e3] text-[#b8620b] border-[#f5dfa0]";
-            const statusLabel = done ? "COMPLETED" : canceled ? "CANCELED" : "PROCESSING";
+            const statusCls = style.cls;
+            const statusLabel = style.label;
             const isInstall = service.type === "install";
             const productImg = PRODUCT_IMAGES[service.productType as string] ?? PRODUCT_IMAGES.others;
             const date = new Date(service.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }).toUpperCase();

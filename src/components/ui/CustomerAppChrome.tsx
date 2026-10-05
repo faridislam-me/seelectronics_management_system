@@ -45,7 +45,7 @@ export function CustomerAppFooter({ tagline }: { tagline: string }) {
 /** Dark blue bottom navigation used by the customer app screens. */
 export function CustomerAppNav({ items, active }: { items: { label: string; icon: LucideIcon; href: string }[]; active: string }) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#0b3d91] bg-[linear-gradient(180deg,#0d47a8_0%,#072a66_100%)] text-white grid px-1 pt-2 pb-[calc(6px+env(safe-area-inset-bottom,0px))] rounded-t-[20px] shadow-[0_-6px_20px_rgba(7,42,102,0.25)]" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#0b3d91] bg-[linear-gradient(180deg,#0d47a8_0%,#072a66_100%)] text-white grid px-1 pt-2 pb-[calc(6px+var(--sab))] rounded-t-[20px] shadow-[0_-6px_20px_rgba(7,42,102,0.25)]" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
       {items.map((item) => {
         const isActive = item.href === active;
         return (

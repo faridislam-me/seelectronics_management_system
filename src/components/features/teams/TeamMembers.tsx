@@ -9,6 +9,7 @@ import clsx from "clsx";
 import {
   AlertTriangle,
   BadgeCheck,
+  Ban,
   ChevronDown,
   ChevronRight,
   ListFilter,
@@ -401,7 +402,7 @@ export default function TeamMembers({
                   )}
                   <span className={clsx("absolute bottom-1.5 right-1.5 z-10 inline-flex items-center gap-1 h-6 px-2 rounded-md text-white text-[10.5px] font-bold shadow-sm", tone.badge)}><tone.Icon size={12} />{tone.label}</span>
                 </div>
-                <span className="flex items-center gap-1 min-w-0"><span className="text-[14px] font-extrabold text-[#16213a] truncate">{staff.name}</span><BadgeCheck size={16} className="shrink-0 text-white fill-[#1f7cf0]" /></span>
+                <span className="flex items-center gap-1 min-w-0"><span className="text-[14px] font-extrabold text-[#16213a] truncate">{staff.name}</span>{staff.isActiveStaff === false ? <Ban size={16} strokeWidth={2.6} className="shrink-0 text-[#e0243f]" aria-label="Blocked" /> : <BadgeCheck size={16} className="shrink-0 text-white fill-[#1f7cf0]" />}</span>
                 <span className="text-[12px] font-semibold text-[#3d4a63] -mt-1">{staff.role === "technician" ? "টেকনিশিয়ান" : "ইলেকট্রিশিয়ান"}</span>
                 <span className="flex items-center gap-1.5 text-[12px] text-[#3d4a63]"><Phone size={13} className="text-[#0b3d91] shrink-0" /><span className="truncate">{staff.phone}</span></span>
                 <span className="flex items-center gap-1.5 text-[12px] text-[#3d4a63] pr-8"><MapPin size={13} className="text-[#0b3d91] shrink-0" /><span className="truncate">{staff.currentDistrict}</span></span>

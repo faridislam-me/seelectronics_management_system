@@ -1148,7 +1148,7 @@ export const reportService = async ({
         });
         if (svc?.customerId) {
           const departed = serviceStatus.status === "staff_departed";
-          void pushToUser("customer", svc.customerId, {
+          await pushToUser("customer", svc.customerId, {
             title: departed ? "টেকনিশিয়ান রওনা দিয়েছেন" : "টেকনিশিয়ান পৌঁছে গেছেন",
             body: departed ? "ম্যাপে লাইভ লোকেশন ও কতক্ষণে পৌঁছাবেন দেখুন।" : "আপনার সার্ভিসের কাজ শুরু হচ্ছে।",
             link: `/service-track?trackingId=${serviceStatus.serviceId}`,

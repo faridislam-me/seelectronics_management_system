@@ -41,7 +41,7 @@ export default function RootLayout({
         {/* Marks pages opened inside the SE mobile apps (see --sab in globals.css) */}
         <script
           dangerouslySetInnerHTML={{
-            __html: "try{if(/SE (Technician|Electrician|Customer|Seller)App/.test(navigator.userAgent))document.documentElement.classList.add('se-app')}catch(e){}",
+            __html: "try{if(/SE (Technician|Electrician|Customer|Seller|Supplier)App/.test(navigator.userAgent))document.documentElement.classList.add('se-app')}catch(e){}",
           }}
         />
       </head>

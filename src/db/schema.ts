@@ -342,6 +342,7 @@ export const products = pgTable("products", {
     .notNull(),
   type: productTypeEnum().notNull(),
   model: varchar({ length: 255 }).notNull(),
+  serialNumber: varchar({ length: 255 }),
   quantity: integer().default(1).notNull(),
   unitPrice: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
   warrantyStartDate: timestamp({ withTimezone: true }).notNull(),

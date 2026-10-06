@@ -276,7 +276,7 @@ function CustomerViewModal({
                       <td className="px-4 py-2">
                         {product.type.toUpperCase()}
                       </td>
-                      <td className="px-4 py-2">{product.model}</td>
+                      <td className="px-4 py-2">{product.model}{product.serialNumber ? <span className="block text-xs text-gray-500">S/N: {product.serialNumber}</span> : null}</td>
                       <td className="py-3 px-3 text-center">
                         {product.warrantyDurationMonths === 0
                           ? "None"

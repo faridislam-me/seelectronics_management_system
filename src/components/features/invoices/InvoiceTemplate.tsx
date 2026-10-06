@@ -41,6 +41,12 @@ export default function InvoiceTemplate({
               <span className="font-semibold">Phone :</span>{" "}
               {data.customerPhone}
             </div>
+            {(data as any).customer?.seller && (
+              <div>
+                <span className="font-semibold">Sold by :</span>{" "}
+                {(data as any).customer.seller.shopName} ({(data as any).customer.seller.sellerId})
+              </div>
+            )}
           </div>
           <div className="text-right space-y-1">
             <div>
@@ -100,6 +106,7 @@ export default function InvoiceTemplate({
                   </td>
                   <td className="py-2 px-3 text-md border-r border-black">
                     {product.type.toUpperCase()}-{product.model}
+                    {product.serialNumber ? <span className="block text-sm">S/N: {product.serialNumber}</span> : null}
                   </td>
                   <td className="py-2 px-3 text-center text-md border-r border-black">
                     {product.warrantyDurationMonths === 0

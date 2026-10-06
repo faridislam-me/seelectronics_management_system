@@ -145,6 +145,7 @@ export default async function CustomerInvoicePage() {
                 <span className="flex flex-col min-w-0 flex-1 leading-tight gap-0.5">
                   <span className="self-start px-1.5 h-5 rounded-md bg-[#e3edff] text-[#1f5fc9] text-[10.5px] font-extrabold uppercase inline-flex items-center">{product.type}</span>
                   <b className="text-[13.5px] break-words">{product.model}</b>
+                  {product.serialNumber && <span className="text-[11px] font-bold text-[#5b6784] break-all">S/N: {product.serialNumber}</span>}
                   <span className="text-[10.5px] font-bold text-[#9aa4b8]">ITEM #{(index + 1).toString().padStart(2, "0")}</span>
                 </span>
                 <span className="shrink-0 rounded-md bg-[#dbe8ff] px-2 py-1 text-right leading-tight"><span className="block text-[9.5px] font-bold uppercase text-[#5b6784]">Line Total</span><b className="text-[15px] text-[#0b3d91]">৳{(product.unitPrice * product.quantity).toLocaleString()}</b></span>

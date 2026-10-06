@@ -34,7 +34,7 @@ type SellerCustomer = {
     notes: string | null;
     paymentType: string;
     date: Date;
-    products: { type: string; model: string; quantity: number; warrantyStartDate: Date; warrantyDurationMonths: number }[];
+    products: { type: string; model: string; serialNumber?: string | null; quantity: number; warrantyStartDate: Date; warrantyDurationMonths: number }[];
   } | null;
   services: { serviceId: string; status: string; type: string; productType: string; productModel: string; staffName: string | null; createdAt: Date }[];
 };
@@ -151,7 +151,7 @@ export default function SellerCustomersClient({ customers, inWarranty, counts }:
           <span className="text-xs font-semibold text-[#6b7690]">{customers.length} customers · {inWarranty} in warranty</span>
         </div>
         <button onClick={() => setShowAdd(true)} className="h-11 px-4 rounded-md bg-[#1f7cf0] text-white font-bold text-sm inline-flex items-center gap-1.5 shadow-[0_6px_16px_rgba(31,124,240,0.35)] active:scale-[0.98] transition-all">
-          <Plus size={18} strokeWidth={2.6} />পণ্য বিক্রি / কাস্টমার এড
+          <Plus size={18} strokeWidth={2.6} />নতুন কাস্টমার
         </button>
       </div>
 
@@ -189,9 +189,24 @@ export default function SellerCustomersClient({ customers, inWarranty, counts }:
                 <span className="text-[#6b7690]">ID <b className="text-[#16213a]">{c.customerId}</b> · Invoice <b className="text-[#16213a]">{c.invoiceNumber}</b> · {formatDate(c.createdAt)}</span>
                 <span className="text-[#6b7690]">Address: <b className="text-[#16213a]">{c.address}</b></span>
                 {c.invoice && <span className="text-[#6b7690]">Total ৳{c.invoice.total.toLocaleString()} · Due ৳{c.invoice.dueAmount.toLocaleString()} · {c.invoice.paymentType.toUpperCase()}</span>}
-                {products.map((p, i) => { const e = new Date(p.warrantyStartDate); e.setMonth(e.getMonth() + p.warrantyDurationMonths); return <span key={i} className="text-[#6b7690]">{p.type.toUpperCase()} {p.model} × {p.quantity} · warranty until <b className="text-[#16213a]">{formatDate(e)}</b></span>; })}
-                <span className="font-bold text-[#16213a] mt-1">Services ({c.services.length})</span>
-                {c.services.length === 0 && <span className="text-[#6b7690]">No service yet</span>}
+                <span className="font-bold text-[#16213a] mt-1">পণ্য ও সার্ভিস ইতিহাস</span>
+                {products.map((p, i) => {
+                  const e = new Date(p.warrantyStartDate); e.setMonth(e.getMonth() + p.warrantyDurationMonths);
+                  const mine = c.services.filter((s) => s.productType === p.type && s.productModel === p.model);
+                  const last = mine[0];
+                  return (
+                    <div key={i} className="rounded-md bg-white border border-[#e6e9f0] p-2 flex flex-col gap-0.5">
+                      <b className="text-[#16213a]">{p.type.toUpperCase()} {p.model} × {p.quantity}</b>
+                      {p.serialNumber && <span className="text-[#6b7690]">Serial: <b className="text-[#16213a]">{p.serialNumber}</b></span>}
+                      <span className="text-[#6b7690]">ওয়ারেন্টি শেষ: <b className="text-[#16213a]">{formatDate(e)}</b></span>
+                      <span className={mine.length ? "text-[#b8620b] font-bold" : "text-[#178a42] font-bold"}>
+                        {mine.length ? `সার্ভিস হয়েছে ${mine.length} বার · শেষ: ${serviceStatusBn[last.status] ?? last.status} (${formatDate(last.createdAt)})` : "এখনো সার্ভিস হয়নি"}
+                      </span>
+                    </div>
+                  );
+                })}
+                <span className="font-bold text-[#16213a] mt-1">সব সার্ভিস ({c.services.length})</span>
+                {c.services.length === 0 && <span className="text-[#6b7690]">কোনো সার্ভিস নেই</span>}
                 {c.services.map((s) => (
                   <Link key={s.serviceId} href={`/service-track?trackingId=${s.serviceId}`} className="flex items-center justify-between gap-2 py-1">
                     <span className="text-[#6b7690]">{s.serviceId} · {formatDate(s.createdAt)}{s.staffName ? ` · ${s.staffName}` : ""}</span>

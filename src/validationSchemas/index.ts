@@ -36,6 +36,7 @@ export const CustomerDataSchema = z.object({
     z.object({
       type: z.enum(productTypeEnum.enumValues),
       model: z.string().min(1),
+      serialNumber: z.string().trim().optional(),
       warrantyDurationMonths: z.coerce.number(),
       warrantyStartDate: z.coerce.date(),
       quantity: z.coerce.number(),
@@ -344,6 +345,7 @@ export const InvoiceDataSchema = z.object({
     z.object({
       type: z.enum(productTypeEnum.enumValues),
       model: z.string().min(1),
+      serialNumber: z.string().trim().optional(),
       warrantyDurationMonths: z.coerce.number(),
       warrantyStartDate: z.coerce.date(),
       quantity: z.coerce.number(),

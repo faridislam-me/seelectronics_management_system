@@ -78,6 +78,7 @@ export type Product = {
   type: "ips" | "battery" | "stabilizer" | "others";
   invoiceId: string;
   model: string;
+  serialNumber?: string | null;
   quantity: number;
   unitPrice: number;
   warrantyStartDate: Date;

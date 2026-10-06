@@ -81,6 +81,10 @@ export const getServices = async ({
             status: true,
           },
         },
+        customer: {
+          columns: { sellerId: true },
+          with: { seller: { columns: { sellerId: true, shopName: true } } },
+        },
       },
       limit: limit ? Number(limit) : undefined,
       offset: offset,

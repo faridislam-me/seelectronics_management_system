@@ -108,6 +108,7 @@ export const getCustomers = async ({
       orderBy: (customers, { desc }) => [desc(customers.createdAt)],
       with: {
         invoice: true,
+        seller: { columns: { sellerId: true, shopName: true } },
       },
     });
 
@@ -279,6 +280,7 @@ export const createCustomer = async (data: any, sendLink = false) => {
           invoiceId: invoiceRecord.id,
           type: p.type,
           model: p.model,
+          serialNumber: String(p.serialNumber ?? "").trim() || null,
           quantity: Number(p.quantity) || 1,
           unitPrice: Number(p.unitPrice) || 0,
           warrantyStartDate: new Date(p.warrantyStartDate),
@@ -517,6 +519,7 @@ export const updateCustomer = async (
             invoiceId: customer.invoice!.id,
             type: p.type,
             model: p.model,
+            serialNumber: String(p.serialNumber ?? "").trim() || null,
             quantity: Number(p.quantity) || 1,
             unitPrice: Number(p.unitPrice) || 0,
             warrantyStartDate: new Date(p.warrantyStartDate),

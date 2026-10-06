@@ -136,6 +136,8 @@ export default function CheckWarrantyPage() {
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-[12px]">
+                      <span className="rounded-md bg-[#f5f7fb] p-2 flex flex-col min-w-0"><span className="text-[#5b6784] font-semibold">মডেল</span><span className="font-extrabold break-words">{product.model}</span></span>
+                      <span className="rounded-md bg-[#f5f7fb] p-2 flex flex-col min-w-0"><span className="text-[#5b6784] font-semibold">সিরিয়াল নম্বর</span><span className="font-extrabold break-all">{product.serialNumber || "—"}</span></span>
                       <span className="rounded-md bg-[#f5f7fb] p-2 flex flex-col"><span className="text-[#5b6784] font-semibold">ওয়ারেন্টি</span><span className="font-extrabold">{has ? `${product.warrantyDurationMonths} মাস` : "N/A"}</span></span>
                       <span className="rounded-md bg-[#f5f7fb] p-2 flex flex-col"><span className="text-[#5b6784] font-semibold">শুরুর তারিখ</span><span className="font-extrabold">{formatDate(product.warrantyStartDate)}</span></span>
                       {end && <span className="col-span-2 rounded-md bg-[#fff6e3] border border-[#f5dfa0] p-2 flex flex-col"><span className="text-[#8a4a05] font-semibold">{valid ? "ওয়ারেন্টি শেষ হবে" : "ওয়ারেন্টি শেষ হয়েছে"}</span><span className="font-extrabold text-[#c81f38]">{formatDate(end)}</span></span>}

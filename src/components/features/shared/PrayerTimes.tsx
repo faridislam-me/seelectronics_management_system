@@ -386,8 +386,17 @@ const PrayerTimes = () => {
                 </span>
               );
             })()}
-            <p className="text-gray-800 text-[16px] font-medium mb-1">এখন : {prayerBangla[currentPrayer as PrayerName]}</p>
-            <p className="text-gray-600 text-[13px] mb-2 font-medium">ওয়াক্ত বাকি</p>
+            {currentPrayer === "Sunrise" ? (
+              <>
+                <p className="text-gray-800 text-[16px] font-medium mb-1">এখন : ওয়াক্ত নেই</p>
+                <p className="text-gray-600 text-[13px] mb-2 font-medium">{prayerBangla.Dhuhr} শুরু হতে বাকি</p>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-800 text-[16px] font-medium mb-1">এখন : {prayerBangla[currentPrayer as PrayerName]}</p>
+                <p className="text-gray-600 text-[13px] mb-2 font-medium">ওয়াক্ত বাকি</p>
+              </>
+            )}
             <div className="bg-white text-brand px-1.5 py-[6px] rounded-full text-[clamp(11px,3.4vw,14px)] font-semibold w-full whitespace-nowrap border border-gray-100">
               {timeLeft} মিনিট
             </div>

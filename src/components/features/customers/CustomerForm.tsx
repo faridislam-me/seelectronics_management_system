@@ -544,7 +544,7 @@ export default function CustomerForm({
                             ))}
                           </select>
                         </td>
-                        <td className="p-2">
+                        <td className="p-2 min-w-[240px]">
                           <InputField
                             name={`model-${item.id}`}
                             placeholder="Model"
@@ -560,7 +560,7 @@ export default function CustomerForm({
                             }
                           />
                         </td>
-                        <td className="p-2">
+                        <td className="p-2 min-w-[200px]">
                           <InputField
                             name={`serial-${item.id}`}
                             placeholder="Serial No"

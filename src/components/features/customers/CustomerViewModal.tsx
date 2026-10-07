@@ -149,6 +149,19 @@ function CustomerViewModal({
                 <span className="mr-4 flex-shrink-0">:</span>
                 <span className="font-semibold">{customerData.address}</span>
               </div>
+              {productItems.some((p: any) => p.serialNumber) && (
+                <div className="flex border-b py-1">
+                  <span className="w-32 flex-shrink-0">Serial No</span>
+                  <span className="mr-4 flex-shrink-0">:</span>
+                  <span className="font-semibold flex flex-col">
+                    {productItems.filter((p: any) => p.serialNumber).map((p: any, i: number) => (
+                      <span key={i} className="break-all">
+                        {productItems.length > 1 ? `${p.model}: ` : ""}{p.serialNumber}
+                      </span>
+                    ))}
+                  </span>
+                </div>
+              )}
               {customerData.vipCardNumber && (
                 <div className="flex border-b py-1">
                   <span className="w-32 flex-shrink-0">VIP Card</span>
@@ -276,7 +289,7 @@ function CustomerViewModal({
                       <td className="px-4 py-2">
                         {product.type.toUpperCase()}
                       </td>
-                      <td className="px-4 py-2">{product.model}{product.serialNumber ? <span className="block text-xs text-gray-500">S/N: {product.serialNumber}</span> : null}</td>
+                      <td className="px-4 py-2">{product.model}</td>
                       <td className="py-3 px-3 text-center">
                         {product.warrantyDurationMonths === 0
                           ? "None"

@@ -272,16 +272,27 @@ export default function CustomerDashboardClient({
             )}
           </div>
 
-          {/* VIP band */}
-          <Link href="/customer/vip-card" className="rounded-md bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2f70_0%,#0d3f96_60%,#0a2f70_100%)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(10,47,112,0.3)] relative overflow-hidden">
-            <span className="absolute -right-6 -bottom-10 size-32 rounded-full border-[12px] border-white/5" />
-            <span className="size-10 rounded-md bg-[#f5c542] text-[#0a2f70] flex items-center justify-center shrink-0"><Crown size={22} strokeWidth={2.4} /></span>
-            <span className="flex flex-col min-w-0 flex-1">
-              <span className="text-[15px] font-extrabold tracking-wide text-[#f5c542]">{isVipCustomer ? "VIP MEMBER" : "VIP CARD"}</span>
-              <span className="text-[12px] font-semibold text-white/90 truncate">{isVipCustomer ? `Premium Access Enabled · Balance ৳${referralBalance.toLocaleString()}` : "প্রিমিয়াম সুবিধা পেতে ভিআইপি কার্ডের জন্য আবেদন করুন"}</span>
-            </span>
-            <span className="shrink-0 inline-flex items-center gap-1 px-3 h-9 rounded-md bg-[#f5c542] text-[#0a2f70] text-[12px] font-extrabold">{isVipCustomer ? "View Benefits" : "Apply"} ›</span>
-          </Link>
+          {/* VIP band: gold card for VIP members, blue apply card for everyone else */}
+          {isVipCustomer ? (
+            <Link href="/customer/vip-card" className="rounded-md border border-[#f6e7a1] bg-[#fffbe6] p-3 flex items-center gap-3">
+              <span className="size-12 rounded-md bg-white border border-[#f6e7a1] text-[#b8860b] flex items-center justify-center shrink-0"><Crown size={24} strokeWidth={2.2} /></span>
+              <span className="flex flex-col min-w-0 flex-1">
+                <span className="text-[16px] font-extrabold tracking-wider text-[#9a5b00]">VIP MEMBER</span>
+                <span className="text-[13px] font-bold text-[#1d2b3a] truncate">Premium Access Enabled</span>
+              </span>
+              <span className="shrink-0 inline-flex items-center px-4 h-10 rounded-full bg-[#fdea8a] text-[#7a4a05] text-[14px] font-extrabold tracking-wider">ELITE</span>
+            </Link>
+          ) : (
+            <Link href="/customer/vip-card" className="rounded-md bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2f70_0%,#0d3f96_60%,#0a2f70_100%)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(10,47,112,0.3)] relative overflow-hidden">
+              <span className="absolute -right-6 -bottom-10 size-32 rounded-full border-[12px] border-white/5" />
+              <span className="size-10 rounded-md bg-[#f5c542] text-[#0a2f70] flex items-center justify-center shrink-0"><Crown size={22} strokeWidth={2.4} /></span>
+              <span className="flex flex-col min-w-0 flex-1">
+                <span className="text-[15px] font-extrabold tracking-wide text-[#f5c542]">VIP CARD</span>
+                <span className="text-[12px] font-semibold text-white/90 truncate">প্রিমিয়াম সুবিধা পেতে ভিআইপি কার্ডের জন্য আবেদন করুন</span>
+              </span>
+              <span className="shrink-0 inline-flex items-center gap-1 px-3 h-9 rounded-md bg-[#f5c542] text-[#0a2f70] text-[12px] font-extrabold">Apply ›</span>
+            </Link>
+          )}
         </div>
 
         {/* Services / Subscription cards */}

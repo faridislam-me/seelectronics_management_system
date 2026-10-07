@@ -30,7 +30,7 @@ export default function DashboardLoading() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style jsx global>{`
         @keyframes seLoad { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }
       `}</style>
     </div>

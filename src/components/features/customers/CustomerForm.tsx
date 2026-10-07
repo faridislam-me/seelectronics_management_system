@@ -97,6 +97,7 @@ export default function CustomerForm({
             id: uuidv4(),
             type: "ips",
             model: "",
+            serialNumber: "",
             warrantyDurationMonths: 0,
             warrantyStartDate: new Date(),
             quantity: 1,
@@ -146,6 +147,7 @@ export default function CustomerForm({
         id: uuidv4(),
         type: "ips",
         model: "",
+        serialNumber: "",
         warrantyDurationMonths: 0,
         warrantyStartDate: new Date(),
         quantity: 1,
@@ -171,11 +173,11 @@ export default function CustomerForm({
 
     // 2. Product Validation
     const hasInvalidProducts = productItems.some(
-      (p) => !p.model || p.quantity <= 0 || p.unitPrice <= 0,
+      (p) => !p.model || p.quantity <= 0 || p.unitPrice <= 0 || (mode === "create" && !p.serialNumber?.trim()),
     );
     if (hasInvalidProducts) {
       return toast.error(
-        "Please provide complete product details (Model, Qty, Unit Price > 0)",
+        "Please provide complete product details (Model, Serial No, Qty, Unit Price > 0)",
       );
     }
 
@@ -497,6 +499,9 @@ export default function CustomerForm({
                     <th className="text-left py-3 px-2">
                       Model <span className="text-red-500">*</span>
                     </th>
+                    <th className="text-left py-3 px-2">
+                      Serial No {mode === "create" && <span className="text-red-500">*</span>}
+                    </th>
                     <th className="text-left py-3 px-2">Warranty</th>
                     <th className="text-left py-3 px-2">Warranty Start Date</th>
                     <th className="text-left py-3 px-2">
@@ -511,7 +516,7 @@ export default function CustomerForm({
                   {mode === "update" && isLoadingProducts ? (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={7}
                         className="text-center py-3 text-gray-600"
                       >
                         <Spinner />
@@ -550,6 +555,22 @@ export default function CustomerForm({
                               handleProductItemChange(
                                 item.id,
                                 "model",
+                                e.target.value,
+                              )
+                            }
+                          />
+                        </td>
+                        <td className="p-2">
+                          <InputField
+                            name={`serial-${item.id}`}
+                            placeholder="Serial No"
+                            required={mode === "create"}
+                            variant="sm"
+                            value={item.serialNumber ?? ""}
+                            onChange={(e) =>
+                              handleProductItemChange(
+                                item.id,
+                                "serialNumber",
                                 e.target.value,
                               )
                             }
@@ -788,7 +809,7 @@ export default function CustomerForm({
               !customerInfo.phone ||
               !customerInfo.address ||
               productItems.some(
-                (p) => !p.model || p.quantity <= 0 || p.unitPrice <= 0,
+                (p) => !p.model || p.quantity <= 0 || p.unitPrice <= 0 || (mode === "create" && !p.serialNumber?.trim()),
               ) ||
               (referralVipCard.length > 0 &&
                 (referralVipCard.length < 16 ||

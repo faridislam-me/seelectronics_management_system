@@ -342,6 +342,7 @@ export const products = pgTable("products", {
     .notNull(),
   type: productTypeEnum().notNull(),
   model: varchar({ length: 255 }).notNull(),
+  serialNumber: varchar({ length: 255 }),
   quantity: integer().default(1).notNull(),
   unitPrice: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
   warrantyStartDate: timestamp({ withTimezone: true }).notNull(),
@@ -987,6 +988,8 @@ export const notices = pgTable("notices", {
   content: text().notNull(), // Rich-text
   priority: noticePriorityEnum().default("normal").notNull(),
   targetType: noticeTargetEnum().default("all").notNull(),
+  /** Who the notice is for: staff (all staff) | technician | electrician | customer */
+  audience: varchar({ length: 20 }).default("staff").notNull(),
   isDraft: boolean().default(false).notNull(),
   scheduledAt: timestamp({ withTimezone: true }),
   expiresAt: timestamp({ withTimezone: true }),

@@ -1,0 +1,1 @@
+ALTER TABLE "products" ADD COLUMN "serialNumber" varchar(255);

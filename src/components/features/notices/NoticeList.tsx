@@ -170,9 +170,19 @@ export default function NoticeList() {
                   )}
                 </div>
                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                  {notice.targetType === "all"
-                    ? "All Staff"
-                    : `${notice.recipients?.length || 0} Recipients`}
+                  {(() => {
+                    const n = notice.recipients?.length || 0;
+                    switch (notice.audience) {
+                      case "customer":
+                        return notice.targetType === "all" ? "Customers · সবাই" : `Customers · ${n} জন`;
+                      case "technician":
+                        return "Technicians · সবাই";
+                      case "electrician":
+                        return "Electricians · সবাই";
+                      default:
+                        return notice.targetType === "all" ? "Staff · সবাই" : `Staff · ${n} জন`;
+                    }
+                  })()}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 text-emerald-600">

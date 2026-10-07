@@ -27,7 +27,8 @@ export type DocType =
   | "complaint_customer"
   | "hearing-notice"
   | "completion-notice"
-  | "staff-not-guilty";
+  | "staff-not-guilty"
+  | "seller-invoice";
 
 export type CertificateData = {
   staffId?: string;
@@ -78,6 +79,7 @@ export type Product = {
   type: "ips" | "battery" | "stabilizer" | "others";
   invoiceId: string;
   model: string;
+  serialNumber?: string | null;
   quantity: number;
   unitPrice: number;
   warrantyStartDate: Date;
@@ -390,6 +392,7 @@ export type NoticeType = {
   content: string;
   priority: NoticePriority;
   targetType: NoticeTarget;
+  audience?: "staff" | "technician" | "electrician" | "customer";
   isDraft: boolean;
   scheduledAt: Date | null;
   expiresAt: Date | null;
@@ -403,6 +406,8 @@ export type NoticeRecipientType = {
   id: string;
   noticeId: string;
   staffId: string;
+  customerId?: string | null;
+  customer?: { name: string; customerId: string } | null;
   isRead: boolean;
   readAt: Date | null;
   isAcknowledged: boolean;

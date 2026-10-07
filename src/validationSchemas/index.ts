@@ -36,6 +36,7 @@ export const CustomerDataSchema = z.object({
     z.object({
       type: z.enum(productTypeEnum.enumValues),
       model: z.string().min(1),
+      serialNumber: z.string().trim().optional(),
       warrantyDurationMonths: z.coerce.number(),
       warrantyStartDate: z.coerce.date(),
       quantity: z.coerce.number(),
@@ -344,6 +345,7 @@ export const InvoiceDataSchema = z.object({
     z.object({
       type: z.enum(productTypeEnum.enumValues),
       model: z.string().min(1),
+      serialNumber: z.string().trim().optional(),
       warrantyDurationMonths: z.coerce.number(),
       warrantyStartDate: z.coerce.date(),
       quantity: z.coerce.number(),
@@ -361,6 +363,7 @@ export const NoticeSchema = z.object({
   content: z.string().min(1, "Content is required"),
   priority: z.enum(noticePriorityEnum.enumValues),
   targetType: z.enum(noticeTargetEnum.enumValues),
+  audience: z.enum(["staff", "technician", "electrician", "customer"]).default("staff"),
   isDraft: z.boolean().default(false),
   scheduledAt: z.coerce.date().nullable().optional(),
   expiresAt: z.coerce.date().nullable().optional(),

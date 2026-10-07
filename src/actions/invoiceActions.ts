@@ -146,6 +146,12 @@ export const getInvoices = async ({
       limit: limit ? Number(limit) : undefined,
       offset: offset,
       orderBy: (invoices, { desc }) => [desc(invoices.date)],
+      with: {
+        customer: {
+          columns: { sellerId: true },
+          with: { seller: { columns: { sellerId: true, shopName: true } } },
+        },
+      },
     });
 
     return { success: true, data: invoicesDate };
@@ -162,7 +168,10 @@ export const getInvoiceByNumber = async (invoiceNumber: string) => {
 
     // Accept either an invoice number or a customer ID (e.g. SES58PHU8D)
     const q = (invoiceNumber || "").trim();
-    const withProducts = { products: { columns: { createdAt: false, updatedAt: false } } } as const;
+    const withProducts = {
+      products: { columns: { createdAt: false, updatedAt: false } },
+      customer: { columns: { sellerId: true }, with: { seller: { columns: { sellerId: true, shopName: true } } } },
+    } as const;
     let invoice = await db.query.invoices.findFirst({
       where: eq(invoices.invoiceNumber, q),
       with: withProducts,
@@ -201,7 +210,7 @@ export const getWarrantyInfo = async (query: string) => {
     if (!q) return { success: false, message: "Invoice not found" };
     const session = await verifySession(false);
     const withProducts = {
-      products: { columns: { type: true, model: true, quantity: true, warrantyStartDate: true, warrantyDurationMonths: true } },
+      products: { columns: { type: true, model: true, serialNumber: true, quantity: true, warrantyStartDate: true, warrantyDurationMonths: true } },
     } as const;
 
     let invoice = await db.query.invoices.findFirst({

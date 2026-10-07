@@ -644,7 +644,7 @@ export async function getSellerPortalData(sellerId: string) {
         customers: {
           columns: { customerId: true, name: true, phone: true, address: true, invoiceNumber: true, isWarrantyStopped: true, warrantyStopReason: true, createdAt: true, referredByVipCard: true, sellerId: true },
           with: {
-            invoice: { columns: { id: true, total: true, subtotal: true, dueAmount: true, dueType: true, notes: true, paymentType: true, date: true }, with: { products: { columns: { type: true, model: true, quantity: true, warrantyStartDate: true, warrantyDurationMonths: true } } } },
+            invoice: { columns: { id: true, total: true, subtotal: true, dueAmount: true, dueType: true, notes: true, paymentType: true, date: true }, with: { products: { columns: { type: true, model: true, serialNumber: true, quantity: true, warrantyStartDate: true, warrantyDurationMonths: true } } } },
             services: { columns: { serviceId: true, status: true, type: true, productType: true, productModel: true, staffName: true, staffPhone: true, reportedIssue: true, createdAt: true }, orderBy: (s, { desc }) => [desc(s.createdAt)], with: { statusHistory: { columns: { status: true, createdAt: true }, orderBy: (h, { asc }) => [asc(h.createdAt)] } } },
           },
           orderBy: (c, { desc }) => [desc(c.createdAt)],
@@ -826,3 +826,61 @@ export const sellerToggleCustomerBlock = async (customerId: string, reason?: "du
     return { success: false, message: "Something went wrong" };
   }
 };
+
+
+/**
+ * Invoice data for one of a seller's purchases from SE Electronics, shaped like a normal invoice
+ * so the standard invoice PDF template can render it. Admin, or the seller who owns the purchase.
+ */
+export async function getSellerPurchaseInvoice(invoiceNumber: string) {
+  try {
+    const session = await verifySession(false);
+    if (!session || (session.role !== "admin" && session.role !== "seller")) {
+      return { success: false as const, message: "Unauthorized" };
+    }
+    const purchase = await db.query.sellerPurchases.findFirst({
+      where: eq(sellerPurchases.invoiceNumber, (invoiceNumber || "").trim()),
+      with: { seller: { columns: { sellerId: true, shopName: true, phone: true, shopStreetAddress: true, shopDistrict: true } } },
+    });
+    if (!purchase || !purchase.seller) return { success: false as const, message: "Invoice not found" };
+    if (session.role === "seller" && purchase.sellerId !== session.userId) {
+      return { success: false as const, message: "Unauthorized" };
+    }
+    const due = Math.max(purchase.totalAmount - purchase.paidAmount, 0);
+    return {
+      success: true as const,
+      data: {
+        id: purchase.id,
+        invoiceNumber: purchase.invoiceNumber,
+        customerName: purchase.seller.shopName,
+        customerAddress: `${purchase.seller.shopStreetAddress}, ${purchase.seller.shopDistrict}`,
+        customerId: purchase.seller.sellerId,
+        customerPhone: purchase.seller.phone,
+        date: purchase.date,
+        createdAt: purchase.createdAt,
+        updatedAt: purchase.updatedAt,
+        paymentType: "cash" as const,
+        subtotal: purchase.totalAmount,
+        total: purchase.totalAmount,
+        dueAmount: due,
+        dueType: "due" as const,
+        notes: purchase.note,
+        products: [
+          {
+            id: purchase.id,
+            invoiceId: purchase.id,
+            type: purchase.productType,
+            model: purchase.productModel,
+            quantity: purchase.quantity,
+            unitPrice: purchase.unitPrice,
+            warrantyStartDate: purchase.date,
+            warrantyDurationMonths: 0,
+          },
+        ],
+      },
+    };
+  } catch (error) {
+    console.error(error);
+    return { success: false as const, message: "Something went wrong" };
+  }
+}

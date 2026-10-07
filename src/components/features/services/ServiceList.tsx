@@ -1,4 +1,5 @@
 import { getServices } from "@/actions";
+import SellerTag from "@/components/ui/SellerTag";
 import { ProfileLinkButton } from "@/components/features/staff";
 import { CopyButton } from "@/components/ui";
 import { SearchParams } from "@/types";
@@ -175,6 +176,7 @@ export default async function ServiceList(
             </span>
           )}
         </div>
+        <SellerTag seller={(service as any).customer?.seller} />
       </td>
       <td className="py-3 px-4 whitespace-nowrap text-gray-700 font-bold text-sm sm:text-base">
         {service.customerPhone}

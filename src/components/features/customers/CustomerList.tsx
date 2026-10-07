@@ -5,6 +5,7 @@ import { formatDate } from "@/utils";
 import clsx from "clsx";
 import { Crown } from "lucide-react";
 import InvoicePreviewButton from "../../features/invoices/InvoicePreviewButton";
+import SellerTag from "@/components/ui/SellerTag";
 import CustomerActionButtons from "./CustomerActionButtons";
 
 export default async function CustomerList(
@@ -94,6 +95,7 @@ export default async function CustomerList(
             )
           )}
         </div>
+        <SellerTag seller={customer.seller} />
       </td>
       <td className="py-3 px-4 whitespace-nowrap text-gray-700 font-bold text-sm sm:text-base">
         <span>{customer.phone}</span>

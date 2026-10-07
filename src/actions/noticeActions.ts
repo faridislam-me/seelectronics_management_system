@@ -1,16 +1,17 @@
 "use server";
 
 import { db } from "@/db/drizzle";
-import { noticeRecipients, notices, staffs } from "@/db/schema";
+import { customers, noticeRecipients, notices, staffs } from "@/db/schema";
+import { pushToUsers } from "@/lib/push";
 import { sendEmail, verifySession } from "@/lib";
 import { NoticeType } from "@/types";
 import { generateRandomId } from "@/utils";
 import { NoticeSchema } from "@/validationSchemas";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-export const createNotice = async (data: z.infer<typeof NoticeSchema>) => {
+export const createNotice = async (data: z.input<typeof NoticeSchema>) => {
   try {
     const session = await verifySession(false, "admin");
     if (!session) return { success: false, message: "Unauthorized" };
@@ -26,6 +27,7 @@ export const createNotice = async (data: z.infer<typeof NoticeSchema>) => {
         content: validatedData.content,
         priority: validatedData.priority,
         targetType: validatedData.targetType,
+        audience: validatedData.audience,
         isDraft: validatedData.isDraft,
         scheduledAt: validatedData.scheduledAt,
         expiresAt: validatedData.expiresAt,
@@ -35,7 +37,7 @@ export const createNotice = async (data: z.infer<typeof NoticeSchema>) => {
 
     // If not a draft and scheduled for now (or not scheduled), dispatch immediately
     if (!validatedData.isDraft && (!validatedData.scheduledAt || validatedData.scheduledAt <= new Date())) {
-      await dispatchNotice(newNotice.id, validatedData.targetType, validatedData.recipientIds);
+      await dispatchNotice(newNotice.id, validatedData.targetType, validatedData.recipientIds, validatedData.audience);
     }
 
     revalidatePath("/(dashboard)/notices");
@@ -46,7 +48,7 @@ export const createNotice = async (data: z.infer<typeof NoticeSchema>) => {
   }
 };
 
-export const updateNotice = async (id: string, data: z.infer<typeof NoticeSchema>) => {
+export const updateNotice = async (id: string, data: z.input<typeof NoticeSchema>) => {
   try {
     const session = await verifySession(false, "admin");
     if (!session) return { success: false, message: "Unauthorized" };
@@ -60,6 +62,7 @@ export const updateNotice = async (id: string, data: z.infer<typeof NoticeSchema
         content: validatedData.content,
         priority: validatedData.priority,
         targetType: validatedData.targetType,
+        audience: validatedData.audience,
         isDraft: validatedData.isDraft,
         scheduledAt: validatedData.scheduledAt,
         expiresAt: validatedData.expiresAt,
@@ -76,7 +79,7 @@ export const updateNotice = async (id: string, data: z.infer<typeof NoticeSchema
     });
 
     if (!validatedData.isDraft && !existingRecipients && (!validatedData.scheduledAt || validatedData.scheduledAt <= new Date())) {
-        await dispatchNotice(updatedNotice.id, validatedData.targetType, validatedData.recipientIds);
+        await dispatchNotice(updatedNotice.id, validatedData.targetType, validatedData.recipientIds, validatedData.audience);
     }
 
     revalidatePath("/(dashboard)/notices");
@@ -116,6 +119,12 @@ export const getNotices = async () => {
                     columns: {
                         name: true,
                         staffId: true
+                    }
+                },
+                customer: {
+                    columns: {
+                        name: true,
+                        customerId: true
                     }
                 }
             }
@@ -266,18 +275,46 @@ export const acknowledgeNotice = async (recipientId: string) => {
     }
 };
 
-async function dispatchNotice(noticeInternalId: string, targetType: string, recipientIds?: string[]) {
+const plainText = (html: string) => html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+
+async function dispatchNotice(
+    noticeInternalId: string,
+    targetType: string,
+    recipientIds?: string[],
+    audience: "staff" | "technician" | "electrician" | "customer" = "staff",
+) {
     const notice = await db.query.notices.findFirst({
         where: eq(notices.id, noticeInternalId)
     });
 
     if (!notice) return;
 
+    const pushBody = plainText(notice.content).slice(0, 140);
+
+    // ---- Customers: every customer, or the picked ones ----
+    if (audience === "customer") {
+        const rows = targetType === "all"
+            ? await db.select({ customerId: customers.customerId }).from(customers)
+            : recipientIds && recipientIds.length > 0
+                ? await db.select({ customerId: customers.customerId }).from(customers).where(inArray(customers.customerId, recipientIds))
+                : [];
+        if (!rows.length) return;
+        for (let i = 0; i < rows.length; i += 500) {
+            await db.insert(noticeRecipients).values(
+                rows.slice(i, i + 500).map((c) => ({ noticeId: noticeInternalId, customerId: c.customerId })),
+            );
+        }
+        await pushToUsers("customer", rows.map((c) => c.customerId), { title: notice.title, body: pushBody, link: "/customer/profile" });
+        return;
+    }
+
+    // ---- Staff: all active staff, only technicians / electricians, or the picked ones ----
     let targetStaff: { staffId: string, name: string, phone: string, username: string | null }[] = [];
 
     if (targetType === "all") {
+        const roleFilter = audience === "technician" ? eq(staffs.role, "technician") : audience === "electrician" ? eq(staffs.role, "electrician") : undefined;
         targetStaff = await db.query.staffs.findMany({
-            where: eq(staffs.isActiveStaff, true),
+            where: roleFilter ? and(eq(staffs.isActiveStaff, true), roleFilter) : eq(staffs.isActiveStaff, true),
             columns: { staffId: true, name: true, phone: true, username: true }
         });
     } else if (recipientIds && recipientIds.length > 0) {
@@ -293,6 +330,8 @@ async function dispatchNotice(noticeInternalId: string, targetType: string, reci
             staffId: s.staffId,
         }));
         await db.insert(noticeRecipients).values(values);
+
+        await pushToUsers("staff", targetStaff.map((s) => s.staffId), { title: notice.title, body: pushBody, link: "/staff/profile" });
 
         // Send emails/SMS for high/urgent priority notices
         if (notice.priority === "high" || notice.priority === "urgent") {
@@ -312,3 +351,24 @@ async function dispatchNotice(noticeInternalId: string, targetType: string, reci
     }
 }
 
+
+
+/** Admin: find customers by name, phone or ID to pick them as notice recipients. */
+export const searchCustomersForNotice = async (query: string) => {
+  try {
+    const session = await verifySession(false, "admin");
+    if (!session) return { success: false as const, data: [] as { customerId: string; name: string; phone: string }[] };
+    const q = (query || "").trim();
+    if (q.length < 2) return { success: true as const, data: [] as { customerId: string; name: string; phone: string }[] };
+    const like = `%${q}%`;
+    const data = await db
+      .select({ customerId: customers.customerId, name: customers.name, phone: customers.phone })
+      .from(customers)
+      .where(or(ilike(customers.name, like), ilike(customers.phone, like), ilike(customers.customerId, like)))
+      .limit(15);
+    return { success: true as const, data };
+  } catch (error) {
+    console.error("searchCustomersForNotice failed:", error);
+    return { success: false as const, data: [] as { customerId: string; name: string; phone: string }[] };
+  }
+};

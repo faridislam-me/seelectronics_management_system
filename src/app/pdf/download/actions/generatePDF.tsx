@@ -135,6 +135,29 @@ export default async function generatePDF({
         break;
       }
 
+      case "seller-invoice": {
+        const InvoiceTemplate = (
+          await import("@/components/features/invoices/InvoiceTemplate")
+        ).default;
+        const { getSellerPurchaseInvoice } = await import("@/actions/sellerActions");
+        const response = await getSellerPurchaseInvoice(finalId);
+        if (!response.success || !response.data) {
+          throw new AppError("ইনভয়েসটি পাওয়া যায়নি।");
+        }
+        const invoice = response.data;
+        const templatePath = path.join(
+          process.cwd(),
+          "src",
+          "assets",
+          "images",
+          invoice.dueAmount > 0 ? "customer-invoice-due.png" : "customer-invoice-paid.png",
+        );
+        const backgroundBase64 = await convertToBase64(templatePath);
+        const data: InvoiceTemplateData = { ...invoice, bgImage: backgroundBase64 };
+        html = renderToStaticMarkup(<InvoiceTemplate data={data} />);
+        break;
+      }
+
       case "payment": {
         const PaymentReceiptTemplate = (
           await import("@/components/features/payments/PaymentReceiptTemplate")

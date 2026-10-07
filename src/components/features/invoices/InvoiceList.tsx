@@ -1,4 +1,5 @@
 import { getInvoices } from "@/actions";
+import SellerTag from "@/components/ui/SellerTag";
 import { CopyButton } from "@/components/ui";
 import { SearchParams } from "@/types";
 import { formatDate } from "@/utils";
@@ -69,6 +70,7 @@ export default async function InvoiceList(
         <span className="font-bold text-gray-900 text-sm sm:text-base">
           {invoice.customerName}
         </span>
+        <SellerTag seller={invoice.customer?.seller} />
       </td>
       <td className="py-3 px-4 whitespace-nowrap text-gray-700 font-bold text-sm sm:text-base">
         {invoice.customerPhone}

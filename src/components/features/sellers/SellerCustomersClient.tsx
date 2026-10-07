@@ -1,7 +1,7 @@
 "use client";
 
 import { sellerRequestService, sellerToggleCustomerBlock } from "@/actions/sellerActions";
-import { FilterChips, PayKind, SellerTabs, inWarranty as calcWarranty, payKind, payLabel, serviceStatusBn, statusTone } from "./sellerShared";
+import { FilterSelects, PayKind, SellerTabs, inWarranty as calcWarranty, payKind, payLabel, serviceStatusBn, statusTone } from "./sellerShared";
 import clsx from "clsx";
 import { BlueCard, BlueChip } from "@/components/ui/BlueDashboard";
 import { Modal } from "@/components/ui";
@@ -160,8 +160,7 @@ export default function SellerCustomersClient({ customers, inWarranty, counts }:
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="নাম, ফোন, আইডি বা ইনভয়েস দিয়ে খুঁজুন" className="flex-1 outline-none bg-transparent" />
       </label>
 
-      <FilterChips value={pay} onChange={setPay} options={[{ key: "all", label: "সব পেমেন্ট" }, { key: "cash", label: payLabel.cash }, { key: "due", label: payLabel.due }, { key: "installment", label: payLabel.installment }]} />
-      <FilterChips value={war} onChange={setWar} options={[{ key: "all", label: "সব ওয়ারেন্টি" }, { key: "yes", label: "ওয়ারেন্টি আছে" }, { key: "no", label: "ওয়ারেন্টি শেষ" }]} />
+      <FilterSelects pay={pay} onPay={setPay} war={war} onWar={setWar} />
 
       <BlueCard className="flex flex-col gap-2.5">
         {customers.length === 0 && (
@@ -186,9 +185,13 @@ export default function SellerCustomersClient({ customers, inWarranty, counts }:
                 </span>
               </summary>
               <div className="mt-3 pt-3 border-t border-[#e6e9f0] flex flex-col gap-1 text-xs">
-                <span className="text-[#6b7690]">ID <b className="text-[#16213a]">{c.customerId}</b> · Invoice <b className="text-[#16213a]">{c.invoiceNumber}</b> · {formatDate(c.createdAt)}</span>
-                <span className="text-[#6b7690]">Address: <b className="text-[#16213a]">{c.address}</b></span>
-                {c.invoice && <span className="text-[#6b7690]">Total ৳{c.invoice.total.toLocaleString()} · Due ৳{c.invoice.dueAmount.toLocaleString()} · {c.invoice.paymentType.toUpperCase()}</span>}
+                <div className="grid grid-cols-2 gap-1.5">
+                  <span className="rounded-md bg-white border border-[#e6e9f0] p-2 flex flex-col"><span className="text-[10.5px] font-bold text-[#6b7690]">কাস্টমার আইডি</span><b className="text-[#16213a] break-all">{c.customerId}</b></span>
+                  <span className="rounded-md bg-white border border-[#e6e9f0] p-2 flex flex-col"><span className="text-[10.5px] font-bold text-[#6b7690]">ইনভয়েস</span><b className="text-[#16213a]">{c.invoiceNumber}</b><span className="text-[10.5px] text-[#6b7690]">{formatDate(c.createdAt)}</span></span>
+                  {c.invoice && <span className="rounded-md bg-white border border-[#e6e9f0] p-2 flex flex-col"><span className="text-[10.5px] font-bold text-[#6b7690]">মোট · {c.invoice.paymentType.toUpperCase()}</span><b className="text-[#16213a]">৳{c.invoice.total.toLocaleString()}</b></span>}
+                  {c.invoice && <span className={clsx("rounded-md border p-2 flex flex-col", c.invoice.dueAmount > 0 ? "bg-[#fff6e3] border-[#f5dfa0]" : "bg-[#e9f9ef] border-[#bfe8cd]")}><span className="text-[10.5px] font-bold text-[#6b7690]">বকেয়া</span><b className={c.invoice.dueAmount > 0 ? "text-[#b8620b]" : "text-[#178a42]"}>৳{c.invoice.dueAmount.toLocaleString()}</b></span>}
+                  <span className="col-span-2 rounded-md bg-white border border-[#e6e9f0] p-2 flex flex-col"><span className="text-[10.5px] font-bold text-[#6b7690]">ঠিকানা</span><b className="text-[#16213a]">{c.address}</b></span>
+                </div>
                 <span className="font-bold text-[#16213a] mt-1">পণ্য ও সার্ভিস ইতিহাস</span>
                 {products.map((p, i) => {
                   const e = new Date(p.warrantyStartDate); e.setMonth(e.getMonth() + p.warrantyDurationMonths);
@@ -210,7 +213,7 @@ export default function SellerCustomersClient({ customers, inWarranty, counts }:
                 {c.services.map((s) => (
                   <Link key={s.serviceId} href={`/service-track?trackingId=${s.serviceId}`} className="flex items-center justify-between gap-2 py-1">
                     <span className="text-[#6b7690]">{s.serviceId} · {formatDate(s.createdAt)}{s.staffName ? ` · ${s.staffName}` : ""}</span>
-                    <span className={clsx("h-6 px-2 rounded-md border text-[10.5px] font-extrabold inline-flex items-center", statusTone(s.status))}>{s.type === "install" ? "ইন্সটল · " : ""}{serviceStatusBn[s.status] ?? s.status}</span>
+                    <span className={clsx("h-6 px-2 rounded-md border text-[10.5px] font-extrabold inline-flex items-center whitespace-nowrap shrink-0", statusTone(s.status))}>{s.type === "install" ? "ইন্সটল · " : ""}{serviceStatusBn[s.status] ?? s.status}</span>
                   </Link>
                 ))}
                 <div className="flex flex-wrap gap-2 mt-2">

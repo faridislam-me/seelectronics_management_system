@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { ExternalLink, Home, Phone, Search, Wrench } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { FilterChips, PayKind, SellerTabs, inWarranty, payKind, payLabel, serviceStatusBn, statusTone } from "./sellerShared";
+import { FilterChips, FilterSelects, PayKind, SellerTabs, inWarranty, payKind, payLabel, serviceStatusBn, statusTone } from "./sellerShared";
 
 export type SellerJob = {
   serviceId: string;
@@ -58,9 +58,8 @@ export default function SellerJobsClient({ kind, jobs, counts }: { kind: "repair
         <Search size={16} className="text-[#9aa4b8]" />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="নাম, ফোন, আইডি বা সার্ভিস আইডি" className="flex-1 outline-none bg-transparent" />
       </label>
-      <FilterChips value={status} onChange={setStatus} options={[{ key: "all", label: "সব" }, { key: "active", label: "চলমান" }, { key: "completed", label: "সম্পন্ন" }, { key: "canceled", label: "বাতিল" }]} />
-      <FilterChips value={pay} onChange={setPay} options={[{ key: "all", label: "সব পেমেন্ট" }, { key: "cash", label: payLabel.cash }, { key: "due", label: payLabel.due }, { key: "installment", label: payLabel.installment }]} />
-      <FilterChips value={war} onChange={setWar} options={[{ key: "all", label: "সব ওয়ারেন্টি" }, { key: "yes", label: "ওয়ারেন্টি আছে" }, { key: "no", label: "ওয়ারেন্টি শেষ" }]} />
+      <FilterChips value={status} onChange={setStatus} options={[{ key: "all", label: `সব (${jobs.length})` }, { key: "active", label: `চলমান (${jobs.filter((j) => !["completed", "canceled"].includes(j.status)).length})` }, { key: "completed", label: `সম্পন্ন (${jobs.filter((j) => j.status === "completed").length})` }, { key: "canceled", label: `বাতিল (${jobs.filter((j) => j.status === "canceled").length})` }]} />
+      <FilterSelects pay={pay} onPay={setPay} war={war} onWar={setWar} />
 
       {list.length === 0 && <div className="rounded-md bg-white border border-[#e3e8f1] py-8 text-center text-sm text-[#9aa4b8]">কিছু পাওয়া যায়নি</div>}
       {list.map((j) => (

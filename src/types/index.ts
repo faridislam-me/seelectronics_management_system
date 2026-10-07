@@ -27,7 +27,8 @@ export type DocType =
   | "complaint_customer"
   | "hearing-notice"
   | "completion-notice"
-  | "staff-not-guilty";
+  | "staff-not-guilty"
+  | "seller-invoice";
 
 export type CertificateData = {
   staffId?: string;

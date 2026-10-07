@@ -71,3 +71,29 @@ export function FilterChips<T extends string>({ value, onChange, options }: { va
     </div>
   );
 }
+
+/** Two labelled dropdowns (payment + warranty) so every list filters the same obvious way. */
+export function FilterSelects({ pay, onPay, war, onWar }: { pay: "all" | PayKind; onPay: (v: "all" | PayKind) => void; war: "all" | "yes" | "no"; onWar: (v: "all" | "yes" | "no") => void }) {
+  const cls = "h-10 w-full rounded-md border border-[#dfe6f2] bg-white px-2 text-[13px] font-bold text-[#16213a] outline-none focus:border-[#1f7cf0]";
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <label className="flex flex-col gap-0.5">
+        <span className="text-[11px] font-bold text-[#6b7690] px-0.5">পেমেন্ট</span>
+        <select value={pay} onChange={(e) => onPay(e.target.value as "all" | PayKind)} className={cls}>
+          <option value="all">সব</option>
+          <option value="cash">{payLabel.cash}</option>
+          <option value="due">{payLabel.due}</option>
+          <option value="installment">{payLabel.installment}</option>
+        </select>
+      </label>
+      <label className="flex flex-col gap-0.5">
+        <span className="text-[11px] font-bold text-[#6b7690] px-0.5">ওয়ারেন্টি</span>
+        <select value={war} onChange={(e) => onWar(e.target.value as "all" | "yes" | "no")} className={cls}>
+          <option value="all">সব</option>
+          <option value="yes">ওয়ারেন্টি আছে</option>
+          <option value="no">ওয়ারেন্টি শেষ</option>
+        </select>
+      </label>
+    </div>
+  );
+}

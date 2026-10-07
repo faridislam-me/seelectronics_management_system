@@ -2,7 +2,7 @@ import { SellerLayout } from "@/components/layout";
 import { BlueCard, BlueChip, BlueStatGrid } from "@/components/ui";
 import { loadSellerPortal } from "@/lib/sellerPortal";
 import { formatDate } from "@/utils";
-import { Banknote, CheckCircle2 } from "lucide-react";
+import { Banknote, CheckCircle2, Download } from "lucide-react";
 
 export default async function SellerPurchasesPage() {
   const { seller, stats, due } = await loadSellerPortal();
@@ -31,6 +31,7 @@ export default async function SellerPurchasesPage() {
                   <div className="flex flex-col"><span className="text-[#6b7690] font-bold">Due</span><span className="font-extrabold text-[#b8620b]">৳{Math.max(dueAmt, 0).toLocaleString()}</span></div>
                 </div>
                 {p.note && <span className="text-xs text-[#6b7690]">{p.note}</span>}
+                <a href={`/pdf/download?type=seller-invoice&id=${p.invoiceNumber}`} target="_blank" className="mt-1 h-9 rounded-md border-2 border-[#bcd4fb] bg-white text-[#1f5fc9] text-xs font-bold inline-flex items-center justify-center gap-1.5"><Download size={14} />ইনভয়েস ডাউনলোড (PDF)</a>
               </div>
             );
           })}

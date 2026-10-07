@@ -1,5 +1,6 @@
 import { getMySupplierLedger, supplierLogout } from "@/actions/supplierActions";
 import { BlueFooterBand, BlueStatGrid } from "@/components/ui";
+import { DataTable, EmptyRow, Td, Th } from "@/components/ui/DataTable";
 import { contactDetails } from "@/constants";
 import { SUPPLIER_PRODUCT_LABEL, supplierProductLabel } from "@/lib/supplierProduct";
 import clsx from "clsx";
@@ -162,36 +163,34 @@ export default async function SupplierProfilePage() {
 
           <section id="ledger" className="scroll-mt-16 flex flex-col gap-2">
             <span className="text-[16px] font-extrabold px-0.5">লেনদেনের হিসাব</span>
-            {recent.length === 0 ? (
-              <div className="rounded-md bg-white border border-dashed border-[#c9d3e6] p-6 text-center text-[13px] text-[#5b6784]">এখনও কোনো লেনদেন নেই।</div>
-            ) : (
-              recent.map((e) => {
-                const purchase = e.type === "purchase";
-                return (
-                  <div key={e.transactionId} className="relative rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.05)] active:bg-[#f4f7fc]">
-                    <Link href={`/supplier/entry/${e.transactionId}`} aria-label="বিস্তারিত দেখুন" className="absolute inset-0 rounded-md" />
-                    {e.photoUrl ? (
-                      <span className="shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={e.photoUrl} alt="মালের ছবি" className="size-12 rounded-md object-cover border border-[#dfe6f2]" />
-                      </span>
-                    ) : (
-                      <span className={clsx("size-10 rounded-full flex items-center justify-center shrink-0", purchase ? "bg-[#fff6e3] text-[#b8620b]" : "bg-[#e9f9ef] text-[#178a42]")}>{purchase ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}</span>
-                    )}
-                    <span className="flex flex-col min-w-0 flex-1 leading-tight">
-                      <span className="text-[14px] font-extrabold">{purchase ? `মাল গ্রহণ${supplierProductLabel(e.productType) ? ` · ${supplierProductLabel(e.productType)}` : ""}` : "পরিশোধ করা হয়েছে"}</span>
-                      {e.description && <span className="text-[13px] font-bold text-[#16213a] break-words">{purchase ? "পণ্য" : "মাধ্যম"}: {e.description}</span>}
-                      <span className="text-[11.5px] text-[#5b6784]">{fmtDate(e.date)}</span>
-                    </span>
-                    <span className="flex flex-col items-end leading-tight shrink-0">
-                      <span className={clsx("text-[15px] font-extrabold", purchase ? "text-[#16213a]" : "text-[#178a42]")}>{purchase ? "+" : "−"}{taka(e.amount)}</span>
-                      <span className="text-[10.5px] text-[#5b6784]">বাকি {taka(e.balance)}</span>
-                      <span className="mt-1 inline-flex items-center gap-0.5 text-[11px] font-bold text-[#1f5fc9]">বিস্তারিত<ChevronRight size={12} /></span>
-                    </span>
-                  </div>
-                );
-              })
-            )}
+            <DataTable>
+              <thead>
+                <tr><Th>তারিখ</Th><Th>ধরন</Th><Th>বিবরণ</Th><Th right>টাকা</Th><Th right>বাকি</Th></tr>
+              </thead>
+              <tbody>
+                {recent.length === 0 && <EmptyRow cols={5} text="এখনও কোনো লেনদেন নেই।" />}
+                {recent.map((e, i) => {
+                  const purchase = e.type === "purchase";
+                  return (
+                    <tr key={e.transactionId} className={i % 2 ? "bg-[#f4f7fc]" : "bg-white"}>
+                      <Td className="!px-1.5 text-[11px]"><Link href={`/supplier/entry/${e.transactionId}`} className="font-bold text-[#1f5fc9] underline">{new Date(e.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}</Link></Td>
+                      <Td strong className="!px-1.5">{purchase ? "মাল" : "পরিশোধ"}</Td>
+                      <Td nowrap={false} className="!px-1.5 min-w-[90px]">
+                        <span className="flex items-center gap-1.5">
+                          {e.photoUrl && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={e.photoUrl} alt="মালের ছবি" className="size-8 rounded-md object-cover border border-[#dfe6f2] shrink-0" />
+                          )}
+                          <span>{[purchase ? supplierProductLabel(e.productType) : null, e.description].filter(Boolean).join(" · ") || "—"}</span>
+                        </span>
+                      </Td>
+                      <Td right strong className={clsx("!px-1.5", purchase ? "" : "text-[#178a42]")}>{purchase ? "+" : "−"}{taka(e.amount)}</Td>
+                      <Td right strong className="!px-1.5">{taka(e.balance)}</Td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </DataTable>
           </section>
 
           <a href={`tel:${contactDetails.customerCare}`} className="rounded-md bg-white border border-[#dfe6f2] p-3 flex items-center gap-2 text-[13px] font-bold text-[#0b3d91]"><Phone size={16} />হিসাব নিয়ে প্রশ্ন? কল করুন {contactDetails.customerCare}</a>

@@ -3,7 +3,8 @@
 import { sellerRequestService, sellerToggleCustomerBlock } from "@/actions/sellerActions";
 import { FilterSelects, PayKind, SellerTabs, inWarranty as calcWarranty, payKind, payLabel, serviceStatusBn, statusTone } from "./sellerShared";
 import clsx from "clsx";
-import { BlueCard, BlueChip } from "@/components/ui/BlueDashboard";
+import { BlueChip } from "@/components/ui/BlueDashboard";
+import { DataTable, EmptyRow, Td, Th } from "@/components/ui/DataTable";
 import { Modal } from "@/components/ui";
 import { toast } from "react-toastify";
 import CustomerForm from "@/components/features/customers/CustomerForm";
@@ -162,71 +163,62 @@ export default function SellerCustomersClient({ customers, inWarranty, counts }:
 
       <FilterSelects pay={pay} onPay={setPay} war={war} onWar={setWar} />
 
-      <BlueCard className="flex flex-col gap-2.5">
-        {customers.length === 0 && (
-          <div className="text-center text-sm text-gray-400 py-6">এখনো কোনো কাস্টমার নেই। উপরের বাটনে ক্লিক করে প্রথম বিক্রি এন্ট্রি করুন।</div>
-        )}
-        {customers.length > 0 && filtered.length === 0 && <div className="text-center text-sm text-gray-400 py-6">কিছু পাওয়া যায়নি</div>}
-        {filtered.map((c) => {
-          const products = c.invoice?.products ?? [];
-          const warranty = !c.isWarrantyStopped && products.some((p) => { const e = new Date(p.warrantyStartDate); e.setMonth(e.getMonth() + p.warrantyDurationMonths); return e > now; });
-          const active = c.services.some((s) => !["completed", "canceled"].includes(s.status));
-          return (
-            <details key={c.customerId} className="p-3 rounded-md bg-[#f5f7fb]">
-              <summary className="list-none cursor-pointer flex items-center gap-3">
-                <span className="size-10 rounded-full bg-[#fff3d6] text-[#b8620b] flex items-center justify-center text-sm font-extrabold shrink-0">{c.name.slice(0, 2).toUpperCase()}</span>
-                <span className="flex flex-col flex-1 min-w-0">
-                  <span className="text-[13px] font-extrabold text-[#16213a] truncate">{c.name}</span>
-                  <span className="text-xs font-semibold text-[#6b7690] truncate">{products.map((p) => `${p.type.toUpperCase()} ${p.model}`).join(", ") || "—"} · {c.phone}</span>
-                </span>
-                <span className="flex flex-col items-end gap-1 shrink-0">
-                  {c.isWarrantyStopped ? (c.warrantyStopReason === "misuse" ? <BlueChip tone="red">ওয়ারেন্টি বাতিল</BlueChip> : <BlueChip tone="amber">বকেয়া ব্লক</BlueChip>) : active ? <BlueChip tone="blue">IN SERVICE</BlueChip> : warranty ? <BlueChip tone="green">WARRANTY</BlueChip> : <BlueChip tone="red">EXPIRED</BlueChip>}
-                  <span className="text-[10px] font-bold text-[#6b7690]">{payLabel[payKind(c.invoice)]}</span>
-                </span>
-              </summary>
-              <div className="mt-3 pt-3 border-t border-[#e6e9f0] flex flex-col gap-1 text-xs">
-                <div className="grid grid-cols-2 gap-1.5">
-                  <span className="rounded-md bg-white border border-[#e6e9f0] p-2 flex flex-col"><span className="text-[10.5px] font-bold text-[#6b7690]">কাস্টমার আইডি</span><b className="text-[#16213a] break-all">{c.customerId}</b></span>
-                  <span className="rounded-md bg-white border border-[#e6e9f0] p-2 flex flex-col"><span className="text-[10.5px] font-bold text-[#6b7690]">ইনভয়েস</span><b className="text-[#16213a]">{c.invoiceNumber}</b><span className="text-[10.5px] text-[#6b7690]">{formatDate(c.createdAt)}</span></span>
-                  {c.invoice && <span className="rounded-md bg-white border border-[#e6e9f0] p-2 flex flex-col"><span className="text-[10.5px] font-bold text-[#6b7690]">মোট · {c.invoice.paymentType.toUpperCase()}</span><b className="text-[#16213a]">৳{c.invoice.total.toLocaleString()}</b></span>}
-                  {c.invoice && <span className={clsx("rounded-md border p-2 flex flex-col", c.invoice.dueAmount > 0 ? "bg-[#fff6e3] border-[#f5dfa0]" : "bg-[#e9f9ef] border-[#bfe8cd]")}><span className="text-[10.5px] font-bold text-[#6b7690]">বকেয়া</span><b className={c.invoice.dueAmount > 0 ? "text-[#b8620b]" : "text-[#178a42]"}>৳{c.invoice.dueAmount.toLocaleString()}</b></span>}
-                  <span className="col-span-2 rounded-md bg-white border border-[#e6e9f0] p-2 flex flex-col"><span className="text-[10.5px] font-bold text-[#6b7690]">ঠিকানা</span><b className="text-[#16213a]">{c.address}</b></span>
-                </div>
-                <span className="font-bold text-[#16213a] mt-1">পণ্য ও সার্ভিস ইতিহাস</span>
-                {products.map((p, i) => {
-                  const e = new Date(p.warrantyStartDate); e.setMonth(e.getMonth() + p.warrantyDurationMonths);
-                  const mine = c.services.filter((s) => s.productType === p.type && s.productModel === p.model);
-                  const last = mine[0];
-                  return (
-                    <div key={i} className="rounded-md bg-white border border-[#e6e9f0] p-2 flex flex-col gap-0.5">
-                      <b className="text-[#16213a]">{p.type.toUpperCase()} {p.model} × {p.quantity}</b>
-                      {p.serialNumber && <span className="text-[#6b7690]">Serial: <b className="text-[#16213a]">{p.serialNumber}</b></span>}
-                      <span className="text-[#6b7690]">ওয়ারেন্টি শেষ: <b className="text-[#16213a]">{formatDate(e)}</b></span>
-                      <span className={mine.length ? "text-[#b8620b] font-bold" : "text-[#178a42] font-bold"}>
-                        {mine.length ? `সার্ভিস হয়েছে ${mine.length} বার · শেষ: ${serviceStatusBn[last.status] ?? last.status} (${formatDate(last.createdAt)})` : "এখনো সার্ভিস হয়নি"}
+      <DataTable>
+        <thead>
+          <tr>
+            <Th>তারিখ</Th><Th>ইনভয়েস</Th><Th>কাস্টমার</Th><Th>ফোন</Th><Th>পণ্য</Th><Th>সিরিয়াল</Th><Th right>পরিমাণ</Th><Th>ওয়ারেন্টি শেষ</Th><Th>সার্ভিস</Th><Th right>মোট</Th><Th right>বাকি</Th><Th>পেমেন্ট</Th><Th>স্ট্যাটাস</Th><Th>অ্যাকশন</Th>
+          </tr>
+        </thead>
+        <tbody>
+          {customers.length === 0 && <EmptyRow cols={14} text="এখনো কোনো কাস্টমার নেই। উপরের বাটনে ক্লিক করে প্রথম কাস্টমার এড করুন।" />}
+          {customers.length > 0 && filtered.length === 0 && <EmptyRow cols={14} text="কিছু পাওয়া যায়নি" />}
+          {filtered.map((c, ci) => {
+            const products = c.invoice?.products ?? [];
+            const rows = products.length ? products : [null];
+            const span = rows.length;
+            const warranty = !c.isWarrantyStopped && products.some((p) => { const e = new Date(p.warrantyStartDate); e.setMonth(e.getMonth() + p.warrantyDurationMonths); return e > now; });
+            const active = c.services.some((s) => !["completed", "canceled"].includes(s.status));
+            const bg = ci % 2 ? "bg-[#f4f7fc]" : "bg-white";
+            return rows.map((p, i) => {
+              const mine = p ? c.services.filter((s) => s.productType === p.type && s.productModel === p.model) : [];
+              const end = p ? (() => { const e = new Date(p.warrantyStartDate); e.setMonth(e.getMonth() + p.warrantyDurationMonths); return e; })() : null;
+              return (
+                <tr key={`${c.customerId}-${i}`} className={bg}>
+                  {i === 0 && <Td rowSpan={span}>{formatDate(c.createdAt)}</Td>}
+                  {i === 0 && <Td rowSpan={span} strong>{c.invoiceNumber}</Td>}
+                  {i === 0 && <Td rowSpan={span} nowrap={false} className="min-w-[120px]"><b>{c.name}</b><span className="block text-[11px] text-[#6b7690]">{c.customerId}</span><span className="block text-[11px] text-[#6b7690]">{c.address}</span></Td>}
+                  {i === 0 && <Td rowSpan={span}>{c.phone}</Td>}
+                  <Td nowrap={false} className="min-w-[130px]">{p ? `${p.type.toUpperCase()} ${p.model}` : "—"}</Td>
+                  <Td>{p?.serialNumber || "—"}</Td>
+                  <Td right>{p ? p.quantity : "—"}</Td>
+                  <Td className={end && end > now && !c.isWarrantyStopped ? "text-[#178a42] font-bold" : "text-[#c81f38] font-bold"}>{end ? formatDate(end) : "—"}</Td>
+                  <Td className={mine.length ? "text-[#b8620b] font-bold" : "text-[#178a42]"}>
+                    {p ? (mine.length ? <Link href={`/service-track?trackingId=${mine[0].serviceId}`}>{mine.length} বার · {serviceStatusBn[mine[0].status] ?? mine[0].status}</Link> : "হয়নি") : "—"}
+                  </Td>
+                  {i === 0 && <Td rowSpan={span} right strong>{c.invoice ? `৳${c.invoice.total.toLocaleString()}` : "—"}</Td>}
+                  {i === 0 && <Td rowSpan={span} right strong className={c.invoice && c.invoice.dueAmount > 0 ? "text-[#b8620b]" : "text-[#178a42]"}>{c.invoice ? `৳${c.invoice.dueAmount.toLocaleString()}` : "—"}</Td>}
+                  {i === 0 && <Td rowSpan={span}>{payLabel[payKind(c.invoice)]}</Td>}
+                  {i === 0 && (
+                    <Td rowSpan={span}>
+                      {c.isWarrantyStopped ? (c.warrantyStopReason === "misuse" ? <BlueChip tone="red">ওয়ারেন্টি বাতিল</BlueChip> : <BlueChip tone="amber">বকেয়া ব্লক</BlueChip>) : active ? <BlueChip tone="blue">IN SERVICE</BlueChip> : warranty ? <BlueChip tone="green">WARRANTY</BlueChip> : <BlueChip tone="red">EXPIRED</BlueChip>}
+                    </Td>
+                  )}
+                  {i === 0 && (
+                    <Td rowSpan={span}>
+                      <span className="flex gap-1">
+                        <button title="এডিট" onClick={() => setEditing(c)} className="size-8 rounded-md border-2 border-[#bcd4fb] text-[#1f7cf0] inline-flex items-center justify-center"><Pencil size={14} /></button>
+                        <button title="সার্ভিস রিকোয়েস্ট" onClick={() => { setReqKind("repair"); setRequesting(c); setReqProduct(0); setReqIssue(""); }} className="size-8 rounded-md border-2 border-[#bfe8cd] text-[#178a42] inline-flex items-center justify-center"><Wrench size={14} /></button>
+                        <button title="ইন্সটল আবেদন" onClick={() => { setReqKind("install"); setRequesting(c); setReqProduct(0); setReqIssue(""); }} className="size-8 rounded-md border-2 border-[#bcd4fb] text-[#1f5fc9] inline-flex items-center justify-center"><Home size={14} /></button>
+                        <button title={c.isWarrantyStopped ? "আনব্লক" : "ব্লক"} onClick={() => toggleBlock(c)} disabled={blockBusy === c.customerId} className={clsx("size-8 rounded-md border-2 inline-flex items-center justify-center disabled:opacity-50", c.isWarrantyStopped ? "border-[#bfe8cd] text-[#178a42]" : "border-[#f7c3ca] text-[#c81f38]")}>{c.isWarrantyStopped ? <ShieldCheck size={14} /> : <Ban size={14} />}</button>
                       </span>
-                    </div>
-                  );
-                })}
-                <span className="font-bold text-[#16213a] mt-1">সব সার্ভিস ({c.services.length})</span>
-                {c.services.length === 0 && <span className="text-[#6b7690]">কোনো সার্ভিস নেই</span>}
-                {c.services.map((s) => (
-                  <Link key={s.serviceId} href={`/service-track?trackingId=${s.serviceId}`} className="flex items-center justify-between gap-2 py-1">
-                    <span className="text-[#6b7690]">{s.serviceId} · {formatDate(s.createdAt)}{s.staffName ? ` · ${s.staffName}` : ""}</span>
-                    <span className={clsx("h-6 px-2 rounded-md border text-[10.5px] font-extrabold inline-flex items-center whitespace-nowrap shrink-0", statusTone(s.status))}>{s.type === "install" ? "ইন্সটল · " : ""}{serviceStatusBn[s.status] ?? s.status}</span>
-                  </Link>
-                ))}
-                <div className="flex flex-wrap gap-2 mt-2">
-                  <button onClick={() => setEditing(c)} className="h-9 px-3 rounded-md border-2 border-[#bcd4fb] text-[#1f7cf0] text-xs font-bold inline-flex items-center gap-1.5"><Pencil size={14} />এডিট</button>
-                  <button onClick={() => { setReqKind("repair"); setRequesting(c); setReqProduct(0); setReqIssue(""); }} className="h-9 px-3 rounded-md border-2 border-[#bfe8cd] text-[#178a42] text-xs font-bold inline-flex items-center gap-1.5"><Wrench size={14} />সার্ভিস রিকোয়েস্ট</button>
-                  <button onClick={() => { setReqKind("install"); setRequesting(c); setReqProduct(0); setReqIssue(""); }} className="h-9 px-3 rounded-md border-2 border-[#bcd4fb] text-[#1f5fc9] text-xs font-bold inline-flex items-center gap-1.5"><Home size={14} />ইন্সটল আবেদন</button>
-                  <button onClick={() => toggleBlock(c)} disabled={blockBusy === c.customerId} className={clsx("h-9 px-3 rounded-md border-2 text-xs font-bold inline-flex items-center gap-1.5 disabled:opacity-50", c.isWarrantyStopped ? "border-[#bfe8cd] text-[#178a42]" : "border-[#f7c3ca] text-[#c81f38]")}>{c.isWarrantyStopped ? <><ShieldCheck size={14} />আনব্লক</> : <><Ban size={14} />ব্লক</>}</button>
-                </div>
-              </div>
-            </details>
-          );
-        })}
-      </BlueCard>
+                    </Td>
+                  )}
+                </tr>
+              );
+            });
+          })}
+        </tbody>
+      </DataTable>
       {blockFor && (
         <div className="fixed inset-0 z-[100] bg-black/40 flex items-end sm:items-center justify-center p-2" onClick={() => setBlockFor(null)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[400px] rounded-md bg-white p-3 flex flex-col gap-2.5">

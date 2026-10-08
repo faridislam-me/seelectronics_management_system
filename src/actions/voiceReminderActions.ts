@@ -290,13 +290,16 @@ export const sendCustomVoiceCallToSelected = async (customerIds: string[], broad
     let sent = 0;
     let mocked = 0;
     let failedChunks = 0;
+    let skipped = 0;
     let lastError = "";
     for (let i = 0; i < phones.length; i += 1000) {
       const chunk = phones.slice(i, i + 1000);
       const res = await sendVoiceCall(chunk, id, `Custom Voice ${id}`);
+      skipped += (res as { skipped?: number }).skipped ?? 0;
       if (res.success) {
-        if ((res as { mocked?: boolean }).mocked) mocked += chunk.length;
-        else sent += chunk.length;
+        const validCount = chunk.length - ((res as { skipped?: number }).skipped ?? 0);
+        if ((res as { mocked?: boolean }).mocked) mocked += validCount;
+        else sent += validCount;
       } else {
         failedChunks++;
         lastError = (res as { error?: string }).error || "";
@@ -312,7 +315,7 @@ export const sendCustomVoiceCallToSelected = async (customerIds: string[], broad
       message:
         mocked > 0
           ? `ভয়েস কল সিমুলেশন হয়েছে (${mocked} জন), আসল কল পাঠাতে MRAM সেট করুন।`
-          : `ভয়েস আইডি ${id} দিয়ে ${sent} জনকে কল পাঠানো হয়েছে${failedChunks ? `; ${failedChunks} টি ব্যাচ ব্যর্থ` : ""}।`,
+          : `ভয়েস আইডি ${id} দিয়ে ${sent} জনকে কল পাঠানো হয়েছে${skipped ? `; ভুল নম্বরের ${skipped} জন বাদ গেছে` : ""}${failedChunks ? `; ${failedChunks} টি ব্যাচ ব্যর্থ` : ""}।`,
     };
   } catch (error) {
     console.error(error);

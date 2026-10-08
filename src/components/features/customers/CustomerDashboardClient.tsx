@@ -274,13 +274,14 @@ export default function CustomerDashboardClient({
 
           {/* VIP band: gold card for VIP members, blue apply card for everyone else */}
           {isVipCustomer ? (
-            <Link href="/customer/vip-card" className="rounded-md border border-[#f6e7a1] bg-[#fffbe6] p-3 flex items-center gap-3">
-              <span className="size-12 rounded-md bg-white border border-[#f6e7a1] text-[#b8860b] flex items-center justify-center shrink-0"><Crown size={24} strokeWidth={2.2} /></span>
-              <span className="flex flex-col min-w-0 flex-1">
-                <span className="text-[16px] font-extrabold tracking-wider text-[#9a5b00]">VIP MEMBER</span>
-                <span className="text-[13px] font-bold text-[#1d2b3a] truncate">Premium Access Enabled</span>
+            <Link href="/customer/vip-card" className="rounded-md border border-[#c8932a] bg-[linear-gradient(110deg,#f3d57a_0%,#e2a93a_55%,#c98a1f_100%)] px-2.5 py-2 flex items-center gap-2.5 shadow-[0_6px_16px_rgba(168,112,10,0.35)] relative overflow-hidden">
+              <span className="absolute -right-5 -top-8 size-24 rounded-full bg-white/20 blur-[2px]" />
+              <span className="size-10 rounded-md bg-[#5a3a05] text-[#f7d878] flex items-center justify-center shrink-0 shadow-inner"><Crown size={20} strokeWidth={2.2} /></span>
+              <span className="flex flex-col min-w-0 flex-1 leading-tight">
+                <span className="text-[14px] font-extrabold tracking-[0.14em] text-[#4a2e02]">VIP MEMBER</span>
+                <span className="text-[11.5px] font-bold text-[#5f3d06]/90 truncate">Premium Access Enabled</span>
               </span>
-              <span className="shrink-0 inline-flex items-center px-4 h-10 rounded-full bg-[#fdea8a] text-[#7a4a05] text-[14px] font-extrabold tracking-wider">ELITE</span>
+              <span className="shrink-0 inline-flex items-center px-3 h-8 rounded-md bg-[#4a2e02] text-[#f7d878] text-[12px] font-extrabold tracking-[0.16em] shadow-[0_2px_6px_rgba(74,46,2,0.35)]">ELITE</span>
             </Link>
           ) : (
             <Link href="/customer/vip-card" className="rounded-md bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2f70_0%,#0d3f96_60%,#0a2f70_100%)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(10,47,112,0.3)] relative overflow-hidden">

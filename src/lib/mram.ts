@@ -34,12 +34,15 @@ export const sendVoiceCall = async (
     const rawNumbers = Array.isArray(phoneNumbers)
       ? phoneNumbers
       : [phoneNumbers];
-    const numbers = Array.from(new Set(rawNumbers.map(formatPhoneNumber))).filter(
+    const formatted = Array.from(new Set(rawNumbers.map(formatPhoneNumber))).filter(
       (number) => number.length > 0,
     );
+    // MRAM rejects the whole request if one number is not 8801XXXXXXXXX, so drop bad ones and report them.
+    const numbers = formatted.filter((number) => /^8801[0-9]{9}$/.test(number));
+    const skipped = formatted.length - numbers.length;
 
     if (!numbers.length) {
-      return { success: false, error: "No valid phone numbers found" };
+      return { success: false, error: "No valid phone numbers found", skipped };
     }
 
     if (
@@ -75,7 +78,7 @@ export const sendVoiceCall = async (
         // We log the error but don't throw it so it doesn't break the main flow.
         return { success: false, error: errMsg };
       }
-      return { success: true, data: jsonRes };
+      return { success: true, data: jsonRes, skipped };
     } else {
       // Development logging
       console.log(`
@@ -88,7 +91,7 @@ Numbers: ${numbers.join(", ")}
 Broadcast ID: ${broadcastId}
 Title: ${title}
 `);
-      return { success: true, mocked: true, data: { status: "dev_mode_mock" } };
+      return { success: true, mocked: true, data: { status: "dev_mode_mock" }, skipped };
     }
   } catch (error) {
     console.error("MRAM Service Exception:", error);

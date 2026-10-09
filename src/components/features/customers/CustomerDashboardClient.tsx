@@ -274,14 +274,13 @@ export default function CustomerDashboardClient({
 
           {/* VIP band: gold card for VIP members, blue apply card for everyone else */}
           {isVipCustomer ? (
-            <Link href="/customer/vip-card" className="rounded-md border border-[#c8932a] bg-[linear-gradient(110deg,#f3d57a_0%,#e2a93a_55%,#c98a1f_100%)] px-2.5 py-2 flex items-center gap-2.5 shadow-[0_6px_16px_rgba(168,112,10,0.35)] relative overflow-hidden">
-              <span className="absolute -right-5 -top-8 size-24 rounded-full bg-white/20 blur-[2px]" />
-              <span className="size-10 rounded-md bg-[#5a3a05] text-[#f7d878] flex items-center justify-center shrink-0 shadow-inner"><Crown size={20} strokeWidth={2.2} /></span>
+            <Link href="/customer/vip-card" className="rounded-md border border-[#ecd27a] bg-[linear-gradient(110deg,#fff3c4_0%,#fbe39a_60%,#f6d377_100%)] px-2.5 py-2 flex items-center gap-2.5 shadow-[0_4px_12px_rgba(214,170,50,0.25)] relative overflow-hidden">
+              <span className="size-10 rounded-md bg-white border border-[#ecd27a] text-[#b8860b] flex items-center justify-center shrink-0"><Crown size={20} strokeWidth={2.2} /></span>
               <span className="flex flex-col min-w-0 flex-1 leading-tight">
-                <span className="text-[14px] font-extrabold tracking-[0.14em] text-[#4a2e02]">VIP MEMBER</span>
-                <span className="text-[11.5px] font-bold text-[#5f3d06]/90 truncate">Premium Access Enabled</span>
+                <span className="text-[14px] font-extrabold tracking-[0.14em] text-[#8a5a00]">VIP MEMBER</span>
+                <span className="text-[11.5px] font-bold text-[#4a3a1a] truncate">Premium Access Enabled</span>
               </span>
-              <span className="shrink-0 inline-flex items-center px-3 h-8 rounded-md bg-[#4a2e02] text-[#f7d878] text-[12px] font-extrabold tracking-[0.16em] shadow-[0_2px_6px_rgba(74,46,2,0.35)]">ELITE</span>
+              <span className="shrink-0 inline-flex items-center px-3 h-8 rounded-md bg-[#fdea8a] border border-[#ecd27a] text-[#7a4a05] text-[12px] font-extrabold tracking-[0.16em]">ELITE</span>
             </Link>
           ) : (
             <Link href="/customer/vip-card" className="rounded-md bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2f70_0%,#0d3f96_60%,#0a2f70_100%)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(10,47,112,0.3)] relative overflow-hidden">

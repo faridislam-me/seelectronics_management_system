@@ -401,7 +401,7 @@ export default async function ServiceTrackPage({
     notFound();
   }
 
-  const response = await getServiceById(params.trackingId);
+  const response = await getServiceById(params.trackingId, { publicLink: true });
 
   if (!response.success || !response.data) {
     throw new AppError("ট্র্যাকিং আইডিটি সঠিক নয় অথবা খুঁজে পাওয়া যায়নি।");

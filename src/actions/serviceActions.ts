@@ -136,7 +136,12 @@ export const getServicesMetadata = async ({
   };
 };
 
-export const getServiceById = async (serviceId: string) => {
+/**
+ * `publicLink: true` is for the tracking page: its link carries the random service ID and already opens
+ * without any login, so a logged-in customer (or a staff member testing on a phone that is also logged in
+ * as a customer) must not be blocked from a link they were sent.
+ */
+export const getServiceById = async (serviceId: string, options?: { publicLink?: boolean }) => {
   try {
     // The tracking link in the customer's SMS (random service id) opens without a
     // login, so a missing session is allowed; a logged-in customer still can only
@@ -176,6 +181,7 @@ export const getServiceById = async (serviceId: string) => {
 
     // Prevent customers from viewing others' services
     if (
+      !options?.publicLink &&
       session &&
       session.role === "customer" &&
       serviceData.customerId !== session.userId

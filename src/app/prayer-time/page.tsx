@@ -88,7 +88,7 @@ const REMINDER_KEY = "se-prayer-reminders-v1";
 async function fetchTimings(d: Date, lat: number, lng: number): Promise<Timings | null> {
   const dd = String(d.getDate()).padStart(2, "0");
   const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const res = await fetch(`https://api.aladhan.com/v1/timings/${dd}-${mm}-${d.getFullYear()}?latitude=${lat}&longitude=${lng}&method=1&timezonestring=Asia/Dhaka`);
+  const res = await fetch(`https://api.aladhan.com/v1/timings/${dd}-${mm}-${d.getFullYear()}?latitude=${lat}&longitude=${lng}&method=1&madhab=1&timezonestring=Asia/Dhaka`);
   const json = await res.json();
   if (json.code !== 200) return null;
   const t = json.data.timings;

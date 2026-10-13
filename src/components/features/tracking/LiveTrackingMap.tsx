@@ -84,7 +84,7 @@ export default function LiveTrackingMap({ serviceId, dark = false }: { serviceId
       const photo = data.staff?.photoUrl ? String(data.staff.photoUrl).replace(/"/g, "&quot;") : "";
       const staffIcon = L.divIcon({
         className: "",
-        html: `<div style="position:relative;width:50px;height:50px;border-radius:9999px;background:#fff;border:3px solid ${GREEN};box-shadow:0 4px 12px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;overflow:hidden">${personSvg}${photo ? `<img src="${photo}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top" onerror="this.style.display='none'" />` : ""}</div>`,
+        html: `<div style="position:relative;width:50px;height:50px;border-radius:9999px;background:#fff;border:3px solid ${GREEN};box-shadow:0 4px 12px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;overflow:hidden">${photo ? `<img src="${photo}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top" onerror="this.style.display='none'" />` : personSvg}</div>`,
         iconSize: [50, 50],
         iconAnchor: [25, 25],
       });

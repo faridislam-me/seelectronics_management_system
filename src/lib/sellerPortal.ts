@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 /** Loads the logged-in seller with stats, or redirects to login. */
 export async function loadSellerPortal() {
   const session = await verifySellerSession();
-  if (!session.isAuth) redirect("/seller/login");
+  if (!session.isAuth) redirect("isBlocked" in session && session.isBlocked ? "/seller/blocked" : "/seller/login");
   const res = await getSellerPortalData(session.userId);
   if (!res.success || !res.data) redirect("/seller/login");
   return res.data;

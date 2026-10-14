@@ -77,10 +77,13 @@ export const verifySession = cache(async (shouldRedirect = true, expectedRole?: 
             .limit(1);
 
         if (!seller || !seller.isActiveSeller) {
-            const cookieStore = await cookies();
-            cookieStore.delete('session');
+            // Cookies can only be changed in server actions / route handlers; in a
+            // server component this throws, which used to crash the render.
+            try {
+                (await cookies()).delete('session');
+            } catch { /* rendering a server component: ignore */ }
             if (shouldRedirect) {
-                redirect('/seller/login');
+                redirect(seller ? '/seller/blocked' : '/seller/login');
             }
             return null;
         }

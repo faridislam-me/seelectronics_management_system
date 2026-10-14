@@ -621,7 +621,13 @@ export async function verifySellerSession() {
     .from(sellers)
     .where(eq(sellers.sellerId, session.userId as string))
     .limit(1);
-  if (!seller || !seller.isActiveSeller) return { isAuth: false as const };
+  if (!seller) return { isAuth: false as const };
+  // Blocked while logged in: tell the caller so it can show the "Account Blocked"
+  // notice instead of bouncing to /seller/login (which the middleware would send
+  // straight back to the portal, causing a redirect loop / blank screen).
+  if (!seller.isActiveSeller) {
+    return { isAuth: false as const, isBlocked: true as const, sellerId: seller.sellerId, name: seller.ownerName, shopName: seller.shopName };
+  }
 
   return { isAuth: true as const, userId: session.userId as string, username: session.username as string, role: "seller" as const, seller };
 }

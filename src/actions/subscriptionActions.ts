@@ -332,12 +332,19 @@ export const createSubscriber = async (prevState: any, formData: FormData) => {
         customerRecordId = customerRecord?.customerId || null;
       }
 
-      const promises = [
-        sendSMS(
-          process.env.ADMIN_PHONE_NUMBER!,
-          ApplicationMessages.subscription.ADMIN_NOTIF,
-        ),
-      ];
+      const promises: Promise<unknown>[] = [];
+
+      // Notify the admin of the new subscription application. Guarded + swallowed
+      // so a missing ADMIN_PHONE_NUMBER or an SMS hiccup never rejects the whole
+      // batch (which would also drop the applicant's own confirmation SMS).
+      if (process.env.ADMIN_PHONE_NUMBER) {
+        promises.push(
+          sendSMS(
+            process.env.ADMIN_PHONE_NUMBER,
+            ApplicationMessages.subscription.ADMIN_NOTIF,
+          ).catch((e) => console.error("Admin subscription SMS failed:", e)),
+        );
+      }
 
       if (customerRecordId) {
         promises.push(notifyCustomer({

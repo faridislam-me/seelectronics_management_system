@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Ubuntu } from "next/font/google";
 import localFont from "next/font/local";
 import { Slide, ToastContainer } from "react-toastify";
@@ -28,6 +28,14 @@ const scriptFont = localFont({
 export const metadata: Metadata = {
   title: "SE Electronics",
   description: "SE Electronics Service Management Platform",
+};
+
+// Tints the mobile browser toolbar / status bar with the SE brand blue so the
+// white strip above every portal (staff, customer, seller, supplier) matches
+// the blue header. Pages that need a different tint still override this at
+// runtime via the useThemeColor hook.
+export const viewport: Viewport = {
+  themeColor: "#0b3d91",
 };
 
 export default function RootLayout({

@@ -598,6 +598,20 @@ export const createStaff = async (_prevState: any, formData: FormData) => {
         applicationId = res.data;
       }
 
+      // Let the admin know a new technician/electrician application needs review.
+      // Guarded + swallowed so a missing number or SMS hiccup never blocks the
+      // applicant's submission.
+      if (process.env.ADMIN_PHONE_NUMBER) {
+        try {
+          await sendSMS(
+            process.env.ADMIN_PHONE_NUMBER,
+            ApplicationMessages.staff.ADMIN_NOTIF,
+          );
+        } catch (e) {
+          console.error("Admin staff-application SMS failed:", e);
+        }
+      }
+
       const agreementId = await db.query.agreements.findFirst({
         where: eq(agreements.isActive, true),
         columns: { id: true },

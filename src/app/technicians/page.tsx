@@ -135,9 +135,7 @@ export default async function TechniciansPage({
                       ({staff.rating || 0} rating)
                     </span>
                   </div>
-                  <p className="text-gray-600 mb-1">
-                    <strong>Phone:</strong> {staff.phone}
-                  </p>
+                  {/* Phone intentionally hidden on the public listing (privacy). */}
                   <p className="text-gray-600 mb-1">
                     <strong>Location:</strong> {staff.currentDistrict}
                   </p>

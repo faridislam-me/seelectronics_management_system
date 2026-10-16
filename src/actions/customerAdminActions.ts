@@ -5,8 +5,51 @@ import { computeManualDiscount, ManualDiscount, parseManualDiscount, withManualD
 import { customers, invoices, products, referralBonuses } from "@/db/schema";
 import { verifySession } from "@/lib";
 import { SearchParams } from "@/types";
-import { and, eq, ilike, or, sql } from "drizzle-orm";
+import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+
+/** Product categories a customer can be filtered by on the reminders page. */
+const PRODUCT_CATEGORIES = ["ips", "battery", "stabilizer"] as const;
+type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
+
+const normalizeCategory = (category?: string): ProductCategory | undefined =>
+  PRODUCT_CATEGORIES.includes(category as ProductCategory)
+    ? (category as ProductCategory)
+    : undefined;
+
+/**
+ * Builds the WHERE condition for the admin customers listing: a text search
+ * across the usual columns, optionally narrowed to customers who own at least
+ * one product of a given category (ips/battery/stabilizer). A customer with
+ * several product types matches every category they own.
+ */
+const buildCustomersWhere = (query?: string, category?: string) => {
+  const q = `%${query || ""}%`;
+  const textFilter = query
+    ? or(
+        ilike(customers.customerId, q),
+        ilike(customers.name, q),
+        ilike(customers.phone, q),
+        ilike(customers.address, q),
+        ilike(customers.invoiceNumber, q),
+      )
+    : undefined;
+
+  const cat = normalizeCategory(category);
+  const categoryFilter = cat
+    ? inArray(
+        customers.customerId,
+        db
+          .selectDistinct({ customerId: invoices.customerId })
+          .from(invoices)
+          .innerJoin(products, eq(products.invoiceId, invoices.id))
+          .where(eq(products.type, cat)),
+      )
+    : undefined;
+
+  if (textFilter && categoryFilter) return and(textFilter, categoryFilter);
+  return textFilter ?? categoryFilter ?? undefined;
+};
 
 /**
  * Fetches metadata (pagination info) for customers listing in admin dashboard
@@ -15,6 +58,7 @@ export const getCustomersMetadata = async ({
   query,
   page = "1",
   limit = "20",
+  category,
 }: SearchParams) => {
   const session = await verifySession(false, "admin");
   if (!session) {
@@ -26,16 +70,7 @@ export const getCustomersMetadata = async ({
     };
   }
 
-  const q = `%${query}%`;
-  const filters = query
-    ? or(
-        ilike(customers.customerId, q),
-        ilike(customers.name, q),
-        ilike(customers.phone, q),
-        ilike(customers.address, q),
-        ilike(customers.invoiceNumber, q),
-      )
-    : undefined;
+  const filters = buildCustomersWhere(query, category);
 
   const result = await db
     .select({ count: sql<number>`count(*)` })
@@ -52,22 +87,16 @@ export const getCustomersMetadata = async ({
   };
 };
 
-export const getCustomerIds = async ({ query }: Pick<SearchParams, "query">) => {
+export const getCustomerIds = async ({
+  query,
+  category,
+}: Pick<SearchParams, "query" | "category">) => {
   try {
     const session = await verifySession(false, "admin");
     if (!session) return { success: false, message: "Unauthorized" };
 
-    const q = `%${query || ""}%`;
     const data = await db.query.customers.findMany({
-      where: query
-        ? or(
-            ilike(customers.customerId, q),
-            ilike(customers.name, q),
-            ilike(customers.phone, q),
-            ilike(customers.address, q),
-            ilike(customers.invoiceNumber, q),
-          )
-        : undefined,
+      where: buildCustomersWhere(query, category),
       columns: { customerId: true },
     });
 
@@ -85,24 +114,16 @@ export const getCustomers = async ({
   query,
   page = "1",
   limit = "20",
+  category,
 }: SearchParams) => {
   try {
     const session = await verifySession(false, "admin");
     if (!session) return { success: false, message: "Unauthorized" };
 
-    const q = `%${query}%`;
     const offset = page && limit ? (Number(page) - 1) * Number(limit) : 0;
 
     const customersData = await db.query.customers.findMany({
-      where: query
-        ? or(
-            ilike(customers.customerId, q),
-            ilike(customers.name, q),
-            ilike(customers.phone, q),
-            ilike(customers.address, q),
-            ilike(customers.invoiceNumber, q),
-          )
-        : undefined,
+      where: buildCustomersWhere(query, category),
       limit: limit ? Number(limit) : undefined,
       offset: offset,
       orderBy: (customers, { desc }) => [desc(customers.createdAt)],

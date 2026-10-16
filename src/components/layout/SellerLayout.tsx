@@ -1,13 +1,14 @@
 "use client";
 
 import { sellerLogout } from "@/actions";
+import { getSellerUnreadNotificationCount } from "@/actions/sellerActions";
 import clsx from "clsx";
 import PushTokenRegistrar from "@/components/features/PushTokenRegistrar";
 import { BlueBottomNav } from "@/components/ui/BlueDashboard";
 import { Bell, Home, Package, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const routeTitles: Record<string, string> = {
   "/seller/profile": "Dashboard",
@@ -16,6 +17,7 @@ const routeTitles: Record<string, string> = {
   "/seller/services": "Customer Services",
   "/seller/details": "Shop Profile",
   "/seller/settings": "Settings",
+  "/seller/notifications": "Notifications",
 };
 
 const navItems = [
@@ -36,9 +38,16 @@ export function SELogo({ size = "md" }: { size?: "sm" | "md" }) {
   );
 }
 
-export function SellerLayout({ children, badge = 0 }: { children: React.ReactNode; badge?: number }) {
+export function SellerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [loggingOut, setLoggingOut] = useState(false);
+  // Bell badge = unread seller notifications (refreshed on every page change).
+  const [badge, setBadge] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    getSellerUnreadNotificationCount().then((n) => alive && setBadge(n)).catch(() => {});
+    return () => { alive = false; };
+  }, [pathname]);
   const isHome = pathname === "/seller/profile";
   const title = routeTitles[pathname] || "Seller Portal";
 
@@ -54,7 +63,7 @@ export function SellerLayout({ children, badge = 0 }: { children: React.ReactNod
             </div>
           )}
           <div className="flex items-center gap-1">
-            <Link href="/seller/services" aria-label="Notifications" className="relative size-11 flex items-center justify-center">
+            <Link href="/seller/notifications" aria-label="Notifications" className="relative size-11 flex items-center justify-center">
               <Bell size={24} strokeWidth={2} />
               {badge > 0 && <span className="absolute top-1 right-1 min-w-5 h-5 px-1 rounded-full bg-[#e5484d] text-[11px] font-extrabold flex items-center justify-center">{badge}</span>}
             </Link>

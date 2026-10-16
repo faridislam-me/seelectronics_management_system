@@ -10,7 +10,7 @@ export default async function SellerProfilePage() {
   const recent = services.slice(0, 3);
 
   return (
-    <SellerLayout badge={stats.inService}>
+    <SellerLayout>
       <BlueHero
         variant="profile"
         compact

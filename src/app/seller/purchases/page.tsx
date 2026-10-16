@@ -8,7 +8,7 @@ import { Banknote, CheckCircle2, Download } from "lucide-react";
 export default async function SellerPurchasesPage() {
   const { seller, stats, due } = await loadSellerPortal();
   return (
-    <SellerLayout badge={stats.inService}>
+    <SellerLayout>
       <div className="flex flex-col gap-2.5 p-2">
         <div className="flex flex-col"><span className="text-lg font-extrabold text-[#16213a]">Purchases from SE Electronics</span><span className="text-xs font-semibold text-[#6b7690]">{seller.purchases.length} orders · {stats.purchasedUnits} units</span></div>
         <BlueStatGrid compact cols={2} cards={[

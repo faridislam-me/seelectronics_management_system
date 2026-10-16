@@ -941,6 +941,32 @@ export const customerNotifications = pgTable("customerNotifications", {
   createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
 });
 
+export const sellerNotifications = pgTable(
+  "sellerNotifications",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    sellerId: varchar({ length: 255 })
+      .references(() => sellers.sellerId, { onDelete: "cascade" })
+      .notNull(),
+    type: varchar({ length: 50 }).notNull(),
+    message: text().notNull(),
+    link: varchar({ length: 255 }),
+    isRead: boolean().default(false).notNull(),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("seller_notifications_seller_id_idx").on(table.sellerId)],
+);
+
+export const sellerNotificationsRelations = relations(
+  sellerNotifications,
+  ({ one }) => ({
+    seller: one(sellers, {
+      fields: [sellerNotifications.sellerId],
+      references: [sellers.sellerId],
+    }),
+  }),
+);
+
 export const staffNotificationsRelations = relations(
   staffNotifications,
   ({ one }) => ({

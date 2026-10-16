@@ -24,6 +24,7 @@ const sellerProtectedRoutes = [
     '/seller/services',
     '/seller/details',
     '/seller/settings',
+    '/seller/notifications',
 ];
 
 const supplierProtectedRoutes = [

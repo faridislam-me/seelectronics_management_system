@@ -15,7 +15,10 @@ export default async function BatteryRemindersPage({
 
   const paginationPromise = getCustomersMetadata(customParams);
   const customersPromise = getCustomers(customParams);
-  const customerIdsPromise = getCustomerIds({ query: params?.query });
+  const customerIdsPromise = getCustomerIds({
+    query: params?.query,
+    category: params?.category,
+  });
 
   const [pagination, customersRes, customerIdsRes] = await Promise.all([
     paginationPromise,
@@ -23,12 +26,19 @@ export default async function BatteryRemindersPage({
     customerIdsPromise,
   ]);
 
+  const activeCategory = ["ips", "battery", "stabilizer"].includes(
+    params?.category || "",
+  )
+    ? params!.category!
+    : "all";
+
   return (
     <div className="flex-1 overflow-hidden flex flex-col gap-4">
       <Toolbar title="Maintenance Reminders" pagination={pagination!} />
       <BatteryRemindersClient
         customers={customersRes.data || []}
         allCustomerIds={customerIdsRes.data || []}
+        activeCategory={activeCategory}
       />
     </div>
   );

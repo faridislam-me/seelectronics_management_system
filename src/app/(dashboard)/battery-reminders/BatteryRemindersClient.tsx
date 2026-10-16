@@ -6,7 +6,8 @@ import {
 } from "@/actions";
 import { sendBulkVoiceCallToSelected, sendCustomVoiceCallToSelected } from "@/actions/voiceReminderActions";
 import Modal from "@/components/ui/Modal";
-import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "react-toastify";
 
 type CustomerRow = {
@@ -16,17 +17,46 @@ type CustomerRow = {
   address: string | null;
 };
 
+const CATEGORIES = [
+  { value: "all", label: "সব" },
+  { value: "battery", label: "ব্যাটারি" },
+  { value: "ips", label: "আইপিএস" },
+  { value: "stabilizer", label: "স্ট্যাবিলাইজার" },
+] as const;
+
 export default function BatteryRemindersClient({
   customers,
   allCustomerIds,
+  activeCategory,
 }: {
   customers: CustomerRow[];
   allCustomerIds: string[];
+  activeCategory: string;
 }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [openMenu, setOpenMenu] = useState<"sms" | "voice" | "custom" | null>(null);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [customVoiceId, setCustomVoiceId] = useState("");
+  const [isCategoryPending, startCategoryTransition] = useTransition();
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Switching category changes who the campaign reaches, so clear any selection
+  // carried over from the previous category to prevent cross-category sends.
+  const changeCategory = (category: string) => {
+    if (category === activeCategory) return;
+    const params = new URLSearchParams(searchParams);
+    params.delete("page");
+    params.delete("limit");
+    if (category === "all") params.delete("category");
+    else params.set("category", category);
+    setSelectedIds([]);
+    startCategoryTransition(() => {
+      router.push(`${pathname}?${params.toString()}`);
+    });
+  };
 
   // Remember the last voice ID typed on this device.
   useEffect(() => {
@@ -119,6 +149,30 @@ export default function BatteryRemindersClient({
             Voice ID দিয়ে কল
           </button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium text-gray-600 mr-1">
+          পণ্যের ধরন:
+        </span>
+        {CATEGORIES.map((category) => {
+          const isActive = activeCategory === category.value;
+          return (
+            <button
+              key={category.value}
+              type="button"
+              onClick={() => changeCategory(category.value)}
+              disabled={isCategoryPending}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-colors disabled:opacity-60 ${
+                isActive
+                  ? "bg-brand text-white border-brand"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              {category.label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex flex-wrap items-center gap-3 text-sm">

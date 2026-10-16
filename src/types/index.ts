@@ -41,7 +41,13 @@ export type CertificateData = {
   district: string;
 };
 
-export type SearchParams = { query?: string; page?: string; limit?: string };
+export type SearchParams = {
+  query?: string;
+  page?: string;
+  limit?: string;
+  /** Product category filter: "ips" | "battery" | "stabilizer" (omit = all) */
+  category?: string;
+};
 
 export type CustomerData = {
   name: string;

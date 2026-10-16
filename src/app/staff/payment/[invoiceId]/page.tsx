@@ -40,7 +40,9 @@ export default async function StaffInvoiceDetailsPage({ params }: { params: Prom
   if (payment.staffId !== session.userId) notFound();
 
   const st = payment.status as string;
-  const status = st === "credited" ? { label: "RECEIVED", cls: "bg-[#1a9c4b] text-white", icon: CheckCircle2 } : st === "completed" ? { label: "PAID", cls: "bg-[#1a9c4b] text-white", icon: CheckCircle2 } : st === "rejected" ? { label: "REJECTED", cls: "bg-[#e0243f] text-white", icon: XCircle } : { label: st.toUpperCase(), cls: "bg-[#e0a11b] text-white", icon: Clock };
+  // Keep these labels in sync with the list view's statusMeta (StaffPaymentCards.tsx)
+  // so the same record never shows a different status in the list vs. here.
+  const status = st === "credited" ? { label: "RECEIVED", cls: "bg-[#1f7cf0] text-white", icon: Download } : st === "completed" ? { label: "PAID", cls: "bg-[#1a9c4b] text-white", icon: CheckCircle2 } : st === "approved" ? { label: "APPROVED", cls: "bg-[#e0a11b] text-white", icon: CheckCircle2 } : st === "rejected" ? { label: "FAILED", cls: "bg-[#e0243f] text-white", icon: XCircle } : { label: "PENDING", cls: "bg-[#e0a11b] text-white", icon: Clock };
   const method = (payment.paymentMethod || "").toLowerCase();
   const isBank = method === "bank";
   const amount = Number(payment.amount || 0);

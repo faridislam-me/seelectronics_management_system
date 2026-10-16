@@ -404,7 +404,7 @@ export default function TeamMembers({
                 </div>
                 <span className="flex items-center gap-1 min-w-0"><span className="text-[14px] font-extrabold text-[#16213a] truncate">{staff.name}</span>{staff.isActiveStaff === false ? <Ban size={16} strokeWidth={2.6} className="shrink-0 text-[#e0243f]" aria-label="Blocked" /> : <BadgeCheck size={16} className="shrink-0 text-white fill-[#1f7cf0]" />}</span>
                 <span className="text-[12px] font-semibold text-[#3d4a63] -mt-1">{staff.role === "technician" ? "টেকনিশিয়ান" : "ইলেকট্রিশিয়ান"}</span>
-                <span className="flex items-center gap-1.5 text-[12px] text-[#3d4a63]"><Phone size={13} className="text-[#0b3d91] shrink-0" /><span className="truncate">{staff.phone}</span></span>
+                {/* Phone intentionally hidden on the public listing (privacy). */}
                 <span className="flex items-center gap-1.5 text-[12px] text-[#3d4a63] pr-8"><MapPin size={13} className="text-[#0b3d91] shrink-0" /><span className="truncate">{staff.currentDistrict}</span></span>
                 <span className={clsx("absolute right-2 bottom-2 size-7 rounded-md flex items-center justify-center", tone.btn)}><ChevronRight size={16} /></span>
               </button>

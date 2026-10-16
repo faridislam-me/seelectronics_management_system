@@ -15,6 +15,7 @@ const statusMeta = (p: PaymentDataType) => {
   if (s === "credited") return { label: "RECEIVED", chip: "bg-[#e8f1ff] text-[#1b6fd6]", solid: "bg-[#1f7cf0] text-white", icon: Download, filter: "received" as Filter };
   if (s === "completed") return { label: "PAID", chip: "bg-[#e9f9ef] text-[#178a42]", solid: "bg-[#1a9c4b] text-white", icon: CheckCircle2, filter: "paid" as Filter };
   if (s === "rejected") return { label: "FAILED", chip: "bg-[#ffe9ec] text-[#c81f38]", solid: "bg-[#e0243f] text-white", icon: XCircle, filter: "failed" as Filter };
+  if (s === "approved") return { label: "APPROVED", chip: "bg-[#fff6e3] text-[#b8620b]", solid: "bg-[#e0a11b] text-white", icon: CheckCircle2, filter: "pending" as Filter };
   return { label: "PENDING", chip: "bg-[#fff6e3] text-[#b8620b]", solid: "bg-[#e0a11b] text-white", icon: Clock, filter: "pending" as Filter };
 };
 

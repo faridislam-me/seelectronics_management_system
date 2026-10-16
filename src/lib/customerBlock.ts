@@ -27,8 +27,8 @@ type BlockableCustomer = {
 
 /**
  * Toggles a customer's block. Unblocking extends every product's warranty end
- * by the blocked duration (same for both reasons). Blocking stores the reason;
- * 'due' triggers the existing MRAM voice call, 'misuse' sends a short SMS.
+ * by the blocked duration (same for both reasons). Blocking stores the reason
+ * and sends the customer one SMS and one voice call (lock or cancel wording).
  */
 export async function toggleCustomerBlockCore(customer: BlockableCustomer, reason: CustomerBlockReason = "due") {
   if (customer.isWarrantyStopped) {
@@ -50,26 +50,38 @@ export async function toggleCustomerBlockCore(customer: BlockableCustomer, reaso
     .set({ isWarrantyStopped: true, warrantyStoppedAt: new Date(), warrantyStopReason: reason })
     .where(eq(customers.customerId, customer.customerId));
 
-  if (reason === "misuse") {
-    try {
-      const { sendSMS } = await import("@/lib/sms");
-      await sendSMS(
-        customer.phone,
-        `SE Electronics: প্রিয় ${customer.name}, পণ্যের অপব্যবহার/ক্ষতি প্রমাণিত হওয়ায় আপনার ওয়ারেন্টি বাতিল করা হয়েছে। বিস্তারিত: ${contactDetails.customerCare}`,
-      );
-    } catch (e) {
-      console.error("Failed to send warranty-void SMS:", e);
-    }
-  } else {
-    try {
-      const { sendVoiceCall, getMramBroadcastIds } = await import("@/lib/mram");
-      const ids = getMramBroadcastIds();
-      if (ids?.customer_dashboard_disabled) {
-        sendVoiceCall(customer.phone, ids.customer_dashboard_disabled, `Dashboard Disabled ${customer.customerId}`).catch((e) => console.error(e));
-      }
-    } catch (e) {
-      console.error("Failed to send MRAM voice call:", e);
-    }
-  }
+  const sms =
+    reason === "misuse"
+      ? `SE Electronics: প্রিয় ${customer.name}, পণ্যের অপব্যবহার/ক্ষতি প্রমাণিত হওয়ায় আপনার ওয়ারেন্টি বাতিল করা হয়েছে। বিস্তারিত: ${contactDetails.customerCare}`
+      : `SE Electronics: প্রিয় ${customer.name}, বকেয়া টাকা পরিশোধ না করায় আপনার ওয়ারেন্টি সাময়িক লক করা হয়েছে। টাকা পরিশোধ করলে আবার চালু হবে। বিস্তারিত: ${contactDetails.customerCare}`;
+  // Cancel uses its own recording when configured, else the lock recording.
+  const voiceKeys = reason === "misuse" ? ["warranty_cancelled", "customer_dashboard_disabled"] : ["customer_dashboard_disabled"];
+  await notifyCustomerBySmsAndCall(customer.phone, sms, voiceKeys, `Warranty ${reason === "misuse" ? "Cancelled" : "Locked"} ${customer.customerId}`);
   return { blocked: true as const };
+}
+
+/**
+ * One SMS + one MRAM voice call to a customer. The call uses the first
+ * broadcast id found in MRAM_VOICE_BROADCAST_ID for the given keys and is
+ * skipped when none is configured. Failures are logged, never thrown.
+ */
+export async function notifyCustomerBySmsAndCall(phone: string, sms: string, voiceKeys: string[], title: string) {
+  try {
+    const { sendSMS } = await import("@/lib/sms");
+    await sendSMS(phone, sms);
+  } catch (e) {
+    console.error(`Failed to send SMS (${title}):`, e);
+  }
+  try {
+    const { sendVoiceCall, getMramBroadcastIds } = await import("@/lib/mram");
+    const ids = getMramBroadcastIds();
+    const broadcastId = voiceKeys.map((k) => ids?.[k]).find(Boolean);
+    if (broadcastId) {
+      await sendVoiceCall(phone, broadcastId, title);
+    } else {
+      console.warn(`No MRAM broadcast id for ${voiceKeys.join("/")}; call skipped (${title})`);
+    }
+  } catch (e) {
+    console.error(`Failed to send voice call (${title}):`, e);
+  }
 }

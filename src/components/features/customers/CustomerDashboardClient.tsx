@@ -322,7 +322,11 @@ export default function CustomerDashboardClient({
             <h3 className="text-[16px] font-extrabold text-[#16213a]">
               Quick Actions
             </h3>
-            <Link href="/customer/services" className="text-[12px] font-bold text-[#1f7cf0]">সবগুলো দেখুন ›</Link>
+            {isDashboardDisabled ? (
+              <button type="button" onClick={() => setShowPopup(true)} className="text-[12px] font-bold text-[#1f7cf0] opacity-50 cursor-not-allowed">সবগুলো দেখুন ›</button>
+            ) : (
+              <Link href="/customer/services" className="text-[12px] font-bold text-[#1f7cf0]">সবগুলো দেখুন ›</Link>
+            )}
           </div>
 
           <div className="grid grid-cols-4 md:grid-cols-8 gap-x-2 gap-y-4 sm:gap-8">

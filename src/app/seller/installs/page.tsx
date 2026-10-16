@@ -7,7 +7,7 @@ export default async function SellerInstallsPage() {
   const data = await loadSellerPortal();
   const { installs, counts } = sellerJobs(data);
   return (
-    <SellerLayout badge={data.stats.inService}>
+    <SellerLayout>
       <SellerJobsClient kind="install" jobs={installs} counts={counts} />
     </SellerLayout>
   );

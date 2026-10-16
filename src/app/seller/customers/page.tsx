@@ -8,7 +8,7 @@ export default async function SellerCustomersPage() {
   const { seller, stats } = data;
   const { counts } = sellerJobs(data);
   return (
-    <SellerLayout badge={stats.inService}>
+    <SellerLayout>
       <SellerCustomersClient customers={seller.customers as any} inWarranty={stats.inWarranty} counts={counts} />
     </SellerLayout>
   );

@@ -374,6 +374,21 @@ export const createCustomer = async (data: any, sendLink = false) => {
       }
     }
 
+    // Admin added a customer under a seller → let the seller know (in-app + push).
+    if (session.role === "admin" && data.sellerId) {
+      try {
+        const { notifySeller } = await import("./notificationActions");
+        await notifySeller({
+          sellerId: data.sellerId,
+          type: "customer_added",
+          message: `SE Electronics: আপনার অধীনে নতুন কাস্টমার ${data.name} (${customerId}) যুক্ত হয়েছে।`,
+          link: "/seller/customers",
+        });
+      } catch (e) {
+        console.error("Failed to notify seller of new customer:", e);
+      }
+    }
+
     try {
       const { sendVoiceCall, getMramBroadcastIds } = await import("@/lib/mram");
       const broadcastIds = getMramBroadcastIds();

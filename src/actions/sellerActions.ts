@@ -7,6 +7,7 @@ import {
   applications,
   customers,
   products,
+  sellerNotifications,
   sellerPurchases,
   sellers,
   services,
@@ -68,6 +69,74 @@ const revalidateSellerPaths = () => {
   revalidatePath("/seller/purchases");
   revalidatePath("/seller/customers");
 };
+
+/** Tells the seller (in-app + push + SMS) about a purchase recorded or updated by admin. */
+const notifySellerOfPurchase = async (
+  sellerId: string,
+  kind: "added" | "updated",
+  p: { productModel: string; quantity: number; totalAmount: number; paidAmount: number },
+) => {
+  try {
+    const seller = await db.query.sellers.findFirst({ where: eq(sellers.sellerId, sellerId), columns: { phone: true } });
+    const due = Math.max(0, p.totalAmount - p.paidAmount);
+    const head = kind === "added" ? "নতুন ক্রয় যুক্ত হয়েছে" : "আপনার ক্রয়ের তথ্য আপডেট হয়েছে";
+    const message = `SE Electronics: ${head} — ${p.productModel} x${p.quantity}, মোট ৳${p.totalAmount.toLocaleString()}, পরিশোধ ৳${p.paidAmount.toLocaleString()}, বাকি ৳${due.toLocaleString()}। বিস্তারিত পোর্টালে দেখুন।`;
+    const { notifySeller } = await import("./notificationActions");
+    await notifySeller({ sellerId, phoneNumber: seller?.phone, type: kind === "added" ? "purchase_added" : "purchase_updated", message, link: "/seller/purchases" });
+  } catch (e) {
+    console.error("seller purchase notification failed:", e);
+  }
+};
+
+// ============================================
+// SELLER: NOTIFICATIONS
+// ============================================
+
+export async function getSellerNotifications() {
+  try {
+    const session = await verifySellerSession();
+    if (!session.isAuth) return { success: false, message: "Unauthorized" };
+    const data = await db.query.sellerNotifications.findMany({
+      where: eq(sellerNotifications.sellerId, session.userId),
+      orderBy: (n, { desc }) => [desc(n.createdAt)],
+      limit: 200,
+    });
+    return { success: true, data };
+  } catch (error) {
+    console.error("Error fetching seller notifications:", error);
+    return { success: false, message: "Failed to fetch notifications" };
+  }
+}
+
+export async function getSellerUnreadNotificationCount() {
+  try {
+    const session = await verifySellerSession();
+    if (!session.isAuth) return 0;
+    const [row] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(sellerNotifications)
+      .where(and(eq(sellerNotifications.sellerId, session.userId), eq(sellerNotifications.isRead, false)));
+    return Number(row?.count || 0);
+  } catch {
+    return 0;
+  }
+}
+
+export async function markSellerNotificationAsRead(id: string) {
+  try {
+    const session = await verifySellerSession();
+    if (!session.isAuth) return { success: false, message: "Unauthorized" };
+    await db
+      .update(sellerNotifications)
+      .set({ isRead: true })
+      .where(and(eq(sellerNotifications.id, id), eq(sellerNotifications.sellerId, session.userId)));
+    revalidatePath("/seller/notifications");
+    return { success: true };
+  } catch (error) {
+    console.error("Error marking seller notification as read:", error);
+    return { success: false, message: "Failed to mark as read" };
+  }
+}
 
 // ============================================
 // ADMIN: INVITE / LIST / VIEW
@@ -531,16 +600,19 @@ export const createSellerPurchase = async (sellerId: string, formData: FormData)
     const session = await verifySession(false, "admin");
     if (!session) return { success: false, message: "Unauthorized" };
     const data = SellerPurchaseDataSchema.parse(Object.fromEntries(formData));
+    const totalAmount = data.quantity * data.unitPrice;
+    const paidAmount = data.paidAmount ?? 0;
     await db.insert(sellerPurchases).values({
       purchaseId: generateRandomId(),
       invoiceNumber: generateInvoiceNumber(),
       sellerId,
       ...data,
       note: data.note || null,
-      paidAmount: data.paidAmount ?? 0,
-      totalAmount: data.quantity * data.unitPrice,
+      paidAmount,
+      totalAmount,
     });
     revalidateSellerPaths();
+    await notifySellerOfPurchase(sellerId, "added", { productModel: data.productModel, quantity: data.quantity, totalAmount, paidAmount });
     return { success: true, message: "Purchase added" };
   } catch (error) {
     console.error(error);
@@ -553,11 +625,15 @@ export const updateSellerPurchase = async (purchaseId: string, formData: FormDat
     const session = await verifySession(false, "admin");
     if (!session) return { success: false, message: "Unauthorized" };
     const data = SellerPurchaseDataSchema.parse(Object.fromEntries(formData));
-    await db
+    const totalAmount = data.quantity * data.unitPrice;
+    const paidAmount = data.paidAmount ?? 0;
+    const [updated] = await db
       .update(sellerPurchases)
-      .set({ ...data, note: data.note || null, paidAmount: data.paidAmount ?? 0, totalAmount: data.quantity * data.unitPrice })
-      .where(eq(sellerPurchases.purchaseId, purchaseId));
+      .set({ ...data, note: data.note || null, paidAmount, totalAmount })
+      .where(eq(sellerPurchases.purchaseId, purchaseId))
+      .returning({ sellerId: sellerPurchases.sellerId });
     revalidateSellerPaths();
+    if (updated) await notifySellerOfPurchase(updated.sellerId, "updated", { productModel: data.productModel, quantity: data.quantity, totalAmount, paidAmount });
     return { success: true, message: "Purchase updated" };
   } catch (error) {
     console.error(error);

@@ -10,7 +10,7 @@ export default async function SellerSettingsPage() {
   const { seller, stats } = await loadSellerPortal();
   const item = "flex items-center gap-3 p-3.5 rounded-md bg-[#f5f7fb] text-[15px] font-bold text-[#16213a]";
   return (
-    <SellerLayout badge={stats.inService}>
+    <SellerLayout>
       <div className="flex flex-col gap-2.5 p-2">
         <BlueCard className="flex flex-col gap-2.5">
           <span className="text-[15px] font-extrabold text-[#16213a]">Account</span>

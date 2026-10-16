@@ -138,6 +138,41 @@ export async function notifyStaff({
 }
 
 /**
+ * Creates an in-app notification for a seller, pushes it to the seller app and,
+ * when a phone number is given, also sends it as an SMS.
+ */
+export async function notifySeller({
+  sellerId,
+  phoneNumber,
+  type,
+  message,
+  shortMessage,
+  link = "/seller/notifications",
+}: {
+  sellerId: string;
+  phoneNumber?: string | null;
+  type: string;
+  message: string;
+  shortMessage?: string;
+  link?: string;
+}) {
+  try {
+    const { sellerNotifications } = await import("@/db/schema");
+    await db.insert(sellerNotifications).values({ sellerId, type, message, link });
+
+    await pushToUser("seller", sellerId, { title: "SE Electronics", body: (shortMessage || message).slice(0, 160), link });
+
+    if (phoneNumber) await sendSMS(phoneNumber, shortMessage || message);
+
+    revalidatePath("/seller/notifications");
+    return { success: true };
+  } catch (error) {
+    console.error("Error in notifySeller:", error);
+    return { success: false, error };
+  }
+}
+
+/**
  * Creates a notification for the admin
  */
 export async function notifyAdmin({

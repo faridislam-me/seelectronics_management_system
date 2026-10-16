@@ -790,13 +790,16 @@ export const appointStaff = async (
             columns: { sellerId: true, name: true },
             with: { seller: { columns: { phone: true } } },
           });
-          const sellerPhone = owner?.seller?.phone;
-          if (!sellerPhone) return;
+          if (!owner?.sellerId) return;
           const kindBn = existingService.type === "install" ? "ইন্সটল" : "সার্ভিস";
-          await sendSMS(
-            sellerPhone,
-            `SE Electronics: আপনার ${owner?.name || existingService.customerName} এর ${kindBn} আবেদন অনুমোদিত হয়েছে। সার্ভিস আইডি ${validatedData.serviceId}।`,
-          );
+          const { notifySeller } = await import("./notificationActions");
+          await notifySeller({
+            sellerId: owner.sellerId,
+            phoneNumber: owner.seller?.phone,
+            type: "service_approved",
+            message: `SE Electronics: আপনার ${owner.name || existingService.customerName} এর ${kindBn} আবেদন অনুমোদিত হয়েছে। সার্ভিস আইডি ${validatedData.serviceId}।`,
+            link: existingService.type === "install" ? "/seller/installs" : "/seller/services",
+          });
         })().catch((e) => console.error("seller approval SMS failed:", e)),
       );
     }

@@ -19,7 +19,7 @@ export default async function SellerDetailsPage() {
   const { seller, stats } = await loadSellerPortal();
   const businessType = sellerBusinessTypes.find((b) => b.value === seller.businessType)?.label ?? seller.businessType;
   return (
-    <SellerLayout badge={stats.inService}>
+    <SellerLayout>
       <div className="flex flex-col gap-2.5 p-2">
         <BlueCard className="relative overflow-hidden flex flex-col items-center gap-2 text-center pt-0 px-0">
           {seller.shopFrontPhotoUrl ? (

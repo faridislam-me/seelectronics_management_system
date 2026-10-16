@@ -101,9 +101,7 @@ export default function SellerRegistrationPage({ token }: { token: string }) {
       <div className="max-w-[760px] mx-auto pb-10">
         <Hero kicker="SELLER APPLICATION" title="সেলার / ডিলার আবেদন ফরম" subtitle="প্রতিটি ফিল্ড সঠিক তথ্য দিয়ে পূরণ করুন। ট্রেড লাইসেন্স ও NID এর তথ্য যাচাই করে আপনার আবেদন অনুমোদন করা হবে।" />
         <div className="px-2 -mt-10 relative">
-          <div className="bg-white rounded-md p-4 sm:p-6 shadow-[0_10px_30px_rgba(11,61,145,0.12)]">
-            <SellerRegistrationForm mode="create" token={token} onComplete={setDone} />
-          </div>
+          <SellerRegistrationForm mode="create" token={token} onComplete={setDone} />
         </div>
       </div>
     </div>

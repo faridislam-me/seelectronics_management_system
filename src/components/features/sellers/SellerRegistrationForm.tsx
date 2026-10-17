@@ -2,27 +2,15 @@
 
 import { createSeller, getSellerMediaUrls, updateSeller } from "@/actions";
 import geoData from "@/assets/data/geo-data.json";
-import { InputField, Spinner } from "@/components/ui";
+import { Spinner } from "@/components/ui";
+import { Field, SectionCard, SelectField, UploadBox } from "@/components/ui/ServiceFormKit";
 import { sellerAgreementText, sellerBusinessTypes } from "@/constants";
 import { SellersType } from "@/types";
-import { FileBadge, Images, LucideIcon, Store, User } from "lucide-react";
+import { Briefcase, Building2, CalendarClock, FileBadge, IdCard, Mail, Map as MapIcon, MapPin, Phone, Send, Store, User } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-function Section({ icon: Icon, title, hint, children }: { icon: LucideIcon; title: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-md border border-[#e3e8f1] bg-white overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-3 bg-[#f5f8fd] border-b border-[#e3e8f1]">
-        <span className="size-9 rounded-md bg-[#1f7cf0] text-white flex items-center justify-center shrink-0"><Icon size={18} /></span>
-        <span className="flex flex-col leading-tight">
-          <span className="text-[15px] font-extrabold text-[#16213a]">{title}</span>
-          {hint && <span className="text-[11px] font-semibold text-[#6b7690]">{hint}</span>}
-        </span>
-      </div>
-      <div className="p-4 flex flex-col gap-4">{children}</div>
-    </section>
-  );
-}
+const cap = (v: string) => v.charAt(0).toUpperCase() + v.slice(1);
 
 export default function SellerRegistrationForm({
   mode,
@@ -46,8 +34,9 @@ export default function SellerRegistrationForm({
   const thanas = geoData[selectedDistrict as keyof typeof geoData] || [];
   const required = mode === "create";
 
-  const loadDocs = async (e: React.ToggleEvent<HTMLDetailsElement>) => {
-    if (!e.currentTarget.open || docs || !sellerData) return;
+  // Edit mode: fetch the already uploaded images so each tile shows a preview.
+  useEffect(() => {
+    if (mode !== "update" || !sellerData) return;
     const keys = [
       sellerData.tradeLicensePhotoKey,
       sellerData.shopFrontPhotoKey,
@@ -55,18 +44,19 @@ export default function SellerRegistrationForm({
       sellerData.nidFrontPhotoKey,
       sellerData.nidBackPhotoKey,
     ];
-    const res = await getSellerMediaUrls(keys.filter(Boolean));
-    if (!res.success) return toast.error(res.message);
-    const urls = res.data!;
-    let i = 0;
-    setDocs({
-      tradeLicensePhoto: urls[i++],
-      shopFrontPhoto: urls[i++],
-      shopInsidePhoto: sellerData.shopInsidePhotoKey ? urls[i++] : "",
-      nidFrontPhoto: urls[i++],
-      nidBackPhoto: urls[i++],
+    getSellerMediaUrls(keys.filter(Boolean)).then((res) => {
+      if (!res.success) return toast.error(res.message);
+      const urls = res.data!;
+      let i = 0;
+      setDocs({
+        tradeLicensePhoto: urls[i++],
+        shopFrontPhoto: urls[i++],
+        shopInsidePhoto: sellerData.shopInsidePhotoKey ? urls[i++] : "",
+        nidFrontPhoto: urls[i++],
+        nidBackPhoto: urls[i++],
+      });
     });
-  };
+  }, [mode, sellerData?.sellerId]);
 
   useEffect(() => {
     if (isCreating || !createResponse) return;
@@ -83,105 +73,70 @@ export default function SellerRegistrationForm({
     if (updateResponse.success) onComplete?.({ name: sellerData?.ownerName || "" });
   }, [isUpdating, updateResponse]);
 
-  const selectCls = "w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-md text-sm sm:text-base transition-all focus:ring-1 focus:ring-brand focus:border-brand outline-none";
-  const Label = ({ text, req }: { text: string; req?: boolean }) => (
-    <span className="text-sm font-medium text-gray-700">{text} {req && <span className="text-red-500 text-lg">*</span>}</span>
-  );
+  const photos: { name: string; label: string; req: boolean; src?: string | null }[] = [
+    { name: "ownerPhoto", label: "মালিকের ছবি", req: true, src: sellerData?.ownerPhotoUrl },
+    { name: "tradeLicensePhoto", label: "ট্রেড লাইসেন্স", req: true, src: docs?.tradeLicensePhoto },
+    { name: "shopFrontPhoto", label: "দোকানের ছবি (সামনে)", req: true, src: docs?.shopFrontPhoto },
+    { name: "shopInsidePhoto", label: "দোকানের ছবি (ভেতরে)", req: false, src: docs?.shopInsidePhoto },
+    { name: "nidFrontPhoto", label: "NID সামনের দিক", req: true, src: docs?.nidFrontPhoto },
+    { name: "nidBackPhoto", label: "NID পেছনের দিক", req: true, src: docs?.nidBackPhoto },
+  ];
 
   return (
-    <form action={mode === "create" ? createAction : updateAction} className="flex flex-col gap-5">
+    <form action={mode === "create" ? createAction : updateAction} className="flex flex-col gap-2.5">
       {token && <input type="hidden" name="token" value={token} />}
 
-      <Section icon={Store} title="দোকানের তথ্য" hint="ট্রেড লাইসেন্স অনুযায়ী দোকানের নাম ও ঠিকানা দিন">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <InputField label="দোকানের নাম" name="shopName" defaultValue={sellerData?.shopName || ""} required={required} />
-          <div className="flex-1 text-start">
-            <label className="flex flex-col gap-1.5">
-              <Label text="ব্যবসার ধরন" req={required} />
-              <select name="businessType" defaultValue={sellerData?.businessType || "retail"} className={selectCls}>
-                {sellerBusinessTypes.map((b) => <option key={b.value} value={b.value}>{b.label}</option>)}
-              </select>
-            </label>
-          </div>
-          <InputField label="ট্রেড লাইসেন্স নং" name="tradeLicenseNumber" defaultValue={sellerData?.tradeLicenseNumber || ""} required={required} />
-          <InputField label="ব্যবসার বয়স (বছর)" name="businessYears" type="number" defaultValue={(sellerData?.businessYears ?? "") as string} required={false} />
+      <SectionCard n={1} title="দোকানের তথ্য" hint="ট্রেড লাইসেন্স অনুযায়ী দোকানের নাম ও ঠিকানা দিন">
+        <div className="grid grid-cols-2 gap-2.5">
+          <Field icon={Store} label="দোকানের নাম" name="shopName" defaultValue={sellerData?.shopName || ""} req={required} placeholder="দোকানের নাম লিখুন" className="col-span-2 sm:col-span-1" />
+          <SelectField className="col-span-2 sm:col-span-1" icon={Briefcase} label="ব্যবসার ধরন" name="businessType" defaultValue={sellerData?.businessType || "retail"} req={required} options={sellerBusinessTypes} placeholder={null} />
+          <Field icon={FileBadge} label="ট্রেড লাইসেন্স নং" name="tradeLicenseNumber" defaultValue={sellerData?.tradeLicenseNumber || ""} req={required} placeholder="লাইসেন্স নাম্বার" />
+          <Field icon={CalendarClock} label="ব্যবসার বয়স (বছর)" name="businessYears" type="number" inputMode="numeric" min={0} defaultValue={(sellerData?.businessYears ?? "") as string} req={false} placeholder="যেমন: 5" />
         </div>
-        <InputField label="দোকানের ঠিকানা" name="shopStreetAddress" defaultValue={sellerData?.shopStreetAddress || ""} required={required} />
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="flex-1 text-start">
-            <label className="flex flex-col gap-1.5">
-              <Label text="জেলা" req={required} />
-              <select required name="shopDistrict" value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)} className={selectCls}>
-                <option value="">নির্বাচন করুন</option>
-                {districts.map((d) => <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>)}
-              </select>
-            </label>
-          </div>
-          <div className="flex-1 text-start">
-            <label className="flex flex-col gap-1.5">
-              <Label text="থানা" />
-              <select name="shopPoliceStation" defaultValue={sellerData?.shopPoliceStation || ""} className={selectCls}>
-                <option value="">নির্বাচন করুন</option>
-                {thanas.map((t) => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-              </select>
-            </label>
-          </div>
-          <InputField label="পোস্ট অফিস" name="shopPostOffice" defaultValue={sellerData?.shopPostOffice || ""} required={false} />
+        <Field icon={MapPin} label="দোকানের ঠিকানা" name="shopStreetAddress" defaultValue={sellerData?.shopStreetAddress || ""} req={required} placeholder="বাজার / রাস্তা / এলাকা" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <SelectField icon={MapIcon} label="জেলা" name="shopDistrict" value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)} req options={districts} format={cap} />
+          <SelectField icon={Building2} label="থানা" name="shopPoliceStation" defaultValue={sellerData?.shopPoliceStation || ""} req={false} options={thanas} format={cap} />
+          <Field icon={Mail} label="পোস্ট অফিস" name="shopPostOffice" defaultValue={sellerData?.shopPostOffice || ""} req={false} placeholder="পোস্ট অফিস" className="col-span-2 sm:col-span-1" />
         </div>
-      </Section>
+      </SectionCard>
 
-      <Section icon={User} title="মালিকের তথ্য" hint="NID অনুযায়ী নাম ও নাম্বার দিন">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <InputField label="মালিকের নাম" name="ownerName" defaultValue={sellerData?.ownerName || ""} required={required} />
-          <InputField label="মোবাইল নাম্বার" name="phone" type="tel" defaultValue={sellerData?.phone || ""} required={required} />
-          <InputField label="NID নাম্বার" name="nidNumber" defaultValue={sellerData?.nidNumber || ""} required={required} />
+      <SectionCard n={2} title="মালিকের তথ্য" hint="NID অনুযায়ী নাম ও নাম্বার দিন">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <Field icon={User} label="মালিকের নাম" name="ownerName" defaultValue={sellerData?.ownerName || ""} req={required} placeholder="পূর্ণ নাম" className="col-span-2 sm:col-span-1" />
+          <Field icon={Phone} label="মোবাইল নাম্বার" name="phone" type="tel" inputMode="tel" defaultValue={sellerData?.phone || ""} req={required} placeholder="01XXXXXXXXX" />
+          <Field icon={IdCard} label="NID নাম্বার" name="nidNumber" inputMode="numeric" defaultValue={sellerData?.nidNumber || ""} req={required} placeholder="NID নাম্বার" />
         </div>
-      </Section>
+      </SectionCard>
 
-      <Section icon={mode === "update" ? Images : FileBadge} title="ডকুমেন্ট ও ছবি" hint="স্পষ্ট ও পড়ার উপযোগী ছবি আপলোড করুন">
-        {mode === "update" ? (
-          <details onToggle={loadDocs}>
-            <summary className="cursor-pointer text-sm font-bold text-[#1f7cf0]">Profile and document images</summary>
-            {docs ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-3">
-                <InputField src={sellerData?.ownerPhotoUrl || undefined} label="মালিকের ছবি" name="ownerPhoto" type="file" required={false} />
-                <InputField src={docs.tradeLicensePhoto} label="ট্রেড লাইসেন্স" name="tradeLicensePhoto" type="file" required={false} />
-                <InputField src={docs.shopFrontPhoto} label="দোকানের ছবি (সামনে)" name="shopFrontPhoto" type="file" required={false} />
-                <InputField src={docs.shopInsidePhoto || undefined} label="দোকানের ছবি (ভেতরে)" name="shopInsidePhoto" type="file" required={false} />
-                <InputField src={docs.nidFrontPhoto} label="NID সামনের দিক" name="nidFrontPhoto" type="file" required={false} />
-                <InputField src={docs.nidBackPhoto} label="NID পেছনের দিক" name="nidBackPhoto" type="file" required={false} />
-              </div>
-            ) : (
-              <div className="__center text-gray-400 h-32"><Spinner /></div>
-            )}
-          </details>
+      <SectionCard n={3} title="ছবি ও ডকুমেন্ট" hint={mode === "update" ? "নতুন ছবি দিলে পুরনোটা বদলে যাবে" : "স্পষ্ট ও পড়ার উপযোগী ছবি আপলোড করুন"}>
+        {mode === "update" && !docs ? (
+          <div className="flex items-center justify-center text-gray-400 h-[100px]"><Spinner /></div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <InputField label="মালিকের ছবি" name="ownerPhoto" type="file" required />
-            <InputField label="ট্রেড লাইসেন্স" name="tradeLicensePhoto" type="file" required />
-            <InputField label="দোকানের ছবি (সামনে)" name="shopFrontPhoto" type="file" required />
-            <InputField label="দোকানের ছবি (ভেতরে)" placeholder="ঐচ্ছিক" name="shopInsidePhoto" type="file" required={false} />
-            <InputField label="NID সামনের দিক" name="nidFrontPhoto" type="file" required />
-            <InputField label="NID পেছনের দিক" name="nidBackPhoto" type="file" required />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {photos.map((p) => (
+              <UploadBox key={p.name} name={p.name} label={p.label} req={mode === "create" && p.req} initialSrc={p.src} />
+            ))}
           </div>
         )}
-      </Section>
+      </SectionCard>
 
       {token ? (
-        <label className="text-start text-[#54595f] text-sm flex gap-3 select-none bg-[#fff6e3] border border-[#f5dfa0] rounded-md p-4">
-          <input value="true" type="checkbox" name="agreed" className="size-4 mt-1 shrink-0 accent-[#1f7cf0]" required />
+        <label className="text-start text-[#3d4a63] text-[13px] flex gap-2.5 select-none bg-[#fff6e3] border border-[#f5dfa0] rounded-md p-2.5">
+          <input value="true" type="checkbox" name="agreed" className="size-5 mt-0.5 shrink-0 accent-[#0b3d91]" required />
           <span className="whitespace-pre-line leading-relaxed">{sellerAgreementText.trim()}</span>
         </label>
       ) : (
         mode === "create" && (
-          <label className="text-start select-none flex items-center text-[#54595f] text-sm">
-            <input value="true" type="checkbox" name="sendConfirmationSMS" className="size-4 mr-2" />
+          <label className="text-start select-none flex items-center gap-2 text-[#3d4a63] text-[13px] font-semibold">
+            <input value="true" type="checkbox" name="sendConfirmationSMS" className="size-4 accent-[#0b3d91]" />
             Send confirmation SMS (Seller ID)
           </label>
         )
       )}
 
-      <button disabled={isCreating || isUpdating} className={token ? "w-full h-12 rounded-md bg-[#0b3d91] bg-[linear-gradient(110deg,#0a2f70_0%,#1b5fd0_100%)] text-white font-extrabold text-base tracking-wide shadow-[0_10px_30px_rgba(10,47,112,0.35)] disabled:opacity-50 active:scale-[0.98] transition-all" : "__btn"}>
+      <button disabled={isCreating || isUpdating} className="h-11 rounded-md bg-[linear-gradient(90deg,#0b3d91,#1f7cf0)] text-white text-[15px] font-extrabold inline-flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(31,124,240,0.35)] disabled:opacity-40 active:scale-[0.98] transition-all">
+        <Send size={18} />
         {mode === "create" ? (isCreating ? "Submitting..." : token ? "আবেদন জমা দিন" : "Add Seller") : isUpdating ? "Updating..." : "Update"}
       </button>
     </form>

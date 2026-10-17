@@ -7,6 +7,15 @@ import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { verifyCustomerSession } from "@/actions/customerActions";
+import { verifySession } from "@/lib";
+import { deleteObject } from "@/lib/s3";
+
+/** Logged-in user (any role) or null. Server actions are callable by anyone, so every one checks this. */
+const currentUser = async () => {
+  const s = await verifySession(false);
+  return s ? { role: s.role as string, userId: s.userId as string } : null;
+};
+const UNAUTHORIZED = { success: false as const, message: "Unauthorized" };
 
 const ComplaintSchema = z.object({
   customerId: z.string().min(1),
@@ -117,6 +126,8 @@ export async function submitComplaint(_prevState: any, formData: FormData) {
 
 export async function getComplaintsByCustomer(customerId: string) {
   try {
+    const user = await currentUser();
+    if (!user || !(user.role === "admin" || (user.role === "customer" && user.userId === customerId))) return UNAUTHORIZED;
     const data = await db
       .select({
         complaint: staffComplaints,
@@ -149,6 +160,7 @@ export async function getComplaintsByCustomer(customerId: string) {
 
 export async function getAllComplaints() {
   try {
+    if ((await currentUser())?.role !== "admin") return UNAUTHORIZED;
     const data = await db.query.staffComplaints.findMany({
       with: {
         customer: {
@@ -191,6 +203,7 @@ export async function updateComplaintStatus(
   }
 ) {
   try {
+    if ((await currentUser())?.role !== "admin") return UNAUTHORIZED;
     const { eq } = await import("drizzle-orm");
     const updateData: any = {
       status: newStatus,
@@ -245,6 +258,8 @@ export async function updateComplaintStatus(
 
 export async function getComplaintById(complaintId: string) {
   try {
+    const user = await currentUser();
+    if (!user) return UNAUTHORIZED;
     const data = await db.query.staffComplaints.findFirst({
       where: (complaints, { eq }) => eq(complaints.complaintId, complaintId),
       with: {
@@ -269,6 +284,11 @@ export async function getComplaintById(complaintId: string) {
       },
     });
     if (!data) return { success: false, message: "Complaint not found" };
+    const allowed =
+      user.role === "admin" ||
+      (user.role === "staff" && data.staffId === user.userId) ||
+      (user.role === "customer" && data.customerId === user.userId);
+    if (!allowed) return { success: false, message: "Complaint not found" };
     return { success: true, data };
   } catch (error) {
     console.error(error);
@@ -278,6 +298,8 @@ export async function getComplaintById(complaintId: string) {
 
 export async function getComplaintsByStaff(staffId: string, all: boolean = false) {
   try {
+    const user = await currentUser();
+    if (!user || !(user.role === "admin" || (user.role === "staff" && user.userId === staffId))) return UNAUTHORIZED;
     const data = await db.query.staffComplaints.findMany({
       where: (complaints, { eq, and, ne }) =>
         all
@@ -300,6 +322,29 @@ export async function getComplaintsByStaff(staffId: string, all: boolean = false
   }
 }
 
+
+/** Admin only: permanently deletes a complaint and its evidence photo. */
+export async function deleteComplaint(complaintId: string) {
+  try {
+    if ((await currentUser())?.role !== "admin") return UNAUTHORIZED;
+    const [deleted] = await db
+      .delete(staffComplaints)
+      .where(eq(staffComplaints.complaintId, complaintId))
+      .returning({ evidencePhotoKey: staffComplaints.evidencePhotoKey, staffId: staffComplaints.staffId, customerId: staffComplaints.customerId });
+    if (!deleted) return { success: false, message: "Complaint not found" };
+    if (deleted.evidencePhotoKey) {
+      await deleteObject({ Key: deleted.evidencePhotoKey }).catch((e) => console.error("evidence photo delete failed:", e));
+    }
+    revalidatePath("/complaints");
+    revalidatePath("/staff/complaints");
+    revalidatePath("/staff/profile");
+    revalidatePath("/customer/complain");
+    return { success: true, message: "অভিযোগটি ডিলেট করা হয়েছে" };
+  } catch (error) {
+    console.error("Error deleting complaint:", error);
+    return { success: false, message: "Could not delete complaint" };
+  }
+}
 
 /** Bangla digits → ASCII (officer phones are stored with Bangla numerals). */
 function toAsciiDigits(v: string) {

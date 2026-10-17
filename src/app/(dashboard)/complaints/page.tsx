@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  deleteComplaint,
   getAllComplaints,
   updateComplaintStatus,
 } from "@/actions/complaintActions";
@@ -13,6 +14,7 @@ import {
   FileText,
   Gavel,
   Download,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -26,6 +28,8 @@ export default function ComplaintsPage() {
   const [selectedComplaint, setSelectedComplaint] = useState<any>(null);
   const [adminNotes, setAdminNotes] = useState("");
   const [isResolving, setIsResolving] = useState(false);
+  const [toDelete, setToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [actionType, setActionType] = useState<
     "processing" | "hearing" | "completed" | null
   >(null);
@@ -72,6 +76,20 @@ export default function ComplaintsPage() {
       toast.error(res.message);
     }
     setIsResolving(false);
+  }
+
+  async function handleDelete() {
+    if (!toDelete) return;
+    setIsDeleting(true);
+    const res = await deleteComplaint(toDelete.complaintId);
+    if (res.success) {
+      toast.success(res.message);
+      setComplaints((list) => list.filter((c) => c.complaintId !== toDelete.complaintId));
+      setToDelete(null);
+    } else {
+      toast.error(res.message);
+    }
+    setIsDeleting(false);
   }
 
   const filteredComplaints = complaints.filter((c) => {
@@ -249,11 +267,45 @@ export default function ComplaintsPage() {
                   <Shield size={14} className="group-hover:rotate-12 transition-transform" />
                   Manage Complaint
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => setToDelete(complaint)}
+                  className="w-full py-2.5 border border-red-200 bg-white text-red-600 rounded-md text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-red-50 transition-all"
+                >
+                  <Trash2 size={14} />
+                  Delete
+                </button>
 
 
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Delete confirmation */}
+      {toDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/60 backdrop-blur-sm" onClick={() => !isDeleting && setToDelete(null)}>
+          <div className="bg-white rounded-md w-full max-w-sm shadow-2xl p-4 flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <span className="size-11 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0"><Trash2 size={20} /></span>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[16px] font-extrabold text-gray-900">অভিযোগ ডিলেট</span>
+                <span className="text-[12px] font-mono text-gray-500 truncate">{toDelete.complaintId}</span>
+              </div>
+            </div>
+            <p className="text-[14px] text-gray-700 leading-relaxed">
+              আপনি কি শিউর এই অভিযোগের তথ্যগুলো ডিলেট করতে চান? ডিলেট করলে আর ফেরত আনা যাবে না।
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" disabled={isDeleting} onClick={() => setToDelete(null)} className="h-11 rounded-md border border-gray-300 text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-50">
+                না
+              </button>
+              <button type="button" disabled={isDeleting} onClick={handleDelete} className="h-11 rounded-md bg-red-600 text-white font-bold hover:bg-red-700 disabled:opacity-50">
+                {isDeleting ? "ডিলেট হচ্ছে..." : "হ্যাঁ"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

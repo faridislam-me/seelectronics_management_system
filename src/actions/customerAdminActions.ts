@@ -8,6 +8,13 @@ import { SearchParams } from "@/types";
 import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
+/** Warranty end = start + duration months (the column used to default to the creation time). */
+const warrantyEndOf = (start: Date, months: number) => {
+  const d = new Date(start);
+  d.setMonth(d.getMonth() + months);
+  return d;
+};
+
 /** Product categories a customer can be filtered by on the reminders page. */
 const PRODUCT_CATEGORIES = ["ips", "battery", "stabilizer"] as const;
 type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
@@ -306,6 +313,7 @@ export const createCustomer = async (data: any, sendLink = false) => {
           unitPrice: Number(p.unitPrice) || 0,
           warrantyStartDate: new Date(p.warrantyStartDate),
           warrantyDurationMonths: Number(p.warrantyDurationMonths),
+          warrantyEndDate: warrantyEndOf(new Date(p.warrantyStartDate), Number(p.warrantyDurationMonths)),
         })),
       );
     }
@@ -545,6 +553,20 @@ export const updateCustomer = async (
 
     // 3. Update products (delete and recreate for simplicity)
     if (customer.invoice) {
+      // Products are recreated; keep any extra days an unblock added to the end date
+      // for the same product (type + model + start date).
+      const old = await db.query.products.findMany({
+        where: eq(products.invoiceId, customer.invoice.id),
+        columns: { type: true, model: true, warrantyStartDate: true, warrantyEndDate: true },
+      });
+      const keyOf = (type: string, model: string, start: Date) => `${type}|${model}|${new Date(start).toISOString().slice(0, 10)}`;
+      const oldEnd = new Map(old.map((o) => [keyOf(o.type, o.model, o.warrantyStartDate), o.warrantyEndDate]));
+      const endFor = (p: any) => {
+        const computed = warrantyEndOf(new Date(p.warrantyStartDate), Number(p.warrantyDurationMonths));
+        const prev = oldEnd.get(keyOf(p.type, p.model, new Date(p.warrantyStartDate)));
+        return prev && prev > computed ? prev : computed;
+      };
+
       await db
         .delete(products)
         .where(eq(products.invoiceId, customer.invoice.id));
@@ -560,6 +582,7 @@ export const updateCustomer = async (
             unitPrice: Number(p.unitPrice) || 0,
             warrantyStartDate: new Date(p.warrantyStartDate),
             warrantyDurationMonths: Number(p.warrantyDurationMonths),
+            warrantyEndDate: endFor(p),
           })),
         );
       }

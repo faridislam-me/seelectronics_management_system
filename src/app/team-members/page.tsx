@@ -19,7 +19,9 @@ export default async function TeamMembersPage({
     throw new AppError("টিম মেম্বারদের তথ্য পাওয়া যায়নি।");
   }
 
-  const staffs = teamMembers.data!;
+  // Public page: never send staff phone numbers to the browser (they would be
+  // readable in the page source even though the cards no longer show them).
+  const staffs = teamMembers.data!.map((s) => ({ ...s, phone: "" }));
   return (
     <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-6">
       <header className="bg-[radial-gradient(120%_90%_at_10%_0%,#1b5fd0_0%,#0b3d91_55%,#072a66_100%)] text-white px-3 h-[56px] flex items-center gap-2.5">

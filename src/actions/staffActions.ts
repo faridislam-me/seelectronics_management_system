@@ -252,8 +252,7 @@ export const getAllTeamMembers = async () => {
         repairExperienceYears: staffs.repairExperienceYears,
         installationExperienceYears: staffs.installationExperienceYears,
         photoKey: staffs.photoKey,
-        nidFrontPhotoKey: staffs.nidFrontPhotoKey,
-        nidBackPhotoKey: staffs.nidBackPhotoKey,
+        // NID photo keys are deliberately NOT selected: this action feeds public pages.
         role: staffs.role,
         isActiveStaff: staffs.isActiveStaff,
         rating: sql<number>`COALESCE(AVG(${feedbacks.rating}), 0)`.mapWith(
@@ -291,20 +290,11 @@ export const getAllTeamMembers = async () => {
 
     const finalStaffData = await Promise.all(
       staffsData.map(async (staff) => {
-        const [photoUrl, nidFrontPhotoUrl, nidBackPhotoUrl] = await Promise.all(
-          [
-            staff.photoKey ? getObjectUrl(staff.photoKey) : null,
-            staff.nidFrontPhotoKey
-              ? getObjectUrl(staff.nidFrontPhotoKey)
-              : null,
-            staff.nidBackPhotoKey ? getObjectUrl(staff.nidBackPhotoKey) : null,
-          ],
-        );
+        // Only the profile photo: NID images must never reach the public pages.
+        const photoUrl = staff.photoKey ? await getObjectUrl(staff.photoKey) : null;
         return {
           ...staff,
           photoUrl,
-          nidFrontPhotoUrl,
-          nidBackPhotoUrl,
           complaintsCount: complaintsMap.get(staff.staffId) || 0,
           completedServices: staff.successfulServices || 0,
           canceledServices: staff.canceledServices || 0,

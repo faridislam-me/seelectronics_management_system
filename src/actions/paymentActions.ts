@@ -226,10 +226,12 @@ export const createPayment = async (
       await ensureUnregisteredStaffExists();
     }
 
+    const { serviceCustomerSnapshot } = await import("@/lib/paymentSnapshot");
     await db.insert(payments).values({
       paymentId,
       invoiceNumber,
       ...validatedPaymentInfo,
+      ...(await serviceCustomerSnapshot((validatedPaymentInfo as { serviceId?: string | null }).serviceId)),
     });
     revalidatePath("/payments");
     return { success: true, message: "Payment added successfully" };
@@ -278,6 +280,7 @@ export async function addVirtualBalance(
       paymentMethod: staffData.paymentPreference || "cash",
       amount,
       serviceId: serviceId || null,
+      ...(await (await import("@/lib/paymentSnapshot")).serviceCustomerSnapshot(serviceId)),
       description: description || "Virtual balance added by admin",
       status: "credited", // credited = counted in balance but not yet requested
       date: new Date(),

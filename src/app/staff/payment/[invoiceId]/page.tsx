@@ -35,7 +35,11 @@ export default async function StaffInvoiceDetailsPage({ params }: { params: Prom
     if (res?.success && res.data) { service = res.data; jobId = id; break; }
   }
   const svcStatus = (service?.status as string | undefined) ?? null;
-  const svcAddress = service ? [service.customerAddress, service.customerAddressPoliceStation, service.customerAddressDistrict].filter(Boolean).join(", ") : "";
+  // If the service was deleted, fall back to the customer snapshot stored on the payment.
+  const snap = payment as PaymentDataType & { customerName?: string | null; customerPhone?: string | null; customerAddress?: string | null };
+  const svcAddress = (service ? [service.customerAddress, service.customerAddressPoliceStation, service.customerAddressDistrict].filter(Boolean).join(", ") : "") || snap.customerAddress || "";
+  const custName = service?.customerName || snap.customerName || "";
+  const custPhone = service?.customerPhone || snap.customerPhone || "";
   const stats = statsRes.success ? statsRes.data : null;
   if (payment.staffId !== session.userId) notFound();
 
@@ -147,8 +151,8 @@ export default async function StaffInvoiceDetailsPage({ params }: { params: Prom
           <div className="flex items-start gap-3">
             <span className="flex flex-col gap-0.5 min-w-0 flex-1 text-[12.5px] text-[#3d4a63]">
               <span>Service Id: <b className="text-[#16213a]">{jobId || "N/A"}</b></span>
-              <span>Customer: <b className="text-[#16213a]">{service?.customerName || "N/A"}</b></span>
-              <span>Mobile: {service?.customerPhone ? <a href={`tel:${service.customerPhone}`} className="font-bold text-[#1f5fc9]">{service.customerPhone}</a> : <b className="text-[#16213a]">N/A</b>}</span>
+              <span>Customer: <b className="text-[#16213a]">{custName || "N/A"}</b></span>
+              <span>Mobile: {custPhone ? <a href={`tel:${custPhone}`} className="font-bold text-[#1f5fc9]">{custPhone}</a> : <b className="text-[#16213a]">N/A</b>}</span>
               <span>Address: <b className="text-[#16213a]">{svcAddress || "N/A"}</b></span>
               {service?.productType && <span>Product: <b className="text-[#16213a] uppercase">{service.productType}</b>{service.productModel ? <b className="text-[#16213a]"> · {service.productModel}</b> : null}</span>}
               <span>Date: <b className="text-[#16213a]">{formatDate(payment.date || payment.createdAt!)}</b></span>

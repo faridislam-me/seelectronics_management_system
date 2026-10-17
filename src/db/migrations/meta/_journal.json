@@ -127,6 +127,13 @@
       "when": 1792139477431,
       "tag": "0017_seller_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792264188583,
+      "tag": "0018_payment_customer_snapshot",
+      "breakpoints": true
     }
   ]
 }

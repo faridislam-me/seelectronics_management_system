@@ -107,6 +107,7 @@ export async function requestPayment(_prevState: any, formData: FormData) {
       description: validated.description ?? null,
       status: "requested", // NEW: starts as "requested"
       date: new Date(),
+      ...(await (await import("@/lib/paymentSnapshot")).serviceCustomerSnapshot(validated.serviceId)),
     };
     if (hasWallet)
       (insertPayload as any).receiverWalletNumber = staffData.walletNumber;

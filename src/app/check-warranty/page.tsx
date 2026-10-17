@@ -7,7 +7,7 @@ import { calculateWarrantyEndDate, formatDate, isWarrantyValid } from "@/utils";
 import clsx from "clsx";
 import { Calendar, CalendarCheck, CheckCircle2, FileText, Headset, Home, IdCard, Info, Lock, Mail, MapPin, Phone, Search, ShieldCheck, TimerOff, User } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const reasons = [
   { icon: ShieldCheck, text: "ওয়ারেন্টি স্ট্যাটাস জানুন" },
@@ -21,6 +21,17 @@ export default function CheckWarrantyPage() {
   const [warrantyData, setWarrantyData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  // When a result arrives, scroll the title / contact / search form out of view
+  // so the page starts at "why check" with the customer + product warranty
+  // status below it, without manual scrolling.
+  useEffect(() => {
+    if (!warrantyData) return;
+    (document.activeElement as HTMLElement | null)?.blur?.(); // close the mobile keyboard first
+    const t = setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+    return () => clearTimeout(t);
+  }, [warrantyData]);
 
   const handleSubmit = async () => {
     if (!invoiceNumber.trim()) return setError("ইনভয়েস নম্বর, কাস্টমার আইডি বা মোবাইল নাম্বার প্রবেশ করান");
@@ -84,7 +95,7 @@ export default function CheckWarrantyPage() {
             {error && <p className="rounded-md bg-[#ffe9ec] border border-[#f7c3ca] text-[#c81f38] text-[13px] font-medium p-3 leading-relaxed">{error}</p>}
           </div>
           {/* Why check: part of the same box */}
-          <div className="border-t border-[#dfe8f7] bg-[#eef4fd] px-3 pt-4 pb-5 flex flex-col gap-5">
+          <div ref={resultsRef} className="scroll-mt-1 border-t border-[#dfe8f7] bg-[#eef4fd] px-3 pt-4 pb-5 flex flex-col gap-5">
             <span className="flex items-center gap-2"><span className="size-9 rounded-full bg-[#0b3d91] text-white flex items-center justify-center"><Info size={18} /></span><span className="text-[clamp(15px,4.4vw,18px)] font-extrabold">কেন ওয়ারেন্টি চেক করবেন?</span></span>
           <div className="grid grid-cols-4 divide-x divide-[#eef1f6]">
               {reasons.map((r) => (

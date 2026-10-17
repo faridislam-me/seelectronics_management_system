@@ -7,7 +7,7 @@ import { calculateWarrantyEndDate, formatDate, isWarrantyValid } from "@/utils";
 import clsx from "clsx";
 import { Calendar, CalendarCheck, CheckCircle2, FileText, Headset, Home, IdCard, Info, Lock, Mail, MapPin, Phone, Search, ShieldCheck, TimerOff, User } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const reasons = [
   { icon: ShieldCheck, text: "ওয়ারেন্টি স্ট্যাটাস জানুন" },
@@ -21,6 +21,16 @@ export default function CheckWarrantyPage() {
   const [warrantyData, setWarrantyData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const resultsRef = useRef<HTMLElement>(null);
+
+  // When a result arrives, scroll it up into view so the customer + product
+  // warranty status is visible without manual scrolling.
+  useEffect(() => {
+    if (!warrantyData) return;
+    (document.activeElement as HTMLElement | null)?.blur?.(); // close the mobile keyboard first
+    const t = setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+    return () => clearTimeout(t);
+  }, [warrantyData]);
 
   const handleSubmit = async () => {
     if (!invoiceNumber.trim()) return setError("ইনভয়েস নম্বর, কাস্টমার আইডি বা মোবাইল নাম্বার প্রবেশ করান");
@@ -100,7 +110,7 @@ export default function CheckWarrantyPage() {
         {/* Results */}
         {warrantyData && (
           <>
-            <section className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-1">
+            <section ref={resultsRef} className="scroll-mt-2 rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-1">
               <span className="text-[15px] font-extrabold mb-1">গ্রাহকের তথ্য</span>
               {[
                 { icon: User, label: "নাম", value: warrantyData.customerName },

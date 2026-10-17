@@ -63,9 +63,13 @@ export async function toggleCustomerBlockCore(customer: BlockableCustomer, reaso
   } else {
     try {
       const { sendVoiceCall, getMramBroadcastIds } = await import("@/lib/mram");
+      // Warranty stopped for an unpaid due. MRAM_DUE_BLOCK_VOICE_ID overrides the
+      // `customer_dashboard_disabled` entry of MRAM_VOICE_BROADCAST_ID (that JSON is a
+      // sensitive env var, so a single ID can't be edited in place).
       const ids = getMramBroadcastIds();
-      if (ids?.customer_dashboard_disabled) {
-        sendVoiceCall(customer.phone, ids.customer_dashboard_disabled, `Dashboard Disabled ${customer.customerId}`).catch((e) => console.error(e));
+      const voiceId = Number(process.env.MRAM_DUE_BLOCK_VOICE_ID) || ids?.customer_dashboard_disabled;
+      if (voiceId) {
+        sendVoiceCall(customer.phone, voiceId, `Dashboard Disabled ${customer.customerId}`).catch((e) => console.error(e));
       }
     } catch (e) {
       console.error("Failed to send MRAM voice call:", e);

@@ -1,7 +1,7 @@
 "use server";
 
 import { sellerAgreementText } from "@/constants";
-import { SellerMessages } from "@/constants/messages";
+import { SellerMessages, ServiceMessages } from "@/constants/messages";
 import { db } from "@/db/drizzle";
 import {
   applications,
@@ -844,6 +844,29 @@ export const sellerRequestService = async (input: {
       isActive: true,
     });
     await db.insert(serviceStatusHistory).values({ serviceId, status: "pending" });
+
+    // Tell the customer, exactly like a service/install added from the admin
+    // dashboard: "request accepted" SMS with the tracking link (+ in-app + push).
+    try {
+      const tracking_link = generateUrl("service-tracking", { trackingId: serviceId });
+      const vars = { customer_name: customer.name, service_id: serviceId, tracking_link };
+      const { notifyCustomer } = await import("./notificationActions");
+      await notifyCustomer({
+        customerId: customer.customerId,
+        phoneNumber: customer.phone,
+        type: "service_confirmation",
+        message: renderText(kind === "install" ? ServiceMessages.INSTALL_CONFIRMATION : ServiceMessages.CONFIRMATION, vars),
+        shortMessage: renderText(
+          kind === "install"
+            ? "প্রিয় গ্রাহক {customer_name}, আপনার আই পি এস হোম ইন্সটল এর অনুরোধটি গ্রহণ করা হয়েছে (ID: {service_id})। বিস্তারিত দেখুন: {tracking_link}"
+            : "প্রিয় গ্রাহক {customer_name}, আপনার সার্ভিস অনুরোধটি (ID: {service_id}) গ্রহণ করা হয়েছে। বিস্তারিত দেখুন: {tracking_link}",
+          vars,
+        ),
+        link: `/customer/services/${serviceId}`,
+      });
+    } catch (e) {
+      console.error("customer confirmation SMS failed:", e);
+    }
 
     // Tell the admin
     try {

@@ -274,16 +274,16 @@ export default function CustomerDashboardClient({
 
           {/* VIP band: gold card for VIP members, blue apply card for everyone else */}
           {isVipCustomer ? (
-            <Link href="/customer/vip-card" className="rounded-md border border-[#ecd27a] bg-[linear-gradient(110deg,#fff3c4_0%,#fbe39a_60%,#f6d377_100%)] px-2.5 py-2 flex items-center gap-2.5 shadow-[0_4px_12px_rgba(214,170,50,0.25)] relative overflow-hidden">
+            <Tile {...tileProps("/customer/vip-card")} className={`rounded-md border border-[#ecd27a] bg-[linear-gradient(110deg,#fff3c4_0%,#fbe39a_60%,#f6d377_100%)] px-2.5 py-2 flex items-center gap-2.5 shadow-[0_4px_12px_rgba(214,170,50,0.25)] relative overflow-hidden text-left w-full ${tileDisabled}`}>
               <span className="size-10 rounded-md bg-white border border-[#ecd27a] text-[#b8860b] flex items-center justify-center shrink-0"><Crown size={20} strokeWidth={2.2} /></span>
               <span className="flex flex-col min-w-0 flex-1 leading-tight">
                 <span className="text-[14px] font-extrabold tracking-[0.14em] text-[#8a5a00]">VIP MEMBER</span>
                 <span className="text-[11.5px] font-bold text-[#4a3a1a] truncate">Premium Access Enabled</span>
               </span>
               <span className="shrink-0 inline-flex items-center px-3 h-8 rounded-md bg-[#fdea8a] border border-[#ecd27a] text-[#7a4a05] text-[12px] font-extrabold tracking-[0.16em]">ELITE</span>
-            </Link>
+            </Tile>
           ) : (
-            <Link href="/customer/vip-card" className="rounded-md bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2f70_0%,#0d3f96_60%,#0a2f70_100%)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(10,47,112,0.3)] relative overflow-hidden">
+            <Tile {...tileProps("/customer/vip-card")} className={`rounded-md bg-[#0a2f70] bg-[linear-gradient(110deg,#0a2f70_0%,#0d3f96_60%,#0a2f70_100%)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(10,47,112,0.3)] relative overflow-hidden text-left w-full ${tileDisabled}`}>
               <span className="absolute -right-6 -bottom-10 size-32 rounded-full border-[12px] border-white/5" />
               <span className="size-10 rounded-md bg-[#f5c542] text-[#0a2f70] flex items-center justify-center shrink-0"><Crown size={22} strokeWidth={2.4} /></span>
               <span className="flex flex-col min-w-0 flex-1">
@@ -291,7 +291,7 @@ export default function CustomerDashboardClient({
                 <span className="text-[12px] font-semibold text-white/90 truncate">প্রিমিয়াম সুবিধা পেতে ভিআইপি কার্ডের জন্য আবেদন করুন</span>
               </span>
               <span className="shrink-0 inline-flex items-center gap-1 px-3 h-9 rounded-md bg-[#f5c542] text-[#0a2f70] text-[12px] font-extrabold">Apply ›</span>
-            </Link>
+            </Tile>
           )}
         </div>
 
@@ -322,7 +322,8 @@ export default function CustomerDashboardClient({
             <h3 className="text-[16px] font-extrabold text-[#16213a]">
               Quick Actions
             </h3>
-            <Link href="/customer/services" className="text-[12px] font-bold text-[#1f7cf0]">সবগুলো দেখুন ›</Link>
+            {/* Same rule as the tiles: blocked → faded, tap shows the notice instead of navigating */}
+            <Tile {...tileProps("/customer/services")} className={`text-[12px] font-bold text-[#1f7cf0] ${tileDisabled}`}>সবগুলো দেখুন ›</Tile>
           </div>
 
           <div className="grid grid-cols-4 md:grid-cols-8 gap-x-2 gap-y-4 sm:gap-8">

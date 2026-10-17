@@ -1,6 +1,7 @@
 "use server";
 
 import { ApplicationMessages, ServiceMessages } from "@/constants/messages";
+import { contactDetails } from "@/constants";
 import { db } from "@/db/drizzle";
 import {
   applications,
@@ -372,14 +373,40 @@ export async function createService(prevState: any, formData: FormData) {
       warrantyCardPhoto
     );
     const originSource = includesMedia ? "public_form" : "dashboard";
+    const session = await verifySession(false);
 
     if (originSource === "dashboard") {
-      const session = await verifySession(false);
       if (
         !session ||
         (session.role !== "admin" && session.role !== "customer")
       ) {
         return { success: false, message: "Unauthorized" };
+      }
+    }
+
+    // A customer whose warranty/dashboard is blocked (unpaid due or misuse) can't
+    // request a service themselves — match by the logged-in customer, the customerId
+    // on the form, or the phone number. Admin can still add one for them.
+    if (session?.role !== "admin") {
+      const blockedBy = [
+        session?.role === "customer" ? eq(customers.customerId, session.userId as string) : undefined,
+        validatedCustomerData.customerId ? eq(customers.customerId, validatedCustomerData.customerId) : undefined,
+        validatedCustomerData.customerPhone ? eq(customers.phone, validatedCustomerData.customerPhone) : undefined,
+      ].filter(Boolean);
+      if (blockedBy.length) {
+        const blocked = await db.query.customers.findFirst({
+          where: and(eq(customers.isWarrantyStopped, true), or(...(blockedBy as any[]))),
+          columns: { warrantyStopReason: true },
+        });
+        if (blocked) {
+          return {
+            success: false,
+            message:
+              blocked.warrantyStopReason === "misuse"
+                ? `পণ্যের অপব্যবহার/ক্ষতি প্রমাণিত হওয়ায় আপনার ওয়ারেন্টি বাতিল করা হয়েছে, তাই অনলাইনে সার্ভিসের আবেদন করা যাবে না। বিস্তারিত: ${contactDetails.customerCare}`
+                : `বকেয়া টাকা পরিশোধ না করায় আপনার ওয়ারেন্টি সাময়িকভাবে বন্ধ আছে, তাই এখন সার্ভিসের আবেদন করা যাবে না। বকেয়া পরিশোধ করলে আবার চালু হবে। বিস্তারিত: ${contactDetails.customerCare}`,
+          };
+        }
       }
     }
 

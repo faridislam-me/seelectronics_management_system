@@ -789,6 +789,11 @@ export const payments = pgTable(
     serviceId: varchar({ length: 255 }).references(() => services.serviceId, {
       onDelete: "set null",
     }),
+    // Snapshot of the job's customer, kept even if the service is deleted later
+    // (serviceId is then set to null and the details page had nothing to show).
+    customerName: varchar({ length: 255 }),
+    customerPhone: varchar({ length: 50 }),
+    customerAddress: text(),
     status: paymentStatusEnum().default("pending").notNull(),
     transactionId: varchar({ length: 255 }).unique(),
     description: text(),

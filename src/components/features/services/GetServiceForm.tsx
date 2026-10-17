@@ -6,9 +6,9 @@ import PageBanner from "@/components/ui/PageBanner";
 import SuccessPopup from "@/components/ui/SuccessPopup";
 import { batteryTypes, contactDetails, ipsBrands, productPowerRatings, productTypes, stabilizerBrands, stabilizerPowerRatings } from "@/constants";
 import { useThemeColor } from "@/hooks";
+import { Field, SectionCard, SelectField, UploadBox } from "@/components/ui/ServiceFormKit";
 import clsx from "clsx";
-import { Box, Building2, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, ClipboardList, FileText, Gauge, Headset, Home, ImagePlus, LucideIcon, Mail, Map as MapIcon, MapPin, Phone, Send, Settings, ShieldCheck, Truck, UploadCloud, User, Wrench, X, Zap } from "lucide-react";
-import Image from "next/image";
+import { Box, Building2, Calendar, Check, ChevronRight, ClipboardList, FileText, Gauge, Headset, Home, ImagePlus, LucideIcon, Mail, Map as MapIcon, MapPin, Phone, Send, Settings, ShieldCheck, Truck, User, Wrench, Zap } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
@@ -79,51 +79,6 @@ function AppHeader({ homeHref }: { homeHref: string }) {
   );
 }
 
-function SectionCard({ id, n, title, children }: { id: string; n: number; title: string; children: React.ReactNode }) {
-  return (
-    <section id={id} data-step={n - 1} className="scroll-mt-[76px] rounded-md bg-white border border-[#dfe6f2] overflow-hidden shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
-      <div className="flex items-center gap-2.5 px-2.5 py-2 bg-[#eef4fd] border-b border-[#dfe8f7]">
-        <span className="size-7 rounded-full bg-[#0b3d91] text-white text-[13px] font-extrabold flex items-center justify-center">{n}</span>
-        <span className="text-[15px] font-extrabold text-[#0b3d91]">{title}</span>
-      </div>
-      <div className="p-2.5 flex flex-col gap-2.5">{children}</div>
-    </section>
-  );
-}
-
-const boxCls = "w-full h-10 rounded-md border border-[#d9e2f0] bg-white pl-9 pr-2.5 text-[14px] font-semibold text-[#16213a] placeholder:font-medium placeholder:text-[#9aa4b8] outline-none focus:border-[#1f7cf0] focus:ring-1 focus:ring-[#1f7cf0]";
-const Label = ({ text, req }: { text: string; req?: boolean }) => <span className="text-[12.5px] font-bold text-[#16213a]">{text} {req && <span className="text-[#e0243f]">*</span>}</span>;
-
-/** Text input with its icon inside the box. */
-function Field({ icon: Icon, label, req = true, className = "", ...props }: { icon: LucideIcon; label: string; req?: boolean } & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <label className={clsx("flex flex-col gap-1 min-w-0", className)}>
-      <Label text={label} req={req} />
-      <span className="relative">
-        <Icon size={17} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#1f5fc9] pointer-events-none" />
-        <input {...props} required={req} className={boxCls} />
-      </span>
-    </label>
-  );
-}
-
-/** Select with its icon inside the box. */
-function SelectField({ icon: Icon, label, req = true, options, format, className = "", ...props }: { icon: LucideIcon; label: string; req?: boolean; options: readonly string[]; format?: (v: string) => string } & React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <label className={clsx("flex flex-col gap-1 min-w-0", className)}>
-      <Label text={label} req={req} />
-      <span className="relative">
-        <Icon size={17} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#1f5fc9] pointer-events-none" />
-        <select {...props} required={req} className={clsx(boxCls, "appearance-none pr-7")}>
-          <option value="">নির্বাচন করুন</option>
-          {options.map((o) => <option key={o} value={o}>{format ? format(o) : o}</option>)}
-        </select>
-        <ChevronDown size={16} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#5b6784] pointer-events-none" />
-      </span>
-    </label>
-  );
-}
-
 /** "Share my location" pin so the technician's live route can end at the customer. */
 function LocationPin() {
   const [loc, setLoc] = useState<{ lat: number; lng: number } | null>(null);
@@ -154,41 +109,6 @@ function LocationPin() {
         {busy ? "লোকেশন নেওয়া হচ্ছে..." : loc ? "আপনার লোকেশন নেওয়া হয়েছে ✓ (আবার নিতে চাপুন)" : "আমার বর্তমান লোকেশন দিন (ঐচ্ছিক)"}
       </button>
       <span className="text-[11px] text-[#5b6784] leading-snug">{err || "লোকেশন দিলে টেকনিশিয়ান কোথায় আছে ও কতক্ষণে পৌঁছাবে ম্যাপে দেখতে পাবেন।"}</span>
-    </div>
-  );
-}
-
-/** Compact dashed upload tile with preview. */
-function UploadBox({ name, label }: { name: string; label: string }) {
-  const [preview, setPreview] = useState<string | null>(null);
-  const ref = useRef<HTMLInputElement | null>(null);
-  const maxMb = Number(process.env.NEXT_PUBLIC_MAX_IMAGE_SIZE_MB || 2);
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return setPreview(null);
-    if (file.size > maxMb * 1024 * 1024) {
-      toast.error(`ফাইল ${maxMb} MB-এর বেশি হতে পারবে না!`);
-      e.target.value = "";
-      return setPreview(null);
-    }
-    setPreview(URL.createObjectURL(file));
-  };
-  return (
-    <div className={clsx("relative h-[100px] rounded-md border border-dashed overflow-hidden", preview ? "border-[#1f7cf0]" : "border-[#b9cdee] bg-[#f7faff]")}>
-      {preview ? (
-        <>
-          <Image src={preview} alt={label} fill className="object-cover" />
-          <span className="absolute inset-x-0 bottom-0 bg-black/55 text-white text-[10px] font-bold text-center py-0.5 truncate px-1">{label}</span>
-          <button type="button" aria-label="Remove" onClick={() => { setPreview(null); if (ref.current) ref.current.value = ""; }} className="absolute top-1 right-1 z-20 size-6 rounded-md bg-black/55 text-white flex items-center justify-center"><X size={14} /></button>
-        </>
-      ) : (
-        <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-1 text-center">
-          <UploadCloud size={22} className="text-[#1f5fc9]" />
-          <span className="text-[11px] font-bold text-[#16213a] leading-tight">{label} <span className="text-[#e0243f]">*</span></span>
-          <span className="text-[9px] font-medium text-[#5b6784] leading-tight">(JPG, PNG বা WebP - Max {maxMb}MB)</span>
-        </span>
-      )}
-      <input ref={ref} type="file" name={name} accept="image/png, image/jpeg, image/webp" required={!preview} onChange={onChange} className={clsx("absolute inset-0 opacity-0 cursor-pointer", preview ? "z-10" : "z-20")} />
     </div>
   );
 }

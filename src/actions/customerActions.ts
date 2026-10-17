@@ -440,3 +440,35 @@ export async function getCustomerDashboardStatus() {
         return { success: false };
     }
 }
+
+/**
+ * Warranty status of the logged-in customer's purchased products, for showing
+ * on a service page. Computed from each product's warranty start + duration
+ * (the same rule as /check-warranty) — never from the service request date.
+ * When `productType` is given, products of that type are preferred.
+ */
+export async function getMyWarrantyStatus(productType?: string | null) {
+    const session = await verifySession(false, 'customer');
+    if (!session || !session.isAuth) return null;
+
+    const customer = await db.query.customers.findFirst({
+        where: eq(customers.customerId, session.userId as string),
+        columns: { isWarrantyStopped: true },
+        with: { invoice: { with: { products: { columns: { type: true, warrantyStartDate: true, warrantyDurationMonths: true } } } } },
+    });
+    const all = customer?.invoice?.products ?? [];
+    if (!all.length) return { status: "none" as const, endDate: null };
+
+    const sameType = productType ? all.filter((p) => p.type === productType) : [];
+    const pool = sameType.length ? sameType : all;
+    const endDate = pool
+        .map((p) => {
+            const d = new Date(p.warrantyStartDate);
+            d.setMonth(d.getMonth() + p.warrantyDurationMonths);
+            return d;
+        })
+        .reduce((a, b) => (b > a ? b : a));
+
+    if (customer?.isWarrantyStopped) return { status: "stopped" as const, endDate };
+    return { status: new Date() <= endDate ? ("valid" as const) : ("expired" as const), endDate };
+}

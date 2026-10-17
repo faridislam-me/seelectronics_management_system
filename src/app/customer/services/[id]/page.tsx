@@ -1,7 +1,6 @@
 import { getServiceById } from "@/actions";
-import { verifyCustomerSession } from "@/actions/customerActions";
+import { getMyWarrantyStatus, verifyCustomerSession } from "@/actions/customerActions";
 import { formatDate } from "@/utils";
-import { warrantyDurationByType } from "@/constants";
 import { CustomerAppHeader, CustomerAppNav } from "@/components/ui/CustomerAppChrome";
 import clsx from "clsx";
 import {
@@ -60,14 +59,14 @@ export default async function ServiceDetailsPage({ params }: { params: Promise<{
   if (!service) notFound();
 
   const latestStatus = service.statusHistory[service.statusHistory.length - 1]?.status as string | undefined;
-  const createdDate = new Date(service.createdAt);
   const isInstall = service.type === "install";
 
-  // Warranty duration based on product type
-  const warrantyMonths = warrantyDurationByType[service.productType] || 24;
-  const expireDate = new Date(createdDate);
-  expireDate.setMonth(expireDate.getMonth() + warrantyMonths);
-  const isWarrantyExpired = new Date() > expireDate;
+  // Warranty comes from the customer's purchased product (start + duration),
+  // not from this service request's date.
+  const warranty = await getMyWarrantyStatus(service.productType);
+  const warrantyStatus = warranty?.status ?? "none";
+  const isWarrantyExpired = warrantyStatus !== "valid";
+  const warrantyLabel = { valid: "Valid", expired: "Expired", stopped: "Stopped", none: "N/A" }[warrantyStatus];
 
   const st = (latestStatus || "").toLowerCase();
   const done = st === "completed";
@@ -129,7 +128,7 @@ export default async function ServiceDetailsPage({ params }: { params: Promise<{
             <span className="text-[12px] font-semibold text-[#5b6784]">ওয়ারেন্টি তথ্য দেখুন</span>
           </span>
           <span className={clsx("inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-[12.5px] font-extrabold", isWarrantyExpired ? "bg-[#ffe9ec] text-[#c81f38]" : "bg-[#e9f9ef] text-[#178a42]")}>
-            {isWarrantyExpired ? <XCircle size={15} /> : <CheckCircle2 size={15} />}{isWarrantyExpired ? "Expired" : "Valid"}
+            {isWarrantyExpired ? <XCircle size={15} /> : <CheckCircle2 size={15} />}{warrantyLabel}
           </span>
           <ChevronRight size={18} className="text-[#0b3d91] shrink-0" />
         </Link>
@@ -148,8 +147,8 @@ export default async function ServiceDetailsPage({ params }: { params: Promise<{
             </div>
             <div className={clsx("rounded-md border p-2 flex flex-col items-center text-center gap-1 w-[112px]", isWarrantyExpired ? "bg-[#fff1f3] border-[#f7c3ca]" : "bg-[#eef4fd] border-[#dfe8f7]")}>
               <Calendar size={20} className={isWarrantyExpired ? "text-[#c81f38]" : "text-[#0b3d91]"} />
-              <span className="text-[11px] font-semibold text-[#5b6784] leading-tight">ওয়ারেন্টি শেষ হবে:</span>
-              <b className={clsx("text-[14px]", isWarrantyExpired ? "text-[#c81f38]" : "text-[#0b3d91]")}>{expireDate.toLocaleDateString()}</b>
+              <span className="text-[11px] font-semibold text-[#5b6784] leading-tight">{warrantyStatus === "valid" ? "ওয়ারেন্টি শেষ হবে:" : warrantyStatus === "none" ? "ওয়ারেন্টি:" : "ওয়ারেন্টি শেষ হয়েছে:"}</span>
+              <b className={clsx("text-[14px]", isWarrantyExpired ? "text-[#c81f38]" : "text-[#0b3d91]")}>{warranty?.endDate ? formatDate(warranty.endDate) : "নেই"}</b>
             </div>
           </div>
         </section>

@@ -5,6 +5,7 @@ export { default as DelayedLoading } from "./DelayedLoading";
 export { default as ImageWithLightbox } from "./ImageWithLightbox";
 export { default as InputField } from "./InputField";
 export { default as Modal } from "./Modal";
+export { default as OfflineScreen, isNetworkError } from "./OfflineScreen";
 export { default as ProgressBar } from "./ProgressBar";
 export { default as RefreshButton } from "./RefreshButton";
 export { default as Search } from "./Search";

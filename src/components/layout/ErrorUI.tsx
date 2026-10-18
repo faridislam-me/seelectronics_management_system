@@ -2,6 +2,7 @@
 
 import { AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react'
 import { useTransition } from 'react'
+import OfflineScreen, { isNetworkError } from '../ui/OfflineScreen'
 
 interface ErrorUIProps {
     reset: () => void
@@ -14,6 +15,18 @@ export default function ErrorUI({
 }: ErrorUIProps) {
 
     const [isPending, startTransition] = useTransition()
+
+    // A lost connection shows the app-style offline page instead of the raw error text.
+    if (isNetworkError(error)) {
+        return (
+            <OfflineScreen
+                reloadWhenOnline
+                onRetry={() => {
+                    if (navigator.onLine) window.location.reload()
+                }}
+            />
+        )
+    }
 
     return (
         <div className="flex flex-col items-center justify-center p-6 min-h-screen animate-in fade-in duration-500">

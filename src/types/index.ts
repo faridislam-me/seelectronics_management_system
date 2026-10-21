@@ -2,6 +2,7 @@ export type UrlConfig =
   | { type: "registration"; params: { token: string } }
   | { type: "seller-registration"; params: { token: string } }
   | { type: "seller-login"; params?: {} }
+  | { type: "seller-certificate"; params?: {} }
   | { type: "feedback"; params: { serviceId: string } }
   | { type: "application-tracking"; params: { trackingId: string } }
   | { type: "service-tracking"; params: { trackingId: string } }
@@ -28,7 +29,8 @@ export type DocType =
   | "hearing-notice"
   | "completion-notice"
   | "staff-not-guilty"
-  | "seller-invoice";
+  | "seller-invoice"
+  | "seller-certificate";
 
 export type CertificateData = {
   staffId?: string;

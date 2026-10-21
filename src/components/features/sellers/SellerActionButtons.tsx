@@ -4,9 +4,10 @@ import { deleteSeller, setSellerCredentials, toggleSellerStatus } from "@/action
 import { Modal } from "@/components/ui";
 import { SellersType } from "@/types";
 import clsx from "clsx";
-import { KeyRound, Package, Pencil, ShieldCheck, ShieldOff, Trash2 } from "lucide-react";
+import { Award, KeyRound, Package, Pencil, ShieldCheck, ShieldOff, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { Id, toast } from "react-toastify";
+import SellerCertificateModal from "./SellerCertificateModal";
 import SellerPurchaseForm from "./SellerPurchaseForm";
 import SellerRegistrationForm from "./SellerRegistrationForm";
 
@@ -14,6 +15,7 @@ export default function SellerActionButtons({ sellerData, onChanged }: { sellerD
   const [showUpdate, setShowUpdate] = useState(false);
   const [showCredentials, setShowCredentials] = useState(false);
   const [showPurchase, setShowPurchase] = useState(false);
+  const [showCertificate, setShowCertificate] = useState(false);
   const [credentials, setCredentials] = useState({ username: sellerData.username || "", password: "" });
   const [busy, setBusy] = useState(false);
   const toastId = useRef<Id | null>(null);
@@ -44,6 +46,7 @@ export default function SellerActionButtons({ sellerData, onChanged }: { sellerD
           <SellerRegistrationForm mode="update" sellerData={sellerData} onComplete={() => { setShowUpdate(false); onChanged?.(); }} />
         </Modal>
       )}
+      {showCertificate && <SellerCertificateModal seller={sellerData} onClose={() => setShowCertificate(false)} />}
       {showPurchase && <SellerPurchaseForm sellerId={sellerData.sellerId} onClose={() => setShowPurchase(false)} onSaved={onChanged} />}
       {showCredentials && (
         <Modal isVisible title="Set Seller Login Credentials" onClose={() => setShowCredentials(false)}>
@@ -63,9 +66,12 @@ export default function SellerActionButtons({ sellerData, onChanged }: { sellerD
         </Modal>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
         <button onClick={() => setShowPurchase(true)} className={btn("bg-teal-50 text-teal-600 border-teal-100 hover:bg-teal-100")}>
           <Package size={24} /><span className="text-[10px] font-black uppercase tracking-widest">Add Purchase</span>
+        </button>
+        <button onClick={() => setShowCertificate(true)} className={btn("bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100")}>
+          <Award size={24} /><span className="text-[10px] font-black uppercase tracking-widest">Certificate</span>
         </button>
         <button onClick={() => setShowUpdate(true)} className={btn("bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100")}>
           <Pencil size={24} /><span className="text-[10px] font-black uppercase tracking-widest">Edit Info</span>

@@ -146,28 +146,35 @@ export default async function StaffCustomerProfilePage({
                 Service History
               </h3>
 
-              {customer.invoice ? (
-                <div className="space-y-4">
-                  <div className="p-5 rounded-md border border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        Primary Invoice
-                      </p>
-                      <p className="text-sm font-black text-gray-900">
-                        {customer.invoice.invoiceNumber}
-                      </p>
-                      <p className="text-sm text-gray-500 font-bold uppercase tracking-tight">
-                        {customer.invoice.paymentType} • Total: ৳
-                        {customer.invoice.total}
-                      </p>
-                    </div>
-                    <Link
-                      href={`/staff/payment/${customer.invoice.invoiceNumber}`}
-                      className="px-5 py-2.5 rounded-md bg-white text-gray-900 text-sm font-black shadow-sm border border-gray-200 flex items-center gap-2 hover:bg-gray-50 transition-all active:scale-95"
+              {customer.invoices && customer.invoices.length > 0 ? (
+                <div className="space-y-3">
+                  {customer.invoices.map((inv) => (
+                    <div
+                      key={inv.id}
+                      className="p-5 rounded-md border border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                     >
-                      Details <ArrowRight size={14} />
-                    </Link>
-                  </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                          Invoice • {formatDate(inv.date)}
+                        </p>
+                        <p className="text-sm font-black text-gray-900">
+                          {inv.invoiceNumber}
+                        </p>
+                        <p className="text-sm text-gray-500 font-bold uppercase tracking-tight">
+                          {inv.paymentType} • Total: ৳{inv.total.toLocaleString()}
+                          {inv.dueAmount > 0 && (
+                            <span className="text-red-500"> • Due ৳{inv.dueAmount.toLocaleString()}</span>
+                          )}
+                        </p>
+                      </div>
+                      <Link
+                        href={`/staff/payment/${inv.invoiceNumber}`}
+                        className="px-5 py-2.5 rounded-md bg-white text-gray-900 text-sm font-black shadow-sm border border-gray-200 flex items-center gap-2 hover:bg-gray-50 transition-all active:scale-95"
+                      >
+                        Details <ArrowRight size={14} />
+                      </Link>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="h-48 flex flex-col items-center justify-center text-center">
@@ -198,7 +205,7 @@ export default async function StaffCustomerProfilePage({
                       Balance
                     </p>
                     <p className="text-sm font-black text-gray-900">
-                      ৳{customer.invoice?.dueAmount || 0} DUE
+                      ৳{(customer.invoices?.reduce((t, i) => t + (i.dueAmount || 0), 0) || 0).toLocaleString()} DUE
                     </p>
                   </div>
                 </div>

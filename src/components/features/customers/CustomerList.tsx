@@ -109,15 +109,27 @@ export default async function CustomerList(
           {customer.address}
         </p>
       </td>
-      <td
-        className={clsx(
-          "py-4 px-4 whitespace-nowrap text-right font-black text-sm sm:text-base",
-          (customer.invoice?.dueAmount || 0) > 0
-            ? "text-red-500"
-            : "text-emerald-600",
+      <td className="py-4 px-4 whitespace-nowrap text-right">
+        <span
+          className={clsx(
+            "font-black text-sm sm:text-base",
+            (customer.aggregate?.totalDue ?? customer.invoice?.dueAmount ?? 0) > 0
+              ? "text-red-500"
+              : "text-emerald-600",
+          )}
+        >
+          ৳{(customer.aggregate?.totalBill ?? customer.invoice?.total ?? 0).toLocaleString()}
+        </span>
+        {(customer.aggregate?.totalDue ?? 0) > 0 && (
+          <span className="block text-[11px] font-bold text-red-500">
+            ৳{customer.aggregate.totalDue.toLocaleString()} due
+          </span>
         )}
-      >
-        ৳{customer.invoice?.total.toLocaleString() || 0}
+        {(customer.aggregate?.invoiceCount ?? 0) > 1 && (
+          <span className="block text-[11px] font-semibold text-gray-400">
+            {customer.aggregate.invoiceCount} invoices
+          </span>
+        )}
       </td>
       <td className="py-3 px-4 whitespace-nowrap text-gray-500 text-sm sm:text-sm font-bold">
         {customer.invoice?.date ? formatDate(customer.invoice.date) : "N/A"}

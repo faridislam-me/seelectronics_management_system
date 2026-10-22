@@ -242,6 +242,10 @@ export const getWarrantyInfo = async (query: string) => {
     });
     const blockReason = owner?.isWarrantyStopped ? (owner.warrantyStopReason === "misuse" ? "misuse" : "due") : null;
 
+    // Warranty covers every purchase under this account, not just the matched invoice.
+    const { getCustomerProducts } = await import("@/lib/customerPurchases");
+    const allProducts = await getCustomerProducts(invoice.customerId);
+
     return {
       success: true,
       data: {
@@ -251,7 +255,7 @@ export const getWarrantyInfo = async (query: string) => {
         customerName: invoice.customerName,
         customerPhone: canSeeAll ? phone : maskedPhone,
         date: invoice.date,
-        products: invoice.products,
+        products: allProducts.length ? allProducts : invoice.products,
       },
     };
   } catch (error) {

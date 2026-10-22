@@ -140,7 +140,36 @@ export const getCustomers = async ({
       },
     });
 
-    return { success: true, data: customersData };
+    // Aggregate every purchase per customer (count + total bill + total due)
+    // so the list reflects all invoices under one account, not just the first.
+    const ids = customersData.map((c) => c.customerId);
+    let withAggregate = customersData as Array<(typeof customersData)[number] & { aggregate?: { invoiceCount: number; totalBill: number; totalDue: number } }>;
+    if (ids.length) {
+      const agg = await db
+        .select({
+          customerId: invoices.customerId,
+          invoiceCount: sql<number>`count(*)::int`,
+          totalBill: sql<number>`coalesce(sum(${invoices.total}), 0)::float`,
+          totalDue: sql<number>`coalesce(sum(${invoices.dueAmount}), 0)::float`,
+        })
+        .from(invoices)
+        .where(inArray(invoices.customerId, ids))
+        .groupBy(invoices.customerId);
+      const map = new Map(agg.map((a) => [a.customerId, a]));
+      withAggregate = customersData.map((c) => {
+        const a = map.get(c.customerId);
+        return {
+          ...c,
+          aggregate: {
+            invoiceCount: Number(a?.invoiceCount ?? (c.invoice ? 1 : 0)),
+            totalBill: Number(a?.totalBill ?? c.invoice?.total ?? 0),
+            totalDue: Number(a?.totalDue ?? c.invoice?.dueAmount ?? 0),
+          },
+        };
+      });
+    }
+
+    return { success: true, data: withAggregate };
   } catch (error) {
     console.error("Error fetching customers:", error);
     return { success: false, message: "Could not fetch customers" };
@@ -175,10 +204,178 @@ export const getCustomerById = async (customerId: string) => {
 
     if (!customerData) return { success: false, message: "Customer not found" };
 
-    return { success: true, data: customerData };
+    // Every purchase the customer has made (newest first). `invoice` above stays
+    // the primary one for backward compatibility; `invoices` is the full list.
+    const { getCustomerInvoices } = await import("@/lib/customerPurchases");
+    const allInvoices = await getCustomerInvoices(customerId);
+
+    return { success: true, data: { ...customerData, invoices: allInvoices } };
   } catch (error) {
     console.error("Error fetching customer by id:", error);
     return { success: false, message: "Something went wrong" };
+  }
+};
+
+/**
+ * Finds existing customers by name / phone / customer ID so a new purchase can
+ * be attached to an existing account instead of creating a duplicate. Admins
+ * search everyone; sellers only their own customers. Returns a light shape with
+ * each customer's purchase count and outstanding due.
+ */
+export const searchCustomersForPurchase = async (query: string) => {
+  try {
+    const session = await verifySession(false);
+    if (!session || (session.role !== "admin" && session.role !== "seller")) {
+      return { success: false, message: "Unauthorized" };
+    }
+    const q = (query || "").trim();
+    if (q.length < 2) return { success: true, data: [] };
+
+    const like = `%${q}%`;
+    const textFilter = or(
+      ilike(customers.customerId, like),
+      ilike(customers.name, like),
+      ilike(customers.phone, like),
+    );
+    const where =
+      session.role === "seller"
+        ? and(eq(customers.sellerId, session.userId as string), textFilter)
+        : textFilter;
+
+    const matches = await db.query.customers.findMany({
+      where,
+      limit: 8,
+      orderBy: (c, { desc }) => [desc(c.createdAt)],
+      columns: {
+        customerId: true,
+        name: true,
+        phone: true,
+        address: true,
+        invoiceNumber: true,
+        isWarrantyStopped: true,
+        warrantyStopReason: true,
+      },
+    });
+
+    const ids = matches.map((m) => m.customerId);
+    const aggMap = new Map<string, { invoiceCount: number; totalDue: number }>();
+    if (ids.length) {
+      const agg = await db
+        .select({
+          customerId: invoices.customerId,
+          invoiceCount: sql<number>`count(*)::int`,
+          totalDue: sql<number>`coalesce(sum(${invoices.dueAmount}), 0)::float`,
+        })
+        .from(invoices)
+        .where(inArray(invoices.customerId, ids))
+        .groupBy(invoices.customerId);
+      for (const a of agg) aggMap.set(a.customerId, { invoiceCount: Number(a.invoiceCount), totalDue: Number(a.totalDue) });
+    }
+
+    return {
+      success: true,
+      data: matches.map((m) => ({
+        ...m,
+        invoiceCount: aggMap.get(m.customerId)?.invoiceCount ?? 0,
+        totalDue: aggMap.get(m.customerId)?.totalDue ?? 0,
+      })),
+    };
+  } catch (error) {
+    console.error("Error searching customers:", error);
+    return { success: false, message: "Could not search customers" };
+  }
+};
+
+/**
+ * Adds a NEW invoice (one purchase) to an EXISTING customer account. The
+ * customer's own name/phone/address are used (the form locks them), so repeat
+ * buyers keep a single account with a separate invoice per purchase. Referral
+ * discounts are a one-time new-customer benefit and are not re-applied here.
+ */
+export const addPurchaseToCustomer = async (customerId: string, data: any, sendLink = false) => {
+  try {
+    const session = await verifySession(false);
+    if (!session || (session.role !== "admin" && session.role !== "seller")) {
+      return { success: false, message: "Unauthorized" };
+    }
+
+    const customer = await db.query.customers.findFirst({
+      where: eq(customers.customerId, customerId),
+      columns: { customerId: true, name: true, phone: true, address: true, sellerId: true },
+    });
+    if (!customer) return { success: false, message: "Customer not found" };
+    if (session.role === "seller" && customer.sellerId !== session.userId) {
+      return { success: false, message: "Unauthorized" };
+    }
+
+    const base = invoiceBase(data);
+    const manual = session.role === "admin" ? readManualDiscount(data, base) : ({ ok: true, discount: null } as const);
+    if (!manual.ok) return { success: false, message: manual.message };
+
+    let finalTotal = base;
+    if (manual.discount) finalTotal = Math.max(0, finalTotal - manual.discount.amount);
+    const finalDue = Math.min(Math.max(0, Number(data.invoice.dueAmount) || 0), finalTotal);
+
+    const { generateInvoiceNumber } = await import("@/utils");
+    const invoiceNumber = generateInvoiceNumber();
+
+    const [invoiceRecord] = await db
+      .insert(invoices)
+      .values({
+        invoiceNumber,
+        customerId: customer.customerId,
+        customerName: customer.name,
+        customerPhone: customer.phone,
+        customerAddress: customer.address,
+        date: new Date(data.invoice.date),
+        paymentType: data.invoice.paymentType,
+        subtotal: base,
+        total: finalTotal,
+        dueAmount: finalDue,
+        dueType: data.invoice.dueType || "due",
+        notes: withManualDiscount(data.invoice.notes, manual.discount),
+      })
+      .returning();
+
+    if (data.products && data.products.length > 0) {
+      await db.insert(products).values(
+        data.products.map((p: any) => ({
+          invoiceId: invoiceRecord.id,
+          type: p.type,
+          model: p.model,
+          serialNumber: String(p.serialNumber ?? "").trim() || null,
+          quantity: Number(p.quantity) || 1,
+          unitPrice: Number(p.unitPrice) || 0,
+          warrantyStartDate: new Date(p.warrantyStartDate),
+          warrantyDurationMonths: Number(p.warrantyDurationMonths),
+          warrantyEndDate: warrantyEndOf(new Date(p.warrantyStartDate), Number(p.warrantyDurationMonths)),
+        })),
+      );
+    }
+
+    if (sendLink) {
+      const { sendInvoiceDownloadLink } = await import("./invoiceActions");
+      await sendInvoiceDownloadLink(
+        { name: customer.name, phoneNumber: customer.phone },
+        {
+          invoiceNumber,
+          date: data.invoice.date,
+          totalPrice: finalTotal,
+          invoiceType: "customer-invoice",
+          customerId: customer.customerId,
+        },
+      );
+    }
+
+    revalidatePath("/customers");
+    revalidatePath(`/staff/customers/${customerId}`);
+    revalidatePath("/seller/customers");
+    revalidatePath("/seller/profile");
+
+    return { success: true, message: "নতুন ইনভয়েস যোগ হয়েছে", invoiceNumber };
+  } catch (error) {
+    console.error("Error adding purchase:", error);
+    return { success: false, message: "Failed to add purchase" };
   }
 };
 
@@ -534,7 +731,9 @@ export const updateCustomer = async (
       })
       .where(eq(customers.customerId, customerId));
 
-    // 2. Update invoice
+    // 2. Update the primary invoice only. A customer can now own several
+    //    invoices (one per purchase); editing the customer must not overwrite
+    //    the others, so we scope by the primary invoice number.
     await db
       .update(invoices)
       .set({
@@ -549,7 +748,7 @@ export const updateCustomer = async (
         dueType: data.invoice.dueType || 'due',
         notes: withManualDiscount(data.invoice.notes, manual.discount),
       })
-      .where(eq(invoices.customerId, customerId));
+      .where(eq(invoices.invoiceNumber, customer.invoiceNumber));
 
     // 3. Update products (delete and recreate for simplicity)
     if (customer.invoice) {
@@ -654,8 +853,12 @@ export const toggleCustomerDashboard = async (customerId: string, reason?: "due"
 
     if (!customer) return { success: false, message: "Customer not found" };
 
+    // Block/unblock must cover every purchase, not just the primary invoice.
+    const { getCustomerProducts } = await import("@/lib/customerPurchases");
+    const allProducts = await getCustomerProducts(customerId);
+
     const { toggleCustomerBlockCore, blockReasonOf } = await import("@/lib/customerBlock");
-    await toggleCustomerBlockCore(customer, blockReasonOf(reason));
+    await toggleCustomerBlockCore({ ...customer, allProducts }, blockReasonOf(reason));
 
     revalidatePath("/customers");
     revalidatePath(`/staff/customers/${customerId}`);

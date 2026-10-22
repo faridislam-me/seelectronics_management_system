@@ -13,6 +13,24 @@ export default function InvoiceTemplate({
   const totalDiscount = Math.max(0, data.subtotal - data.total);
   const manualAmount = manual ? Math.min(manual.amount, totalDiscount) : 0;
   const referralAmount = Math.max(0, totalDiscount - manualAmount);
+
+  // Auto-fit: the page background has a fixed footer (notes/seal/signature) baked
+  // in near the bottom. As the item count grows, shrink row height and font so the
+  // table + totals always stay in the safe band above that footer, never overlap it.
+  const itemCount = data.products?.length ?? 0;
+  const density =
+    itemCount <= 5 ? "normal" : itemCount <= 8 ? "compact" : itemCount <= 12 ? "tight" : "xtight";
+  const rowPad =
+    density === "normal" ? "py-2" : density === "compact" ? "py-1" : density === "tight" ? "py-0.5" : "py-[1px]";
+  const cellText =
+    density === "normal" ? "text-md" : density === "compact" ? "text-sm" : "text-xs";
+  const headPad = density === "normal" ? "py-2" : density === "compact" ? "py-1" : "py-0.5";
+  const headText = density === "xtight" ? "text-[10px]" : density === "tight" ? "text-xs" : "text-sm";
+  const totalsText =
+    density === "normal" ? "text-base" : density === "compact" ? "text-sm" : density === "tight" ? "text-xs" : "text-[11px]";
+  const totalsGap =
+    density === "normal" ? "space-y-2" : density === "compact" ? "space-y-1" : "space-y-0.5";
+  const headerMb = density === "normal" ? "mb-4" : "mb-2";
   return (
     <div
       className="relative w-[210mm] h-[297mm] mx-auto bg-white bg-center bg-no-repeat bg-cover"
@@ -22,10 +40,10 @@ export default function InvoiceTemplate({
       }}
     >
       <div className="absolute top-[200px] left-[40px] right-[40px]">
-        <div className="text-right text-xl font-bold tracking-wide mb-4">
+        <div className={`text-right text-xl font-bold tracking-wide ${headerMb}`}>
           INVOICE
         </div>
-        <div className="flex justify-between mb-4 text-sm">
+        <div className={`flex justify-between ${headerMb} text-sm`}>
           <div className="space-y-1">
             <div>
               <span className="font-semibold text-xl ">Invoice To</span>
@@ -78,22 +96,22 @@ export default function InvoiceTemplate({
                   data.dueAmount > 0 ? "bg-[#FFD7DC]" : "bg-[#D7E6F5]",
                 )}
               >
-                <th className="text-left py-2 px-3 font-bold text-sm border-r border-black w-4">
+                <th className={`text-left ${headPad} px-3 font-bold ${headText} border-r border-black w-4`}>
                   No
                 </th>
-                <th className="text-left py-2 px-3 font-bold text-sm border-r border-black">
+                <th className={`text-left ${headPad} px-3 font-bold ${headText} border-r border-black`}>
                   Product details
                 </th>
-                <th className="text-center py-2 px-3 font-bold text-sm border-r border-black">
+                <th className={`text-center ${headPad} px-3 font-bold ${headText} border-r border-black`}>
                   Warrenty
                 </th>
-                <th className="text-center py-2 px-3 font-bold text-sm border-r border-black">
+                <th className={`text-center ${headPad} px-3 font-bold ${headText} border-r border-black`}>
                   Qty
                 </th>
-                <th className="text-right py-2 px-3 font-bold text-sm border-r border-black">
+                <th className={`text-right ${headPad} px-3 font-bold ${headText} border-r border-black`}>
                   Unit Price
                 </th>
-                <th className="text-right py-2 px-3 font-bold text-sm border-black">
+                <th className={`text-right ${headPad} px-3 font-bold ${headText} border-black`}>
                   Total
                 </th>
               </tr>
@@ -101,31 +119,31 @@ export default function InvoiceTemplate({
             <tbody>
               {data.products?.map((product, index) => (
                 <tr key={product.id} className="border border-black">
-                  <td className="py-2 px-3 text-md border-r border-black">
+                  <td className={`${rowPad} px-3 ${cellText} border-r border-black`}>
                     {index + 1}.
                   </td>
-                  <td className="py-2 px-3 text-md border-r border-black">
+                  <td className={`${rowPad} px-3 ${cellText} border-r border-black`}>
                     {product.type.toUpperCase()}-{product.model}
-                    {product.serialNumber ? <span className="block text-sm">S/N: {product.serialNumber}</span> : null}
+                    {product.serialNumber ? <span className={`block ${density === "normal" ? "text-sm" : "text-xs"}`}>S/N: {product.serialNumber}</span> : null}
                   </td>
-                  <td className="py-2 px-3 text-center text-md border-r border-black">
+                  <td className={`${rowPad} px-3 text-center ${cellText} border-r border-black`}>
                     {product.warrantyDurationMonths === 0
                       ? "None"
                       : product.warrantyDurationMonths + " Months"}
                   </td>
-                  <td className="py-2 px-3 text-center text-md border-r border-black">
+                  <td className={`${rowPad} px-3 text-center ${cellText} border-r border-black`}>
                     {product.quantity}
                   </td>
-                  <td className="py-2 px-3 text-right text-md border-r border-black">
+                  <td className={`${rowPad} px-3 text-right ${cellText} border-r border-black`}>
                     {product.unitPrice.toLocaleString()}
                   </td>
-                  <td className="py-2 px-3 text-right text-md font-semibold border-black">
+                  <td className={`${rowPad} px-3 text-right ${cellText} font-semibold border-black`}>
                     {(product.unitPrice * product.quantity).toLocaleString()} TK
                   </td>
                 </tr>
               ))}
               <tr>
-                <td colSpan={6} className="py-3 px-3 border border-black">
+                <td colSpan={6} className={`${headPad} px-3 border border-black`}>
                   {/* Notes (e.g. referral / discount notes) sit on the left of the totals, inside the table, so they never overlap the notice box below */}
                   <div className="flex justify-between items-start gap-4">
                     <div
@@ -134,38 +152,38 @@ export default function InvoiceTemplate({
                     >
                       {data.notes || ""}
                     </div>
-                    <div className="text-right space-y-2 shrink-0">
+                    <div className={`text-right ${totalsGap} shrink-0`}>
                       {totalDiscount > 0 && (
-                        <div className="text-base">
+                        <div className={totalsText}>
                           <span className="font-semibold">Subtotal : </span>
                           {data.subtotal.toLocaleString()} Tk
                         </div>
                       )}
                       {referralAmount > 0.5 && (
-                        <div className="text-base text-red-600">
+                        <div className={`${totalsText} text-red-600`}>
                           <span className="font-semibold">Referral Discount : </span>
                           -{Math.round(referralAmount).toLocaleString()} Tk
                         </div>
                       )}
                       {manualAmount > 0 && (
-                        <div className="text-base text-red-600">
+                        <div className={`${totalsText} text-red-600`}>
                           <span className="font-semibold">
                             Discount{manual?.type === "percent" ? ` (${manual.value}%)` : ""} :{" "}
                           </span>
                           -{Math.round(manualAmount).toLocaleString()} Tk
                         </div>
                       )}
-                      <div className="text-base">
+                      <div className={totalsText}>
                         <span className="font-semibold">Total Bill : </span>
                         {data.total.toLocaleString()} Tk
                       </div>
                       {data.dueAmount > 0 ? (
                         <>
-                          <div className="text-base">
+                          <div className={totalsText}>
                             <span className="font-semibold">Advance :</span>{" "}
                             {(data.total - data.dueAmount).toLocaleString()} Tk
                           </div>
-                          <div className="text-base">
+                          <div className={totalsText}>
                             <span className="font-semibold">
                               {data.dueType === "installment"
                                 ? "Installment"
@@ -178,12 +196,12 @@ export default function InvoiceTemplate({
                           </div>
                         </>
                       ) : (
-                        <div className="text-base">
+                        <div className={totalsText}>
                           <span className="font-semibold">Paid : </span>
                           {data.total.toLocaleString()} Tk
                         </div>
                       )}
-                      <div className="text-base">
+                      <div className={totalsText}>
                         <span className="font-semibold">Payment Method : </span>
                         {data.paymentType.toUpperCase()}
                       </div>

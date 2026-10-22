@@ -920,8 +920,12 @@ export const sellerToggleCustomerBlock = async (customerId: string, reason?: "du
     });
     if (!customer) return { success: false, message: "এই কাস্টমার আপনার তালিকায় নেই" };
 
+    // Block/unblock must cover every purchase, not just the primary invoice.
+    const { getCustomerProducts } = await import("@/lib/customerPurchases");
+    const allProducts = await getCustomerProducts(customerId);
+
     const { toggleCustomerBlockCore, blockReasonOf } = await import("@/lib/customerBlock");
-    await toggleCustomerBlockCore(customer, blockReasonOf(reason));
+    await toggleCustomerBlockCore({ ...customer, allProducts }, blockReasonOf(reason));
 
     revalidatePath("/seller/customers");
     revalidatePath("/customers");

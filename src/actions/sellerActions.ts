@@ -6,6 +6,7 @@ import { db } from "@/db/drizzle";
 import {
   applications,
   customers,
+  invoices,
   products,
   sellerNotifications,
   sellerPurchases,
@@ -735,18 +736,41 @@ export async function getSellerPortalData(sellerId: string) {
     });
     if (!seller) return { success: false, message: "Seller not found" };
 
+    // A customer can own several invoices (one per purchase). Load them all so
+    // the seller list aggregates totals/due/warranty across every purchase, not
+    // just the primary invoice.
+    const customerIds = seller.customers.map((c) => c.customerId);
+    const invoicesByCustomer = new Map<string, any[]>();
+    if (customerIds.length) {
+      const allInvoices = await db.query.invoices.findMany({
+        where: inArray(invoices.customerId, customerIds),
+        columns: { id: true, invoiceNumber: true, customerId: true, total: true, subtotal: true, dueAmount: true, dueType: true, notes: true, paymentType: true, date: true },
+        orderBy: (inv, { desc }) => [desc(inv.date)],
+        with: { products: { columns: { type: true, model: true, serialNumber: true, quantity: true, warrantyStartDate: true, warrantyDurationMonths: true } } },
+      });
+      for (const inv of allInvoices) {
+        const arr = invoicesByCustomer.get(inv.customerId) ?? [];
+        arr.push(inv);
+        invoicesByCustomer.set(inv.customerId, arr);
+      }
+    }
+    const customersWithInvoices = seller.customers.map((c) => ({
+      ...c,
+      invoices: invoicesByCustomer.get(c.customerId) ?? (c.invoice ? [c.invoice] : []),
+    }));
+
     const activeStatuses = ["pending", "in_progress", "appointment_retry", "staff_departed", "staff_arrived", "service_center", "service_center_received"];
-    const allServices = seller.customers
+    const allServices = customersWithInvoices
       .flatMap((c) => c.services.map((s) => ({ ...s, customerName: c.name, customerPhone: c.phone, customerId: c.customerId })))
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     const now = new Date();
-    const inWarranty = seller.customers.filter((c) =>
+    const inWarranty = customersWithInvoices.filter((c) =>
       !c.isWarrantyStopped &&
-      c.invoice?.products?.some((p) => {
+      c.invoices.some((inv) => inv.products?.some((p: any) => {
         const end = new Date(p.warrantyStartDate);
         end.setMonth(end.getMonth() + p.warrantyDurationMonths);
         return end > now;
-      }),
+      })),
     ).length;
 
     const stats = {
@@ -764,7 +788,7 @@ export async function getSellerPortalData(sellerId: string) {
 
     return {
       success: true,
-      data: { seller: { ...safe, ownerPhotoUrl, shopFrontPhotoUrl }, services: allServices, stats, due: stats.purchasedAmount - stats.paidAmount },
+      data: { seller: { ...safe, customers: customersWithInvoices, ownerPhotoUrl, shopFrontPhotoUrl }, services: allServices, stats, due: stats.purchasedAmount - stats.paidAmount },
     };
   } catch (error) {
     console.error(error);

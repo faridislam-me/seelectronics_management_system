@@ -37,8 +37,30 @@ type SellerCustomer = {
     date: Date;
     products: { type: string; model: string; serialNumber?: string | null; quantity: number; warrantyStartDate: Date; warrantyDurationMonths: number }[];
   } | null;
+  // Every purchase (invoice) under this one account.
+  invoices?: {
+    id: string;
+    invoiceNumber: string;
+    total: number;
+    subtotal: number;
+    dueAmount: number;
+    dueType: "due" | "installment" | null;
+    notes: string | null;
+    paymentType: string;
+    date: Date;
+    products: { type: string; model: string; serialNumber?: string | null; quantity: number; warrantyStartDate: Date; warrantyDurationMonths: number }[];
+  }[];
   services: { serviceId: string; status: string; type: string; productType: string; productModel: string; staffName: string | null; createdAt: Date }[];
 };
+
+/** Flatten every product across all of a customer's invoices. */
+const allProductsOf = (c: SellerCustomer) =>
+  (c.invoices && c.invoices.length ? c.invoices : c.invoice ? [c.invoice] : []).flatMap((inv) => inv.products ?? []);
+/** Sum a numeric invoice field across all of a customer's invoices. */
+const sumInv = (c: SellerCustomer, field: "total" | "dueAmount") =>
+  (c.invoices && c.invoices.length ? c.invoices : c.invoice ? [c.invoice] : []).reduce((t, inv) => t + (inv[field] || 0), 0);
+/** How many invoices the customer has. */
+const invoiceCountOf = (c: SellerCustomer) => (c.invoices && c.invoices.length ? c.invoices.length : c.invoice ? 1 : 0);
 
 export default function SellerCustomersClient({ customers, inWarranty, counts }: { customers: SellerCustomer[]; inWarranty: number; counts?: { sales: number; services: number; installs: number } }) {
   const router = useRouter();
@@ -69,7 +91,7 @@ export default function SellerCustomersClient({ customers, inWarranty, counts }:
 
   const submitRequest = async () => {
     if (!requesting) return;
-    const p = requesting.invoice?.products?.[reqProduct];
+    const p = allProductsOf(requesting)[reqProduct];
     setReqBusy(true);
     const res = await sellerRequestService({
       customerId: requesting.customerId,
@@ -89,7 +111,7 @@ export default function SellerCustomersClient({ customers, inWarranty, counts }:
     return customers.filter((c) => {
       if (q && ![c.name, c.phone, c.customerId, c.invoiceNumber, c.address].some((v) => v?.toLowerCase().includes(q))) return false;
       if (pay !== "all" && payKind(c.invoice) !== pay) return false;
-      const w = calcWarranty(c.isWarrantyStopped, c.invoice?.products);
+      const w = calcWarranty(c.isWarrantyStopped, allProductsOf(c));
       if (war === "yes" && !w) return false;
       if (war === "no" && w) return false;
       return true;
@@ -131,8 +153,8 @@ export default function SellerCustomersClient({ customers, inWarranty, counts }:
             <label className="flex flex-col gap-1 text-sm">
               <span className="font-semibold text-gray-700">{reqKind === "install" ? "কোন পণ্যের ইন্সটল?" : "কোন পণ্যের সার্ভিস?"}</span>
               <select value={reqProduct} onChange={(e) => setReqProduct(Number(e.target.value))} className="__input">
-                {(requesting.invoice?.products ?? []).map((p, i) => <option key={i} value={i}>{p.type.toUpperCase()} {p.model} × {p.quantity}</option>)}
-                {(requesting.invoice?.products ?? []).length === 0 && <option value={0}>পণ্যের তথ্য নেই</option>}
+                {allProductsOf(requesting).map((p, i) => <option key={i} value={i}>{p.type.toUpperCase()} {p.model} × {p.quantity}</option>)}
+                {allProductsOf(requesting).length === 0 && <option value={0}>পণ্যের তথ্য নেই</option>}
               </select>
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -173,9 +195,12 @@ export default function SellerCustomersClient({ customers, inWarranty, counts }:
           {customers.length === 0 && <EmptyRow cols={14} text="এখনো কোনো কাস্টমার নেই। উপরের বাটনে ক্লিক করে প্রথম কাস্টমার এড করুন।" />}
           {customers.length > 0 && filtered.length === 0 && <EmptyRow cols={14} text="কিছু পাওয়া যায়নি" />}
           {filtered.map((c, ci) => {
-            const products = c.invoice?.products ?? [];
+            const products = allProductsOf(c);
             const rows = products.length ? products : [null];
             const span = rows.length;
+            const totalBill = sumInv(c, "total");
+            const totalDue = sumInv(c, "dueAmount");
+            const invCount = invoiceCountOf(c);
             const warranty = !c.isWarrantyStopped && products.some((p) => { const e = new Date(p.warrantyStartDate); e.setMonth(e.getMonth() + p.warrantyDurationMonths); return e > now; });
             const active = c.services.some((s) => !["completed", "canceled"].includes(s.status));
             const bg = ci % 2 ? "bg-[#f4f7fc]" : "bg-white";
@@ -185,7 +210,7 @@ export default function SellerCustomersClient({ customers, inWarranty, counts }:
               return (
                 <tr key={`${c.customerId}-${i}`} className={bg}>
                   {i === 0 && <Td rowSpan={span}>{formatDate(c.createdAt)}</Td>}
-                  {i === 0 && <Td rowSpan={span} strong>{c.invoiceNumber}</Td>}
+                  {i === 0 && <Td rowSpan={span} strong>{c.invoiceNumber}{invCount > 1 && <span className="block text-[11px] font-semibold text-[#6b7690]">+{invCount - 1} more</span>}</Td>}
                   {i === 0 && <Td rowSpan={span} nowrap={false} className="min-w-[120px]"><b>{c.name}</b><span className="block text-[11px] text-[#6b7690]">{c.customerId}</span><span className="block text-[11px] text-[#6b7690]">{c.address}</span></Td>}
                   {i === 0 && <Td rowSpan={span}>{c.phone}</Td>}
                   <Td nowrap={false} className="min-w-[130px]">{p ? `${p.type.toUpperCase()} ${p.model}` : "—"}</Td>
@@ -195,8 +220,8 @@ export default function SellerCustomersClient({ customers, inWarranty, counts }:
                   <Td className={mine.length ? "text-[#b8620b] font-bold" : "text-[#178a42]"}>
                     {p ? (mine.length ? <Link href={`/service-track?trackingId=${mine[0].serviceId}`}>{mine.length} বার · {serviceStatusBn[mine[0].status] ?? mine[0].status}</Link> : "হয়নি") : "—"}
                   </Td>
-                  {i === 0 && <Td rowSpan={span} right strong>{c.invoice ? `৳${c.invoice.total.toLocaleString()}` : "—"}</Td>}
-                  {i === 0 && <Td rowSpan={span} right strong className={c.invoice && c.invoice.dueAmount > 0 ? "text-[#b8620b]" : "text-[#178a42]"}>{c.invoice ? `৳${c.invoice.dueAmount.toLocaleString()}` : "—"}</Td>}
+                  {i === 0 && <Td rowSpan={span} right strong>{invCount ? `৳${totalBill.toLocaleString()}` : "—"}</Td>}
+                  {i === 0 && <Td rowSpan={span} right strong className={totalDue > 0 ? "text-[#b8620b]" : "text-[#178a42]"}>{invCount ? `৳${totalDue.toLocaleString()}` : "—"}</Td>}
                   {i === 0 && <Td rowSpan={span}>{payLabel[payKind(c.invoice)]}</Td>}
                   {i === 0 && (
                     <Td rowSpan={span}>

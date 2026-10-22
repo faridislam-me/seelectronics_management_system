@@ -6,6 +6,7 @@ import {
   Toolbar,
 } from "@/components";
 import { SearchParams } from "@/types";
+import Link from "next/link";
 import { Suspense } from "react";
 
 export default async function Customers({
@@ -23,7 +24,20 @@ export default async function Customers({
     <div className="flex-1 overflow-hidden flex flex-col gap-4">
       <Toolbar
         title="Customers"
-        actions={<AddCustomerButton />}
+        actions={
+          <>
+            <Link
+              href="/customers/merge"
+              className="flex items-center gap-2 rounded-md border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 sm:text-base"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+              </svg>
+              <span className="hidden lg:block">ডুপ্লিকেট মার্জ</span>
+            </Link>
+            <AddCustomerButton />
+          </>
+        }
         pagination={pagination!}
       />
       <div className="overflow-x-auto overflow-y-auto flex-1 bg-white rounded-md border border-gray-100 shadow-sm custom-scrollbar">

@@ -8,7 +8,9 @@ export function sellerJobs(data: SellerPortalData) {
   const jobs: SellerJob[] = [];
   for (const c of data.seller.customers as any[]) {
     const pay = payKind(c.invoice);
-    const warranty = inWarranty(c.isWarrantyStopped, c.invoice?.products);
+    // Warranty spans every purchase, not just the primary invoice.
+    const allProducts = (c.invoices && c.invoices.length ? c.invoices : c.invoice ? [c.invoice] : []).flatMap((inv: any) => inv.products ?? []);
+    const warranty = inWarranty(c.isWarrantyStopped, allProducts);
     for (const s of c.services) {
       jobs.push({
         serviceId: s.serviceId, status: s.status, type: s.type, productType: s.productType, productModel: s.productModel,

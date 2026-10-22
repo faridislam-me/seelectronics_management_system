@@ -18,6 +18,7 @@ const routeTitles: Record<string, string> = {
   "/seller/details": "Shop Profile",
   "/seller/settings": "Settings",
   "/seller/notifications": "Notifications",
+  "/seller/certificates": "Certificates",
 };
 
 const navItems = [

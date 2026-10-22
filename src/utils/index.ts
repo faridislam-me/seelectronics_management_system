@@ -73,6 +73,7 @@ const LINK_PORTAL: Record<string, "staff" | "customer" | "seller"> = {
   "certificate-download": "staff",
   "seller-registration": "seller",
   "seller-login": "seller",
+  "seller-certificate": "seller",
   "customer-login": "customer",
   feedback: "customer",
   "service-tracking": "customer",
@@ -108,6 +109,9 @@ export const generateUrl = <T extends UrlConfig["type"]>(
 
     case "seller-login":
       return `${baseUrl}/seller/login`;
+
+    case "seller-certificate":
+      return `${baseUrl}/seller/certificates`;
 
     case "application-tracking":
       if (!p.trackingId) {

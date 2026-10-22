@@ -341,6 +341,19 @@ export default async function generatePDF({
         break;
       }
 
+      case "seller-certificate": {
+        const { isSellerCertificateType } = await import("@/constants/sellerCertificates");
+        const p = payload as unknown as import("@/constants/sellerCertificates").SellerCertificatePayload | null;
+        if (!p || !isSellerCertificateType(p.certType) || !p.shopName) {
+          throw new AppError("সার্টিফিকেট ডাউনলোড করার জন্য একটি বৈধ ডাউনলোড লিঙ্ক প্রয়োজন।");
+        }
+        const { buildSellerCertificateData } = await import("@/lib/sellerCertificate");
+        const SellerCertificateTemplate = (await import("@/components/features/sellers/SellerCertificateTemplate")).default;
+        html = renderToStaticMarkup(<SellerCertificateTemplate data={await buildSellerCertificateData(p)} />);
+        options = { format: "A4", landscape: true, printBackground: true, margin: { top: 0, right: 0, bottom: 0, left: 0 } };
+        break;
+      }
+
       case "complaint": {
         const PunishmentTemplate = (
           await import("@/components/features/complaints/PunishmentTemplate")

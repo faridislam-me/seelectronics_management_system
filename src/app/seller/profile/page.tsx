@@ -1,13 +1,15 @@
 import { SellerLayout } from "@/components/layout";
 import { BlueBalanceCard, BlueCard, BlueChip, BlueContactCard, BlueFooterBand, BlueHero, BlueStatGrid } from "@/components/ui";
+import { getMySellerCertificates } from "@/actions/sellerCertificateActions";
 import { loadSellerPortal } from "@/lib/sellerPortal";
 import { formatDate } from "@/utils";
-import { Banknote, CheckCircle2, FileText, MapPin, Package, Phone, ShieldCheck, Store, User, Users, Wrench } from "lucide-react";
+import { Award, Banknote, CheckCircle2, ChevronRight, FileText, MapPin, Package, Phone, ShieldCheck, Store, User, Users, Wrench } from "lucide-react";
 import Link from "next/link";
 
 export default async function SellerProfilePage() {
   const { seller, stats, due, services } = await loadSellerPortal();
   const recent = services.slice(0, 3);
+  const certificates = await getMySellerCertificates();
 
   return (
     <SellerLayout>
@@ -36,6 +38,15 @@ export default async function SellerProfilePage() {
           { value: `৳${Math.round(stats.purchasedAmount).toLocaleString()}`, label: "মোট ক্রয়", icon: Banknote, tone: "amber", href: "/seller/purchases" },
           { value: `৳${Math.round(stats.paidAmount).toLocaleString()}`, label: "পরিশোধিত", icon: CheckCircle2, tone: "red", href: "/seller/purchases" },
         ]} />
+        <Link href="/seller/certificates" className="flex items-center gap-2.5 rounded-md bg-white border border-[#dfe6f2] p-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+          <span className="size-10 rounded-md bg-[#fff6e3] text-[#c98a0c] flex items-center justify-center shrink-0"><Award size={22} /></span>
+          <span className="flex flex-col flex-1 min-w-0 leading-tight">
+            <span className="text-[14.5px] font-extrabold text-[#16213a]">আমার সার্টিফিকেট</span>
+            <span className="text-xs font-semibold text-[#6b7690] truncate">{certificates.length > 0 ? `${certificates.length} টি সার্টিফিকেট · দেখুন ও PDF ডাউনলোড করুন` : "সম্মাননা, বেশি বিক্রি ও কাস্টমার সার্ভিস সার্টিফিকেট"}</span>
+          </span>
+          {certificates.length > 0 && <span className="min-w-6 h-6 px-1.5 rounded-full bg-[#e0a11b] text-white text-xs font-extrabold flex items-center justify-center">{certificates.length}</span>}
+          <ChevronRight size={18} className="text-[#9aa6bd]" />
+        </Link>
         <BlueContactCard compact title="Shop Details" editHref="/seller/details" rows={[
           { label: "Owner", value: seller.ownerName, icon: User },
           { label: "Phone", value: seller.phone, icon: Phone },

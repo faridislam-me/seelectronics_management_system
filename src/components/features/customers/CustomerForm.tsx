@@ -4,6 +4,8 @@ import {
   createCustomer,
   updateCustomer,
   validateReferralVipCard,
+  searchCustomersForPurchase,
+  addPurchaseToCustomer,
 } from "@/actions";
 import { getProducts } from "@/actions/productActions";
 import { SellerSelect } from "@/components/features/sellers";
@@ -20,7 +22,20 @@ export default function CustomerForm({
   mode,
   onClose,
   role = "admin",
+  presetCustomer,
 }: {
+  /** Opens the create form already attached to this existing customer (add-purchase mode). */
+  presetCustomer?: {
+    customerId: string;
+    name: string;
+    phone: string;
+    address: string;
+    invoiceNumber: string;
+    isWarrantyStopped: boolean;
+    warrantyStopReason?: string | null;
+    invoiceCount: number;
+    totalDue: number;
+  };
   customerData?: Pick<
     CustomerData,
     "customerId" | "name" | "phone" | "address" | "referredByVipCard"
@@ -52,6 +67,45 @@ export default function CustomerForm({
     success: boolean;
     name?: string;
   } | null>(null);
+
+  // --- Repeat-customer handling (create mode) -------------------------------
+  // When adding a record, the admin can search an existing customer by name or
+  // phone and attach this purchase as a NEW invoice under that one account
+  // instead of creating a duplicate customer.
+  type ExistingMatch = {
+    customerId: string;
+    name: string;
+    phone: string;
+    address: string;
+    invoiceNumber: string;
+    isWarrantyStopped: boolean;
+    warrantyStopReason?: string | null;
+    invoiceCount: number;
+    totalDue: number;
+  };
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [searchResults, setSearchResults] = useState<ExistingMatch[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [existingCustomer, setExistingCustomer] = useState<ExistingMatch | null>(
+    presetCustomer ?? null,
+  );
+
+  const selectExistingCustomer = (m: ExistingMatch) => {
+    setExistingCustomer(m);
+    setCustomerInfo((prev) => ({
+      ...prev,
+      name: m.name,
+      phone: m.phone,
+      address: m.address,
+    }));
+    setSearchResults([]);
+    setCustomerSearch("");
+  };
+
+  const clearExistingCustomer = () => {
+    setExistingCustomer(null);
+    setCustomerInfo((prev) => ({ ...prev, name: "", phone: "", address: "" }));
+  };
   const [customerInfo, setCustomerInfo] = useState<{
     name: string;
     phone: string;
@@ -72,9 +126,9 @@ export default function CustomerForm({
       // the manual-discount line is managed by the Discount box, not the notes field
       invoice: { ...customerData.invoice, notes: stripManualDiscount(customerData.invoice?.notes) },
     }) || {
-      name: "",
-      phone: "",
-      address: "",
+      name: presetCustomer?.name ?? "",
+      phone: presetCustomer?.phone ?? "",
+      address: presetCustomer?.address ?? "",
       invoice: {
         date: new Date(),
         paymentType: "cash",
@@ -237,10 +291,16 @@ export default function CustomerForm({
     };
     const response =
       mode === "create"
-        ? await createCustomer(
-            customerDataPayload as Parameters<typeof createCustomer>[0],
-            sendInvoiceLink,
-          )
+        ? existingCustomer
+          ? await addPurchaseToCustomer(
+              existingCustomer.customerId,
+              customerDataPayload,
+              sendInvoiceLink,
+            )
+          : await createCustomer(
+              customerDataPayload as Parameters<typeof createCustomer>[0],
+              sendInvoiceLink,
+            )
         : await updateCustomer(
             customerData!.customerId,
             customerDataPayload as Parameters<typeof updateCustomer>[1],
@@ -311,20 +371,136 @@ export default function CustomerForm({
       setVipValidationResult(null);
     }
   }, [referralVipCard, mode]);
+
+  // Debounced search for an existing customer (create mode, before one is picked)
+  useEffect(() => {
+    if (mode !== "create" || existingCustomer) return;
+    const q = customerSearch.trim();
+    if (q.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    let active = true;
+    setIsSearching(true);
+    const t = setTimeout(async () => {
+      const res = await searchCustomersForPurchase(q);
+      if (!active) return;
+      setSearchResults(res.success && res.data ? (res.data as ExistingMatch[]) : []);
+      setIsSearching(false);
+    }, 350);
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
+  }, [customerSearch, mode, existingCustomer]);
   return (
     <Modal
       width="900"
       isVisible
-      title={mode === "update" ? "Update Customer" : "Create Customer"}
+      title={
+        mode === "update"
+          ? "Update Customer"
+          : existingCustomer
+            ? `নতুন ইনভয়েস — ${existingCustomer.name}`
+            : "Create Customer"
+      }
       onClose={onClose}
     >
       <div className="space-y-6">
+        {mode === "create" && !existingCustomer && (
+          <div className="rounded-md border border-[#cfe0fb] bg-[#f5f8fd] p-3">
+            <label className="text-sm font-medium text-gray-700">
+              আগের কাস্টমার? নাম বা নাম্বার দিয়ে খুঁজুন
+            </label>
+            <p className="text-xs text-gray-500 mb-1.5">
+              মিললে সেটাতে ক্লিক করুন — নতুন মালটা ওই একই অ্যাকাউন্টে আলাদা ইনভয়েস হয়ে যোগ হবে।
+            </p>
+            <div className="relative">
+              <input
+                className="__input w-full"
+                placeholder="নাম / মোবাইল নম্বর / কাস্টমার আইডি"
+                value={customerSearch}
+                onChange={(e) => setCustomerSearch(e.target.value)}
+              />
+              {(isSearching || searchResults.length > 0) && (
+                <div className="mt-2 max-h-56 overflow-auto rounded-md border border-gray-200 bg-white shadow-sm divide-y">
+                  {isSearching ? (
+                    <div className="flex items-center gap-2 p-3 text-sm text-gray-500">
+                      <Spinner className="size-4" /> খুঁজছি...
+                    </div>
+                  ) : (
+                    searchResults.map((m) => (
+                      <button
+                        key={m.customerId}
+                        type="button"
+                        onClick={() => selectExistingCustomer(m)}
+                        className="w-full text-left p-2.5 hover:bg-[#f0f6ff] flex items-center justify-between gap-3"
+                      >
+                        <span className="min-w-0">
+                          <span className="block font-semibold text-gray-900 text-sm truncate">
+                            {m.name}{" "}
+                            <span className="text-gray-400 font-normal">({m.customerId})</span>
+                          </span>
+                          <span className="block text-xs text-gray-500 truncate">
+                            {m.phone} • {m.address}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-right">
+                          <span className="block text-[11px] text-gray-500">
+                            {m.invoiceCount} invoice
+                          </span>
+                          {m.totalDue > 0 && (
+                            <span className="block text-[11px] font-bold text-red-500">
+                              ৳{m.totalDue.toLocaleString()} due
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                  {!isSearching && searchResults.length === 0 && customerSearch.trim().length >= 2 && (
+                    <div className="p-3 text-sm text-gray-500">কোনো কাস্টমার পাওয়া যায়নি — নিচে নতুন করে যোগ করুন।</div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {existingCustomer && (
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-emerald-700">
+                বিদ্যমান অ্যাকাউন্টে নতুন ইনভয়েস যোগ হচ্ছে
+              </p>
+              <p className="text-sm font-semibold text-gray-900 truncate">
+                {existingCustomer.name}{" "}
+                <span className="text-gray-400 font-normal">({existingCustomer.customerId})</span>
+              </p>
+              <p className="text-xs text-gray-600 truncate">
+                {existingCustomer.phone} • আগের invoice: {existingCustomer.invoiceCount}
+                {existingCustomer.totalDue > 0 && (
+                  <span className="text-red-500 font-bold"> • ৳{existingCustomer.totalDue.toLocaleString()} due</span>
+                )}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={clearExistingCustomer}
+              className="shrink-0 text-xs font-semibold text-gray-600 hover:text-gray-900 underline"
+            >
+              নতুন কাস্টমার
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-4">
           <InputField
             onChange={handleCustomerInputChange}
             value={customerInfo.name}
             label="Name"
             name="name"
+            readOnly={!!existingCustomer}
           />
           <InputField
             onChange={handleCustomerInputChange}
@@ -332,6 +508,7 @@ export default function CustomerForm({
             label="Phone Number"
             name="phone"
             type="tel"
+            readOnly={!!existingCustomer}
           />
         </div>
         <div className="flex flex-col sm:flex-row gap-4">
@@ -340,6 +517,7 @@ export default function CustomerForm({
             value={customerInfo.address}
             label="Address"
             name="address"
+            readOnly={!!existingCustomer}
           />
           <InputField
             onChange={handleCustomerInputChange}
@@ -396,7 +574,7 @@ export default function CustomerForm({
           </div>
         </div>
 
-        {mode === "create" && (
+        {mode === "create" && !existingCustomer && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex-1 text-start">
               <InputField
@@ -820,9 +998,13 @@ export default function CustomerForm({
               ? isSubmitting
                 ? "Updating..."
                 : "Update"
-              : isSubmitting
-                ? "Adding..."
-                : "Add Record"}
+              : existingCustomer
+                ? isSubmitting
+                  ? "যোগ হচ্ছে..."
+                  : "ইনভয়েস যোগ করুন"
+                : isSubmitting
+                  ? "Adding..."
+                  : "Add Record"}
           </button>
         </div>
       </div>

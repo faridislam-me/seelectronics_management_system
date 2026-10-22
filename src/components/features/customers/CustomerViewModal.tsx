@@ -5,7 +5,6 @@ import {
   getFeedbackHistoryById,
   getServiceHistoryById,
 } from "@/actions";
-import { getProducts } from "@/actions/productActions";
 import { Modal, ProfileLinkButton, Spinner, StatusBadge } from "@/components";
 import { CustomerData, Product } from "@/types";
 import { formatDate, isWarrantyValid } from "@/utils";
@@ -28,6 +27,8 @@ function CustomerViewModal({
   const [customerData, setCustomerData] = useState<any>({ ...customer });
   const [isProductsLoading, setIsProductsLoading] = useState(true);
   const [productItems, setProductItems] = useState(products || []);
+  // Every invoice (purchase) under this customer account, newest first.
+  const [invoicesData, setInvoicesData] = useState<any[]>((customer as any)?.invoices ?? []);
   const [serviceData, setServiceData] = useState<any[]>([]);
   const [feedbacksData, setFeedbacksData] = useState<any[]>([]);
   const [isLoadingServiceHistory, setIsLoadingServiceHistory] = useState(false);
@@ -74,29 +75,27 @@ function CustomerViewModal({
   };
 
   useEffect(() => {
-    if (customerId) {
-      (async () => {
-        setIsLoading(true);
-        const res = await getCustomerById(customerId);
-
-        if (res.success) {
-          setCustomerData({ ...res.data });
-          setIsLoading(false);
-
-          const productResponse = await getProducts(res.data?.invoice?.id ?? '');
-
-          if (productResponse.success) {
-            setProductItems(productResponse.data!);
-          } else {
-            toast.error(res.message);
-          }
-          setIsProductsLoading(false);
-        } else {
-          toast.error(res.message);
-          onClose();
-        }
-      })();
+    const id = customerId ?? customer?.customerId;
+    if (!id) {
+      setIsProductsLoading(false);
+      return;
     }
+    (async () => {
+      if (customerId) setIsLoading(true);
+      // Always load the full record so every purchase (invoice) is shown.
+      const res = await getCustomerById(id);
+      if (res.success && res.data) {
+        setCustomerData({ ...res.data });
+        const invs = (res.data as any).invoices ?? [];
+        setInvoicesData(invs);
+        setProductItems(invs.flatMap((inv: any) => inv.products ?? []));
+      } else {
+        toast.error(res.message);
+        if (customerId) onClose();
+      }
+      setIsLoading(false);
+      setIsProductsLoading(false);
+    })();
   }, []);
   return (
     <Modal title="Customer Profile" isVisible onClose={onClose}>
@@ -186,148 +185,147 @@ function CustomerViewModal({
                 </div>
               )}
             </div>
-            {customerData.invoice ? (
-              <div>
-                <div className="flex border-b py-1">
-                  <span className="w-32 flex-shrink-0">Date</span>
-                  <span className="mr-4 flex-shrink-0">:</span>
-                  <span className="font-semibold">
-                    {formatDate(customerData.invoice.date)}
-                  </span>
-                </div>
-                <div className="flex border-b py-1">
-                  <span className="w-32 flex-shrink-0">Payment Type</span>
-                  <span className="mr-4 flex-shrink-0">:</span>
-                  <span className="font-semibold">
-                    {customerData.invoice.paymentType}
-                  </span>
-                </div>
-                <div className="flex border-b py-1">
-                  <span className="w-32 flex-shrink-0">Product Price</span>
-                  <span className="mr-4 flex-shrink-0">:</span>
-                  <span className="font-semibold">
-                    {customerData.invoice.subtotal?.toLocaleString()} TK
-                  </span>
-                </div>
-                {(customerData.invoice.subtotal - customerData.invoice.total) > 0 && (
-                  <div className="flex border-b py-1">
-                    <span className="w-32 flex-shrink-0 text-gray-500">Discount</span>
-                    <span className="mr-4 flex-shrink-0">:</span>
-                    <span className="font-semibold text-green-600">
-                      {(customerData.invoice.subtotal - customerData.invoice.total).toLocaleString()} TK
-                    </span>
-                  </div>
-                )}
-                <div className="flex border-b py-1">
-                  <span className="w-32 flex-shrink-0">Total Bill</span>
-                  <span className="mr-4 flex-shrink-0">:</span>
-                  <span className="font-bold">
-                    {customerData.invoice.total?.toLocaleString()} TK
-                  </span>
-                </div>
-                {customerData.invoice.dueAmount > 0 ? (
-                  <>
+            {invoicesData.length > 0 ? (
+              (() => {
+                const totalSub = invoicesData.reduce((t, i) => t + (i.subtotal || 0), 0);
+                const totalBill = invoicesData.reduce((t, i) => t + (i.total || 0), 0);
+                const totalDue = invoicesData.reduce((t, i) => t + (i.dueAmount || 0), 0);
+                const discount = Math.max(0, totalSub - totalBill);
+                return (
+                  <div>
+                    <div className="flex border-b py-1">
+                      <span className="w-32 flex-shrink-0">Purchases</span>
+                      <span className="mr-4 flex-shrink-0">:</span>
+                      <span className="font-semibold">{invoicesData.length} invoice</span>
+                    </div>
+                    <div className="flex border-b py-1">
+                      <span className="w-32 flex-shrink-0">Product Price</span>
+                      <span className="mr-4 flex-shrink-0">:</span>
+                      <span className="font-semibold">{totalSub.toLocaleString()} TK</span>
+                    </div>
+                    {discount > 0 && (
+                      <div className="flex border-b py-1">
+                        <span className="w-32 flex-shrink-0 text-gray-500">Discount</span>
+                        <span className="mr-4 flex-shrink-0">:</span>
+                        <span className="font-semibold text-green-600">{discount.toLocaleString()} TK</span>
+                      </div>
+                    )}
+                    <div className="flex border-b py-1">
+                      <span className="w-32 flex-shrink-0">Total Bill</span>
+                      <span className="mr-4 flex-shrink-0">:</span>
+                      <span className="font-bold">{totalBill.toLocaleString()} TK</span>
+                    </div>
                     <div className="flex border-b py-1">
                       <span className="w-32 flex-shrink-0 text-gray-500">Paid Amount</span>
                       <span className="mr-4 flex-shrink-0">:</span>
-                      <span className="font-semibold text-emerald-600">
-                        {(
-                          customerData.invoice.total -
-                          customerData.invoice.dueAmount
-                        ).toLocaleString()}{" "}
-                        TK
-                      </span>
+                      <span className="font-semibold text-emerald-600">{(totalBill - totalDue).toLocaleString()} TK</span>
                     </div>
-                    <div className="flex border-b py-1">
-                      <span className="w-32 flex-shrink-0 text-red-500">Due Amount</span>
-                      <span className="mr-4 flex-shrink-0 text-red-500">:</span>
-                      <span className="font-bold text-red-500">
-                        {customerData.invoice.dueAmount.toLocaleString()} TK
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex border-b py-1">
-                    <span className="w-32 flex-shrink-0 text-gray-500">Paid Amount</span>
-                    <span className="mr-4 flex-shrink-0">:</span>
-                    <span className="font-semibold text-emerald-600">
-                      {customerData.invoice.total?.toLocaleString()} TK
-                    </span>
+                    {totalDue > 0 && (
+                      <div className="flex border-b py-1">
+                        <span className="w-32 flex-shrink-0 text-red-500">Due Amount</span>
+                        <span className="mr-4 flex-shrink-0 text-red-500">:</span>
+                        <span className="font-bold text-red-500">{totalDue.toLocaleString()} TK</span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })()
             ) : (
               <div className="__center h-full text-gray-400 italic">
                 No invoice associated with this customer
               </div>
             )}
           </div>
-          <h2 className="text-lg font-semibold mt-4 mb-2">Products</h2>
-          <div className="overflow-x-auto">
-            <table className="table-auto w-full">
-              <thead>
-                <tr className="text-left bg-gray-100">
-                  <th className="px-4 py-2">Type</th>
-                  <th className="px-4 py-2">Model</th>
-                  <th className="px-4 py-2">Warranty</th>
-                  <th className="px-4 py-2">Warranty start date</th>
-                  <th className="px-4 py-2">Warranty status</th>
-                  <th className="px-4 py-2">Qty</th>
-                  <th className="px-4 py-2">Unit Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {isProductsLoading ? (
-                  <tr>
-                    <td colSpan={7} className="text-center py-3 text-gray-600">
-                      <Spinner />
-                    </td>
-                  </tr>
-                ) : productItems.length > 0 ? (
-                  productItems.map((product, index) => (
-                    <tr key={index} className="border-b">
-                      <td className="px-4 py-2">
-                        {product.type.toUpperCase()}
-                      </td>
-                      <td className="px-4 py-2">{product.model}</td>
-                      <td className="py-3 px-3 text-center">
-                        {product.warrantyDurationMonths === 0
-                          ? "None"
-                          : product.warrantyDurationMonths + " Months"}
-                      </td>
-                      <td className="px-4 py-2">
-                        {formatDate(product.warrantyStartDate)}
-                      </td>
-                      <td className="px-4 py-2 text-center">
-                        <StatusBadge
-                          status={
-                            isWarrantyValid(
-                              product.warrantyStartDate,
-                              product.warrantyDurationMonths,
-                            )
-                              ? "valid"
-                              : "expired"
-                          }
-                        />
-                      </td>
-                      <td className="px-4 py-2 text-center">
-                        {product.quantity}
-                      </td>
-                      <td className="px-4 py-2">
-                        {product.unitPrice.toLocaleString()} TK
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={7} className="text-center py-3 text-gray-600 italic">
-                      No products found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <h2 className="text-lg font-semibold mt-4 mb-2">
+            Purchases{invoicesData.length > 0 ? ` (${invoicesData.length})` : ""}
+          </h2>
+          {isProductsLoading ? (
+            <div className="__center text-gray-500 h-24">
+              <Spinner />
+            </div>
+          ) : invoicesData.length === 0 ? (
+            <div className="__center text-gray-400 italic h-16">No purchases found</div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {invoicesData.map((inv: any) => (
+                <div key={inv.id} className="rounded-md border border-gray-200 overflow-hidden">
+                  <div className="flex flex-wrap items-center justify-between gap-2 bg-gray-50 px-3 py-2 border-b">
+                    <div className="flex items-center gap-3 text-sm">
+                      <span className="font-bold text-gray-900">#{inv.invoiceNumber}</span>
+                      <span className="text-gray-500">{formatDate(inv.date)}</span>
+                      <span className="uppercase text-xs font-semibold text-gray-500">{inv.paymentType}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm">
+                      <span className="font-semibold">৳{(inv.total || 0).toLocaleString()}</span>
+                      {inv.dueAmount > 0 && (
+                        <span className="px-2 py-0.5 rounded bg-red-100 text-red-600 text-xs font-bold">
+                          ৳{inv.dueAmount.toLocaleString()} due
+                        </span>
+                      )}
+                      <a
+                        target="_blank"
+                        href={`/pdf/download?type=invoice&id=${inv.invoiceNumber}`}
+                        className="text-brand font-semibold text-xs hover:underline whitespace-nowrap"
+                      >
+                        PDF ডাউনলোড
+                      </a>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="table-auto w-full text-sm">
+                      <thead>
+                        <tr className="text-left bg-white border-b">
+                          <th className="px-3 py-1.5">Type</th>
+                          <th className="px-3 py-1.5">Model</th>
+                          <th className="px-3 py-1.5">Warranty</th>
+                          <th className="px-3 py-1.5">Start date</th>
+                          <th className="px-3 py-1.5">Status</th>
+                          <th className="px-3 py-1.5">Qty</th>
+                          <th className="px-3 py-1.5">Unit Price</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(inv.products ?? []).length > 0 ? (
+                          inv.products.map((product: any, index: number) => (
+                            <tr key={index} className="border-b last:border-0">
+                              <td className="px-3 py-1.5">{product.type.toUpperCase()}</td>
+                              <td className="px-3 py-1.5">
+                                {product.model}
+                                {product.serialNumber ? (
+                                  <span className="block text-xs text-gray-400">S/N: {product.serialNumber}</span>
+                                ) : null}
+                              </td>
+                              <td className="px-3 py-1.5 text-center">
+                                {product.warrantyDurationMonths === 0 ? "None" : product.warrantyDurationMonths + " Months"}
+                              </td>
+                              <td className="px-3 py-1.5">{formatDate(product.warrantyStartDate)}</td>
+                              <td className="px-3 py-1.5 text-center">
+                                <StatusBadge
+                                  status={
+                                    isWarrantyValid(product.warrantyStartDate, product.warrantyDurationMonths)
+                                      ? "valid"
+                                      : "expired"
+                                  }
+                                />
+                              </td>
+                              <td className="px-3 py-1.5 text-center">{product.quantity}</td>
+                              <td className="px-3 py-1.5">{product.unitPrice.toLocaleString()} TK</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={7} className="text-center py-2 text-gray-400 italic">
+                              No products
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="mt-4 flex flex-col gap-4">
             <details onToggle={serviceHistoryToggleHandler}>
               <summary className="font-semibold select-none cursor-pointer">

@@ -16,13 +16,22 @@ export function blockReasonOf(value: string | null | undefined): CustomerBlockRe
   return value === "misuse" ? "misuse" : "due";
 }
 
+type BlockableProduct = { id: string; warrantyEndDate: Date | null };
+
 type BlockableCustomer = {
   customerId: string;
   name: string;
   phone: string;
   isWarrantyStopped: boolean;
   warrantyStoppedAt: Date | null;
-  invoice?: { products?: { id: string; warrantyEndDate: Date | null }[] | null } | null;
+  /** Products of the primary invoice (legacy callers). */
+  invoice?: { products?: BlockableProduct[] | null } | null;
+  /**
+   * Every product across ALL of the customer's invoices. When provided this is
+   * used instead of `invoice.products`, so unblocking extends the warranty of
+   * each purchase, not just the first one.
+   */
+  allProducts?: BlockableProduct[] | null;
 };
 
 /**
@@ -34,7 +43,8 @@ export async function toggleCustomerBlockCore(customer: BlockableCustomer, reaso
   if (customer.isWarrantyStopped) {
     const stoppedAt = customer.warrantyStoppedAt ? new Date(customer.warrantyStoppedAt) : new Date();
     const durationMs = Date.now() - stoppedAt.getTime();
-    for (const prod of customer.invoice?.products ?? []) {
+    const prods = customer.allProducts ?? customer.invoice?.products ?? [];
+    for (const prod of prods) {
       const currentEnd = prod.warrantyEndDate ? new Date(prod.warrantyEndDate) : new Date();
       await db.update(products).set({ warrantyEndDate: new Date(currentEnd.getTime() + durationMs) }).where(eq(products.id, prod.id));
     }

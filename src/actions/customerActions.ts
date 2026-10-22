@@ -319,13 +319,12 @@ export async function getCustomerProfileStats(customerId: string) {
                 eq(subscriptions.isActive, true)
             ));
 
-        const { invoices, products } = await import("@/db/schema");
-        const invoiceDataPromise = customerData.invoiceNumber
-            ? db.select({ id: invoices.id, due: invoices.dueAmount, dueType: invoices.dueType })
-                .from(invoices)
-                .where(eq(invoices.invoiceNumber, customerData.invoiceNumber))
-                .limit(1)
-            : Promise.resolve([]);
+        const { invoices } = await import("@/db/schema");
+        // Due and warranty are summed across every purchase, not just the first invoice.
+        const invoiceDataPromise = db
+            .select({ due: invoices.dueAmount, dueType: invoices.dueType })
+            .from(invoices)
+            .where(eq(invoices.customerId, customerId));
 
         const [subscriptionCount, invoiceDataResult] = await Promise.all([
             subscriptionCountPromise,
@@ -337,36 +336,23 @@ export async function getCustomerProfileStats(customerId: string) {
         let isWarrantyExpired = false;
         let warrantyExpiryDate: Date | null = null;
 
-        const invoiceData = invoiceDataResult[0];
-        if (invoiceData) {
-            if (invoiceData.due) dueAmount = invoiceData.due;
-            if (invoiceData.dueType) dueType = invoiceData.dueType as "due" | "installment";
-
-            const dbProducts = await db.select({
-                warrantyStartDate: products.warrantyStartDate,
-                warrantyDurationMonths: products.warrantyDurationMonths
-            }).from(products)
-            .where(eq(products.invoiceId, invoiceData.id));
-
-            if (dbProducts.length > 0) {
-                let hasActive = false;
-                const now = new Date();
-                for (const p of dbProducts) {
-                    const expiry = new Date(p.warrantyStartDate);
-                    expiry.setMonth(expiry.getMonth() + p.warrantyDurationMonths);
-                    
-                    if (warrantyExpiryDate === null || expiry > warrantyExpiryDate) {
-                        warrantyExpiryDate = expiry;
-                    }
-
-                    if (expiry >= now) {
-                        hasActive = true;
-                    }
-                }
-                isWarrantyExpired = !hasActive;
-            } else {
-                isWarrantyExpired = true;
+        for (const inv of invoiceDataResult) {
+            const due = Number(inv.due) || 0;
+            if (due > 0) {
+                dueAmount += due;
+                // If any outstanding invoice is an installment, surface that label.
+                if (inv.dueType === "installment") dueType = "installment";
+                else if (dueType === undefined) dueType = "due";
             }
+        }
+
+        const { getCustomerProducts, latestWarrantyEnd, hasActiveWarranty } = await import("@/lib/customerPurchases");
+        const dbProducts = await getCustomerProducts(customerId);
+        if (dbProducts.length > 0) {
+            warrantyExpiryDate = latestWarrantyEnd(dbProducts);
+            isWarrantyExpired = !hasActiveWarranty(dbProducts);
+        } else {
+            isWarrantyExpired = true;
         }
 
         return {
@@ -454,9 +440,10 @@ export async function getMyWarrantyStatus(productType?: string | null) {
     const customer = await db.query.customers.findFirst({
         where: eq(customers.customerId, session.userId as string),
         columns: { isWarrantyStopped: true },
-        with: { invoice: { with: { products: { columns: { type: true, warrantyStartDate: true, warrantyDurationMonths: true } } } } },
     });
-    const all = customer?.invoice?.products ?? [];
+    // Warranty spans every purchase, not just the first invoice.
+    const { getCustomerProducts } = await import("@/lib/customerPurchases");
+    const all = await getCustomerProducts(session.userId as string);
     if (!all.length) return { status: "none" as const, endDate: null };
 
     const sameType = productType ? all.filter((p) => p.type === productType) : [];

@@ -349,12 +349,12 @@ const runMerge = async (
 };
 
 /** Merge same-phone duplicate accounts (used by the auto duplicate-group tool). */
-export const mergeCustomerGroup = (primaryCustomerId: string, mergeCustomerIds: string[]) =>
+export const mergeCustomerGroup = async (primaryCustomerId: string, mergeCustomerIds: string[]) =>
   runMerge(primaryCustomerId, mergeCustomerIds, { requireSamePhone: true });
 
 /**
  * Merge any admin-selected accounts into one, even with different phone numbers
  * (used by the manual search-and-merge tool for a buyer + their relatives' accounts).
  */
-export const mergeCustomersManual = (primaryCustomerId: string, mergeCustomerIds: string[]) =>
+export const mergeCustomersManual = async (primaryCustomerId: string, mergeCustomerIds: string[]) =>
   runMerge(primaryCustomerId, mergeCustomerIds, { requireSamePhone: false });

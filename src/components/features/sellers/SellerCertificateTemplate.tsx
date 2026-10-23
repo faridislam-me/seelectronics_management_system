@@ -61,6 +61,34 @@ function LaurelMedal({ accent }: { accent: string }) {
   );
 }
 
+/** Symmetric filigree divider (scroll-work flourish with a centre diamond). */
+function Flourish() {
+  const half = (
+    <g fill="none" stroke={GOLD} strokeWidth={1.6} strokeLinecap="round">
+      {/* inner curl near the centre */}
+      <path d="M296 24 c 10 0 16 -8 10 -15 c -4 -5 -12 -3 -11 4 c 1 5 7 5 9 1" />
+      {/* main flowing scroll line */}
+      <path d="M300 24 c 45 -12 120 -12 176 0" />
+      {/* lower swash */}
+      <path d="M314 27 c 42 8 108 8 150 1" strokeWidth={1} opacity={0.75} />
+      {/* outer end curl */}
+      <path d="M476 24 c 12 0 18 -6 13 -13" />
+    </g>
+  );
+  return (
+    <svg viewBox="0 0 560 48" className="h-[11mm] w-[150mm]">
+      {half}
+      <circle cx={489} cy={10} r={2.2} fill={GOLD} />
+      <g transform="translate(560,0) scale(-1,1)">{half}</g>
+      <circle cx={71} cy={10} r={2.2} fill={GOLD} />
+      {/* centre ornament */}
+      <path d="M280 10 l10 14 -10 14 -10 -14 z" fill={GOLD} stroke={GOLD_DK} strokeWidth={0.6} />
+      <circle cx={280} cy={24} r={3.4} fill={NAVY} />
+      <circle cx={280} cy={24} r={1.3} fill="#f6e27a" />
+    </svg>
+  );
+}
+
 /** A4 landscape (297mm x 210mm) seller award certificate, used for the preview and the PDF. */
 export default function SellerCertificateTemplate({ data }: { data: SellerCertificateTemplateData }) {
   const kind = SELLER_CERTIFICATE_TYPES[data.certType] || SELLER_CERTIFICATE_TYPES.honor;
@@ -121,8 +149,13 @@ export default function SellerCertificateTemplate({ data }: { data: SellerCertif
         <p className="mt-[7mm] max-w-[225mm] text-[21px] leading-[1.85] text-[#2b3445]">{kind.body}</p>
         {data.note && <p className="mt-2 max-w-[225mm] text-[18px] font-semibold italic" style={{ color: accent }}>{data.note}</p>}
 
+        {/* Decorative filigree flourish above the footer */}
+        <div className="mt-auto flex w-full justify-center pb-3">
+          <Flourish />
+        </div>
+
         {/* Footer: date + number, laurel medal + QR, signature + seals */}
-        <div className="mt-auto w-full grid grid-cols-3 items-end">
+        <div className="w-full grid grid-cols-3 items-end">
           <div className="text-left">
             <div className="text-[16.5px] font-bold">{bnDate(data.issuedAt)}</div>
             <div className="mt-1 w-[52mm] border-t border-[#94a3b8]" />

@@ -15,7 +15,7 @@ import {
   staffComplaints,
 } from "@/db/schema";
 import { verifySession } from "@/lib";
-import { eq, inArray, sql } from "drizzle-orm";
+import { desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 /** Last 10 digits of a phone, so +880 / 0 / spacing variants of the same number match. */
@@ -126,15 +126,105 @@ export const getDuplicateCustomerGroups = async (): Promise<
 };
 
 /**
+ * Free-text search over customers (name / customer id / phone / address) for the
+ * manual merge tool. Unlike the auto duplicate groups above, this lets an admin
+ * pull together accounts that do NOT share a phone number — e.g. one person who
+ * bought under their own number and again under a relative's number — and merge
+ * them into a single account. Returns the same aggregate shape as a duplicate row.
+ */
+export const searchCustomersForMerge = async (
+  query: string,
+): Promise<{ success: true; data: DuplicateCustomer[] } | { success: false; message: string }> => {
+  try {
+    const session = await verifySession(false, "admin");
+    if (!session) return { success: false, message: "Unauthorized" };
+
+    const q = (query || "").trim();
+    if (q.length < 2) return { success: true, data: [] };
+    const pattern = `%${q}%`;
+
+    const custs = await db
+      .select({
+        customerId: customers.customerId,
+        name: customers.name,
+        phone: customers.phone,
+        address: customers.address,
+        invoiceNumber: customers.invoiceNumber,
+        createdAt: customers.createdAt,
+        vipCardNumber: customers.vipCardNumber,
+        referralBalance: customers.referralBalance,
+        sellerId: customers.sellerId,
+      })
+      .from(customers)
+      .where(
+        or(
+          ilike(customers.name, pattern),
+          ilike(customers.customerId, pattern),
+          ilike(customers.phone, pattern),
+          ilike(customers.address, pattern),
+        ),
+      )
+      .orderBy(desc(customers.createdAt))
+      .limit(25);
+
+    if (custs.length === 0) return { success: true, data: [] };
+
+    const ids = custs.map((c) => c.customerId);
+    const [invAgg, prodAgg] = await Promise.all([
+      db
+        .select({
+          customerId: invoices.customerId,
+          cnt: sql<number>`count(*)::int`,
+          bill: sql<number>`coalesce(sum(${invoices.total}), 0)::float`,
+          due: sql<number>`coalesce(sum(${invoices.dueAmount}), 0)::float`,
+        })
+        .from(invoices)
+        .where(inArray(invoices.customerId, ids))
+        .groupBy(invoices.customerId),
+      db
+        .select({
+          customerId: invoices.customerId,
+          pc: sql<number>`count(*)::int`,
+        })
+        .from(products)
+        .innerJoin(invoices, eq(products.invoiceId, invoices.id))
+        .where(inArray(invoices.customerId, ids))
+        .groupBy(invoices.customerId),
+    ]);
+
+    const invMap = new Map(invAgg.map((r) => [r.customerId, r]));
+    const prodMap = new Map(prodAgg.map((r) => [r.customerId, r.pc]));
+
+    const data: DuplicateCustomer[] = custs.map((c) => {
+      const agg = invMap.get(c.customerId);
+      return {
+        ...c,
+        referralBalance: Number(c.referralBalance ?? 0),
+        invoiceCount: agg?.cnt ?? 0,
+        totalBill: agg?.bill ?? 0,
+        totalDue: agg?.due ?? 0,
+        productCount: prodMap.get(c.customerId) ?? 0,
+      };
+    });
+
+    return { success: true, data };
+  } catch (error) {
+    console.error(error);
+    return { success: false, message: "সার্চ করা যায়নি" };
+  }
+};
+
+/**
  * Merges several duplicate customer accounts into one primary account:
  * every invoice, service, notification, referral record etc. is moved onto the
  * primary customerId, referral balances are added up, a VIP card is carried over
  * if the primary has none, and the duplicate rows are deleted. All purchases then
  * live under the one account. On Neon (production) this runs as an atomic batch.
  */
-export const mergeCustomerGroup = async (
+const runMerge = async (
   primaryCustomerId: string,
   mergeCustomerIds: string[],
+  opts: { requireSamePhone: boolean },
 ): Promise<{ success: boolean; message: string }> => {
   try {
     const session = await verifySession(false, "admin");
@@ -164,14 +254,18 @@ export const mergeCustomerGroup = async (
     const toMerge = involved.filter((c) => mergeIds.includes(c.customerId));
     if (toMerge.length !== mergeIds.length) return { success: false, message: "কিছু অ্যাকাউন্ট পাওয়া যায়নি" };
 
-    // Safety: only merge accounts that share the same phone number as the primary.
-    const primaryNp = normPhone(primary.phone);
-    const mismatch = toMerge.find((c) => normPhone(c.phone) !== primaryNp);
-    if (mismatch) {
-      return {
-        success: false,
-        message: "শুধু একই ফোন নাম্বারের অ্যাকাউন্টগুলো মার্জ করা যাবে",
-      };
+    // Safety for the auto duplicate-group tool: only merge accounts that share the
+    // same phone number as the primary. The manual tool skips this on purpose so an
+    // admin can join a person's own and a relative's accounts (different numbers).
+    if (opts.requireSamePhone) {
+      const primaryNp = normPhone(primary.phone);
+      const mismatch = toMerge.find((c) => normPhone(c.phone) !== primaryNp);
+      if (mismatch) {
+        return {
+          success: false,
+          message: "শুধু একই ফোন নাম্বারের অ্যাকাউন্টগুলো মার্জ করা যাবে",
+        };
+      }
     }
 
     // Build the ordered write plan: move every child row onto the primary, then
@@ -242,6 +336,8 @@ export const mergeCustomerGroup = async (
 
     revalidatePath("/staff/customers");
     revalidatePath("/staff/customers/merge");
+    revalidatePath("/customers");
+    revalidatePath("/customers/merge");
     return {
       success: true,
       message: `${mergeIds.length}টি অ্যাকাউন্ট একটি অ্যাকাউন্টে মার্জ হয়েছে`,
@@ -251,3 +347,14 @@ export const mergeCustomerGroup = async (
     return { success: false, message: "মার্জ করা যায়নি, আবার চেষ্টা করুন" };
   }
 };
+
+/** Merge same-phone duplicate accounts (used by the auto duplicate-group tool). */
+export const mergeCustomerGroup = (primaryCustomerId: string, mergeCustomerIds: string[]) =>
+  runMerge(primaryCustomerId, mergeCustomerIds, { requireSamePhone: true });
+
+/**
+ * Merge any admin-selected accounts into one, even with different phone numbers
+ * (used by the manual search-and-merge tool for a buyer + their relatives' accounts).
+ */
+export const mergeCustomersManual = (primaryCustomerId: string, mergeCustomerIds: string[]) =>
+  runMerge(primaryCustomerId, mergeCustomerIds, { requireSamePhone: false });

@@ -22,10 +22,15 @@ export default function InvoiceTemplate({
     itemCount <= 5 ? "normal" : itemCount <= 8 ? "compact" : itemCount <= 12 ? "tight" : "xtight";
   const rowPad =
     density === "normal" ? "py-2" : density === "compact" ? "py-1" : density === "tight" ? "py-0.5" : "py-[1px]";
+  // Keep every cell on a single line (text-md was not a real Tailwind size, so rows
+  // fell back to the large body font and warranty / price values wrapped to two lines).
   const cellText =
-    density === "normal" ? "text-md" : density === "compact" ? "text-sm" : "text-xs";
+    (density === "normal" ? "text-sm" : density === "compact" ? "text-[13px]" : "text-xs") +
+    " whitespace-nowrap";
   const headPad = density === "normal" ? "py-2" : density === "compact" ? "py-1" : "py-0.5";
-  const headText = density === "xtight" ? "text-[10px]" : density === "tight" ? "text-xs" : "text-sm";
+  const headText =
+    (density === "xtight" ? "text-[10px]" : density === "tight" ? "text-xs" : "text-sm") +
+    " whitespace-nowrap";
   const totalsText =
     density === "normal" ? "text-base" : density === "compact" ? "text-sm" : density === "tight" ? "text-xs" : "text-[11px]";
   const totalsGap =
@@ -122,7 +127,7 @@ export default function InvoiceTemplate({
                   <td className={`${rowPad} px-3 ${cellText} border-r border-black`}>
                     {index + 1}.
                   </td>
-                  <td className={`${rowPad} px-3 ${cellText} border-r border-black`}>
+                  <td className={`${rowPad} px-3 ${cellText} !whitespace-normal break-words border-r border-black`}>
                     {product.type.toUpperCase()}-{product.model}
                     {product.serialNumber ? <span className={`block ${density === "normal" ? "text-sm" : "text-xs"}`}>S/N: {product.serialNumber}</span> : null}
                   </td>

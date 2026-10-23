@@ -1,5 +1,5 @@
 import { getDuplicateCustomerGroups } from "@/actions/customerMergeActions";
-import { CustomerMergeClient } from "@/components";
+import { CustomerManualMergeClient, CustomerMergeClient } from "@/components";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -23,11 +23,18 @@ export default async function CustomerMergePage() {
         </Link>
       </div>
 
-      {!res.success ? (
-        <div className="__card p-10 text-center text-rose-500">{res.message}</div>
-      ) : (
-        <CustomerMergeClient groups={groups} />
-      )}
+      <CustomerManualMergeClient />
+
+      <div className="mt-2">
+        <h2 className="mb-1 text-sm font-bold uppercase tracking-wide text-gray-400">
+          একই ফোন নাম্বারের ডুপ্লিকেট (অটো-শনাক্ত)
+        </h2>
+        {!res.success ? (
+          <div className="__card p-10 text-center text-rose-500">{res.message}</div>
+        ) : (
+          <CustomerMergeClient groups={groups} />
+        )}
+      </div>
     </div>
   );
 }

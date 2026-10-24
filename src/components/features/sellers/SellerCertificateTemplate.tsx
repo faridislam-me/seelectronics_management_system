@@ -34,15 +34,15 @@ export default function SellerCertificateTemplate({ data }: { data: SellerCertif
         {/* Brand */}
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={data.logo} alt="SE Electronics" className="size-[16mm] rounded-full border-2 object-cover" style={{ borderColor: GOLD }} />
+          <img src={data.logo} alt="SE Electronics" className="size-[14mm] rounded-full border-2 object-cover" style={{ borderColor: GOLD }} />
           <div className="text-left leading-tight">
-            <div className="text-[29px] font-extrabold tracking-[4px]" style={{ color: NAVY, fontFamily: "Inter, sans-serif" }}>SE ELECTRONICS</div>
-            <div className="text-[14.5px] font-semibold text-[#5b6784]">এস ই ইলেকট্রনিকস · বাদাম বাগিচা, সিলেট</div>
+            <div className="text-[26px] font-extrabold tracking-[4px]" style={{ color: NAVY, fontFamily: "Inter, sans-serif" }}>SE ELECTRONICS</div>
+            <div className="text-[13.5px] font-semibold text-[#5b6784]">এস ই ইলেকট্রনিকস · বাদাম বাগিচা, সিলেট</div>
           </div>
         </div>
 
         {/* Title */}
-        <div className="mt-[4mm] text-[54px] font-bold leading-none" style={{ color: accent }}>{kind.title}</div>
+        <div className="mt-[3mm] text-[50px] font-bold leading-none" style={{ color: accent }}>{kind.title}</div>
         <div className="mt-2.5 flex items-center gap-3">
           <span className="h-[1.5px] w-[32mm]" style={{ background: GOLD }} />
           <span className="text-[15.5px] font-bold uppercase tracking-[5px]" style={{ color: GOLD, fontFamily: "Inter, sans-serif" }}>{kind.english}</span>
@@ -53,24 +53,25 @@ export default function SellerCertificateTemplate({ data }: { data: SellerCertif
         )}
 
         {/* Recipient */}
-        <div className="mt-[5mm] text-[19px] font-semibold text-[#5b6784]">এই সার্টিফিকেট গর্বের সাথে প্রদান করা হলো</div>
-        <div className="mt-1 min-w-[160mm] max-w-[230mm] border-b-2 px-6 pb-1 text-[46px] font-bold leading-tight" style={{ borderColor: GOLD, color: NAVY }}>
+        <div className="mt-[4mm] text-[18px] font-semibold text-[#5b6784]">এই সার্টিফিকেট গর্বের সাথে প্রদান করা হলো</div>
+        <div className="mt-1 min-w-[160mm] max-w-[230mm] border-b-2 px-6 pb-0.5 text-[42px] font-bold leading-tight" style={{ borderColor: GOLD, color: NAVY }}>
           {data.shopName}
         </div>
-        <div className="mt-2 text-[17.5px] font-semibold text-[#334155]">
+        <div className="mt-1.5 text-[17px] font-semibold text-[#334155]">
           স্বত্বাধিকারী: <b>{data.ownerName}</b>
           <span className="mx-2 text-[#c0c7d4]">|</span>সেলার আইডি: <b style={{ fontFamily: "Inter, sans-serif" }}>{data.sellerId}</b>
           {data.district && (<><span className="mx-2 text-[#c0c7d4]">|</span>জেলা: <b>{data.district}</b></>)}
         </div>
 
-        <p className="mt-[3mm] max-w-[232mm] text-[20px] leading-[1.6] text-[#2b3445]">{kind.body}</p>
-        {data.note && <p className="mt-1 max-w-[230mm] text-[17px] leading-[1.5] font-semibold italic" style={{ color: accent }}>{data.note}</p>}
+        <p className="mt-[2.5mm] max-w-[236mm] text-[19px] leading-[1.55] text-[#2b3445]">{kind.body}</p>
+        {data.note && <p className="mt-1 max-w-[230mm] text-[16.5px] leading-[1.45] font-semibold italic" style={{ color: accent }}>{data.note}</p>}
 
         {/* "Best service point" stamp on scroll-work (client-supplied artwork), centred above the footer.
             flex-1 + min-h-0 lets it shrink when the text above is long so the footer never overflows the page. */}
         <div className="flex min-h-0 flex-1 w-full items-center justify-center py-[1mm]">
+          {/* banner wants ~46mm; it only shrinks below that when the text above runs long */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={data.banner} alt="Best Service Point" className="max-h-full w-[185mm] object-contain" />
+          <img src={data.banner} alt="Best Service Point" className="h-[46mm] max-h-full w-auto max-w-[240mm] object-contain" />
         </div>
 
         {/* Footer: date + number, QR, signature + seals */}
@@ -84,7 +85,7 @@ export default function SellerCertificateTemplate({ data }: { data: SellerCertif
 
           <div className="flex items-end justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={data.qrcode} alt="QR" className="size-[20mm] bg-white p-[1mm] border" style={{ borderColor: "#e2e8f0" }} />
+            <img src={data.qrcode} alt="QR" className="size-[26mm] bg-white p-[1mm] border" style={{ borderColor: "#e2e8f0" }} />
           </div>
 
           <div className="relative flex flex-col items-center">

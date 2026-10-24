@@ -320,11 +320,14 @@ export default function DashboardLayout({
           )}
         >
           <SideNavContext value={{ openSideNav: () => setShowSideNav(true) }}>
-            <header className="mb-6 flex gap-4 items-center p-4">
+            {/* Mobile-only bar: just the sidebar toggle. On desktop the sidebar is
+                always visible, so no top bar is rendered — this removes the page
+                title that duplicated each page's own heading and the empty space
+                above it. Each page provides its own title. */}
+            <header className="xl:hidden flex items-center gap-3 px-4 pt-4 pb-1">
               <button
                 title="Show Sidebar"
                 onClick={() => setShowSideNav(true)}
-                className="xl:hidden"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -341,16 +344,8 @@ export default function DashboardLayout({
                   />
                 </svg>
               </button>
-              <div>
-                <span className="font-bold text-2xl">
-                  {links.find((link) => link.href === pathname)?.sectionTitle ||
-                    links.find((link) => link.href === pathname)?.name ||
-                    (pathname.startsWith("/suppliers/") ? "Supplier Ledger" : null) ||
-                    "Dashboard Overview"}
-                </span>
-              </div>
             </header>
-            <div className="flex-1 px-4 pb-4">{children}</div>
+            <div className="flex-1 px-4 pb-4 pt-3 xl:pt-5">{children}</div>
           </SideNavContext>
         </section>
       </div>

@@ -69,18 +69,23 @@ export default function SellerCertificateTemplate({ data }: { data: SellerCertif
         {/* "Best service point" stamp on scroll-work (client-supplied artwork), centred above the footer.
             flex-1 + min-h-0 lets it shrink when the text above is long so the footer never overflows the page. */}
         <div className="flex min-h-0 flex-1 w-full items-center justify-center py-[1mm]">
-          {/* banner wants ~46mm; it only shrinks below that when the text above runs long */}
+          {/* banner wants ~34mm; it only shrinks below that when the text above runs long */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={data.banner} alt="Best Service Point" className="h-[46mm] max-h-full w-auto max-w-[240mm] object-contain" />
+          <img src={data.banner} alt="Best Service Point" className="h-[34mm] max-h-full w-auto max-w-[200mm] object-contain" />
         </div>
 
         {/* Footer: date + number, QR, signature + seals */}
         <div className="w-full shrink-0 grid grid-cols-3 items-end">
-          <div className="text-left">
-            <div className="text-[16.5px] font-bold">{bnDate(data.issuedAt)}</div>
-            <div className="mt-1 w-[52mm] border-t border-[#94a3b8]" />
-            <div className="text-[13.5px] font-semibold text-[#5b6784]">প্রদানের তারিখ</div>
-            <div className="mt-2 text-[12.5px] font-bold text-[#5b6784]" style={{ fontFamily: "Inter, sans-serif" }}>Certificate No: {data.certNo}</div>
+          <div className="flex items-end gap-[4mm] text-left">
+            <div>
+              <div className="text-[16.5px] font-bold">{bnDate(data.issuedAt)}</div>
+              <div className="mt-1 w-[52mm] border-t border-[#94a3b8]" />
+              <div className="text-[13.5px] font-semibold text-[#5b6784]">প্রদানের তারিখ</div>
+              <div className="mt-2 text-[12.5px] font-bold text-[#5b6784]" style={{ fontFamily: "Inter, sans-serif" }}>Certificate No: {data.certNo}</div>
+            </div>
+            {/* round office seal, on the left as the client asked */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={data.seal} alt="" className="size-[26mm] shrink-0 object-contain opacity-[0.85] mix-blend-multiply -rotate-[8deg]" />
           </div>
 
           <div className="flex items-end justify-center">
@@ -89,9 +94,6 @@ export default function SellerCertificateTemplate({ data }: { data: SellerCertif
           </div>
 
           <div className="relative flex flex-col items-center">
-            {/* round office seal, stamped over the signature on the left */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={data.seal} alt="" className="absolute -left-[9mm] -bottom-[2mm] size-[28mm] object-contain opacity-[0.82] mix-blend-multiply -rotate-[8deg]" />
             {/* handwritten signature */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={data.sign} alt="Signature" className="w-[52mm] object-contain mix-blend-multiply -mb-1" />

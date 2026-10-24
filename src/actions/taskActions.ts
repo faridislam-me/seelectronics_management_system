@@ -2,7 +2,7 @@
 
 import { db } from "@/db/drizzle";
 import { pushToUser } from "@/lib/push";
-import { smsLogs, staffNotifications, staffs, tasks } from "@/db/schema";
+import { staffNotifications, staffs, tasks } from "@/db/schema";
 import { sendSMS, verifySession } from "@/lib";
 import { TaskStatus } from "@/types";
 import { formatDate, generateRandomId } from "@/utils";
@@ -50,22 +50,10 @@ async function sendTaskNotificationSMS(
     const smsContent = `New Task: ${shortTitle}\nPriority: ${priority.toUpperCase()}\nDue: ${formattedDate}\nLog in to your dashboard for details: ${process.env.NEXT_PUBLIC_APP_URL}/staff/tasks`;
 
     try {
+      // sendSMS records the outcome in smsLogs itself.
       await sendSMS(staff.phone, smsContent);
-      await db.insert(smsLogs).values({
-        staffId,
-        phoneNumber: staff.phone,
-        message: smsContent,
-        status: "sent",
-      });
     } catch (error: any) {
       console.error("Failed to send task SMS:", error);
-      await db.insert(smsLogs).values({
-        staffId,
-        phoneNumber: staff.phone,
-        message: smsContent,
-        status: "failed",
-        error: error.message || "Unknown error",
-      });
     }
   } catch (error) {
     console.error("Error in sendTaskNotificationSMS:", error);

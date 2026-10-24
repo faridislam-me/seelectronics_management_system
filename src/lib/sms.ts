@@ -7,6 +7,17 @@ export class SMSError extends Error {
   }
 }
 
+/** Records the outcome of a real SMS / voice attempt so failures are visible in the DB (never throws). */
+export async function logDelivery(entry: { phoneNumber: string; message: string; status: "sent" | "failed"; error?: string | null; carrier: "sms" | "voice" }) {
+  try {
+    const { db } = await import("@/db/drizzle");
+    const { smsLogs } = await import("@/db/schema");
+    await db.insert(smsLogs).values({ phoneNumber: entry.phoneNumber, message: entry.message, status: entry.status, error: entry.error ?? null, carrier: entry.carrier });
+  } catch (e) {
+    console.error("logDelivery failed:", e);
+  }
+}
+
 export const sendSMS = async (phoneNumber: string, message: string) => {
   try {
     const shouldSendRealSMS =
@@ -31,8 +42,10 @@ export const sendSMS = async (phoneNumber: string, message: string) => {
       const jsonRes = await res.json();
       if (jsonRes.response_code != 202) {
         const errMsg = jsonRes.error_message || JSON.stringify(jsonRes);
+        await logDelivery({ phoneNumber, message, status: "failed", error: errMsg, carrier: "sms" });
         throw new SMSError("SMS Service Error - " + errMsg);
       }
+      await logDelivery({ phoneNumber, message, status: "sent", carrier: "sms" });
       return jsonRes;
     } else {
       // Development: log to console (set SMS_SEND_IN_DEV=true in .env to send real SMS)
@@ -45,6 +58,9 @@ Message: ${message}
     }
   } catch (error) {
     console.error(error);
+    if (!(error instanceof SMSError)) {
+      await logDelivery({ phoneNumber, message, status: "failed", error: error instanceof Error ? error.message : String(error), carrier: "sms" });
+    }
     throw error;
   }
 };

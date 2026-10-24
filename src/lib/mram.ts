@@ -71,13 +71,17 @@ export const sendVoiceCall = async (
       );
 
       const jsonRes = await res.json();
+      const { logDelivery } = await import("@/lib/sms");
+      const label = `[VOICE] ${title} (broadcast ${broadcastId})`;
 
       if (!res.ok) {
         const errMsg = jsonRes.message || JSON.stringify(jsonRes);
         console.error("MRAM API Error:", errMsg);
+        for (const n of numbers) await logDelivery({ phoneNumber: n, message: label, status: "failed", error: errMsg, carrier: "voice" });
         // We log the error but don't throw it so it doesn't break the main flow.
         return { success: false, error: errMsg };
       }
+      for (const n of numbers) await logDelivery({ phoneNumber: n, message: label, status: "sent", carrier: "voice" });
       return { success: true, data: jsonRes, skipped };
     } else {
       // Development logging
@@ -95,6 +99,11 @@ Title: ${title}
     }
   } catch (error) {
     console.error("MRAM Service Exception:", error);
+    try {
+      const { logDelivery } = await import("@/lib/sms");
+      const phone = Array.isArray(phoneNumbers) ? phoneNumbers.join(",") : phoneNumbers;
+      await logDelivery({ phoneNumber: phone, message: `[VOICE] ${title} (broadcast ${broadcastId})`, status: "failed", error: error instanceof Error ? error.message : String(error), carrier: "voice" });
+    } catch {}
     // Return gracefully to prevent disrupting core operations
     return { success: false, error: "MRAM Service failed" };
   }

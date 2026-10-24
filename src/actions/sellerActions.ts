@@ -1006,6 +1006,16 @@ export const sellerRequestService = async (input: {
     } catch (e) {
       console.error("customer confirmation SMS failed:", e);
     }
+    // …and the automated voice call, exactly like the admin dashboard path.
+    try {
+      const { sendVoiceCall, getMramBroadcastIds } = await import("@/lib/mram");
+      const ids = getMramBroadcastIds();
+      const broadcastId = kind === "install" ? ids?.installation_requested : ids?.service_requested;
+      if (broadcastId) await sendVoiceCall(customer.phone, broadcastId, `${kind === "install" ? "Installation" : "Service"} Requested ${serviceId}`);
+      else console.warn("No MRAM broadcast id for service/installation request; call skipped");
+    } catch (e) {
+      console.error("customer voice call failed:", e);
+    }
 
     // Tell the admin
     try {

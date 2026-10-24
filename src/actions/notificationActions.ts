@@ -61,9 +61,15 @@ export async function notifyCustomer({
     await pushToUser("customer", customerId, { title: "SE Electronics", body: (shortMessage || message).slice(0, 160), link });
 
     // 2. Send SMS
-    const smsContent = message || `প্রিয় গ্রাহক, আপনার ড্যাশবোর্ডে একটি নতুন বার্তা আছে। বিস্তারিত দেখুন: ${generateUrl("customer-login", {})}`;
-    
-    await sendSMS(phoneNumber, smsContent);
+    const smsContent = shortMessage || message || `প্রিয় গ্রাহক, আপনার ড্যাশবোর্ডে একটি নতুন বার্তা আছে। বিস্তারিত দেখুন: ${generateUrl("customer-login", {})}`;
+
+    try {
+      await sendSMS(phoneNumber, smsContent);
+    } catch (e) {
+      // The in-app notification + push already went out; an SMS gateway error
+      // must not make the caller think the whole notification failed.
+      console.error(`notifyCustomer SMS failed (${type}, ${customerId}):`, e);
+    }
 
     revalidatePath("/customer/profile");
     return { success: true };

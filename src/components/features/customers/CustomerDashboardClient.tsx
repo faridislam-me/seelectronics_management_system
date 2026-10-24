@@ -16,6 +16,7 @@ import {
   LogOut,
   MapPin,
   MessageSquare,
+  PackageOpen,
   PhoneCall,
   ShieldCheck,
   ShoppingCart,
@@ -140,10 +141,10 @@ export default function CustomerDashboardClient({
     },
     {
       label: "My All Products",
-      icon: ShoppingCart,
+      icon: PackageOpen,
       href: "/customer/products",
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
+      color: "text-teal-600",
+      bg: "bg-teal-50",
     },
     {
       label: "Complaints",
@@ -344,7 +345,7 @@ export default function CustomerDashboardClient({
                     >
                       <action.icon className="size-6 sm:size-8" />
                     </div>
-                    <span className="text-[10px] sm:text-xs font-bold text-gray-700 text-center leading-tight">
+                    <span className="w-full px-0.5 text-[10px] sm:text-xs font-bold text-gray-700 text-center leading-tight break-words">
                       {action.label}
                     </span>
                   </button>
@@ -367,7 +368,7 @@ export default function CustomerDashboardClient({
                     >
                       <action.icon className="size-6 sm:size-8" />
                     </div>
-                    <span className="text-[10px] sm:text-xs font-bold text-gray-700 text-center leading-tight">
+                    <span className="w-full px-0.5 text-[10px] sm:text-xs font-bold text-gray-700 text-center leading-tight break-words">
                       {action.label}
                     </span>
                   </button>
@@ -389,7 +390,7 @@ export default function CustomerDashboardClient({
                   >
                     <action.icon className="size-6 sm:size-8" />
                   </div>
-                  <span className="text-[10px] sm:text-xs font-bold text-gray-700 text-center leading-tight">
+                  <span className="w-full px-0.5 text-[10px] sm:text-xs font-bold text-gray-700 text-center leading-tight break-words">
                     {action.label}
                   </span>
                 </Link>

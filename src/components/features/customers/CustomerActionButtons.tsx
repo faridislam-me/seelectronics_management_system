@@ -120,21 +120,13 @@ export default function CustomerActionButtons({
           }}
         />
       )}
-      {showProducts && customerData.invoice && (
+      {showProducts && (
+        // Load EVERY product the customer owns across all their invoices, so a
+        // merged customer with many units can be serviced/installed per unit.
         <ProductSelectionModal
-          productItems={products}
-          invoiceId={customerData.invoice.id}
+          customerId={customerData.customerId}
           onClose={() => setShowProducts(false)}
         />
-      )}
-      {showProducts && !customerData.invoice && (
-        <div className="hidden">
-          {(() => {
-            setShowProducts(false);
-            toast.error("No invoice found for this customer");
-            return null;
-          })()}
-        </div>
       )}
       {showVoiceSmsModal && (
         <VoiceSmsModal

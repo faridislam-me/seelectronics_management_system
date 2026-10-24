@@ -38,6 +38,9 @@ export default async function SellerProfilePage() {
           { value: stats.inWarranty, label: "ওয়ারেন্টিতে", icon: ShieldCheck, tone: "teal", href: "/seller/customers" },
           { value: `৳${Math.round(stats.purchasedAmount).toLocaleString()}`, label: "মোট ক্রয়", icon: Banknote, tone: "amber", href: "/seller/purchases" },
           { value: `৳${Math.round(stats.paidAmount).toLocaleString()}`, label: "পরিশোধিত", icon: CheckCircle2, tone: "red", href: "/seller/purchases" },
+        ]} />
+        {/* Service-charge tiles on their own full-width row (two equal halves). */}
+        <BlueStatGrid compact cols={2} cards={[
           { value: `৳${Math.round(stats.serviceDue).toLocaleString()}`, label: "সার্ভিস চার্জ বাকি", icon: Banknote, tone: "amber", href: "/seller/services" },
           { value: stats.serviceDueJobs, label: "চার্জ বাকি কাজ", icon: Wrench, tone: "red", href: "/seller/services" },
         ]} />

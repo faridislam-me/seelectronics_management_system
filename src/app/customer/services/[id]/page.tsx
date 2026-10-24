@@ -63,7 +63,7 @@ export default async function ServiceDetailsPage({ params }: { params: Promise<{
 
   // Warranty comes from the customer's purchased product (start + duration),
   // not from this service request's date.
-  const warranty = await getMyWarrantyStatus(service.productType);
+  const warranty = await getMyWarrantyStatus(service.productType, service.productModel);
   const warrantyStatus = warranty?.status ?? "none";
   const isWarrantyExpired = warrantyStatus !== "valid";
   const warrantyLabel = { valid: "Valid", expired: "Expired", stopped: "Stopped", none: "N/A" }[warrantyStatus];

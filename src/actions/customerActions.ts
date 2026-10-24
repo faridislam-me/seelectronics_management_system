@@ -433,7 +433,7 @@ export async function getCustomerDashboardStatus() {
  * (the same rule as /check-warranty) — never from the service request date.
  * When `productType` is given, products of that type are preferred.
  */
-export async function getMyWarrantyStatus(productType?: string | null) {
+export async function getMyWarrantyStatus(productType?: string | null, productModel?: string | null) {
     const session = await verifySession(false, 'customer');
     if (!session || !session.isAuth) return null;
 
@@ -446,8 +446,19 @@ export async function getMyWarrantyStatus(productType?: string | null) {
     const all = await getCustomerProducts(session.userId as string);
     if (!all.length) return { status: "none" as const, endDate: null };
 
+    // Prefer the EXACT product this warranty is about (type + model). After merging
+    // many purchases into one account, a specific unit whose warranty expired must
+    // not show "valid" just because another unit of the same type is still covered.
+    const norm = (s: string | null | undefined) => (s || "").trim().toLowerCase();
     const sameType = productType ? all.filter((p) => p.type === productType) : [];
-    const pool = sameType.length ? sameType : all;
+    const typePool = sameType.length ? sameType : all;
+    const wantModel = norm(productModel);
+    let sameModel = wantModel ? typePool.filter((p) => norm(p.model) === wantModel) : [];
+    if (wantModel && !sameModel.length) {
+        // tolerate minor text differences between the service record and the product row
+        sameModel = typePool.filter((p) => norm(p.model).includes(wantModel) || wantModel.includes(norm(p.model)));
+    }
+    const pool = sameModel.length ? sameModel : typePool;
     const endDate = pool
         .map((p) => {
             const d = new Date(p.warrantyStartDate);

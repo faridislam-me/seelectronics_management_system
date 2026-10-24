@@ -39,6 +39,14 @@ const buildCustomersWhere = (query?: string, category?: string) => {
         ilike(customers.phone, q),
         ilike(customers.address, q),
         ilike(customers.invoiceNumber, q),
+        // customer IDs that were merged into this account (kept on their invoices)
+        inArray(
+          customers.customerId,
+          db
+            .selectDistinct({ customerId: invoices.customerId })
+            .from(invoices)
+            .where(ilike(invoices.originalCustomerId, q)),
+        ),
       )
     : undefined;
 
@@ -324,6 +332,7 @@ export const addPurchaseToCustomer = async (customerId: string, data: any, sendL
       .values({
         invoiceNumber,
         customerId: customer.customerId,
+        originalCustomerId: customer.customerId,
         customerName: customer.name,
         customerPhone: customer.phone,
         customerAddress: customer.address,
@@ -485,6 +494,7 @@ export const createCustomer = async (data: any, sendLink = false) => {
       .values({
         invoiceNumber,
         customerId,
+        originalCustomerId: customerId,
         customerName: data.name,
         customerPhone: data.phone,
         customerAddress: data.address,

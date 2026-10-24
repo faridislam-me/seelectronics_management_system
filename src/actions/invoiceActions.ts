@@ -100,6 +100,7 @@ export const getInvoicesMetadata = async ({
     ? or(
         ilike(invoices.invoiceNumber, q),
         ilike(invoices.customerId, q),
+        ilike(invoices.originalCustomerId, q),
         ilike(invoices.customerName, q),
         ilike(invoices.customerPhone, q),
         ilike(invoices.customerAddress, q),
@@ -138,6 +139,7 @@ export const getInvoices = async ({
         ? or(
             ilike(invoices.invoiceNumber, q),
             ilike(invoices.customerId, q),
+            ilike(invoices.originalCustomerId, q),
             ilike(invoices.customerName, q),
             ilike(invoices.customerPhone, q),
             ilike(invoices.customerAddress, q),
@@ -219,6 +221,10 @@ export const getWarrantyInfo = async (query: string) => {
     });
     if (!invoice) {
       invoice = await db.query.invoices.findFirst({ where: eq(invoices.customerId, q.toUpperCase()), with: withProducts });
+    }
+    if (!invoice) {
+      // a customer ID that was merged into another account lives on its invoices
+      invoice = await db.query.invoices.findFirst({ where: eq(invoices.originalCustomerId, q.toUpperCase()), with: withProducts });
     }
     const digits = q.replace(/\D/g, "");
     if (!invoice && digits.length >= 10 && digits.length === q.replace(/[\s+-]/g, "").length) {

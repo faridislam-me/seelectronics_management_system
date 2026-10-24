@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from "@/db/drizzle";
-import { customers, services, subscriptions, applications, customerNotifications } from "@/db/schema";
+import { customers, invoices, services, subscriptions, applications, customerNotifications } from "@/db/schema";
 import { createSession, deleteSession, verifySession } from "@/lib";
 import { eq, and, count, or, ilike, isNull } from "drizzle-orm";
 
@@ -385,12 +385,31 @@ export async function customerLogin(prevState: any, formData: FormData) {
             return { success: false, message: "Customer ID is required" };
         }
 
-        const customer = await db.query.customers.findFirst({
+        const id = customerId.trim();
+        let customer = await db.query.customers.findFirst({
             where: or(
-                eq(customers.customerId, customerId),
-                eq(customers.invoiceNumber, customerId)
+                eq(customers.customerId, id),
+                eq(customers.invoiceNumber, id)
             )
         });
+
+        // Any invoice number of the account, or a customer ID that was merged into
+        // this account (kept on invoices.originalCustomerId), also logs in.
+        if (!customer) {
+            const inv = await db.query.invoices.findFirst({
+                where: or(
+                    eq(invoices.invoiceNumber, id),
+                    eq(invoices.originalCustomerId, id),
+                    eq(invoices.originalCustomerId, id.toUpperCase()),
+                ),
+                columns: { customerId: true },
+            });
+            if (inv) {
+                customer = await db.query.customers.findFirst({
+                    where: eq(customers.customerId, inv.customerId),
+                });
+            }
+        }
 
         if (!customer) {
             return { success: false, message: "Invalid Customer ID or Invoice Number" };

@@ -134,6 +134,13 @@
       "when": 1792264188583,
       "tag": "0018_payment_customer_snapshot",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792805954408,
+      "tag": "0019_invoice_original_customer_id",
+      "breakpoints": true
     }
   ]
 }

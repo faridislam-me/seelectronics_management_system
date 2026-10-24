@@ -23,6 +23,8 @@ import {
   verifySession,
 } from "@/lib";
 import { deleteObject, getObjectUrl, putObject } from "@/lib/s3";
+import type { OwnedProductWithServices } from "@/lib/customerPurchases";
+import { sellerCustomerFilter } from "@/lib/sellerScope";
 import { compressImage } from "@/lib/sharp";
 import { SearchParams } from "@/types";
 import {
@@ -39,7 +41,7 @@ import {
 } from "@/validationSchemas";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { RedirectType, redirect } from "next/navigation";
@@ -713,6 +715,34 @@ export async function verifySellerSession() {
 // SELLER PORTAL DATA
 // ============================================
 
+/**
+ * The seller who sold a customer the unit matching the given type/model (by the
+ * invoice attribution), or null when the unit was sold by SE directly / unknown.
+ */
+export async function sellerForCustomerUnit(customerId: string, productType: string, productModel: string) {
+  const norm = (v: string | null | undefined) => (v || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const rows = await db
+    .select({ sellerId: invoices.sellerId, phone: sellers.phone, type: products.type, model: products.model, date: invoices.date })
+    .from(products)
+    .innerJoin(invoices, eq(products.invoiceId, invoices.id))
+    .innerJoin(sellers, eq(sellers.sellerId, invoices.sellerId))
+    .where(eq(invoices.customerId, customerId))
+    .orderBy(desc(invoices.date));
+  const want = norm(productModel);
+  const hit = rows.find((r) => r.type === productType && norm(r.model) === want) ?? rows.find((r) => r.type === productType);
+  return hit && hit.sellerId ? { sellerId: hit.sellerId, phone: hit.phone } : null;
+}
+
+/** One unit sold through the seller, with the customer it belongs to and its service history. */
+export type SellerSoldProduct = OwnedProductWithServices & {
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  isWarrantyStopped: boolean;
+  warrantyStopReason: string | null;
+};
+
 export async function getSellerPortalData(sellerId: string) {
   try {
     const session = await verifySession(false);
@@ -722,62 +752,130 @@ export async function getSellerPortalData(sellerId: string) {
 
     const seller = await db.query.sellers.findFirst({
       where: eq(sellers.sellerId, sellerId),
-      with: {
-        purchases: { orderBy: (p, { desc }) => [desc(p.date)] },
-        customers: {
-          columns: { customerId: true, name: true, phone: true, address: true, invoiceNumber: true, isWarrantyStopped: true, warrantyStopReason: true, createdAt: true, referredByVipCard: true, sellerId: true },
-          with: {
-            invoice: { columns: { id: true, total: true, subtotal: true, dueAmount: true, dueType: true, notes: true, paymentType: true, date: true }, with: { products: { columns: { type: true, model: true, serialNumber: true, quantity: true, warrantyStartDate: true, warrantyDurationMonths: true } } } },
-            services: { columns: { serviceId: true, status: true, type: true, productType: true, productModel: true, staffName: true, staffPhone: true, reportedIssue: true, createdAt: true }, orderBy: (s, { desc }) => [desc(s.createdAt)], with: { statusHistory: { columns: { status: true, createdAt: true }, orderBy: (h, { asc }) => [asc(h.createdAt)] } } },
-          },
-          orderBy: (c, { desc }) => [desc(c.createdAt)],
-        },
-      },
+      with: { purchases: { orderBy: (p, { desc }) => [desc(p.date)] } },
     });
     if (!seller) return { success: false, message: "Seller not found" };
 
-    // A customer can own several invoices (one per purchase). Load them all so
-    // the seller list aggregates totals/due/warranty across every purchase, not
-    // just the primary invoice.
-    const customerIds = seller.customers.map((c) => c.customerId);
+    const sellerCustomers = await db.query.customers.findMany({
+      where: sellerCustomerFilter(sellerId),
+      columns: { customerId: true, name: true, phone: true, address: true, invoiceNumber: true, isWarrantyStopped: true, warrantyStopReason: true, createdAt: true, referredByVipCard: true, sellerId: true },
+      with: {
+        services: { columns: { serviceId: true, status: true, type: true, productType: true, productModel: true, staffName: true, staffPhone: true, reportedIssue: true, createdAt: true }, orderBy: (s, { desc }) => [desc(s.createdAt)], with: { statusHistory: { columns: { status: true, createdAt: true }, orderBy: (h, { asc }) => [asc(h.createdAt)] } } },
+      },
+      orderBy: (c, { desc }) => [desc(c.createdAt)],
+    });
+
+    // Only the purchases sold through THIS seller. A customer account can also
+    // hold purchases from SE Electronics directly or from another shop; those
+    // are never shown here, so sellers' records never mix.
+    const customerIds = sellerCustomers.map((c) => c.customerId);
     const invoicesByCustomer = new Map<string, any[]>();
-    if (customerIds.length) {
-      const allInvoices = await db.query.invoices.findMany({
-        where: inArray(invoices.customerId, customerIds),
-        columns: { id: true, invoiceNumber: true, customerId: true, total: true, subtotal: true, dueAmount: true, dueType: true, notes: true, paymentType: true, date: true },
-        orderBy: (inv, { desc }) => [desc(inv.date)],
-        with: { products: { columns: { type: true, model: true, serialNumber: true, quantity: true, warrantyStartDate: true, warrantyDurationMonths: true } } },
-      });
-      for (const inv of allInvoices) {
-        const arr = invoicesByCustomer.get(inv.customerId) ?? [];
-        arr.push(inv);
-        invoicesByCustomer.set(inv.customerId, arr);
-      }
+    const allInvoices = customerIds.length
+      ? await db.query.invoices.findMany({
+          where: and(inArray(invoices.customerId, customerIds), eq(invoices.sellerId, sellerId)),
+          columns: { id: true, invoiceNumber: true, customerId: true, originalCustomerId: true, total: true, subtotal: true, dueAmount: true, dueType: true, notes: true, paymentType: true, date: true },
+          orderBy: (inv, { desc }) => [desc(inv.date)],
+          with: { products: true },
+        })
+      : [];
+    for (const inv of allInvoices) {
+      const arr = invoicesByCustomer.get(inv.customerId) ?? [];
+      arr.push(inv);
+      invoicesByCustomer.set(inv.customerId, arr);
     }
-    const customersWithInvoices = seller.customers.map((c) => ({
-      ...c,
-      invoices: invoicesByCustomer.get(c.customerId) ?? (c.invoice ? [c.invoice] : []),
-    }));
+    // Does the customer also have purchases NOT from this seller?
+    const otherInvoiceCustomers = new Set(
+      customerIds.length
+        ? (
+            await db
+              .selectDistinct({ customerId: invoices.customerId })
+              .from(invoices)
+              .where(and(inArray(invoices.customerId, customerIds), or(isNull(invoices.sellerId), sql`${invoices.sellerId} <> ${sellerId}`)))
+          ).map((r) => r.customerId)
+        : [],
+    );
+
+    const now = new Date();
+    const { attachServicesToProducts } = await import("@/lib/customerPurchases");
+    const soldProducts: SellerSoldProduct[] = [];
+    const customersWithInvoices = sellerCustomers
+      .map((c) => {
+        const invs = invoicesByCustomer.get(c.customerId) ?? [];
+        const owned = invs.flatMap((inv) =>
+          (inv.products ?? []).map((p: any) => {
+            const warrantyEnd = new Date(p.warrantyStartDate);
+            warrantyEnd.setMonth(warrantyEnd.getMonth() + p.warrantyDurationMonths);
+            return {
+              id: p.id as string,
+              type: p.type as string,
+              model: p.model as string,
+              serialNumber: (p.serialNumber ?? null) as string | null,
+              quantity: p.quantity as number,
+              unitPrice: p.unitPrice as number,
+              warrantyStartDate: new Date(p.warrantyStartDate),
+              warrantyDurationMonths: p.warrantyDurationMonths as number,
+              warrantyEnd,
+              warrantyActive: p.warrantyDurationMonths > 0 && warrantyEnd >= now,
+              invoiceId: inv.id as string,
+              invoiceNumber: inv.invoiceNumber as string,
+              originalCustomerId: (inv.originalCustomerId ?? null) as string | null,
+              invoiceDate: new Date(inv.date),
+              invoiceTotal: inv.total as number,
+              invoiceDue: inv.dueAmount as number,
+              paymentType: inv.paymentType as string,
+            };
+          }),
+        );
+        const requests = c.services.map((s) => ({
+          serviceId: s.serviceId,
+          type: (s.type === "install" ? "install" : "repair") as "install" | "repair",
+          status: s.status,
+          createdAt: new Date(s.createdAt),
+          staffName: s.staffName ?? null,
+          productType: s.productType,
+          productModel: s.productModel,
+        }));
+        const { products: withServices, unmatched } = attachServicesToProducts(owned, requests);
+        for (const p of withServices) {
+          soldProducts.push({
+            ...p,
+            customerId: c.customerId,
+            customerName: c.name,
+            customerPhone: c.phone,
+            customerAddress: c.address,
+            isWarrantyStopped: !!c.isWarrantyStopped,
+            warrantyStopReason: c.warrantyStopReason ?? null,
+          });
+        }
+        // Services on the seller's units, plus (when the seller sold everything
+        // the customer owns) requests that matched no unit — never another shop's jobs.
+        const keep = new Set(withServices.flatMap((p) => p.services.map((s) => s.serviceId)));
+        if (!otherInvoiceCustomers.has(c.customerId)) for (const u of unmatched) keep.add(u.serviceId);
+        const services = c.services.filter((s) => keep.has(s.serviceId));
+        const primary = invs[0] ?? null;
+        return { ...c, invoice: primary, invoices: invs, services };
+      })
+      // A customer linked to the seller but with no purchase from them yet still
+      // shows (so the seller can record the sale); everyone else must have one.
+      .filter((c) => c.invoices.length > 0 || c.sellerId === sellerId);
+    soldProducts.sort((a, b) => b.invoiceDate.getTime() - a.invoiceDate.getTime());
 
     const activeStatuses = ["pending", "in_progress", "appointment_retry", "staff_departed", "staff_arrived", "service_center", "service_center_received"];
     const allServices = customersWithInvoices
       .flatMap((c) => c.services.map((s) => ({ ...s, customerName: c.name, customerPhone: c.phone, customerId: c.customerId })))
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    const now = new Date();
-    const inWarranty = customersWithInvoices.filter((c) =>
-      !c.isWarrantyStopped &&
-      c.invoices.some((inv) => inv.products?.some((p: any) => {
-        const end = new Date(p.warrantyStartDate);
-        end.setMonth(end.getMonth() + p.warrantyDurationMonths);
-        return end > now;
-      })),
-    ).length;
+    const inWarranty = customersWithInvoices.filter((c) => !c.isWarrantyStopped && c.invoices.some((inv) => inv.products?.some((p: any) => {
+      const end = new Date(p.warrantyStartDate);
+      end.setMonth(end.getMonth() + p.warrantyDurationMonths);
+      return end > now;
+    }))).length;
 
     const stats = {
       purchasedUnits: seller.purchases.reduce((t, p) => t + p.quantity, 0),
       purchasedAmount: seller.purchases.reduce((t, p) => t + p.totalAmount, 0),
       paidAmount: seller.purchases.reduce((t, p) => t + p.paidAmount, 0),
-      customers: seller.customers.length,
+      customers: customersWithInvoices.length,
+      soldUnits: soldProducts.reduce((t, p) => t + p.quantity, 0),
       inService: allServices.filter((s) => activeStatuses.includes(s.status)).length,
       completedServices: allServices.filter((s) => s.status === "completed").length,
       inWarranty,
@@ -788,7 +886,7 @@ export async function getSellerPortalData(sellerId: string) {
 
     return {
       success: true,
-      data: { seller: { ...safe, customers: customersWithInvoices, ownerPhotoUrl, shopFrontPhotoUrl }, services: allServices, stats, due: stats.purchasedAmount - stats.paidAmount },
+      data: { seller: { ...safe, customers: customersWithInvoices, ownerPhotoUrl, shopFrontPhotoUrl }, products: soldProducts, services: allServices, stats, due: stats.purchasedAmount - stats.paidAmount },
     };
   } catch (error) {
     console.error(error);
@@ -808,6 +906,8 @@ export async function getSellerPortalData(sellerId: string) {
  */
 export const sellerRequestService = async (input: {
   customerId: string;
+  /** Product row id (preferred) — the exact unit the request is for. */
+  productId?: string;
   productType: string;
   productModel: string;
   reportedIssue?: string;
@@ -827,13 +927,23 @@ export const sellerRequestService = async (input: {
     if (!seller || !seller.isActiveSeller) return { success: false, message: "Seller account is not active" };
 
     const customer = await db.query.customers.findFirst({
-      where: and(eq(customers.customerId, input.customerId), eq(customers.sellerId, seller.sellerId)),
-      with: { invoice: { with: { products: true } } },
+      where: and(eq(customers.customerId, input.customerId), sellerCustomerFilter(seller.sellerId)),
+      columns: { customerId: true, name: true, phone: true, address: true },
     });
     if (!customer) return { success: false, message: "এই কাস্টমার আপনার তালিকায় নেই" };
 
-    const productType = (input.productType || customer.invoice?.products?.[0]?.type || "ips") as typeof services.$inferInsert.productType;
-    const productModel = input.productModel || customer.invoice?.products?.[0]?.model || "N/A";
+    // Resolve the unit: by product id (must be on one of this seller's invoices),
+    // else by the type/model text, else the seller's latest sale to the customer.
+    const sellerUnits = await db
+      .select({ id: products.id, type: products.type, model: products.model, date: invoices.date })
+      .from(products)
+      .innerJoin(invoices, eq(products.invoiceId, invoices.id))
+      .where(and(eq(invoices.customerId, customer.customerId), eq(invoices.sellerId, seller.sellerId)))
+      .orderBy(desc(invoices.date));
+    const unit = input.productId ? sellerUnits.find((u) => u.id === input.productId) : undefined;
+    if (input.productId && !unit) return { success: false, message: "এই পণ্যটি আপনার বিক্রির তালিকায় নেই" };
+    const productType = (unit?.type || input.productType || sellerUnits[0]?.type || "ips") as typeof services.$inferInsert.productType;
+    const productModel = unit?.model || input.productModel || sellerUnits[0]?.model || "";
     if (!productModel) return { success: false, message: "পণ্যের মডেল পাওয়া যায়নি" };
 
     // Avoid duplicate open requests for the same customer + product
@@ -913,6 +1023,7 @@ export const sellerRequestService = async (input: {
     revalidatePath("/services/repairs");
     revalidatePath("/installations");
     revalidatePath("/seller/customers");
+    revalidatePath("/seller/products", "layout");
     revalidatePath("/seller/services");
     revalidatePath("/seller/installs");
     revalidatePath("/seller/profile");
@@ -939,7 +1050,7 @@ export const sellerToggleCustomerBlock = async (customerId: string, reason?: "du
     if (!session) return { success: false, message: "Unauthorized" };
 
     const customer = await db.query.customers.findFirst({
-      where: and(eq(customers.customerId, customerId), eq(customers.sellerId, session.userId as string)),
+      where: and(eq(customers.customerId, customerId), sellerCustomerFilter(session.userId as string)),
       with: { invoice: { with: { products: true } } },
     });
     if (!customer) return { success: false, message: "এই কাস্টমার আপনার তালিকায় নেই" };
@@ -952,6 +1063,7 @@ export const sellerToggleCustomerBlock = async (customerId: string, reason?: "du
     await toggleCustomerBlockCore({ ...customer, allProducts }, blockReasonOf(reason));
 
     revalidatePath("/seller/customers");
+    revalidatePath("/seller/products", "layout");
     revalidatePath("/customers");
     return { success: true, message: customer.isWarrantyStopped ? "কাস্টমার আনব্লক করা হয়েছে" : "কাস্টমার ব্লক করা হয়েছে", blocked: !customer.isWarrantyStopped };
   } catch (error) {
@@ -1017,3 +1129,42 @@ export async function getSellerPurchaseInvoice(invoiceNumber: string) {
     return { success: false as const, message: "Something went wrong" };
   }
 }
+
+// ============================================
+// SELLER → EDIT OWN CUSTOMER'S CONTACT DETAILS
+// ============================================
+
+/**
+ * A seller can correct a customer's name / phone / address. Only the contact
+ * fields change (on the account and on every invoice snapshot) — invoices,
+ * products and prices are never touched from the seller portal.
+ */
+export const sellerUpdateCustomerContact = async (customerId: string, input: { name: string; phone: string; address: string }) => {
+  try {
+    const session = await verifySession(false, "seller");
+    if (!session) return { success: false, message: "Unauthorized" };
+    const name = (input.name || "").trim();
+    const phone = (input.phone || "").trim();
+    const address = (input.address || "").trim();
+    if (name.length < 2) return { success: false, message: "নাম লিখুন" };
+    if (!/^01\d{9}$/.test(phone)) return { success: false, message: "সঠিক মোবাইল নম্বর দিন (01XXXXXXXXX)" };
+    if (address.length < 3) return { success: false, message: "ঠিকানা লিখুন" };
+
+    const customer = await db.query.customers.findFirst({
+      where: and(eq(customers.customerId, customerId), sellerCustomerFilter(session.userId as string)),
+      columns: { customerId: true },
+    });
+    if (!customer) return { success: false, message: "এই কাস্টমার আপনার তালিকায় নেই" };
+
+    await db.update(customers).set({ name, phone, address }).where(eq(customers.customerId, customerId));
+    await db.update(invoices).set({ customerName: name, customerPhone: phone, customerAddress: address }).where(eq(invoices.customerId, customerId));
+
+    revalidatePath("/seller/customers");
+    revalidatePath("/seller/products", "layout");
+    revalidatePath("/customers");
+    return { success: true, message: "কাস্টমারের তথ্য আপডেট হয়েছে" };
+  } catch (error) {
+    console.error("sellerUpdateCustomerContact error:", error);
+    return { success: false, message: "আপডেট করা যায়নি" };
+  }
+};

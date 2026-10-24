@@ -141,6 +141,13 @@
       "when": 1792805954408,
       "tag": "0019_invoice_original_customer_id",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792821219520,
+      "tag": "0020_invoice_seller_id",
+      "breakpoints": true
     }
   ]
 }

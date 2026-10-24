@@ -39,13 +39,14 @@ const buildCustomersWhere = (query?: string, category?: string) => {
         ilike(customers.phone, q),
         ilike(customers.address, q),
         ilike(customers.invoiceNumber, q),
+        // any invoice number on the account (not just the first one), and the
         // customer IDs that were merged into this account (kept on their invoices)
         inArray(
           customers.customerId,
           db
             .selectDistinct({ customerId: invoices.customerId })
             .from(invoices)
-            .where(ilike(invoices.originalCustomerId, q)),
+            .where(or(ilike(invoices.invoiceNumber, q), ilike(invoices.originalCustomerId, q))),
         ),
       )
     : undefined;
@@ -164,8 +165,25 @@ export const getCustomers = async ({
         .where(inArray(invoices.customerId, ids))
         .groupBy(invoices.customerId);
       const map = new Map(agg.map((a) => [a.customerId, a]));
+
+      // When the search text is an invoice number or a (possibly old, merged)
+      // customer ID, find THAT purchase so the row can show it directly instead
+      // of making the admin dig through every invoice on the account.
+      const matched = new Map<string, any>();
+      const q = (query || "").trim();
+      if (q) {
+        const like = `%${q}%`;
+        const hits = await db.query.invoices.findMany({
+          where: and(inArray(invoices.customerId, ids), or(ilike(invoices.invoiceNumber, like), ilike(invoices.originalCustomerId, like))),
+          orderBy: (inv, { desc }) => [desc(inv.date)],
+          with: { seller: { columns: { sellerId: true, shopName: true } } },
+        });
+        for (const inv of hits) if (!matched.has(inv.customerId)) matched.set(inv.customerId, inv);
+      }
+
       withAggregate = customersData.map((c) => {
         const a = map.get(c.customerId);
+        const m = matched.get(c.customerId);
         return {
           ...c,
           aggregate: {
@@ -173,6 +191,7 @@ export const getCustomers = async ({
             totalBill: Number(a?.totalBill ?? c.invoice?.total ?? 0),
             totalDue: Number(a?.totalDue ?? c.invoice?.dueAmount ?? 0),
           },
+          matchedInvoice: m ?? undefined,
         };
       });
     }
@@ -244,10 +263,31 @@ export const searchCustomersForPurchase = async (query: string) => {
       ilike(customers.customerId, like),
       ilike(customers.name, like),
       ilike(customers.phone, like),
+      // IDs printed on older invoices (merged accounts)
+      inArray(
+        customers.customerId,
+        db.selectDistinct({ customerId: invoices.customerId }).from(invoices).where(ilike(invoices.originalCustomerId, like)),
+      ),
     );
+    // A seller sees their own customers by any text, and can also reach any
+    // other customer (so a repeat buyer keeps ONE account) but only by exact
+    // phone number or customer ID — never by browsing names.
+    const exact = q.toUpperCase();
     const where =
       session.role === "seller"
-        ? and(eq(customers.sellerId, session.userId as string), textFilter)
+        ? or(
+            and(eq(customers.sellerId, session.userId as string), textFilter),
+            inArray(
+              customers.customerId,
+              db.selectDistinct({ customerId: invoices.customerId }).from(invoices).where(eq(invoices.sellerId, session.userId as string)),
+            ),
+            eq(customers.phone, q),
+            eq(customers.customerId, exact),
+            inArray(
+              customers.customerId,
+              db.selectDistinct({ customerId: invoices.customerId }).from(invoices).where(eq(invoices.originalCustomerId, exact)),
+            ),
+          )
         : textFilter;
 
     const matches = await db.query.customers.findMany({
@@ -312,9 +352,12 @@ export const addPurchaseToCustomer = async (customerId: string, data: any, sendL
       columns: { customerId: true, name: true, phone: true, address: true, sellerId: true },
     });
     if (!customer) return { success: false, message: "Customer not found" };
-    if (session.role === "seller" && customer.sellerId !== session.userId) {
-      return { success: false, message: "Unauthorized" };
-    }
+
+    // Who sold this purchase. A seller always sells as themselves (even to a
+    // customer who first bought directly from SE or from another shop); an admin
+    // can pick the seller in the form. Attribution lives on the invoice, so the
+    // purchases under one account never mix between sellers.
+    const sellerId: string | null = session.role === "seller" ? (session.userId as string) : data.sellerId || null;
 
     const base = invoiceBase(data);
     const manual = session.role === "admin" ? readManualDiscount(data, base) : ({ ok: true, discount: null } as const);
@@ -333,6 +376,7 @@ export const addPurchaseToCustomer = async (customerId: string, data: any, sendL
         invoiceNumber,
         customerId: customer.customerId,
         originalCustomerId: customer.customerId,
+        sellerId,
         customerName: customer.name,
         customerPhone: customer.phone,
         customerAddress: customer.address,
@@ -374,6 +418,27 @@ export const addPurchaseToCustomer = async (customerId: string, data: any, sendL
           customerId: customer.customerId,
         },
       );
+    }
+
+    // A customer with no seller yet becomes this seller's customer (first seller
+    // wins; later sellers are still credited through their own invoices).
+    if (sellerId && !customer.sellerId) {
+      await db.update(customers).set({ sellerId }).where(eq(customers.customerId, customer.customerId));
+    }
+
+    // Admin recorded a sale under a seller → let the seller know.
+    if (session.role === "admin" && sellerId) {
+      try {
+        const { notifySeller } = await import("./notificationActions");
+        await notifySeller({
+          sellerId,
+          type: "customer_added",
+          message: `SE Electronics: আপনার অধীনে কাস্টমার ${customer.name} (${customer.customerId}) এর নতুন বিক্রি (ইনভয়েস ${invoiceNumber}) যুক্ত হয়েছে।`,
+          link: "/seller/customers",
+        });
+      } catch (e) {
+        console.error("Failed to notify seller of new purchase:", e);
+      }
     }
 
     revalidatePath("/customers");
@@ -495,6 +560,7 @@ export const createCustomer = async (data: any, sendLink = false) => {
         invoiceNumber,
         customerId,
         originalCustomerId: customerId,
+        sellerId: data.sellerId || null,
         customerName: data.name,
         customerPhone: data.phone,
         customerAddress: data.address,
@@ -642,10 +708,15 @@ export const updateCustomer = async (
     });
 
     if (!customer) return { success: false, message: "Customer not found" };
-    // A seller may only edit their own customers and cannot re-assign them
+    // A seller may only edit customers in their list and cannot re-assign them
     if (session.role === "seller") {
-      if (customer.sellerId !== session.userId) return { success: false, message: "Unauthorized" };
-      data = { ...data, sellerId: session.userId };
+      const { sellerCustomerFilter } = await import("@/lib/sellerScope");
+      const mine = await db.query.customers.findFirst({
+        where: and(eq(customers.customerId, customerId), sellerCustomerFilter(session.userId as string)),
+        columns: { customerId: true },
+      });
+      if (!mine) return { success: false, message: "Unauthorized" };
+      data = { ...data, sellerId: customer.sellerId };
     }
 
     const base = invoiceBase(data);

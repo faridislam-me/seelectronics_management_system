@@ -44,10 +44,18 @@ export default async function CustomerList(
 
   const customers = response.data!;
 
-  return customers.map((customer) => (
+  return customers.map((customer) => {
+    // When the search hit a specific invoice / old customer ID on this account,
+    // show THAT purchase in the row (invoice, amount, date) instead of the primary one.
+    const hit = customer.matchedInvoice;
+    const showHit = !!hit && (hit.invoiceNumber !== customer.invoiceNumber || (hit.originalCustomerId && hit.originalCustomerId !== customer.customerId));
+    const inv = showHit ? hit : customer.invoice;
+    const invNo = showHit ? hit.invoiceNumber : customer.invoiceNumber;
+    const oldId = showHit && hit.originalCustomerId && hit.originalCustomerId !== customer.customerId ? hit.originalCustomerId : null;
+    return (
     <tr
       key={customer.id}
-      className="hover:bg-gray-50/50 transition-colors group"
+      className={clsx("transition-colors group", showHit ? "bg-amber-50/70 hover:bg-amber-50" : "hover:bg-gray-50/50")}
     >
       <td className="py-3 px-4 whitespace-nowrap">
         <div className="flex items-center gap-2">
@@ -56,18 +64,23 @@ export default async function CustomerList(
           </span>
           <CopyButton content={customer.customerId} />
         </div>
+        {oldId && (
+          <span className="mt-0.5 inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold text-amber-900" title="এই ইনভয়েসটি আগে এই আইডিতে ছিল; এখন এক অ্যাকাউন্টে">
+            পুরনো ID {oldId} <CopyButton content={oldId} />
+          </span>
+        )}
       </td>
       <td className="py-3 px-4 whitespace-nowrap">
         <div className="flex items-center gap-2">
-          {customer.invoiceNumber ? (
+          {invNo ? (
             <div className="flex items-center gap-1.5">
               <InvoicePreviewButton
-                invoiceData={customer.invoice}
+                invoiceData={inv}
                 className="text-brand font-bold hover:underline cursor-pointer text-sm sm:text-base"
               >
-                <span>#{customer.invoiceNumber}</span>
+                <span>#{invNo}</span>
               </InvoicePreviewButton>
-              <CopyButton content={customer.invoiceNumber} />
+              <CopyButton content={invNo} />
             </div>
           ) : (
             <span className="text-sm sm:text-sm text-gray-400 italic">
@@ -75,6 +88,9 @@ export default async function CustomerList(
             </span>
           )}
         </div>
+        {showHit && (
+          <span className="block text-[11px] font-bold text-amber-800">সার্চে মিলেছে{hit.seller ? ` · ${hit.seller.shopName}` : ""}</span>
+        )}
       </td>
       <td className="py-3 px-4 whitespace-nowrap">
         <div className="flex items-center gap-2">
@@ -110,6 +126,16 @@ export default async function CustomerList(
         </p>
       </td>
       <td className="py-4 px-4 whitespace-nowrap text-right">
+        {showHit ? (
+          <>
+            <span className={clsx("font-black text-sm sm:text-base", (hit.dueAmount ?? 0) > 0 ? "text-red-500" : "text-emerald-600")}>
+              ৳{Number(hit.total ?? 0).toLocaleString()}
+            </span>
+            {(hit.dueAmount ?? 0) > 0 && <span className="block text-[11px] font-bold text-red-500">৳{Number(hit.dueAmount).toLocaleString()} due</span>}
+            <span className="block text-[11px] font-semibold text-gray-400">এই ইনভয়েস · অ্যাকাউন্টে মোট ৳{(customer.aggregate?.totalBill ?? 0).toLocaleString()}</span>
+          </>
+        ) : (
+          <>
         <span
           className={clsx(
             "font-black text-sm sm:text-base",
@@ -130,13 +156,16 @@ export default async function CustomerList(
             {customer.aggregate.invoiceCount} invoices
           </span>
         )}
+          </>
+        )}
       </td>
       <td className="py-3 px-4 whitespace-nowrap text-gray-500 text-sm sm:text-sm font-bold">
-        {customer.invoice?.date ? formatDate(customer.invoice.date) : "N/A"}
+        {inv?.date ? formatDate(inv.date) : "N/A"}
       </td>
       <td className="py-3 px-4 whitespace-nowrap md:sticky md:right-0 bg-white group-hover:bg-gray-50 transition-colors md:shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]">
         <CustomerActionButtons customerData={customer} />
       </td>
     </tr>
-  ));
+    );
+  });
 }

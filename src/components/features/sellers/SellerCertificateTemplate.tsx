@@ -8,83 +8,94 @@ const NAVY = "#0a2f70";
 const bnDate = (iso: string) =>
   new Date(iso).toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Dhaka" });
 
-/** A laurel-wreath coin medallion (leaves on both sides) with a star + accent centre. */
-function LaurelMedal({ accent }: { accent: string }) {
-  const cx = 60;
-  const cy = 60;
-  const R = 44; // wreath radius
-  // Two branches rising from the bottom to an open gap at the top.
-  const branch = (side: 1 | -1) =>
-    Array.from({ length: 9 }, (_, i) => {
-      // 268° (bottom) sweeping up to 150° on the left / 30° on the right
-      const a = 268 - side * (i * 13);
-      const rad = (a * Math.PI) / 180;
-      const x = cx + R * Math.cos(rad);
-      const y = cy - R * Math.sin(rad);
-      // leaf points outward along the radius
-      const rot = 90 - a + side * 18;
-      return (
-        <ellipse
-          key={`${side}-${i}`}
-          cx={x}
-          cy={y}
-          rx={3.4}
-          ry={7.4}
-          fill={GOLD}
-          stroke={GOLD_DK}
-          strokeWidth={0.5}
-          transform={`rotate(${rot} ${x} ${y})`}
-        />
-      );
-    });
+/** Serrated (postage-stamp edge) circle path. */
+function serratedCircle(cx: number, cy: number, rOuter: number, rInner: number, teeth: number) {
+  const pts: string[] = [];
+  for (let i = 0; i < teeth * 2; i++) {
+    const r = i % 2 === 0 ? rOuter : rInner;
+    const a = (i * Math.PI) / teeth;
+    pts.push(`${(cx + r * Math.cos(a)).toFixed(2)} ${(cy + r * Math.sin(a)).toFixed(2)}`);
+  }
+  return `M${pts.join(" L")} Z`;
+}
 
+/** Round "BEST SERVICE POINT" stamp: serrated outer edge, double ring, star on top, three-line label. */
+function ServiceSeal({ accent }: { accent: string }) {
   return (
     <svg viewBox="0 0 120 120" className="size-full">
-      {/* laurel branches */}
-      <path d={`M60 ${cy + R} A ${R} ${R} 0 0 1 ${cx + R * Math.cos((150 * Math.PI) / 180)} ${cy - R * Math.sin((150 * Math.PI) / 180)}`} fill="none" stroke={GOLD_DK} strokeWidth={1.1} />
-      <path d={`M60 ${cy + R} A ${R} ${R} 0 0 0 ${cx + R * Math.cos((30 * Math.PI) / 180)} ${cy - R * Math.sin((30 * Math.PI) / 180)}`} fill="none" stroke={GOLD_DK} strokeWidth={1.1} />
-      {branch(1)}
-      {branch(-1)}
-      {/* ribbon knot at the bottom */}
-      <circle cx={60} cy={cy + R} r={3.2} fill={GOLD} stroke={GOLD_DK} strokeWidth={0.6} />
-      {/* coin medallion */}
-      <circle cx={60} cy={60} r={30} fill={GOLD} />
-      <circle cx={60} cy={60} r={30} fill="none" stroke={GOLD_DK} strokeWidth={1.4} />
-      <circle cx={60} cy={60} r={26} fill={accent} />
-      <circle cx={60} cy={60} r={26} fill="none" stroke="#ffffff" strokeWidth={1.2} opacity={0.75} />
-      {/* star + label */}
-      <path d="M60 42l3.6 8.2 8.9.8-6.7 5.9 2 8.7L60 70l-7.8 4.3 2-8.7-6.7-5.9 8.9-.8z" fill="#f6e27a" />
-      <text x="60" y="84" textAnchor="middle" fill="#ffffff" fontSize="8.5" fontWeight="800" letterSpacing="1.4" fontFamily="Inter, sans-serif">
-        SE AWARD
-      </text>
+      <path d={serratedCircle(60, 60, 56, 52.5, 44)} fill="#ffffff" stroke={accent} strokeWidth={1.2} />
+      <circle cx={60} cy={60} r={49} fill="none" stroke={accent} strokeWidth={2.2} />
+      <circle cx={60} cy={60} r={45} fill="none" stroke={accent} strokeWidth={0.8} />
+      {/* star */}
+      <path d="M60 22.5l3.1 6.9 7.5.7-5.7 5 1.7 7.4L60 38.7l-6.6 3.8 1.7-7.4-5.7-5 7.5-.7z" fill={accent} />
+      <g fill={accent} fontFamily="Inter, Arial, sans-serif" fontWeight="800" textAnchor="middle" letterSpacing="1.2">
+        <text x="60" y="60" fontSize="12">BEST</text>
+        <text x="60" y="74.5" fontSize="12">SERVICE</text>
+        <text x="60" y="89" fontSize="12">POINT</text>
+      </g>
+      {/* small dots left/right of the star, like an engraved stamp */}
+      <circle cx={34} cy={50} r={1.3} fill={accent} />
+      <circle cx={86} cy={50} r={1.3} fill={accent} />
     </svg>
   );
 }
 
-/** Symmetric filigree divider (scroll-work flourish with a centre diamond). */
-function Flourish() {
+/** Archimedean spiral polyline (curl) centred on cx,cy. */
+function spiral(cx: number, cy: number, r0: number, r1: number, turns: number, dir: 1 | -1, phase = 0) {
+  const n = 40;
+  const pts: string[] = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const a = phase + dir * t * turns * Math.PI * 2;
+    const r = r0 + (r1 - r0) * t;
+    pts.push(`${(cx + r * Math.cos(a)).toFixed(2)} ${(cy + r * Math.sin(a)).toFixed(2)}`);
+  }
+  return `M${pts.join(" L")}`;
+}
+
+/** Sine wave path across the given width. */
+function wave(y: number, width: number, amp: number, len: number) {
+  const pts: string[] = [];
+  for (let x = 0; x <= width; x += 2) pts.push(`${x} ${(y + amp * Math.sin((x / len) * Math.PI * 2)).toFixed(2)}`);
+  return `M${pts.join(" L")}`;
+}
+
+/**
+ * Symmetric scroll-work flourish (blue curls) with a double wavy band beneath,
+ * matching the reference certificate: the seal sits on top of the centre curls.
+ */
+function Flourish({ accent }: { accent: string }) {
+  const W = 760;
   const half = (
-    <g fill="none" stroke={GOLD} strokeWidth={1.6} strokeLinecap="round">
-      {/* inner curl near the centre */}
-      <path d="M296 24 c 10 0 16 -8 10 -15 c -4 -5 -12 -3 -11 4 c 1 5 7 5 9 1" />
-      {/* main flowing scroll line */}
-      <path d="M300 24 c 45 -12 120 -12 176 0" />
-      {/* lower swash */}
-      <path d="M314 27 c 42 8 108 8 150 1" strokeWidth={1} opacity={0.75} />
-      {/* outer end curl */}
-      <path d="M476 24 c 12 0 18 -6 13 -13" />
+    <g fill="none" stroke="url(#flourishGrad)" strokeWidth={3} strokeLinecap="round">
+      {/* big centre curl */}
+      <path d={spiral(352, 28, 2, 28, 1.3, -1, Math.PI * 0.5)} />
+      {/* second curl, smaller, sitting on the line */}
+      <path d={spiral(410, 24, 1.5, 13, 1.2, 1, Math.PI)} />
+      {/* main line out to the end */}
+      <path d="M352 52 C 380 52, 395 40, 420 36 C 470 30, 560 30, 640 30" />
+      {/* small lower swash under the second curl */}
+      <path d="M396 44 c 14 10 36 10 56 2" strokeWidth={1.5} opacity={0.8} />
+      {/* end curl */}
+      <path d={spiral(652, 30, 1, 9, 1.1, -1, Math.PI)} strokeWidth={2} />
     </g>
   );
   return (
-    <svg viewBox="0 0 560 48" className="h-[11mm] w-[150mm]">
-      {half}
-      <circle cx={489} cy={10} r={2.2} fill={GOLD} />
-      <g transform="translate(560,0) scale(-1,1)">{half}</g>
-      <circle cx={71} cy={10} r={2.2} fill={GOLD} />
-      {/* centre ornament */}
-      <path d="M280 10 l10 14 -10 14 -10 -14 z" fill={GOLD} stroke={GOLD_DK} strokeWidth={0.6} />
-      <circle cx={280} cy={24} r={3.4} fill={NAVY} />
-      <circle cx={280} cy={24} r={1.3} fill="#f6e27a" />
+    <svg viewBox={`0 0 ${W} 90`} className="h-[20mm] w-[220mm]">
+      <defs>
+        <linearGradient id="flourishGrad" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stopColor="#5b3fb5" />
+          <stop offset="0.5" stopColor={accent} />
+          <stop offset="1" stopColor="#2fb3d6" />
+        </linearGradient>
+      </defs>
+      <g transform={`translate(${W / 2 - 380},0)`}>{half}</g>
+      <g transform={`translate(${W / 2 + 380},0) scale(-1,1)`}>{half}</g>
+      {/* centre knot under the seal */}
+      <circle cx={W / 2} cy={52} r={3} fill={accent} />
+      {/* double wavy band */}
+      <path d={wave(74, W, 2.2, 16)} fill="none" stroke={accent} strokeWidth={1.6} opacity={0.9} />
+      <path d={wave(81, W, 2.2, 16)} fill="none" stroke={accent} strokeWidth={1.1} opacity={0.6} />
     </svg>
   );
 }
@@ -149,12 +160,17 @@ export default function SellerCertificateTemplate({ data }: { data: SellerCertif
         <p className="mt-[7mm] max-w-[225mm] text-[21px] leading-[1.85] text-[#2b3445]">{kind.body}</p>
         {data.note && <p className="mt-2 max-w-[225mm] text-[18px] font-semibold italic" style={{ color: accent }}>{data.note}</p>}
 
-        {/* Decorative filigree flourish above the footer */}
-        <div className="mt-auto flex w-full justify-center pb-3">
-          <Flourish />
+        {/* "Best service point" seal sitting on the scroll-work flourish, above the footer */}
+        <div className="mt-auto flex w-full flex-col items-center pb-2">
+          <div className="relative z-10 size-[24mm]">
+            <ServiceSeal accent={accent} />
+          </div>
+          <div className="-mt-[7mm]">
+            <Flourish accent={accent} />
+          </div>
         </div>
 
-        {/* Footer: date + number, laurel medal + QR, signature + seals */}
+        {/* Footer: date + number, QR, signature + seals */}
         <div className="w-full grid grid-cols-3 items-end">
           <div className="text-left">
             <div className="text-[16.5px] font-bold">{bnDate(data.issuedAt)}</div>
@@ -163,10 +179,7 @@ export default function SellerCertificateTemplate({ data }: { data: SellerCertif
             <div className="mt-2 text-[12.5px] font-bold text-[#5b6784]" style={{ fontFamily: "Inter, sans-serif" }}>Certificate No: {data.certNo}</div>
           </div>
 
-          <div className="flex items-end justify-center gap-4">
-            <div className="size-[36mm]">
-              <LaurelMedal accent={accent} />
-            </div>
+          <div className="flex items-end justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={data.qrcode} alt="QR" className="size-[22mm] bg-white p-[1mm] border" style={{ borderColor: "#e2e8f0" }} />
           </div>

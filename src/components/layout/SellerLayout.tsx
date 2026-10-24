@@ -13,8 +13,9 @@ import { useEffect, useState } from "react";
 const routeTitles: Record<string, string> = {
   "/seller/profile": "Dashboard",
   "/seller/purchases": "Purchases",
-  "/seller/customers": "My Customers",
+  "/seller/customers": "My Sales",
   "/seller/services": "Customer Services",
+  "/seller/installs": "Installations",
   "/seller/details": "Shop Profile",
   "/seller/settings": "Settings",
   "/seller/notifications": "Notifications",
@@ -24,7 +25,7 @@ const routeTitles: Record<string, string> = {
 const navItems = [
   { label: "Home", icon: Home, href: "/seller/profile" },
   { label: "Stock", icon: Package, href: "/seller/purchases" },
-  { label: "Customers", icon: Users, href: "/seller/customers" },
+  { label: "Sales", icon: Users, href: "/seller/customers" },
   { label: "Settings", icon: Settings, href: "/seller/settings" },
 ];
 
@@ -50,7 +51,7 @@ export function SellerLayout({ children }: { children: React.ReactNode }) {
     return () => { alive = false; };
   }, [pathname]);
   const isHome = pathname === "/seller/profile";
-  const title = routeTitles[pathname] || "Seller Portal";
+  const title = routeTitles[pathname] || (pathname.startsWith("/seller/products/") ? "Product Details" : "Seller Portal");
 
   return (
     <div className="min-h-screen bg-[#eef3fb] flex flex-col overflow-x-hidden">

@@ -1,15 +1,14 @@
 import { SellerLayout } from "@/components/layout";
-import SellerCustomersClient from "@/components/features/sellers/SellerCustomersClient";
+import SellerSalesClient from "@/components/features/sellers/SellerSalesClient";
 import { loadSellerPortal } from "@/lib/sellerPortal";
 import { sellerJobs } from "@/lib/sellerJobs";
 
-export default async function SellerCustomersPage() {
+export default async function SellerSalesPage() {
   const data = await loadSellerPortal();
-  const { seller, stats } = data;
   const { counts } = sellerJobs(data);
   return (
     <SellerLayout>
-      <SellerCustomersClient customers={seller.customers as any} inWarranty={stats.inWarranty} counts={counts} />
+      <SellerSalesClient products={data.products} counts={counts} />
     </SellerLayout>
   );
 }

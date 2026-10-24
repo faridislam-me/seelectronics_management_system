@@ -23,5 +23,5 @@ export function sellerJobs(data: SellerPortalData) {
   jobs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const repairs = jobs.filter((j) => j.type !== "install");
   const installs = jobs.filter((j) => j.type === "install");
-  return { repairs, installs, counts: { sales: data.seller.customers.length, services: repairs.length, installs: installs.length } };
+  return { repairs, installs, counts: { sales: data.products.length, services: repairs.length, installs: installs.length } };
 }

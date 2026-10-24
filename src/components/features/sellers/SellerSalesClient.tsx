@@ -2,32 +2,32 @@
 
 import type { SellerSoldProduct } from "@/actions/sellerActions";
 import CustomerForm from "@/components/features/customers/CustomerForm";
+import { serviceChargeDue } from "@/constants/serviceCharges";
 import { productImage, serviceStatusStyle } from "@/lib/serviceStatusStyle";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
-import { ChevronRight, Home, Phone, Plus, Search, ShieldCheck, ShieldX, Wrench, Zap } from "lucide-react";
+import { ChevronRight, Download, Info, Phone, Plus, Search, ShieldCheck, ShieldX, Wrench, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import SellerRequestModal from "./SellerRequestModal";
 import { FilterChips, SellerTabs } from "./sellerShared";
 
-type Filter = "all" | "warranty" | "expired" | "inservice" | "due";
+type Filter = "all" | "warranty" | "expired" | "inservice" | "due" | "servicedue";
 
 /**
  * The seller's sales as one card per unit sold (not one row per customer):
- * tap a product to see everything about it; service / install requests are
- * one tap away on every card.
+ * tap a product (বিস্তারিত) to see everything about it and to request a
+ * service / install from there; the card itself only links to details + invoice.
  */
 export default function SellerSalesClient({ products, counts }: { products: SellerSoldProduct[]; counts: { sales: number; services: number; installs: number } }) {
   const router = useRouter();
   const [showAdd, setShowAdd] = useState(false);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
-  const [request, setRequest] = useState<{ product: SellerSoldProduct; kind: "repair" | "install" } | null>(null);
 
   const isActive = (s: { status: string }) => !["completed", "canceled"].includes(s.status);
+  const serviceDueOf = (p: SellerSoldProduct) => p.services.reduce((t, s) => t + serviceChargeDue(s.charge), 0);
   const list = useMemo(() => {
     const t = q.trim().toLowerCase();
     return products.filter((p) => {
@@ -37,6 +37,7 @@ export default function SellerSalesClient({ products, counts }: { products: Sell
       if (filter === "expired" && warrantyOk) return false;
       if (filter === "inservice" && !p.services.some(isActive)) return false;
       if (filter === "due" && !(p.invoiceDue > 0)) return false;
+      if (filter === "servicedue" && !(serviceDueOf(p) > 0)) return false;
       return true;
     });
   }, [products, q, filter]);
@@ -48,7 +49,6 @@ export default function SellerSalesClient({ products, counts }: { products: Sell
   return (
     <div className="flex flex-col gap-2.5 p-2">
       {showAdd && <CustomerForm mode="create" role="seller" onClose={() => { setShowAdd(false); router.refresh(); }} />}
-      {request && <SellerRequestModal product={request.product} kind={request.kind} onClose={() => setRequest(null)} />}
 
       <SellerTabs active="sales" counts={counts} />
 
@@ -76,6 +76,7 @@ export default function SellerSalesClient({ products, counts }: { products: Sell
           { key: "expired", label: `ওয়ারেন্টি শেষ (${products.length - inWarranty})` },
           { key: "inservice", label: `সার্ভিসে আছে (${products.filter((p) => p.services.some(isActive)).length})` },
           { key: "due", label: `বাকি আছে (${products.filter((p) => p.invoiceDue > 0).length})` },
+          { key: "servicedue", label: `সার্ভিস চার্জ বাকি (${products.filter((p) => serviceDueOf(p) > 0).length})` },
         ]}
       />
 
@@ -113,11 +114,14 @@ export default function SellerSalesClient({ products, counts }: { products: Sell
               <ChevronRight size={18} className="text-[#9aa6bd] shrink-0 self-center" />
             </Link>
 
-            <div className="flex items-center gap-2 text-[11.5px] font-semibold text-[#5b6784]">
+            <div className="flex flex-wrap items-center gap-1.5 text-[11.5px] font-semibold text-[#5b6784]">
               <a href={`tel:${p.customerPhone}`} className="inline-flex items-center gap-1 h-7 px-2 rounded-md bg-[#f5f8fd] border border-[#e3ebf7] text-[#0b3d91] font-bold"><Phone size={12} />{p.customerPhone}</a>
               <span className={clsx("inline-flex items-center h-7 px-2 rounded-md border", p.invoiceDue > 0 ? "bg-[#fff6e3] border-[#f5dfa0] text-[#b8620b] font-extrabold" : "bg-[#f5f8fd] border-[#e3ebf7]")}>
                 {p.invoiceDue > 0 ? `বাকি ৳${p.invoiceDue.toLocaleString()}` : `৳${(p.unitPrice * p.quantity).toLocaleString()} · পরিশোধিত`}
               </span>
+              {serviceDueOf(p) > 0 && (
+                <span className="inline-flex items-center h-7 px-2 rounded-md border bg-[#fff6e3] border-[#f5dfa0] text-[#b8620b] font-extrabold">সার্ভিস বাকি ৳{Math.round(serviceDueOf(p)).toLocaleString()}</span>
+              )}
               {latest && (() => {
                 const st = serviceStatusStyle(latest.status);
                 return (
@@ -130,12 +134,12 @@ export default function SellerSalesClient({ products, counts }: { products: Sell
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setRequest({ product: p, kind: "repair" })} className={clsx("h-10 rounded-md text-[12.5px] font-extrabold inline-flex items-center justify-center gap-1.5", active?.type === "repair" ? "bg-[#f5f8fd] border border-[#e3ebf7] text-[#5b6784]" : "bg-[#e9f9ef] border border-[#bfe8cd] text-[#178a42]")}>
-                <Wrench size={15} />{active?.type === "repair" ? "সার্ভিস চলছে" : "সার্ভিস রিকোয়েস্ট"}
-              </button>
-              <button type="button" onClick={() => setRequest({ product: p, kind: "install" })} className={clsx("h-10 rounded-md text-[12.5px] font-extrabold inline-flex items-center justify-center gap-1.5", active?.type === "install" ? "bg-[#f5f8fd] border border-[#e3ebf7] text-[#5b6784]" : "bg-[#e8f1ff] border border-[#bcd4fb] text-[#1f5fc9]")}>
-                <Home size={15} />{active?.type === "install" ? "ইন্সটল চলছে" : "ইন্সটল আবেদন"}
-              </button>
+              <Link href={href} className="h-10 rounded-md text-[12.5px] font-extrabold inline-flex items-center justify-center gap-1.5 bg-[#1f7cf0] text-white shadow-[0_4px_12px_rgba(31,124,240,0.3)]">
+                <Info size={15} />বিস্তারিত
+              </Link>
+              <a href={`/pdf/download?type=invoice&id=${p.invoiceNumber}`} target="_blank" className="h-10 rounded-md text-[12.5px] font-extrabold inline-flex items-center justify-center gap-1.5 bg-[#f5f8fd] border border-[#d6e2f5] text-[#0b3d91]">
+                <Download size={15} />ইনভয়েস
+              </a>
             </div>
           </article>
         );

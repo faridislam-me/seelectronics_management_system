@@ -1,10 +1,11 @@
 import { getServiceById } from "@/actions";
+import { serviceChargeDue, serviceChargeReasonLabel } from "@/constants/serviceCharges";
 import { getMyWarrantyStatus, verifyCustomerSession } from "@/actions/customerActions";
 import { formatDate } from "@/utils";
 import { CustomerAppHeader, CustomerAppNav } from "@/components/ui/CustomerAppChrome";
 import clsx from "clsx";
 import {
-  AlertTriangle, Box, Calendar, CardSim, CheckCircle2, ChevronRight, ClipboardList, Clock, CreditCard, FileText, History,
+  AlertTriangle, Banknote, Box, Calendar, CardSim, CheckCircle2, ChevronRight, ClipboardList, Clock, CreditCard, FileText, History,
   Home, MapPin, MessageSquare, Phone, Settings, ShieldCheck, Store, User, Wrench, XCircle,
 } from "lucide-react";
 import Image from "next/image";
@@ -75,6 +76,11 @@ export default async function ServiceDetailsPage({ params }: { params: Promise<{
   const statusCls = done ? "bg-[#e9f9ef] text-[#178a42]" : canceled ? "bg-[#ffe9ec] text-[#c81f38]" : "bg-[#fff6e3] text-[#b8620b]";
   const productImg = PRODUCT_IMAGES[service.productType as string] ?? PRODUCT_IMAGES.others;
   const card = "rounded-md bg-white border border-[#dfe6f2] p-3 shadow-[0_4px_14px_rgba(11,61,145,0.06)]";
+  // Service charge (out of warranty / out of city / parts). No row = free job.
+  const charge = (service as any).charge as { amount: number; paidAmount: number; status: string; reason: string; note: string | null; paidAt: Date | null; paymentMethod: string | null } | null;
+  const chargeDue = serviceChargeDue(charge);
+  const payLabel = !charge ? "Free" : charge.status === "waived" ? "Waived" : chargeDue > 0 ? `Due ৳${Math.round(chargeDue).toLocaleString()}` : "Paid";
+  const payCls = chargeDue > 0 ? "bg-[#fff6e3] text-[#b8620b]" : "bg-[#e9f9ef] text-[#178a42]";
 
   return (
     <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-16">
@@ -104,7 +110,7 @@ export default async function ServiceDetailsPage({ params }: { params: Promise<{
                 {latestStatus && (
                   <span className={clsx("inline-flex items-center gap-1 h-7 px-2.5 rounded-md text-[12px] font-extrabold capitalize", statusCls)}><StatusIcon size={14} strokeWidth={2.6} />{latestStatus}</span>
                 )}
-                <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-[#e9f9ef] text-[#178a42] text-[12px] font-extrabold"><CreditCard size={14} />Paid</span>
+                <span className={clsx("inline-flex items-center gap-1 h-7 px-2.5 rounded-md text-[12px] font-extrabold", payCls)}><CreditCard size={14} />{payLabel}</span>
               </span>
             </span>
           </div>
@@ -115,10 +121,30 @@ export default async function ServiceDetailsPage({ params }: { params: Promise<{
             </span>
             <span className="flex items-center gap-2 p-2">
               <span className="size-9 rounded-full bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center shrink-0"><CreditCard size={17} /></span>
-              <span className="flex flex-col leading-tight gap-0.5"><span className="text-[11px] font-semibold text-[#5b6784]">পেমেন্ট:</span><span className="self-start px-2 h-6 rounded-md bg-[#e9f9ef] text-[#178a42] text-[12px] font-extrabold inline-flex items-center">Paid</span></span>
+              <span className="flex flex-col leading-tight gap-0.5"><span className="text-[11px] font-semibold text-[#5b6784]">পেমেন্ট:</span><span className={clsx("self-start px-2 h-6 rounded-md text-[12px] font-extrabold inline-flex items-center", payCls)}>{payLabel}</span></span>
             </span>
           </div>
         </section>
+
+        {/* Service charge */}
+        {charge && (
+          <section className={clsx(card, "flex flex-col gap-2", chargeDue > 0 ? "border-[#f5dfa0] bg-[#fffaf0]" : "")}>
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2">
+                <span className="size-9 rounded-full bg-[#fff1d6] text-[#b8620b] flex items-center justify-center shrink-0"><Banknote size={18} /></span>
+                <span className="flex flex-col leading-tight"><span className="text-[15px] font-extrabold">সার্ভিস চার্জ</span><span className="text-[11px] font-semibold text-[#5b6784]">{serviceChargeReasonLabel(charge.reason)}</span></span>
+              </span>
+              <span className={clsx("inline-flex items-center h-8 px-2.5 rounded-md text-[12.5px] font-extrabold", payCls)}>{charge.status === "waived" ? "মওকুফ" : chargeDue > 0 ? `বাকি ৳${Math.round(chargeDue).toLocaleString()}` : "পরিশোধিত"}</span>
+            </div>
+            <div className="grid grid-cols-3 divide-x divide-[#eadfc3] rounded-md bg-white border border-[#eef1f6] text-center">
+              <span className="flex flex-col p-2 leading-tight"><span className="text-[10.5px] font-semibold text-[#5b6784]">মোট চার্জ</span><b className="text-[13px]">৳{Math.round(charge.amount).toLocaleString()}</b></span>
+              <span className="flex flex-col p-2 leading-tight"><span className="text-[10.5px] font-semibold text-[#5b6784]">পরিশোধ</span><b className="text-[13px] text-[#178a42]">৳{Math.round(charge.paidAmount).toLocaleString()}</b></span>
+              <span className="flex flex-col p-2 leading-tight"><span className="text-[10.5px] font-semibold text-[#5b6784]">বাকি</span><b className={clsx("text-[13px]", chargeDue > 0 ? "text-[#c81f38]" : "text-[#178a42]")}>৳{Math.round(chargeDue).toLocaleString()}</b></span>
+            </div>
+            {charge.note && <p className="text-[12px] font-semibold text-[#5b6784]">{charge.note}</p>}
+            {chargeDue > 0 && <p className="text-[12px] font-semibold text-[#8a4a05]">অনুগ্রহ করে SE Electronics অফিসে বা টেকনিশিয়ানের কাছে চার্জ পরিশোধ করুন।</p>}
+          </section>
+        )}
 
         {/* Warranty */}
         <Link href="/check-warranty" className={clsx(card, "flex items-center gap-2.5 bg-[#f7faff]")}>

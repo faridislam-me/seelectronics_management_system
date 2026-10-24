@@ -1,5 +1,6 @@
 import { db } from "@/db/drizzle";
 import { invoices, products, services } from "@/db/schema";
+import type { ServiceChargeInfo } from "@/constants/serviceCharges";
 import { desc, eq } from "drizzle-orm";
 
 /**
@@ -96,6 +97,8 @@ export type ProductService = {
   staffName: string | null;
   productType: string;
   productModel: string;
+  /** Service charge on this job (null when the job is free / under warranty). */
+  charge?: ServiceChargeInfo | null;
 };
 
 export type OwnedProductWithServices = OwnedProduct & {
@@ -140,6 +143,7 @@ export async function getCustomerServiceRequests(customerId: string): Promise<Pr
     where: eq(services.customerId, customerId),
     orderBy: [desc(services.createdAt)],
     columns: { serviceId: true, type: true, status: true, createdAt: true, staffName: true, productType: true, productModel: true },
+    with: { charge: { columns: { amount: true, paidAmount: true, status: true, reason: true, note: true, paidAt: true, paymentMethod: true, sellerId: true } } },
   });
   return rows.map((s) => ({
     serviceId: s.serviceId,
@@ -149,7 +153,14 @@ export async function getCustomerServiceRequests(customerId: string): Promise<Pr
     staffName: s.staffName ?? null,
     productType: s.productType,
     productModel: s.productModel,
+    charge: chargeInfo(s.charge),
   }));
+}
+
+/** Narrows a joined serviceCharges row to what portals render. */
+export function chargeInfo(c: { amount: number; paidAmount: number; status: string; reason: string; note: string | null; paidAt: Date | null; paymentMethod: string | null; sellerId: string | null } | null | undefined): ServiceChargeInfo | null {
+  if (!c) return null;
+  return { amount: c.amount, paidAmount: c.paidAmount, status: c.status as ServiceChargeInfo["status"], reason: c.reason, note: c.note, paidAt: c.paidAt, paymentMethod: c.paymentMethod, sellerId: c.sellerId };
 }
 
 const normModel = (s: string | null | undefined) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");

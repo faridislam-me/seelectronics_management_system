@@ -172,6 +172,8 @@ export const getInvoiceByNumber = async (invoiceNumber: string) => {
     const q = (invoiceNumber || "").trim();
     const withProducts = {
       products: { columns: { createdAt: false, updatedAt: false } },
+      // per-invoice seller attribution first; customer.seller stays as the legacy fallback
+      seller: { columns: { sellerId: true, shopName: true } },
       customer: { columns: { sellerId: true }, with: { seller: { columns: { sellerId: true, shopName: true } } } },
     } as const;
     let invoice = await db.query.invoices.findFirst({

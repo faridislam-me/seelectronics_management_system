@@ -26,6 +26,7 @@ export default async function SellerProfilePage() {
           { label: "SELLER", color: "glass", icon: Store },
           { label: "VERIFIED", color: "green", icon: ShieldCheck },
           ...(due > 0 ? [{ label: "DUE", color: "amber" as const }] : []),
+          ...(stats.serviceDue > 0 ? [{ label: "SERVICE DUE", color: "red" as const }] : []),
         ]}
       />
       <div className="flex flex-col gap-2.5 px-2.5 pt-2 relative">
@@ -37,6 +38,8 @@ export default async function SellerProfilePage() {
           { value: stats.inWarranty, label: "ওয়ারেন্টিতে", icon: ShieldCheck, tone: "teal", href: "/seller/customers" },
           { value: `৳${Math.round(stats.purchasedAmount).toLocaleString()}`, label: "মোট ক্রয়", icon: Banknote, tone: "amber", href: "/seller/purchases" },
           { value: `৳${Math.round(stats.paidAmount).toLocaleString()}`, label: "পরিশোধিত", icon: CheckCircle2, tone: "red", href: "/seller/purchases" },
+          { value: `৳${Math.round(stats.serviceDue).toLocaleString()}`, label: "সার্ভিস চার্জ বাকি", icon: Banknote, tone: "amber", href: "/seller/services" },
+          { value: stats.serviceDueJobs, label: "চার্জ বাকি কাজ", icon: Wrench, tone: "red", href: "/seller/services" },
         ]} />
         <Link href="/seller/certificates" className="flex items-center gap-2.5 rounded-md bg-white border border-[#dfe6f2] p-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
           <span className="size-10 rounded-md bg-[#fff6e3] text-[#c98a0c] flex items-center justify-center shrink-0"><Award size={22} /></span>

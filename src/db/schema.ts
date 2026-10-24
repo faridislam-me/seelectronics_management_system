@@ -312,6 +312,14 @@ export const invoices = pgTable(
      * customer can still log in with the ID printed on their original invoice.
      */
     originalCustomerId: varchar({ length: 255 }),
+    /**
+     * The seller (shop) this purchase was sold through, if any. Attribution is
+     * per invoice so one customer account can hold purchases from different
+     * sellers and from SE Electronics directly without mixing them up.
+     */
+    sellerId: varchar({ length: 255 }).references(() => sellers.sellerId, {
+      onDelete: "set null",
+    }),
     customerName: varchar({ length: 255 }).notNull(),
     customerPhone: varchar({ length: 255 }).notNull(),
     customerAddress: text().notNull(),
@@ -332,6 +340,7 @@ export const invoices = pgTable(
     index("invoice_number_idx").on(table.invoiceNumber),
     index("invoice_customer_id_idx").on(table.customerId),
     index("invoice_original_customer_id_idx").on(table.originalCustomerId),
+    index("invoice_seller_id_idx").on(table.sellerId),
   ],
 );
 
@@ -339,6 +348,10 @@ export const invoiceRelations = relations(invoices, ({ one, many }) => ({
   customer: one(customers, {
     fields: [invoices.customerId],
     references: [customers.customerId],
+  }),
+  seller: one(sellers, {
+    fields: [invoices.sellerId],
+    references: [sellers.sellerId],
   }),
   products: many(products),
 }));
@@ -1190,6 +1203,7 @@ export const sellerPurchases = pgTable(
 
 export const sellersRelations = relations(sellers, ({ many, one }) => ({
   customers: many(customers),
+  soldInvoices: many(invoices),
   purchases: many(sellerPurchases),
   application: one(applications, {
     fields: [sellers.sellerId],

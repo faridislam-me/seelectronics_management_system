@@ -33,7 +33,7 @@ export default async function SellerProfilePage() {
         <BlueStatGrid compact cards={[
           { value: stats.purchasedUnits, label: "ক্রয়কৃত ইউনিট", icon: Package, tone: "blue", href: "/seller/purchases" },
           { value: stats.inService, label: "চলমান সার্ভিস", icon: Wrench, tone: "green", href: "/seller/services" },
-          { value: stats.customers, label: "কাস্টমার", icon: Users, tone: "purple", href: "/seller/customers" },
+          { value: stats.soldUnits, label: "বিক্রি (ইউনিট)", icon: Users, tone: "purple", href: "/seller/customers" },
           { value: stats.inWarranty, label: "ওয়ারেন্টিতে", icon: ShieldCheck, tone: "teal", href: "/seller/customers" },
           { value: `৳${Math.round(stats.purchasedAmount).toLocaleString()}`, label: "মোট ক্রয়", icon: Banknote, tone: "amber", href: "/seller/purchases" },
           { value: `৳${Math.round(stats.paidAmount).toLocaleString()}`, label: "পরিশোধিত", icon: CheckCircle2, tone: "red", href: "/seller/purchases" },

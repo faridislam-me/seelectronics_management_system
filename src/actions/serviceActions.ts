@@ -673,6 +673,8 @@ export const appointStaff = async (
         staffId: true,
         status: true,
         type: true,
+        productType: true,
+        productModel: true,
         reportedIssue: true,
         customerId: true,
         customerName: true,
@@ -817,14 +819,19 @@ export const appointStaff = async (
             columns: { sellerId: true, name: true },
             with: { seller: { columns: { phone: true } } },
           });
-          if (!owner?.sellerId) return;
+          // Prefer the seller who sold the unit this job is for (invoice attribution).
+          const { sellerForCustomerUnit } = await import("./sellerActions");
+          const sold = await sellerForCustomerUnit(existingService.customerId!, existingService.productType, existingService.productModel);
+          const sellerId = sold?.sellerId ?? owner?.sellerId;
+          const sellerPhone = sold?.phone ?? owner?.seller?.phone;
+          if (!sellerId) return;
           const kindBn = existingService.type === "install" ? "ইন্সটল" : "সার্ভিস";
           const { notifySeller } = await import("./notificationActions");
           await notifySeller({
-            sellerId: owner.sellerId,
-            phoneNumber: owner.seller?.phone,
+            sellerId,
+            phoneNumber: sellerPhone,
             type: "service_approved",
-            message: `SE Electronics: আপনার ${owner.name || existingService.customerName} এর ${kindBn} আবেদন অনুমোদিত হয়েছে। সার্ভিস আইডি ${validatedData.serviceId}।`,
+            message: `SE Electronics: আপনার ${owner?.name || existingService.customerName} এর ${kindBn} আবেদন অনুমোদিত হয়েছে। সার্ভিস আইডি ${validatedData.serviceId}।`,
             link: existingService.type === "install" ? "/seller/installs" : "/seller/services",
           });
         })().catch((e) => console.error("seller approval SMS failed:", e)),

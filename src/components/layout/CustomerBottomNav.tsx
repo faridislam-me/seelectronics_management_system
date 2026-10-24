@@ -10,6 +10,7 @@ import {
   Bell,
   Users,
   AlertTriangle,
+  Package,
 } from "lucide-react";
 import clsx from "clsx";
 import { useState, useEffect } from "react";
@@ -37,6 +38,11 @@ export function CustomerBottomNav() {
       label: "Home",
       icon: Home,
       href: "/customer/profile",
+    },
+    {
+      label: "Products",
+      icon: Package,
+      href: "/customer/products",
     },
     {
       label: "History",

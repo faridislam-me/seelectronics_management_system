@@ -139,10 +139,10 @@ export default function CustomerDashboardClient({
       bg: "bg-cyan-50",
     },
     {
-      label: "WhatsApp",
-      icon: MessageSquare,
-      href: `https://wa.me/8801310673600`,
-      color: "text-emerald-500",
+      label: "My All Products",
+      icon: ShoppingCart,
+      href: "/customer/products",
+      color: "text-emerald-600",
       bg: "bg-emerald-50",
     },
     {

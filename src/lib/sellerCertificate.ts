@@ -9,6 +9,8 @@ export type SellerCertificateTemplateData = SellerCertificatePayload & {
   seal: string;
   sign: string;
   nameSeal: string;
+  /** "Best Service Point" stamp + scroll flourish artwork shown above the footer. */
+  banner: string;
   qrcode: string;
 };
 
@@ -18,11 +20,12 @@ const toDataUrl = async (file: string, mime: string) =>
 
 /** Payload + the logo, seal, signature and QR code the certificate template needs. */
 export async function buildSellerCertificateData(payload: SellerCertificatePayload): Promise<SellerCertificateTemplateData> {
-  const [logo, seal, sign, nameSeal] = await Promise.all([
+  const [logo, seal, sign, nameSeal, banner] = await Promise.all([
     toDataUrl("logo.jpg", "image/jpeg"),
     toDataUrl("officeSeal.png", "image/png"),
     toDataUrl("chairmanSign.png", "image/png"),
     toDataUrl("chairmanNameSeal.png", "image/png"),
+    toDataUrl("serviceSealBanner.png", "image/png"),
   ]);
   const kind = SELLER_CERTIFICATE_TYPES[payload.certType];
   // QRCode directly (not id-gen) so this page does not load the native canvas module.
@@ -37,5 +40,5 @@ export async function buildSellerCertificateData(payload: SellerCertificatePaylo
     ].join("\n"),
     { margin: 1, width: 300 },
   );
-  return { ...payload, logo, seal, sign, nameSeal, qrcode: qr };
+  return { ...payload, logo, seal, sign, nameSeal, banner, qrcode: qr };
 }

@@ -425,8 +425,8 @@ export default function CustomerForm({
               {(isSearching || searchResults.length > 0) && (
                 <div className="mt-2 max-h-56 overflow-auto rounded-md border border-gray-200 bg-white shadow-sm divide-y">
                   {isSearching ? (
-                    <div className="flex items-center gap-2 p-3 text-sm text-gray-500">
-                      <Spinner className="size-4" /> খুঁজছি...
+                    <div className="p-3 text-sm text-gray-500">
+                      <Spinner message="খুঁজছি..." />
                     </div>
                   ) : (
                     searchResults.map((m) => (

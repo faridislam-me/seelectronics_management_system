@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db/drizzle";
-import { computeManualDiscount, ManualDiscount, parseManualDiscount, withManualDiscount } from "@/lib/invoiceDiscount";
+import { computeManualDiscount, ManualDiscount, parseManualDiscount, stripManualDiscount, withManualDiscount } from "@/lib/invoiceDiscount";
 import { customers, invoices, products, referralBonuses } from "@/db/schema";
 import { verifySession } from "@/lib";
 import { SearchParams } from "@/types";
@@ -890,6 +890,147 @@ export const updateCustomer = async (
   } catch (error) {
     console.error("Error updating customer:", error);
     return { success: false, message: "Failed to update customer record" };
+  }
+};
+
+/**
+ * Loads one invoice (by id) with its products, for the per-invoice editor.
+ * A customer can own several invoices; this lets the admin edit any of them,
+ * not only the primary one that `updateCustomer` touches.
+ */
+export const getInvoiceForEdit = async (invoiceId: string) => {
+  try {
+    const session = await verifySession(false, "admin");
+    if (!session) return { success: false, message: "Unauthorized" };
+    const invoice = await db.query.invoices.findFirst({
+      where: eq(invoices.id, invoiceId),
+      with: { products: true },
+    });
+    if (!invoice) return { success: false, message: "Invoice not found" };
+    return {
+      success: true,
+      data: {
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        customerId: invoice.customerId,
+        date: invoice.date,
+        paymentType: invoice.paymentType,
+        subtotal: invoice.subtotal,
+        total: invoice.total,
+        dueAmount: invoice.dueAmount,
+        dueType: invoice.dueType,
+        // Human part of the notes only (the manual-discount marker is kept internally).
+        notes: stripManualDiscount(invoice.notes),
+        products: invoice.products ?? [],
+      },
+    };
+  } catch (error) {
+    console.error("getInvoiceForEdit error:", error);
+    return { success: false, message: "Could not load the invoice" };
+  }
+};
+
+/**
+ * Updates ONE specific invoice (its products, prices, date, payment, due and
+ * notes). Any manual discount already on the invoice is preserved and
+ * re-applied against the new subtotal. Does not touch the customer record or
+ * any other invoice, so editing one purchase never disturbs the others.
+ */
+export const updateInvoiceById = async (
+  invoiceId: string,
+  data: {
+    date: string | Date;
+    paymentType: string;
+    dueAmount: number;
+    dueType?: "due" | "installment";
+    notes?: string;
+    products: Array<{
+      type: string;
+      model: string;
+      serialNumber?: string | null;
+      quantity: number;
+      unitPrice: number;
+      warrantyStartDate: string | Date;
+      warrantyDurationMonths: number;
+    }>;
+  },
+) => {
+  try {
+    const session = await verifySession(false, "admin");
+    if (!session) return { success: false, message: "Unauthorized" };
+
+    const invoice = await db.query.invoices.findFirst({
+      where: eq(invoices.id, invoiceId),
+      columns: { id: true, invoiceNumber: true, notes: true },
+      with: { products: { columns: { type: true, model: true, warrantyStartDate: true, warrantyEndDate: true } } },
+    });
+    if (!invoice) return { success: false, message: "Invoice not found" };
+
+    const items = Array.isArray(data.products) ? data.products : [];
+    if (items.length === 0) return { success: false, message: "At least one product is required" };
+    for (const p of items) {
+      if (!p.model?.trim() || Number(p.quantity) <= 0 || Number(p.unitPrice) < 0) {
+        return { success: false, message: "Every product needs a model, a quantity and a price" };
+      }
+    }
+
+    const subtotal = items.reduce((sum, p) => sum + (Number(p.unitPrice) || 0) * (Number(p.quantity) || 0), 0);
+
+    // Preserve whatever manual discount was on the invoice, recomputed against the new subtotal.
+    const prev = parseManualDiscount(invoice.notes);
+    let discount: ManualDiscount | null = null;
+    if (prev) {
+      const amount = computeManualDiscount(subtotal, prev.type, prev.value);
+      discount = amount > 0 ? { type: prev.type, value: prev.value, amount } : null;
+    }
+    const total = Math.max(0, subtotal - (discount?.amount ?? 0));
+    const due = Math.min(Math.max(0, Number(data.dueAmount) || 0), total);
+
+    // Keep any extra days an "unblock" added to a product's warranty (match by type+model+start).
+    const keyOf = (type: string, model: string, start: Date) => `${type}|${model}|${new Date(start).toISOString().slice(0, 10)}`;
+    const oldEnd = new Map((invoice.products ?? []).map((o) => [keyOf(o.type, o.model, o.warrantyStartDate), o.warrantyEndDate]));
+    const endFor = (p: { type: string; model: string; warrantyStartDate: string | Date; warrantyDurationMonths: number }) => {
+      const computed = warrantyEndOf(new Date(p.warrantyStartDate), Number(p.warrantyDurationMonths));
+      const prevEnd = oldEnd.get(keyOf(p.type, p.model, new Date(p.warrantyStartDate)));
+      return prevEnd && prevEnd > computed ? prevEnd : computed;
+    };
+
+    await db
+      .update(invoices)
+      .set({
+        date: new Date(data.date),
+        paymentType: data.paymentType as any,
+        subtotal,
+        total,
+        dueAmount: due,
+        dueType: (data.dueType as any) || "due",
+        notes: withManualDiscount(data.notes ?? "", discount),
+      })
+      .where(eq(invoices.id, invoiceId));
+
+    await db.delete(products).where(eq(products.invoiceId, invoiceId));
+    await db.insert(products).values(
+      items.map((p) => ({
+        invoiceId,
+        type: p.type as any,
+        model: p.model,
+        serialNumber: String(p.serialNumber ?? "").trim() || null,
+        quantity: Number(p.quantity) || 1,
+        unitPrice: Number(p.unitPrice) || 0,
+        warrantyStartDate: new Date(p.warrantyStartDate),
+        warrantyDurationMonths: Number(p.warrantyDurationMonths),
+        warrantyEndDate: endFor(p),
+      })),
+    );
+
+    revalidatePath("/customers");
+    revalidatePath("/invoices");
+    revalidatePath("/customer/products");
+    revalidatePath("/customer/services", "layout");
+    return { success: true, message: "Invoice updated" };
+  } catch (error) {
+    console.error("updateInvoiceById error:", error);
+    return { success: false, message: "Failed to update the invoice" };
   }
 };
 

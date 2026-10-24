@@ -6,9 +6,11 @@ import {
   getServiceHistoryById,
 } from "@/actions";
 import { Modal, ProfileLinkButton, Spinner, StatusBadge } from "@/components";
+import InvoiceEditModal from "./InvoiceEditModal";
 import { CustomerData, Product } from "@/types";
 import { formatDate, isWarrantyValid } from "@/utils";
 import clsx from "clsx";
+import { Pencil } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -34,6 +36,20 @@ function CustomerViewModal({
   const [isLoadingServiceHistory, setIsLoadingServiceHistory] = useState(false);
   const [isLoadingFeedbacksHistory, setIsLoadingFeedbacksHistory] =
     useState(false);
+  const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
+
+  // Reloads the full customer record so an invoice edit is reflected at once.
+  const loadCustomer = async () => {
+    const id = customerId ?? customer?.customerId ?? customerData?.customerId;
+    if (!id) return;
+    const res = await getCustomerById(id);
+    if (res.success && res.data) {
+      setCustomerData({ ...res.data });
+      const invs = (res.data as any).invoices ?? [];
+      setInvoicesData(invs);
+      setProductItems(invs.flatMap((inv: any) => inv.products ?? []));
+    }
+  };
 
   useEffect(() => {
     if (products) {
@@ -98,6 +114,14 @@ function CustomerViewModal({
     })();
   }, []);
   return (
+    <>
+      {editInvoiceId && (
+        <InvoiceEditModal
+          invoiceId={editInvoiceId}
+          onClose={() => setEditInvoiceId(null)}
+          onSaved={loadCustomer}
+        />
+      )}
     <Modal title="Customer Profile" isVisible onClose={onClose}>
       {isLoading ? (
         <div className="__center h-32">
@@ -269,6 +293,13 @@ function CustomerViewModal({
                       >
                         PDF ডাউনলোড
                       </a>
+                      <button
+                        type="button"
+                        onClick={() => setEditInvoiceId(inv.id)}
+                        className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100 whitespace-nowrap"
+                      >
+                        <Pencil size={13} />এডিট
+                      </button>
                     </div>
                   </div>
                   <div className="overflow-x-auto">
@@ -533,6 +564,7 @@ function CustomerViewModal({
         </div>
       )}
     </Modal>
+    </>
   );
 }
 

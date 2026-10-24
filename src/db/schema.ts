@@ -305,6 +305,13 @@ export const invoices = pgTable(
     customerId: varchar({ length: 255 })
       .references(() => customers.customerId, { onDelete: "cascade" })
       .notNull(),
+    /**
+     * The customer ID this invoice was issued under. Normally equals customerId,
+     * but when duplicate accounts are merged every invoice moves to the surviving
+     * account while this keeps the old ID, so a purchase can still be found and a
+     * customer can still log in with the ID printed on their original invoice.
+     */
+    originalCustomerId: varchar({ length: 255 }),
     customerName: varchar({ length: 255 }).notNull(),
     customerPhone: varchar({ length: 255 }).notNull(),
     customerAddress: text().notNull(),
@@ -324,6 +331,7 @@ export const invoices = pgTable(
   (table) => [
     index("invoice_number_idx").on(table.invoiceNumber),
     index("invoice_customer_id_idx").on(table.customerId),
+    index("invoice_original_customer_id_idx").on(table.originalCustomerId),
   ],
 );
 

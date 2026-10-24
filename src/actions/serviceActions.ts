@@ -175,6 +175,9 @@ export const getServiceById = async (serviceId: string, options?: { publicLink?:
             invoiceNumber: true,
           },
         },
+        charge: {
+          columns: { amount: true, paidAmount: true, status: true, reason: true, note: true, paidAt: true, paymentMethod: true },
+        },
       },
     });
 
@@ -313,6 +316,9 @@ export const getServiceHistoryById = async (id: string) => {
             serviceId: true,
             rating: true,
           },
+        },
+        charge: {
+          columns: { amount: true, paidAmount: true, status: true, reason: true, paidAt: true, paymentMethod: true },
         },
       },
       orderBy: (services, { desc }) => [desc(services.createdAt)],

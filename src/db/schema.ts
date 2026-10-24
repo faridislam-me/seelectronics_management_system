@@ -447,6 +447,10 @@ export const services = pgTable(
 
 export const servicesRelations = relations(services, ({ many, one }) => ({
   statusHistory: many(serviceStatusHistory),
+  charge: one(serviceCharges, {
+    fields: [services.serviceId],
+    references: [serviceCharges.serviceId],
+  }),
   customer: one(customers, {
     fields: [services.customerId],
     references: [customers.customerId],
@@ -466,6 +470,60 @@ export const servicesRelations = relations(services, ({ many, one }) => ({
   task: one(tasks, {
     fields: [services.serviceId],
     references: [tasks.serviceId],
+  }),
+}));
+
+/**
+ * A chargeable service job (out of warranty, outside the city, parts, …).
+ * One row per service. The customer owes it; when the unit was sold through a
+ * seller the charge is also attributed to that seller so it shows as a service
+ * due in the seller's account until it is collected or waived.
+ */
+export const serviceCharges = pgTable(
+  "serviceCharges",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    serviceId: varchar({ length: 255 })
+      .references(() => services.serviceId, { onDelete: "cascade" })
+      .unique()
+      .notNull(),
+    customerId: varchar({ length: 255 }).references(() => customers.customerId, { onDelete: "set null" }),
+    sellerId: varchar({ length: 255 }).references(() => sellers.sellerId, { onDelete: "set null" }),
+    amount: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
+    paidAmount: numeric({ precision: 12, scale: 2, mode: "number" }).default(0).notNull(),
+    /** out_of_warranty | out_of_city | parts | other */
+    reason: varchar({ length: 30 }).notNull(),
+    note: text(),
+    /** due | paid | waived */
+    status: varchar({ length: 20 }).default("due").notNull(),
+    paymentMethod: varchar({ length: 50 }),
+    paidAt: timestamp({ withTimezone: true }),
+    createdBy: varchar({ length: 255 }),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp({ withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("service_charge_customer_id_idx").on(table.customerId),
+    index("service_charge_seller_id_idx").on(table.sellerId),
+    index("service_charge_status_idx").on(table.status),
+  ],
+);
+
+export const serviceChargesRelations = relations(serviceCharges, ({ one }) => ({
+  service: one(services, {
+    fields: [serviceCharges.serviceId],
+    references: [services.serviceId],
+  }),
+  customer: one(customers, {
+    fields: [serviceCharges.customerId],
+    references: [customers.customerId],
+  }),
+  seller: one(sellers, {
+    fields: [serviceCharges.sellerId],
+    references: [sellers.sellerId],
   }),
 }));
 

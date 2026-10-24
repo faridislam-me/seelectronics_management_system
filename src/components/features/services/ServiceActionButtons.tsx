@@ -31,6 +31,7 @@ import { FileText } from "lucide-react";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { Id, toast } from "react-toastify";
 import ServiceViewModal from "./ServiceViewModal";
+import ServiceChargeModal from "./ServiceChargeModal";
 
 type ServiceStatus =
   | "pending"
@@ -54,6 +55,7 @@ export default function ServiceActionButtons({
   const [showViewModal, setShowViewModal] = useState(false);
   const [showAddBalanceModal, setShowAddBalanceModal] = useState(false);
   const [showAddReportModal, setShowAddReportModal] = useState(false);
+  const [showChargeModal, setShowChargeModal] = useState(false);
   const [hasPaymentCredited, setHasPaymentCredited] = useState(false);
   const toastId = useRef<Id | null>(null);
 
@@ -113,6 +115,12 @@ export default function ServiceActionButtons({
           serviceData={serviceData}
           onClose={() => setShowAddBalanceModal(false)}
           onSuccess={() => setHasPaymentCredited(true)}
+        />
+      )}
+      {showChargeModal && (
+        <ServiceChargeModal
+          serviceData={serviceData}
+          onClose={() => setShowChargeModal(false)}
         />
       )}
       {showAddReportModal && (
@@ -216,6 +224,26 @@ export default function ServiceActionButtons({
               strokeLinecap="round"
               strokeLinejoin="round"
               d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+            />
+          </svg>
+        </button>
+        <button
+          title="Service Charge"
+          onClick={() => setShowChargeModal(true)}
+          className="text-amber-600 hover:text-amber-700"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="size-5 sm:size-6"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z"
             />
           </svg>
         </button>

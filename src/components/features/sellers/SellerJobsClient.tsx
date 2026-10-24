@@ -1,5 +1,6 @@
 "use client";
 
+import { type ServiceChargeInfo, serviceChargeDue, serviceChargeReasonLabel } from "@/constants/serviceCharges";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
 import { ExternalLink, Phone, Search } from "lucide-react";
@@ -23,6 +24,7 @@ export type SellerJob = {
   customerId: string;
   pay: PayKind;
   warranty: boolean;
+  charge: ServiceChargeInfo | null;
   history: { status: string; createdAt: Date }[];
 };
 
@@ -48,6 +50,7 @@ export default function SellerJobsClient({ kind, jobs, counts }: { kind: "repair
   }, [jobs, q, status, pay, war]);
 
   const title = kind === "install" ? "ইন্সটল লিস্ট" : "সার্ভিস লিস্ট";
+  const totalDue = jobs.reduce((t, j) => t + serviceChargeDue(j.charge), 0);
 
   return (
     <div className="flex flex-col gap-2 p-2">
@@ -61,13 +64,18 @@ export default function SellerJobsClient({ kind, jobs, counts }: { kind: "repair
       </label>
       <FilterChips value={status} onChange={setStatus} options={[{ key: "all", label: `সব (${jobs.length})` }, { key: "active", label: `চলমান (${jobs.filter((j) => !["completed", "canceled"].includes(j.status)).length})` }, { key: "completed", label: `সম্পন্ন (${jobs.filter((j) => j.status === "completed").length})` }, { key: "canceled", label: `বাতিল (${jobs.filter((j) => j.status === "canceled").length})` }]} />
       <FilterSelects pay={pay} onPay={setPay} war={war} onWar={setWar} />
+      {totalDue > 0 && (
+        <div className="rounded-md border border-[#f5dfa0] bg-[#fff8ea] px-3 py-2 text-[12.5px] font-bold text-[#8a4a05]">
+          সার্ভিস চার্জ বাকি মোট ৳{Math.round(totalDue).toLocaleString()} ({jobs.filter((j) => serviceChargeDue(j.charge) > 0).length} টি কাজ) — ওয়ারেন্টির বাইরে / শহরের বাইরের সার্ভিসের চার্জ কাস্টমারের কাছ থেকে আদায় করে অফিসে জমা দিন।
+        </div>
+      )}
 
       <DataTable>
         <thead>
-          <tr><Th>তারিখ</Th><Th>সার্ভিস আইডি</Th><Th>কাস্টমার</Th><Th>ফোন</Th><Th>পণ্য</Th><Th>পেমেন্ট</Th><Th>ওয়ারেন্টি</Th><Th>টেকনিশিয়ান</Th><Th>স্ট্যাটাস</Th><Th>ট্র্যাক</Th></tr>
+          <tr><Th>তারিখ</Th><Th>সার্ভিস আইডি</Th><Th>কাস্টমার</Th><Th>ফোন</Th><Th>পণ্য</Th><Th>পেমেন্ট</Th><Th>ওয়ারেন্টি</Th><Th>চার্জ</Th><Th>টেকনিশিয়ান</Th><Th>স্ট্যাটাস</Th><Th>ট্র্যাক</Th></tr>
         </thead>
         <tbody>
-          {list.length === 0 && <EmptyRow cols={10} text="কিছু পাওয়া যায়নি" />}
+          {list.length === 0 && <EmptyRow cols={11} text="কিছু পাওয়া যায়নি" />}
           {list.map((j, i) => (
             <tr key={j.serviceId} className={i % 2 ? "bg-[#f4f7fc]" : "bg-white"}>
               <Td>{formatDate(j.createdAt)}</Td>
@@ -77,6 +85,7 @@ export default function SellerJobsClient({ kind, jobs, counts }: { kind: "repair
               <Td nowrap={false} className="min-w-[130px]">{j.productType.toUpperCase()} {j.productModel}{j.reportedIssue ? <span className="block text-[11px] text-[#6b7690]">{j.reportedIssue}</span> : null}</Td>
               <Td>{payLabel[j.pay]}</Td>
               <Td className={j.warranty ? "text-[#178a42] font-bold" : "text-[#c81f38] font-bold"}>{j.warranty ? "আছে" : "শেষ"}</Td>
+              <Td nowrap={false} className="min-w-[110px]">{j.charge ? <><b className={serviceChargeDue(j.charge) > 0 ? "text-[#b8620b]" : "text-[#178a42]"}>৳{Math.round(j.charge.amount).toLocaleString()} · {j.charge.status === "waived" ? "মওকুফ" : serviceChargeDue(j.charge) > 0 ? `বাকি ৳${Math.round(serviceChargeDue(j.charge)).toLocaleString()}` : "পরিশোধিত"}</b><span className="block text-[11px] text-[#6b7690]">{serviceChargeReasonLabel(j.charge.reason)}</span></> : "—"}</Td>
               <Td>{j.staffName ? <>{j.staffName}{j.staffPhone && <a href={`tel:${j.staffPhone}`} className="ml-1 inline-flex align-middle text-[#1f7cf0]"><Phone size={12} /></a>}</> : "—"}</Td>
               <Td><span className={clsx("h-6 px-2 rounded-md border text-[10.5px] font-extrabold inline-flex items-center whitespace-nowrap", statusTone(j.status))}>{serviceStatusBn[j.status] ?? j.status}</span></Td>
               <Td><Link href={`/service-track?trackingId=${j.serviceId}`} className="inline-flex items-center gap-1 font-bold text-[#1f5fc9]"><ExternalLink size={13} />দেখুন</Link></Td>

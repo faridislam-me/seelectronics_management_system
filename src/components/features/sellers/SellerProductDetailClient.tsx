@@ -2,6 +2,7 @@
 
 import { sellerToggleCustomerBlock, sellerUpdateCustomerContact, type SellerSoldProduct } from "@/actions/sellerActions";
 import { Modal } from "@/components/ui";
+import { serviceChargeDue, serviceChargeReasonLabel } from "@/constants/serviceCharges";
 import { productImage, serviceStatusStyle } from "@/lib/serviceStatusStyle";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
@@ -51,6 +52,7 @@ export default function SellerProductDetailClient({ product: p, siblings }: { pr
   const warrantyOk = p.warrantyActive && !p.isWarrantyStopped;
   const noWarranty = p.warrantyDurationMonths === 0;
   const active = p.services.find((s) => !["completed", "canceled"].includes(s.status));
+  const serviceDue = p.services.reduce((t, s) => t + serviceChargeDue(s.charge), 0);
 
   const saveContact = async () => {
     setBusy(true);
@@ -155,6 +157,11 @@ export default function SellerProductDetailClient({ product: p, siblings }: { pr
       </Section>
 
       {/* Service / install history */}
+      {serviceDue > 0 && (
+        <div className="rounded-md border border-[#f5dfa0] bg-[#fff8ea] p-2.5 flex items-center gap-2 text-[12.5px] font-bold text-[#8a4a05]">
+          <Banknote size={16} className="shrink-0" />এই পণ্যের সার্ভিস চার্জ বাকি ৳{Math.round(serviceDue).toLocaleString()} — কাস্টমারের কাছ থেকে আদায় করে অফিসে জমা দিন।
+        </div>
+      )}
       <Section icon={Wrench} title="সার্ভিস ও ইন্সটল" sub="এই পণ্যের হিস্টোরি" right={
         <span className="text-[11px] font-extrabold text-[#5b6784] text-right leading-tight">
           <span className="inline-flex items-center gap-1"><Zap size={12} className="text-[#1f7cf0]" />{p.installCount} ইন্সটল</span><br />
@@ -175,6 +182,11 @@ export default function SellerProductDetailClient({ product: p, siblings }: { pr
                 <span className="flex flex-col gap-0.5 min-w-0 flex-1 leading-tight">
                   <span className="text-[13px] font-extrabold">{s.type === "install" ? "ইন্সটল" : "সার্ভিস"} #{p.services.length - i}</span>
                   <span className="text-[11.5px] font-semibold text-[#5b6784] break-all">ID: {s.serviceId} · {formatDate(s.createdAt)}{s.staffName ? ` · ${s.staffName}` : ""}</span>
+                  {s.charge && (
+                    <span className={clsx("text-[11px] font-extrabold", serviceChargeDue(s.charge) > 0 ? "text-[#b8620b]" : "text-[#178a42]")}>
+                      চার্জ ৳{Math.round(s.charge.amount).toLocaleString()} ({serviceChargeReasonLabel(s.charge.reason)}) · {s.charge.status === "waived" ? "মওকুফ" : serviceChargeDue(s.charge) > 0 ? `বাকি ৳${Math.round(serviceChargeDue(s.charge)).toLocaleString()}` : "পরিশোধিত"}
+                    </span>
+                  )}
                 </span>
                 <span className={clsx("shrink-0 inline-flex items-center gap-1 px-2 h-7 rounded-md border text-[10px] font-extrabold", st.cls)}><StatusIcon size={12} strokeWidth={2.6} />{st.label}</span>
                 <ChevronRight size={16} className="text-[#0b3d91] shrink-0" />

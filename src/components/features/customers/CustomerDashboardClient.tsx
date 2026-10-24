@@ -236,10 +236,10 @@ export default function CustomerDashboardClient({
           <div className="flex items-center gap-3">
             <span className="size-[52px] rounded-full bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><User size={28} strokeWidth={2.2} /></span>
             <div className="flex flex-col min-w-0 flex-1">
-              <span className="text-[clamp(16px,4.8vw,20px)] font-extrabold text-[#16213a] leading-tight truncate">{customer.name}</span>
+              <span className="text-[clamp(14px,4vw,17px)] font-extrabold text-[#16213a] leading-tight truncate">{customer.name}</span>
               <span className="text-[13px] font-semibold text-[#6b7690] truncate">ID: {customer.customerId}</span>
             </div>
-            <span className={clsx("inline-flex items-center gap-1.5 px-2.5 h-8 rounded-md text-[12px] font-extrabold whitespace-nowrap shrink-0", statusOk ? "bg-[#e9f9ef] text-[#178a42]" : "bg-[#ffe9ec] text-[#c81f38]")}>
+            <span className={clsx("inline-flex items-center gap-1 px-2 h-7 rounded-md font-extrabold whitespace-nowrap shrink-0", statusOk ? "bg-[#e9f9ef] text-[#178a42] text-[12px]" : "bg-[#ffe9ec] text-[#c81f38] text-[10.5px]")}>
               <span className={clsx("size-1.5 rounded-full", statusOk ? "bg-[#1a9c4b]" : "bg-[#e0243f]")} />{statusLabel}
             </span>
           </div>

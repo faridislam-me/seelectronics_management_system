@@ -1,11 +1,12 @@
 import PageBanner from "@/components/ui/PageBanner";
+import { serviceChargeDue } from "@/constants/serviceCharges";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { getServiceHistoryById } from "@/actions/serviceActions";
 import { CustomerAppHeader, CustomerAppNav } from "@/components/ui/CustomerAppChrome";
 import { AppError } from "@/utils";
 import clsx from "clsx";
 import {
-  Calendar, CheckCircle2, ChevronRight, ClipboardList, Clock, FileText, Headset, History, Home, Info, ListChecks, Navigation, Plus, Settings, User, Wrench, XCircle, Zap,
+  Banknote, Calendar, CheckCircle2, ChevronRight, ClipboardList, Clock, FileText, Headset, History, Home, Info, ListChecks, Navigation, Plus, Settings, User, Wrench, XCircle, Zap,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -73,6 +74,8 @@ export default async function CustomerServicesPage() {
             const isInstall = service.type === "install";
             const productImg = PRODUCT_IMAGES[service.productType as string] ?? PRODUCT_IMAGES.others;
             const date = new Date(service.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }).toUpperCase();
+            const charge = (service as any).charge as { amount: number; paidAmount: number; status: string } | null;
+            const chargeDue = serviceChargeDue(charge);
 
             return (
               <article key={service.id} className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-3 shadow-[0_4px_18px_rgba(11,61,145,0.06)]">
@@ -93,6 +96,11 @@ export default async function CustomerServicesPage() {
                       <span className="inline-flex items-center gap-1"><Info size={13} className="text-[#1f7cf0]" />ID : {service.serviceId}</span>
                       <span className="inline-flex items-center gap-1"><Calendar size={13} className="text-[#1f7cf0]" />{date}</span>
                     </span>
+                    {charge && (
+                      <span className={clsx("self-start inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-extrabold", chargeDue > 0 ? "bg-[#fff6e3] text-[#b8620b]" : "bg-[#e9f9ef] text-[#178a42]")}>
+                        <Banknote size={12} />সার্ভিস চার্জ ৳{Math.round(charge.amount).toLocaleString()} · {charge.status === "waived" ? "মওকুফ" : chargeDue > 0 ? `বাকি ৳${Math.round(chargeDue).toLocaleString()}` : "পরিশোধিত"}
+                      </span>
+                    )}
                   </span>
                 </div>
 

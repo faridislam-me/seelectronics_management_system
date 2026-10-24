@@ -36,6 +36,9 @@ export default function InvoiceTemplate({
   const totalsGap =
     density === "normal" ? "space-y-2" : density === "compact" ? "space-y-1" : "space-y-0.5";
   const headerMb = density === "normal" ? "mb-4" : "mb-2";
+  // Seller shown under Customer ID: per-invoice attribution first, legacy customer seller as fallback.
+  const soldBy: { sellerId: string; shopName: string } | null =
+    (data as any).seller ?? (data as any).customer?.seller ?? null;
   return (
     <div
       className="relative w-[210mm] h-[297mm] mx-auto bg-white bg-center bg-no-repeat bg-cover"
@@ -64,12 +67,6 @@ export default function InvoiceTemplate({
               <span className="font-semibold">Phone :</span>{" "}
               {data.customerPhone}
             </div>
-            {(data as any).customer?.seller && (
-              <div>
-                <span className="font-semibold">Sold by :</span>{" "}
-                {(data as any).customer.seller.shopName} ({(data as any).customer.seller.sellerId})
-              </div>
-            )}
           </div>
           <div className="text-right space-y-1">
             <div>
@@ -88,6 +85,12 @@ export default function InvoiceTemplate({
               <div>
                 <span className="font-semibold">Service ID :</span>{" "}
                 {data.serviceId}
+              </div>
+            )}
+            {soldBy && (
+              <div>
+                <span className="font-semibold">Sold by :</span>{" "}
+                {soldBy.shopName} ({soldBy.sellerId})
               </div>
             )}
           </div>

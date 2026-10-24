@@ -15,7 +15,7 @@ export function sellerJobs(data: SellerPortalData) {
       jobs.push({
         serviceId: s.serviceId, status: s.status, type: s.type, productType: s.productType, productModel: s.productModel,
         staffName: s.staffName, staffPhone: s.staffPhone ?? null, reportedIssue: s.reportedIssue ?? null, createdAt: s.createdAt,
-        customerName: c.name, customerPhone: c.phone, customerId: c.customerId, pay, warranty,
+        customerName: c.name, customerPhone: c.phone, customerId: c.customerId, pay, warranty, charge: s.charge ?? null,
         history: (s.statusHistory ?? []).map((h: any) => ({ status: h.status, createdAt: h.createdAt })),
       });
     }

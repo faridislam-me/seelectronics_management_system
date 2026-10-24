@@ -25,6 +25,7 @@ import {
 import { deleteObject, getObjectUrl, putObject } from "@/lib/s3";
 import type { OwnedProductWithServices } from "@/lib/customerPurchases";
 import { sellerCustomerFilter } from "@/lib/sellerScope";
+import { serviceChargeDue } from "@/constants/serviceCharges";
 import { compressImage } from "@/lib/sharp";
 import { SearchParams } from "@/types";
 import {
@@ -760,7 +761,7 @@ export async function getSellerPortalData(sellerId: string) {
       where: sellerCustomerFilter(sellerId),
       columns: { customerId: true, name: true, phone: true, address: true, invoiceNumber: true, isWarrantyStopped: true, warrantyStopReason: true, createdAt: true, referredByVipCard: true, sellerId: true },
       with: {
-        services: { columns: { serviceId: true, status: true, type: true, productType: true, productModel: true, staffName: true, staffPhone: true, reportedIssue: true, createdAt: true }, orderBy: (s, { desc }) => [desc(s.createdAt)], with: { statusHistory: { columns: { status: true, createdAt: true }, orderBy: (h, { asc }) => [asc(h.createdAt)] } } },
+        services: { columns: { serviceId: true, status: true, type: true, productType: true, productModel: true, staffName: true, staffPhone: true, reportedIssue: true, createdAt: true }, orderBy: (s, { desc }) => [desc(s.createdAt)], with: { statusHistory: { columns: { status: true, createdAt: true }, orderBy: (h, { asc }) => [asc(h.createdAt)] }, charge: { columns: { amount: true, paidAmount: true, status: true, reason: true, note: true, paidAt: true, paymentMethod: true, sellerId: true } } } },
       },
       orderBy: (c, { desc }) => [desc(c.createdAt)],
     });
@@ -796,7 +797,7 @@ export async function getSellerPortalData(sellerId: string) {
     );
 
     const now = new Date();
-    const { attachServicesToProducts } = await import("@/lib/customerPurchases");
+    const { attachServicesToProducts, chargeInfo } = await import("@/lib/customerPurchases");
     const soldProducts: SellerSoldProduct[] = [];
     const customersWithInvoices = sellerCustomers
       .map((c) => {
@@ -834,6 +835,7 @@ export async function getSellerPortalData(sellerId: string) {
           staffName: s.staffName ?? null,
           productType: s.productType,
           productModel: s.productModel,
+          charge: chargeInfo(s.charge),
         }));
         const { products: withServices, unmatched } = attachServicesToProducts(owned, requests);
         for (const p of withServices) {
@@ -879,6 +881,9 @@ export async function getSellerPortalData(sellerId: string) {
       inService: allServices.filter((s) => activeStatuses.includes(s.status)).length,
       completedServices: allServices.filter((s) => s.status === "completed").length,
       inWarranty,
+      // Service charges still owed on jobs for units this seller sold (out of warranty, out of city…).
+      serviceDue: allServices.reduce((t, s) => t + serviceChargeDue(s.charge), 0),
+      serviceDueJobs: allServices.filter((s) => serviceChargeDue(s.charge) > 0).length,
     };
 
     const { password: _password, ...safe } = seller;

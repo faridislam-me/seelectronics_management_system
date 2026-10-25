@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  deleteInvoiceById,
   getCustomerById,
   getFeedbackHistoryById,
   getServiceHistoryById,
@@ -10,7 +11,7 @@ import InvoiceEditModal from "./InvoiceEditModal";
 import { CustomerData, Product } from "@/types";
 import { formatDate, isWarrantyValid } from "@/utils";
 import clsx from "clsx";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -37,6 +38,17 @@ function CustomerViewModal({
   const [isLoadingFeedbacksHistory, setIsLoadingFeedbacksHistory] =
     useState(false);
   const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
+
+  const [deletingInvoiceId, setDeletingInvoiceId] = useState<string | null>(null);
+
+  const handleDeleteInvoice = async (inv: any) => {
+    if (!window.confirm(`ইনভয়েস #${inv.invoiceNumber} এবং এর সব পণ্য ডিলিট করবেন? কাস্টমারের অন্য ইনভয়েস গুলো থাকবে।`)) return;
+    setDeletingInvoiceId(inv.id);
+    const res = await deleteInvoiceById(inv.id);
+    setDeletingInvoiceId(null);
+    toast(res.message, { type: res.success ? "success" : "error" });
+    if (res.success) await loadCustomer();
+  };
 
   // Reloads the full customer record so an invoice edit is reflected at once.
   const loadCustomer = async () => {
@@ -299,6 +311,14 @@ function CustomerViewModal({
                         className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100 whitespace-nowrap"
                       >
                         <Pencil size={13} />এডিট
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteInvoice(inv)}
+                        disabled={deletingInvoiceId === inv.id}
+                        className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 whitespace-nowrap disabled:opacity-50"
+                      >
+                        <Trash2 size={13} />{deletingInvoiceId === inv.id ? "..." : "ডিলিট"}
                       </button>
                     </div>
                   </div>

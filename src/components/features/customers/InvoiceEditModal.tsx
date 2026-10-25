@@ -2,6 +2,7 @@
 
 import { getInvoiceForEdit, updateInvoiceById } from "@/actions";
 import { Modal, Spinner } from "@/components";
+import SellerSelect from "@/components/features/sellers/SellerSelect";
 import { productTypes, warrantyMonths } from "@/constants";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -43,6 +44,7 @@ export default function InvoiceEditModal({
   const [dueType, setDueType] = useState<"due" | "installment">("due");
   const [dueAmount, setDueAmount] = useState<number>(0);
   const [notes, setNotes] = useState("");
+  const [sellerId, setSellerId] = useState<string>("");
   const [rows, setRows] = useState<Row[]>([]);
 
   useEffect(() => {
@@ -61,6 +63,7 @@ export default function InvoiceEditModal({
       setDueType((d.dueType as "due" | "installment") || "due");
       setDueAmount(Number(d.dueAmount) || 0);
       setNotes(d.notes || "");
+      setSellerId((d as any).sellerId || "");
       setRows(
         (d.products as any[]).map((p) => ({
           type: p.type,
@@ -95,6 +98,7 @@ export default function InvoiceEditModal({
       dueAmount: Number(dueAmount) || 0,
       dueType,
       notes,
+      sellerId,
       products: rows,
     });
     setSaving(false);
@@ -132,6 +136,13 @@ export default function InvoiceEditModal({
             <label className="text-xs font-semibold text-gray-600 flex flex-col gap-1">বাকি (৳)
               <input type="number" min={0} value={dueAmount} onChange={(e) => setDueAmount(Number(e.target.value))} className={input} />
             </label>
+          </div>
+
+          {/* Seller / dealer this purchase is attributed to. Setting it here makes
+              the product show in that seller's own account too. */}
+          <div className="rounded-md border border-blue-100 bg-blue-50/40 p-2.5">
+            <SellerSelect value={sellerId} onChange={setSellerId} className="text-start" />
+            <p className="mt-1 text-[11px] text-gray-500">এই বিক্রিটি কোন সেলার/ডিলারের তা নির্বাচন করুন — তাহলে এটি ওই সেলারের একাউন্টেও দেখা যাবে। (Direct = সরাসরি SE Electronics)</p>
           </div>
 
           {/* Products */}

@@ -108,7 +108,7 @@ export default function StatusBadge({
   return (
     <span
       className={clsx(
-        "text-sm sm:text-sm font-black uppercase tracking-wider px-2 py-0.5 rounded-md",
+        "inline-block whitespace-nowrap text-sm sm:text-sm font-black uppercase tracking-wider px-2 py-0.5 rounded-md",
         statusData.styles,
       )}
     >

@@ -773,7 +773,7 @@ export default function CustomerForm({
                                 </option>
                               ) : (
                                 <option key={m} value={m}>
-                                  {m} Months
+                                  {m} {m === 1 ? "Month" : "Months"}
                                 </option>
                               ),
                             )}

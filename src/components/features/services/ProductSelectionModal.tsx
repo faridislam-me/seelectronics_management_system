@@ -111,7 +111,7 @@ function ProductSelectionModal({
                     <td className="px-3 py-2 text-gray-500">{product.serialNumber || "—"}</td>
                     <td className="px-3 py-2">
                       <StatusBadge
-                        status={isWarrantyValid(product.warrantyStartDate, product.warrantyDurationMonths) ? "valid" : "expired"}
+                        status={Number(product.warrantyDurationMonths) === 0 ? "none" : isWarrantyValid(product.warrantyStartDate, product.warrantyDurationMonths) ? "valid" : "expired"}
                       />
                     </td>
                   </tr>

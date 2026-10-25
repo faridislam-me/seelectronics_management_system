@@ -815,6 +815,9 @@ export const updateCustomer = async (
     // 2. Update the primary invoice only. A customer can now own several
     //    invoices (one per purchase); editing the customer must not overwrite
     //    the others, so we scope by the primary invoice number.
+    // Keep the primary invoice's seller aligned with the customer's seller, so
+    // what admin sees and what shows in the seller's own account stay in sync.
+    const primarySellerId = data.sellerId !== undefined ? (data.sellerId || null) : (customer.sellerId ?? null);
     await db
       .update(invoices)
       .set({
@@ -828,6 +831,7 @@ export const updateCustomer = async (
         dueAmount: finalDue,
         dueType: data.invoice.dueType || 'due',
         notes: withManualDiscount(data.invoice.notes, manual.discount),
+        sellerId: primarySellerId,
       })
       .where(eq(invoices.invoiceNumber, customer.invoiceNumber));
 
@@ -913,6 +917,7 @@ export const getInvoiceForEdit = async (invoiceId: string) => {
         id: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
         customerId: invoice.customerId,
+        sellerId: invoice.sellerId ?? "",
         date: invoice.date,
         paymentType: invoice.paymentType,
         subtotal: invoice.subtotal,
@@ -944,6 +949,8 @@ export const updateInvoiceById = async (
     dueAmount: number;
     dueType?: "due" | "installment";
     notes?: string;
+    /** Seller/dealer this purchase is attributed to ("" = direct SE Electronics). */
+    sellerId?: string | null;
     products: Array<{
       type: string;
       model: string;
@@ -961,10 +968,13 @@ export const updateInvoiceById = async (
 
     const invoice = await db.query.invoices.findFirst({
       where: eq(invoices.id, invoiceId),
-      columns: { id: true, invoiceNumber: true, notes: true },
+      columns: { id: true, invoiceNumber: true, notes: true, customerId: true },
       with: { products: { columns: { type: true, model: true, warrantyStartDate: true, warrantyEndDate: true } } },
     });
     if (!invoice) return { success: false, message: "Invoice not found" };
+
+    // Seller attribution: a blank value means "direct SE Electronics" (null).
+    const sellerId = (data.sellerId || "").trim() || null;
 
     const items = Array.isArray(data.products) ? data.products : [];
     if (items.length === 0) return { success: false, message: "At least one product is required" };
@@ -1005,8 +1015,19 @@ export const updateInvoiceById = async (
         dueAmount: due,
         dueType: (data.dueType as any) || "due",
         notes: withManualDiscount(data.notes ?? "", discount),
+        sellerId,
       })
       .where(eq(invoices.id, invoiceId));
+
+    // Keep the customer's primary seller in sync so the admin row badge and the
+    // seller's own account agree: if this invoice now has a seller and the
+    // customer had none, adopt it as the customer's seller.
+    if (sellerId && invoice.customerId) {
+      const owner = await db.query.customers.findFirst({ where: eq(customers.customerId, invoice.customerId), columns: { sellerId: true } });
+      if (owner && !owner.sellerId) {
+        await db.update(customers).set({ sellerId }).where(eq(customers.customerId, invoice.customerId));
+      }
+    }
 
     await db.delete(products).where(eq(products.invoiceId, invoiceId));
     await db.insert(products).values(
@@ -1027,10 +1048,63 @@ export const updateInvoiceById = async (
     revalidatePath("/invoices");
     revalidatePath("/customer/products");
     revalidatePath("/customer/services", "layout");
+    revalidatePath("/seller/customers", "layout");
+    revalidatePath("/seller/profile");
     return { success: true, message: "Invoice updated" };
   } catch (error) {
     console.error("updateInvoiceById error:", error);
     return { success: false, message: "Failed to update the invoice" };
+  }
+};
+
+/**
+ * Deletes ONE invoice (and its products) from a customer, leaving the other
+ * invoices and the customer record intact. If it was the customer's primary
+ * invoice pointer, the pointer is moved to the newest remaining invoice.
+ */
+export const deleteInvoiceById = async (invoiceId: string) => {
+  try {
+    const session = await verifySession(false, "admin");
+    if (!session) return { success: false, message: "Unauthorized" };
+
+    const invoice = await db.query.invoices.findFirst({
+      where: eq(invoices.id, invoiceId),
+      columns: { id: true, invoiceNumber: true, customerId: true },
+    });
+    if (!invoice) return { success: false, message: "Invoice not found" };
+
+    await db.delete(products).where(eq(products.invoiceId, invoiceId));
+    await db.delete(invoices).where(eq(invoices.id, invoiceId));
+
+    // If this was the customer's primary invoice pointer, repoint it.
+    if (invoice.customerId) {
+      const owner = await db.query.customers.findFirst({
+        where: eq(customers.customerId, invoice.customerId),
+        columns: { invoiceNumber: true },
+      });
+      if (owner && owner.invoiceNumber === invoice.invoiceNumber) {
+        const next = await db.query.invoices.findFirst({
+          where: eq(invoices.customerId, invoice.customerId),
+          orderBy: (inv, { desc }) => [desc(inv.date)],
+          columns: { invoiceNumber: true },
+        });
+        await db
+          .update(customers)
+          .set({ invoiceNumber: next?.invoiceNumber ?? "" })
+          .where(eq(customers.customerId, invoice.customerId));
+      }
+    }
+
+    revalidatePath("/customers");
+    revalidatePath("/invoices");
+    revalidatePath("/customer/products");
+    revalidatePath("/customer/services", "layout");
+    revalidatePath("/seller/customers", "layout");
+    revalidatePath("/seller/profile");
+    return { success: true, message: "Invoice deleted" };
+  } catch (error) {
+    console.error("deleteInvoiceById error:", error);
+    return { success: false, message: "Failed to delete the invoice" };
   }
 };
 

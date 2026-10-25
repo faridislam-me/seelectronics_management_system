@@ -81,6 +81,11 @@ const STATUSES = {
     styles:
       "text-red-500 bg-red-500 bg-opacity-10 px-2 py-0.5 rounded-md border border-red-500",
   },
+  none: {
+    name: "No Warranty",
+    styles:
+      "text-gray-500 bg-gray-500 bg-opacity-10 px-2 py-0.5 rounded-md border border-gray-400",
+  },
   custom: {
     name: "Custom",
     styles:

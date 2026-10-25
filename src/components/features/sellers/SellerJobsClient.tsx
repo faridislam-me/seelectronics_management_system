@@ -34,6 +34,7 @@ export default function SellerJobsClient({ kind, jobs, counts }: { kind: "repair
   const [status, setStatus] = useState<"all" | "active" | "completed" | "canceled">("all");
   const [pay, setPay] = useState<"all" | PayKind>("all");
   const [war, setWar] = useState<"all" | "yes" | "no">("all");
+  const [viewJob, setViewJob] = useState<SellerJob | null>(null);
 
   const list = useMemo(() => {
     const t = q.trim().toLowerCase();
@@ -82,7 +83,15 @@ export default function SellerJobsClient({ kind, jobs, counts }: { kind: "repair
               <Td strong>{j.serviceId}</Td>
               <Td nowrap={false} className="min-w-[110px]">{j.customerName}<span className="block text-[11px] text-[#6b7690]">{j.customerId}</span></Td>
               <Td>{j.customerPhone}</Td>
-              <Td nowrap={false} className="min-w-[130px]">{j.productType.toUpperCase()} {j.productModel}{j.reportedIssue ? <span className="block text-[11px] text-[#6b7690]">{j.reportedIssue}</span> : null}</Td>
+              <Td nowrap={false} className="min-w-[130px] max-w-[220px]">
+                <span className="font-semibold">{j.productType.toUpperCase()} {j.productModel}</span>
+                {j.reportedIssue ? (
+                  <>
+                    <span className="block text-[11px] text-[#6b7690] overflow-hidden" style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" }}>{j.reportedIssue}</span>
+                    <button type="button" onClick={() => setViewJob(j)} className="mt-0.5 text-[11px] font-bold text-[#1f6fd0] hover:underline">দেখুন</button>
+                  </>
+                ) : null}
+              </Td>
               <Td>{payLabel[j.pay]}</Td>
               <Td className={j.warranty ? "text-[#178a42] font-bold" : "text-[#c81f38] font-bold"}>{j.warranty ? "আছে" : "শেষ"}</Td>
               <Td nowrap={false} className="min-w-[110px]">{j.charge ? <><b className={serviceChargeDue(j.charge) > 0 ? "text-[#b8620b]" : "text-[#178a42]"}>৳{Math.round(j.charge.amount).toLocaleString()} · {j.charge.status === "waived" ? "মওকুফ" : serviceChargeDue(j.charge) > 0 ? `বাকি ৳${Math.round(serviceChargeDue(j.charge)).toLocaleString()}` : "পরিশোধিত"}</b><span className="block text-[11px] text-[#6b7690]">{serviceChargeReasonLabel(j.charge.reason)}</span></> : "—"}</Td>
@@ -93,6 +102,22 @@ export default function SellerJobsClient({ kind, jobs, counts }: { kind: "repair
           ))}
         </tbody>
       </DataTable>
+
+      {viewJob && (
+        <div className="fixed inset-0 z-[100] bg-black/40 flex items-end sm:items-center justify-center p-2" onClick={() => setViewJob(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[460px] rounded-md bg-white p-3.5 flex flex-col gap-2 shadow-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-[15px] font-extrabold text-[#16213a]">{viewJob.productType.toUpperCase()} {viewJob.productModel}</span>
+              <button type="button" onClick={() => setViewJob(null)} className="text-[#9aa4b8] text-xl leading-none px-1">×</button>
+            </div>
+            <div className="text-[12px] font-semibold text-[#5b6784]">{viewJob.customerName} · {viewJob.customerPhone} · {viewJob.serviceId}</div>
+            <div className="rounded-md bg-[#f5f8fd] border border-[#e3ebf7] p-2.5 text-[13px] text-[#2b3445] whitespace-pre-wrap break-words max-h-[55vh] overflow-auto">
+              {viewJob.reportedIssue || "—"}
+            </div>
+            <Link href={`/service-track?trackingId=${viewJob.serviceId}`} className="mt-1 h-10 rounded-md bg-[#1f7cf0] text-white text-[13px] font-extrabold inline-flex items-center justify-center gap-1.5"><ExternalLink size={15} />স্ট্যাটাস ট্র্যাক করুন</Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

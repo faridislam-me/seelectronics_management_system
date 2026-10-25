@@ -353,9 +353,11 @@ function CustomerViewModal({
                               <td className="px-3 py-1.5 text-center">
                                 <StatusBadge
                                   status={
-                                    isWarrantyValid(product.warrantyStartDate, product.warrantyDurationMonths)
-                                      ? "valid"
-                                      : "expired"
+                                    Number(product.warrantyDurationMonths) === 0
+                                      ? "none"
+                                      : isWarrantyValid(product.warrantyStartDate, product.warrantyDurationMonths)
+                                        ? "valid"
+                                        : "expired"
                                   }
                                 />
                               </td>

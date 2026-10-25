@@ -188,12 +188,9 @@ function CustomerViewModal({
                 <div className="flex border-b py-1">
                   <span className="w-32 flex-shrink-0">Serial No</span>
                   <span className="mr-4 flex-shrink-0">:</span>
-                  <span className="font-semibold flex flex-col">
-                    {productItems.filter((p: any) => p.serialNumber).map((p: any, i: number) => (
-                      <span key={i} className="break-all">
-                        {productItems.length > 1 ? `${p.model}: ` : ""}{p.serialNumber}
-                      </span>
-                    ))}
+                  <span className="font-semibold break-all">
+                    {/* Serial numbers only (no product names). */}
+                    {Array.from(new Set(productItems.filter((p: any) => p.serialNumber).map((p: any) => String(p.serialNumber).trim()))).join(", ")}
                   </span>
                 </div>
               )}

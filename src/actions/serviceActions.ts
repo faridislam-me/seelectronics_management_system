@@ -193,29 +193,41 @@ export const getServiceById = async (serviceId: string, options?: { publicLink?:
       return { success: false, message: "Unauthorized access to service" };
     }
 
+    // Warranty of the ACTUAL serviced unit, not the customer's primary invoice.
+    // A merged customer owns many invoices; the product being serviced is matched
+    // by type + model across all of them (same rule the seller/customer portals
+    // use), preferring the unit bought most recently before the request. This
+    // keeps the tracking page's warranty in step with the product's own page.
     let warrantyExpiryDate: Date | null = null;
-    if (serviceData.customer?.invoiceNumber) {
+    const norm = (s: string | null | undefined) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const endOf = (start: Date, months: number) => { const e = new Date(start); e.setMonth(e.getMonth() + months); return e; };
+    if (serviceData.customerId) {
+      const invs = await db.query.invoices.findMany({
+        where: eq(invoices.customerId, serviceData.customerId),
+        columns: { date: true },
+        with: { products: { columns: { type: true, model: true, warrantyStartDate: true, warrantyDurationMonths: true } } },
+      });
+      const wantModel = norm(serviceData.productModel);
+      const cands = invs
+        .flatMap((inv) => (inv.products ?? []).map((p) => ({ ...p, invoiceDate: new Date(inv.date) })))
+        .filter((p) => p.type === serviceData.productType && (norm(p.model) === wantModel || (wantModel.length >= 4 && (norm(p.model).includes(wantModel) || wantModel.includes(norm(p.model))))));
+      if (cands.length) {
+        const serviceAt = new Date(serviceData.createdAt);
+        const before = cands.filter((p) => p.invoiceDate <= serviceAt);
+        const pick = (before.length ? before : cands).sort((a, b) => b.invoiceDate.getTime() - a.invoiceDate.getTime())[0];
+        warrantyExpiryDate = pick.warrantyDurationMonths > 0 ? endOf(new Date(pick.warrantyStartDate), pick.warrantyDurationMonths) : null;
+      }
+    }
+    // Fallback to the primary invoice's latest warranty if no product matched.
+    if (warrantyExpiryDate === null && serviceData.customer?.invoiceNumber) {
       const invoice = await db.query.invoices.findFirst({
         where: eq(invoices.invoiceNumber, serviceData.customer.invoiceNumber),
-        with: {
-          products: {
-            columns: {
-              warrantyStartDate: true,
-              warrantyDurationMonths: true,
-            },
-          },
-        },
+        with: { products: { columns: { warrantyStartDate: true, warrantyDurationMonths: true } } },
       });
-
-      if (invoice?.products && invoice.products.length > 0) {
-        for (const p of invoice.products) {
-          if (p.warrantyStartDate && p.warrantyDurationMonths) {
-            const expiry = new Date(p.warrantyStartDate);
-            expiry.setMonth(expiry.getMonth() + p.warrantyDurationMonths);
-            if (warrantyExpiryDate === null || expiry > warrantyExpiryDate) {
-              warrantyExpiryDate = expiry;
-            }
-          }
+      for (const p of invoice?.products ?? []) {
+        if (p.warrantyStartDate && p.warrantyDurationMonths) {
+          const expiry = endOf(new Date(p.warrantyStartDate), p.warrantyDurationMonths);
+          if (warrantyExpiryDate === null || expiry > warrantyExpiryDate) warrantyExpiryDate = expiry;
         }
       }
     }

@@ -819,8 +819,8 @@ export default function CustomerForm({
                             }
                           />
                         </td>
-                        <td className="p-2">
-                          <div className="flex gap-3">
+                        <td className="p-2 min-w-[150px]">
+                          <div className="flex items-center gap-2">
                             <InputField
                               name={`totalPrice-${item.id}`}
                               min={0}
@@ -828,6 +828,7 @@ export default function CustomerForm({
                               placeholder="Unit Price"
                               required={true}
                               variant="sm"
+                              className="min-w-[90px]"
                               value={item.unitPrice}
                               onChange={(e) =>
                                 handleProductItemChange(

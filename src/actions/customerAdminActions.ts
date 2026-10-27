@@ -269,26 +269,20 @@ export const searchCustomersForPurchase = async (query: string) => {
         db.selectDistinct({ customerId: invoices.customerId }).from(invoices).where(ilike(invoices.originalCustomerId, like)),
       ),
     );
-    // A seller sees their own customers by any text, and can also reach any
-    // other customer (so a repeat buyer keeps ONE account) but only by exact
-    // phone number or customer ID — never by browsing names.
-    const exact = q.toUpperCase();
+    // A seller may only ever reach their OWN customers — a customer whose
+    // account is attributed to them, or who has any invoice sold by them.
+    // Within that scope they can match by name, phone or (old) customer ID,
+    // but another seller's or an admin-only customer never shows up, even by
+    // exact phone / ID — so sellers cannot see or poach each other's buyers.
+    const sellerScope = or(
+      eq(customers.sellerId, session.userId as string),
+      inArray(
+        customers.customerId,
+        db.selectDistinct({ customerId: invoices.customerId }).from(invoices).where(eq(invoices.sellerId, session.userId as string)),
+      ),
+    );
     const where =
-      session.role === "seller"
-        ? or(
-            and(eq(customers.sellerId, session.userId as string), textFilter),
-            inArray(
-              customers.customerId,
-              db.selectDistinct({ customerId: invoices.customerId }).from(invoices).where(eq(invoices.sellerId, session.userId as string)),
-            ),
-            eq(customers.phone, q),
-            eq(customers.customerId, exact),
-            inArray(
-              customers.customerId,
-              db.selectDistinct({ customerId: invoices.customerId }).from(invoices).where(eq(invoices.originalCustomerId, exact)),
-            ),
-          )
-        : textFilter;
+      session.role === "seller" ? and(sellerScope, textFilter) : textFilter;
 
     const matches = await db.query.customers.findMany({
       where,

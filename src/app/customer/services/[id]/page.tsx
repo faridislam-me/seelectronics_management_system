@@ -1,6 +1,6 @@
 import { getServiceById } from "@/actions";
 import { serviceChargeDue, serviceChargeReasonLabel } from "@/constants/serviceCharges";
-import { getMyWarrantyStatus, verifyCustomerSession } from "@/actions/customerActions";
+import { verifyCustomerSession } from "@/actions/customerActions";
 import { formatDate } from "@/utils";
 import { CustomerAppHeader, CustomerAppNav } from "@/components/ui/CustomerAppChrome";
 import clsx from "clsx";
@@ -62,11 +62,15 @@ export default async function ServiceDetailsPage({ params }: { params: Promise<{
   const latestStatus = service.statusHistory[service.statusHistory.length - 1]?.status as string | undefined;
   const isInstall = service.type === "install";
 
-  // Warranty comes from the customer's purchased product (start + duration),
-  // not from this service request's date.
-  const warranty = await getMyWarrantyStatus(service.productType, service.productModel);
-  const warrantyStatus = warranty?.status ?? "none";
-  const isWarrantyExpired = warrantyStatus !== "valid";
+  // Warranty of the ACTUAL serviced unit, computed in getServiceById (matched by
+  // type + model to the unit bought most recently before this service). Use the
+  // exact same source as the public service-track page so both always agree —
+  // otherwise a merged customer's two same-model units showed different results.
+  const warrantyExpiry = service.warrantyExpiryDate ? new Date(service.warrantyExpiryDate) : null;
+  const isWarrantyStopped = Boolean(service.customer?.isWarrantyStopped);
+  const isWarrantyValid = !isWarrantyStopped && !!warrantyExpiry && warrantyExpiry >= new Date();
+  const isWarrantyExpired = !isWarrantyValid;
+  const warrantyStatus = isWarrantyStopped ? "stopped" : isWarrantyValid ? "valid" : warrantyExpiry ? "expired" : "none";
   const warrantyLabel = { valid: "Valid", expired: "Expired", stopped: "Stopped", none: "N/A" }[warrantyStatus];
 
   const st = (latestStatus || "").toLowerCase();
@@ -81,6 +85,15 @@ export default async function ServiceDetailsPage({ params }: { params: Promise<{
   const chargeDue = serviceChargeDue(charge);
   const payLabel = !charge ? "Free" : charge.status === "waived" ? "Waived" : chargeDue > 0 ? `Due ৳${Math.round(chargeDue).toLocaleString()}` : "Paid";
   const payCls = chargeDue > 0 ? "bg-[#fff6e3] text-[#b8620b]" : "bg-[#e9f9ef] text-[#178a42]";
+
+  // Technician (repair) / electrician (install). Imported & manually-entered
+  // jobs keep the person only in the denormalised staffName/staffPhone fields
+  // (no linked staff account), so fall back to those when there is no staff FK —
+  // otherwise this whole card silently disappears for older services.
+  const staffName = service.appointedStaff?.name || service.staffName || null;
+  const staffPhone = service.appointedStaff?.phone || service.staffPhone || null;
+  const staffIdLabel = service.staffId || service.appointedStaff?.staffId || null;
+  const hasStaff = Boolean(staffName || staffPhone);
 
   return (
     <div className="min-h-screen bg-[#eef3fb] text-[#16213a] pb-16">
@@ -100,9 +113,9 @@ export default async function ServiceDetailsPage({ params }: { params: Promise<{
 
         {/* Service header */}
         <section className={clsx(card, "flex flex-col gap-2.5")}>
-          <div className="flex items-start gap-2.5">
-            <span className="relative size-14 rounded-md bg-white border border-[#e6ebf4] overflow-hidden shrink-0">
-              <Image src={productImg} alt={service.productType} fill sizes="56px" className="object-contain p-0.5" />
+          <div className="flex items-start gap-4">
+            <span className="relative size-20 rounded-md bg-white border border-[#e6ebf4] overflow-hidden shrink-0">
+              <Image src={productImg} alt={service.productType} fill sizes="80px" className="object-contain p-1" />
             </span>
             <span className="flex flex-col gap-1.5 min-w-0 flex-1">
               <span className="text-[15px] font-extrabold break-all">Service ID # {service.serviceId}</span>
@@ -174,19 +187,19 @@ export default async function ServiceDetailsPage({ params }: { params: Promise<{
             <div className={clsx("rounded-md border p-2 flex flex-col items-center text-center gap-1 w-[112px]", isWarrantyExpired ? "bg-[#fff1f3] border-[#f7c3ca]" : "bg-[#eef4fd] border-[#dfe8f7]")}>
               <Calendar size={20} className={isWarrantyExpired ? "text-[#c81f38]" : "text-[#0b3d91]"} />
               <span className="text-[11px] font-semibold text-[#5b6784] leading-tight">{warrantyStatus === "valid" ? "ওয়ারেন্টি শেষ হবে:" : warrantyStatus === "none" ? "ওয়ারেন্টি:" : "ওয়ারেন্টি শেষ হয়েছে:"}</span>
-              <b className={clsx("text-[14px]", isWarrantyExpired ? "text-[#c81f38]" : "text-[#0b3d91]")}>{warranty?.endDate ? formatDate(warranty.endDate) : "নেই"}</b>
+              <b className={clsx("text-[14px]", isWarrantyExpired ? "text-[#c81f38]" : "text-[#0b3d91]")}>{warrantyExpiry ? formatDate(warrantyExpiry) : "নেই"}</b>
             </div>
           </div>
         </section>
 
-        {/* Technician */}
-        {service.appointedStaff && (
+        {/* Technician (repair) / Electrician (install) */}
+        {hasStaff && (
           <section className={clsx(card, "flex flex-col gap-2.5")}>
             <CardHead icon={Wrench} title={isInstall ? "Electrician Information" : "Technician Information"} subtitle={isInstall ? "সার্ভিস ইলেকট্রিশিয়ানের তথ্য" : "সার্ভিস টেকনিশিয়ানের তথ্য"} />
             <div className="flex flex-col gap-2 pl-1">
-              <InfoRow icon={User}>{service.appointedStaff.name}</InfoRow>
-              <InfoRow icon={CardSim}>{isInstall ? `Electrician ID : ${service.staffId}` : `Technician ID : ${service.staffId}`}</InfoRow>
-              <InfoRow icon={Phone}><a href={`tel:${service.appointedStaff.phone}`}>{service.appointedStaff.phone}</a></InfoRow>
+              {staffName && <InfoRow icon={User}>{staffName}</InfoRow>}
+              {staffIdLabel && <InfoRow icon={CardSim}>{isInstall ? `Electrician ID : ${staffIdLabel}` : `Technician ID : ${staffIdLabel}`}</InfoRow>}
+              {staffPhone && <InfoRow icon={Phone}><a href={`tel:${staffPhone}`}>{staffPhone}</a></InfoRow>}
               <InfoRow icon={MapPin}>Service Area: {service.customerAddress}</InfoRow>
             </div>
           </section>
@@ -209,7 +222,7 @@ export default async function ServiceDetailsPage({ params }: { params: Promise<{
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-md bg-white border border-[#f7d9dd] px-2.5 py-2 text-[12px] font-semibold text-[#3d4a63]">
             <span className="inline-flex items-center gap-1.5"><Wrench size={14} className="text-[#0b3d91]" />Service: {service.productType.toUpperCase()}</span>
-            {service.appointedStaff?.name && <span className="inline-flex items-center gap-1.5"><User size={14} className="text-[#0b3d91]" />{service.appointedStaff.name}</span>}
+            {staffName && <span className="inline-flex items-center gap-1.5"><User size={14} className="text-[#0b3d91]" />{staffName}</span>}
             <span className="inline-flex items-center gap-1.5"><Calendar size={14} className="text-[#0b3d91]" />{formatDate(service.createdAt!)}</span>
           </div>
         </section>

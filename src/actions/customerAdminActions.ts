@@ -435,6 +435,20 @@ export const addPurchaseToCustomer = async (customerId: string, data: any, sendL
       }
     }
 
+    // Same welcome/confirmation voice call a brand-new customer gets, so a repeat
+    // purchase on an existing ("marked") account also notifies by voice — not SMS
+    // only. Keeps every add path (new, repeat, seller, admin) consistent.
+    try {
+      const { sendVoiceCall, getMramBroadcastIds } = await import("@/lib/mram");
+      const broadcastIds = getMramBroadcastIds();
+      if (broadcastIds && broadcastIds.customer_add) {
+        // Do not block the request
+        sendVoiceCall(customer.phone, broadcastIds.customer_add, `Repeat Purchase ${customer.customerId}`).catch((e) => console.error(e));
+      }
+    } catch (e) {
+      console.error("Failed to send MRAM voice call:", e);
+    }
+
     revalidatePath("/customers");
     revalidatePath(`/staff/customers/${customerId}`);
     revalidatePath("/seller/customers");

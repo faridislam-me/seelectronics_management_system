@@ -1,6 +1,5 @@
-import { notifyWarrantyExpired } from "@/lib/warrantyExpiry";
+import { notifyWarrantyExpired, warrantyExpirySms, warrantyVoiceId } from "@/lib/warrantyExpiry";
 import { verifySession } from "@/lib";
-import { contactDetails } from "@/constants";
 import { NextResponse } from "next/server";
 
 /**
@@ -14,17 +13,22 @@ import { NextResponse } from "next/server";
  * flow can be verified on demand without waiting for a real expiry.
  */
 export async function GET(request: Request) {
-  const testPhone = new URL(request.url).searchParams.get("test");
+  const url = new URL(request.url);
+  const testPhone = url.searchParams.get("test");
   if (testPhone) {
     const session = await verifySession(false, "admin");
     if (!session) {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
     try {
+      // ?months=24 tests the 24-month (IPS/stabilizer) voice; anything else tests
+      // the other-products voice. Defaults to 24.
+      const months = Number(url.searchParams.get("months")) || 24;
+      const broadcastId = warrantyVoiceId(months);
       const { notifyCustomerBySmsAndCall } = await import("@/lib/customerBlock");
-      const sms = `SE Electronics: প্রিয় গ্রাহক, আপনার পণ্যের ওয়ারেন্টির মেয়াদ শেষ হয়েছে। সার্ভিস বা নতুন প্যাকেজের জন্য যোগাযোগ করুন: ${contactDetails.customerCare}`;
-      await notifyCustomerBySmsAndCall(testPhone, sms, ["warranty_expired"], "Warranty Expiry TEST");
-      return NextResponse.json({ success: true, test: true, phone: testPhone });
+      const sms = warrantyExpirySms("গ্রাহক", "SEPI1050 VA DSP SINE WAVE IPS");
+      await notifyCustomerBySmsAndCall(testPhone, sms, [], "Warranty Expiry TEST", broadcastId);
+      return NextResponse.json({ success: true, test: true, phone: testPhone, months, broadcastId });
     } catch (error) {
       console.error("Warranty expiry test error:", error);
       return NextResponse.json({ success: false, message: "Internal Server Error" }, { status: 500 });

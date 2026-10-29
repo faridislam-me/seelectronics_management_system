@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import SellerActionButtons from "./SellerActionButtons";
 import SellerCollectButton from "./SellerCollectButton";
+import SellerDueReminderButton from "./SellerDueReminderButton";
 import SellerPurchaseForm from "./SellerPurchaseForm";
 import { ProfileLinkButton } from "@/components/features/staff";
 
@@ -105,7 +106,8 @@ export default function SellerProfileModal({ sellerId, onClose }: { sellerId: st
 
           <div>
             <div className="font-semibold mb-2 p-1 bg-brand/10 text-brand rounded-md px-3">Quick Actions</div>
-            <div className="p-4 bg-gray-50 rounded-md border border-gray-100">
+            <div className="p-4 bg-gray-50 rounded-md border border-gray-100 flex flex-wrap items-center gap-3">
+              {(due > 0 || serviceDues.length > 0) && <SellerDueReminderButton sellerId={seller.sellerId} />}
               <SellerActionButtons sellerData={seller} onChanged={load} />
             </div>
           </div>

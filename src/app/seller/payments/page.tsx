@@ -29,11 +29,11 @@ export default async function SellerPaymentsPage() {
         <DataTable>
           <thead>
             <tr>
-              <Th>তারিখ</Th><Th>কী বাবদ</Th><Th right>পরিমাণ</Th><Th>মাধ্যম</Th><Th>সেন্ডার / TrxID</Th><Th>স্ট্যাটাস</Th><Th>নোট</Th>
+              <Th>তারিখ</Th><Th>কী বাবদ</Th><Th right>পরিমাণ</Th><Th>মাধ্যম</Th><Th>সেন্ডার / TrxID</Th><Th>স্ট্যাটাস</Th><Th>রশিদ</Th><Th>নোট</Th>
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && <EmptyRow cols={7} text="এখনো কোনো পেমেন্ট জমা দেননি" />}
+            {rows.length === 0 && <EmptyRow cols={8} text="এখনো কোনো পেমেন্ট জমা দেননি" />}
             {rows.map((r, i) => {
               const st = STATUS[r.status] ?? { label: r.status, tone: "amber" as const };
               return (
@@ -49,6 +49,19 @@ export default async function SellerPaymentsPage() {
                     {r.senderNumber || "—"}{r.transactionId ? <span className="block">TrxID: {r.transactionId}</span> : null}
                   </Td>
                   <Td><BlueChip tone={st.tone}>{st.label}</BlueChip></Td>
+                  <Td>
+                    {r.status === "approved" ? (
+                      <a
+                        href={`/pdf/download?type=seller-payment&id=${r.requestId}`}
+                        target="_blank"
+                        className="inline-flex items-center h-7 px-2.5 rounded-md bg-[#1f7cf0] text-white text-[11px] font-extrabold"
+                      >
+                        ডাউনলোড
+                      </a>
+                    ) : (
+                      <span className="text-[11px] text-[#9aa4b8]">—</span>
+                    )}
+                  </Td>
                   <Td nowrap={false} className="min-w-[120px] text-[11.5px] text-[#5b6784]">{r.adminNote || r.note || "—"}</Td>
                 </tr>
               );

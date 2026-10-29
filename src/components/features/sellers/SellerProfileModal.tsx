@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteSellerPurchase, getSellerById, getSellerMediaUrls } from "@/actions";
+import { deleteSellerPurchase, getSellerById, getSellerMediaUrls, getSellerOutstandingDues } from "@/actions";
 import { ImageWithLightbox, Modal, Spinner, StatusBadge } from "@/components/ui";
 import { sellerBusinessTypes } from "@/constants";
 import { SellerPurchaseType, SellersType } from "@/types";
@@ -8,8 +8,11 @@ import { formatDate } from "@/utils";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import SellerActionButtons from "./SellerActionButtons";
+import SellerCollectButton from "./SellerCollectButton";
 import SellerPurchaseForm from "./SellerPurchaseForm";
 import { ProfileLinkButton } from "@/components/features/staff";
+
+type ServiceDue = { targetRef: string; label: string; remaining: number };
 
 type SellerDetail = SellersType & {
   purchases: SellerPurchaseType[];
@@ -20,11 +23,18 @@ export default function SellerProfileModal({ sellerId, onClose }: { sellerId: st
   const [seller, setSeller] = useState<SellerDetail | null>(null);
   const [docs, setDocs] = useState<string[] | null>(null);
   const [editPurchase, setEditPurchase] = useState<SellerPurchaseType | null>(null);
+  const [serviceDues, setServiceDues] = useState<ServiceDue[]>([]);
+
+  const loadServiceDues = async () => {
+    const res = await getSellerOutstandingDues(sellerId);
+    if (res.success) setServiceDues(res.data.serviceDues);
+  };
 
   const load = async () => {
     const res = await getSellerById(sellerId);
     if (res.success) setSeller(res.data as unknown as SellerDetail);
     else { toast.error(res.message); onClose(); }
+    loadServiceDues();
   };
   useEffect(() => { load(); }, []);
 
@@ -117,8 +127,20 @@ export default function SellerProfileModal({ sellerId, onClose }: { sellerId: st
                         <td className="p-2 text-right whitespace-nowrap">৳{p.paidAmount.toLocaleString()}</td>
                         <td className={`p-2 text-right whitespace-nowrap ${p.totalAmount - p.paidAmount > 0 ? "text-rose-600 font-semibold" : "text-emerald-600"}`}>৳{Math.max(p.totalAmount - p.paidAmount, 0).toLocaleString()}</td>
                         <td className="p-2 whitespace-nowrap text-center">
-                          <button className="text-blue-500 hover:underline mr-2" onClick={() => setEditPurchase(p)}>Edit</button>
-                          <button className="text-red-500 hover:underline" onClick={() => removePurchase(p)}>Delete</button>
+                          <div className="flex items-center justify-center gap-2">
+                            {p.totalAmount - p.paidAmount > 0.01 && (
+                              <SellerCollectButton
+                                sellerId={seller.sellerId}
+                                targetType="purchase"
+                                targetRef={p.purchaseId}
+                                label={`${p.productType.toUpperCase()} ${p.productModel} (ইনভয়েস ${p.invoiceNumber})`}
+                                due={p.totalAmount - p.paidAmount}
+                                onDone={load}
+                              />
+                            )}
+                            <button className="text-blue-500 hover:underline" onClick={() => setEditPurchase(p)}>Edit</button>
+                            <button className="text-red-500 hover:underline" onClick={() => removePurchase(p)}>Delete</button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -127,6 +149,35 @@ export default function SellerProfileModal({ sellerId, onClose }: { sellerId: st
               )}
             </div>
           </details>
+
+          {serviceDues.length > 0 && (
+            <details open>
+              <summary className="font-semibold cursor-pointer text-rose-700">সার্ভিস চার্জ বকেয়া ({serviceDues.length})</summary>
+              <div className="overflow-auto max-h-80 mt-2">
+                <table className="w-full text-sm border">
+                  <thead><tr className="bg-gray-100"><th className="p-2 text-left">সার্ভিস</th><th className="p-2 text-right">বাকি</th><th className="p-2 text-center">আদায়</th></tr></thead>
+                  <tbody>
+                    {serviceDues.map((d) => (
+                      <tr key={d.targetRef} className="border-t">
+                        <td className="p-2">{d.label}</td>
+                        <td className="p-2 text-right whitespace-nowrap text-rose-600 font-semibold">৳{Math.round(d.remaining).toLocaleString()}</td>
+                        <td className="p-2 text-center">
+                          <SellerCollectButton
+                            sellerId={seller.sellerId}
+                            targetType="service_charge"
+                            targetRef={d.targetRef}
+                            label={d.label}
+                            due={d.remaining}
+                            onDone={load}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          )}
 
           <details open>
             <summary className="font-semibold cursor-pointer">Customers ({seller.customers.length})</summary>

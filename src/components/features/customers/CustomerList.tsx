@@ -162,7 +162,7 @@ export default async function CustomerList(
       <td className="py-3 px-4 whitespace-nowrap text-gray-500 text-sm sm:text-sm font-bold">
         {inv?.date ? formatDate(inv.date) : "N/A"}
       </td>
-      <td className="py-3 px-4 whitespace-nowrap md:sticky md:right-0 bg-white group-hover:bg-gray-50 transition-colors md:shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]">
+      <td className="py-3 px-4 whitespace-nowrap">
         <CustomerActionButtons customerData={customer} />
       </td>
     </tr>

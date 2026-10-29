@@ -41,7 +41,7 @@ export default async function Customers({
         pagination={pagination!}
       />
       <div className="overflow-x-auto overflow-y-auto flex-1 bg-white rounded-md border border-gray-100 shadow-sm custom-scrollbar">
-        <table className="w-full text-sm text-left">
+        <table className="w-full min-w-[1100px] text-sm text-left">
           <thead className="sticky top-0 z-20">
             <tr className="bg-gray-50">
               <th className="py-3 px-4 font-bold text-gray-700 whitespace-nowrap">
@@ -65,7 +65,7 @@ export default async function Customers({
               <th className="py-3 px-4 font-bold text-gray-700 whitespace-nowrap">
                 Date
               </th>
-              <th className="py-3 px-4 font-bold text-gray-700 whitespace-nowrap md:sticky md:right-0 md:bg-gray-50 md:shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]">
+              <th className="py-3 px-4 font-bold text-gray-700 whitespace-nowrap">
                 Actions
               </th>
             </tr>

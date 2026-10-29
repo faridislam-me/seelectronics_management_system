@@ -14,12 +14,14 @@ const adminProtectedRoutes = [
     '/applications',
     '/referral-payments',
     '/sellers',
+    '/seller-payments',
     '/suppliers',
 ];
 
 const sellerProtectedRoutes = [
     '/seller/profile',
     '/seller/purchases',
+    '/seller/payments',
     '/seller/customers',
     '/seller/products',
     '/seller/installs',

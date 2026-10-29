@@ -22,6 +22,7 @@ import {
   Store,
   UserCog,
   Users,
+  Wallet,
   Wrench,
   Zap,
   Truck,
@@ -109,6 +110,11 @@ const links = [
     href: "/sellers",
     icon: Store,
     sectionTitle: "Sellers / Dealers",
+  },
+  {
+    name: "Seller Payments",
+    href: "/seller-payments",
+    icon: Wallet,
   },
   {
     name: "Suppliers",

@@ -155,6 +155,13 @@
       "when": 1792850883099,
       "tag": "0021_service_charges",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793243462433,
+      "tag": "0022_ambitious_iceman",
+      "breakpoints": true
     }
   ]
 }

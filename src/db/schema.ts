@@ -1279,6 +1279,58 @@ export const sellerPurchasesRelations = relations(
   }),
 );
 
+/**
+ * A payment a seller submits from their portal to clear one of their own dues —
+ * either a stock-purchase due (sellerPurchases) or a service-charge due
+ * (serviceCharges). It starts as "requested"; the admin reviews the sender /
+ * transaction details and either approves it (the amount is then applied to the
+ * matching due and the request becomes "approved") or rejects it ("rejected").
+ * Admins can also record a payment on a due directly, without a request.
+ */
+export const sellerPaymentRequests = pgTable(
+  "sellerPaymentRequests",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    requestId: varchar({ length: 255 }).unique().notNull(),
+    sellerId: varchar({ length: 255 })
+      .references(() => sellers.sellerId, { onDelete: "cascade" })
+      .notNull(),
+    /** "purchase" (stock due) | "service_charge" (service due) */
+    targetType: varchar({ length: 20 }).notNull(),
+    /** purchaseId for a purchase due, serviceId for a service-charge due */
+    targetRef: varchar({ length: 255 }).notNull(),
+    amount: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
+    paymentMethod: paymentTypesEnum().notNull(),
+    senderNumber: varchar({ length: 255 }),
+    transactionId: varchar({ length: 255 }),
+    note: text(),
+    /** requested | approved | rejected */
+    status: paymentStatusEnum().default("requested").notNull(),
+    adminNote: text(),
+    processedBy: varchar({ length: 255 }),
+    processedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp({ withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("seller_payment_req_seller_idx").on(table.sellerId),
+    index("seller_payment_req_status_idx").on(table.status),
+  ],
+);
+
+export const sellerPaymentRequestsRelations = relations(
+  sellerPaymentRequests,
+  ({ one }) => ({
+    seller: one(sellers, {
+      fields: [sellerPaymentRequests.sellerId],
+      references: [sellers.sellerId],
+    }),
+  }),
+);
+
 // ============================================
 // SUPPLIERS (goods bought from suppliers, payments made, dues)
 // ============================================

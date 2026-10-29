@@ -8,6 +8,7 @@ import { DataTable, EmptyRow, Td, Th } from "@/components/ui/DataTable";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { FilterChips, FilterSelects, PayKind, SellerTabs, inWarranty, payKind, payLabel, serviceStatusBn, statusTone } from "./sellerShared";
+import SellerPayButton from "./SellerPayButton";
 
 export type SellerJob = {
   serviceId: string;
@@ -94,7 +95,7 @@ export default function SellerJobsClient({ kind, jobs, counts }: { kind: "repair
               </Td>
               <Td>{payLabel[j.pay]}</Td>
               <Td className={j.warranty ? "text-[#178a42] font-bold" : "text-[#c81f38] font-bold"}>{j.warranty ? "আছে" : "শেষ"}</Td>
-              <Td nowrap={false} className="min-w-[110px]">{j.charge ? <><b className={serviceChargeDue(j.charge) > 0 ? "text-[#b8620b]" : "text-[#178a42]"}>৳{Math.round(j.charge.amount).toLocaleString()} · {j.charge.status === "waived" ? "মওকুফ" : serviceChargeDue(j.charge) > 0 ? `বাকি ৳${Math.round(serviceChargeDue(j.charge)).toLocaleString()}` : "পরিশোধিত"}</b><span className="block text-[11px] text-[#6b7690]">{serviceChargeReasonLabel(j.charge.reason)}</span></> : "—"}</Td>
+              <Td nowrap={false} className="min-w-[110px]">{j.charge ? <><b className={serviceChargeDue(j.charge) > 0 ? "text-[#b8620b]" : "text-[#178a42]"}>৳{Math.round(j.charge.amount).toLocaleString()} · {j.charge.status === "waived" ? "মওকুফ" : serviceChargeDue(j.charge) > 0 ? `বাকি ৳${Math.round(serviceChargeDue(j.charge)).toLocaleString()}` : "পরিশোধিত"}</b><span className="block text-[11px] text-[#6b7690]">{serviceChargeReasonLabel(j.charge.reason)}</span>{serviceChargeDue(j.charge) > 0 && <span className="block mt-1"><SellerPayButton targetType="service_charge" targetRef={j.serviceId} label={`${j.productType.toUpperCase()} ${j.productModel} · সার্ভিস #${j.serviceId}`} due={serviceChargeDue(j.charge)} /></span>}</> : "—"}</Td>
               <Td>{j.staffName ? <>{j.staffName}{j.staffPhone && <a href={`tel:${j.staffPhone}`} className="ml-1 inline-flex align-middle text-[#1f7cf0]"><Phone size={12} /></a>}</> : "—"}</Td>
               <Td><span className={clsx("h-6 px-2 rounded-md border text-[10.5px] font-extrabold inline-flex items-center whitespace-nowrap", statusTone(j.status))}>{serviceStatusBn[j.status] ?? j.status}</span></Td>
               <Td><Link href={`/service-track?trackingId=${j.serviceId}`} className="inline-flex items-center gap-1 font-bold text-[#1f5fc9]"><ExternalLink size={13} />দেখুন</Link></Td>

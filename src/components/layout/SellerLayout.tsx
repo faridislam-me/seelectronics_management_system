@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 const routeTitles: Record<string, string> = {
   "/seller/profile": "Dashboard",
   "/seller/purchases": "Purchases",
+  "/seller/payments": "My Payments",
   "/seller/customers": "My Sales",
   "/seller/services": "Customer Services",
   "/seller/installs": "Installations",

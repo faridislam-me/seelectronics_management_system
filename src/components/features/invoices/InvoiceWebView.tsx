@@ -1,5 +1,5 @@
 import { InvoicesType, Product } from "@/types";
-import { formatDate } from "@/utils";
+import { formatDate, formatWarrantyDuration } from "@/utils";
 import clsx from "clsx";
 import { User, ClipboardList, CreditCard, ShieldX, ShieldXIcon, ShieldCheck } from "lucide-react";
 
@@ -155,7 +155,7 @@ export default function InvoiceWebView({ data }: InvoiceWebViewProps) {
   ) : (
     <>
       <ShieldCheck className="w-4 h-4 text-green-500 text-lg" />
-      <span>{product.warrantyDurationMonths} Months</span>
+      <span>{formatWarrantyDuration(product.warrantyDurationMonths)}</span>
     </>
   )}
 </p>

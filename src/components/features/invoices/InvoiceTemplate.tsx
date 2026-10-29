@@ -1,5 +1,5 @@
 import { InvoicesType } from "@/types";
-import { formatDate } from "@/utils";
+import { formatDate, formatWarrantyDuration } from "@/utils";
 import clsx from "clsx";
 import { parseManualDiscount } from "@/lib/invoiceDiscount";
 
@@ -135,9 +135,7 @@ export default function InvoiceTemplate({
                     {product.serialNumber ? <span className={`block ${density === "normal" ? "text-sm" : "text-xs"}`}>S/N: {product.serialNumber}</span> : null}
                   </td>
                   <td className={`${rowPad} px-3 text-center ${cellText} border-r border-black`}>
-                    {product.warrantyDurationMonths === 0
-                      ? "None"
-                      : product.warrantyDurationMonths + " Months"}
+                    {formatWarrantyDuration(product.warrantyDurationMonths)}
                   </td>
                   <td className={`${rowPad} px-3 text-center ${cellText} border-r border-black`}>
                     {product.quantity}

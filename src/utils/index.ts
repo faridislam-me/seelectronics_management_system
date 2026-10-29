@@ -195,6 +195,14 @@ export const formatDate = (
   return `${datePart} - ${timePart}`;
 };
 
+// Human label for a warranty length. Long warranties (5y / 10y solar) read as
+// years; the usual month options stay in months so existing invoices are unchanged.
+export function formatWarrantyDuration(months: number): string {
+  if (!months) return "None";
+  if (months >= 48 && months % 12 === 0) return `${months / 12} Years`;
+  return `${months} ${months === 1 ? "Month" : "Months"}`;
+}
+
 export function isWarrantyValid(
   warrantyStartDate: Date,
   warrantyDurationMonths: number,

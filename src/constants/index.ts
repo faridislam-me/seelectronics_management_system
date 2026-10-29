@@ -12,7 +12,8 @@ export const contactDetails = {
     baseUrl: 'https://admin.seelectronicsbd.com'
 }
 
-export const warrantyMonths = [0, 1, 2, 3, 6, 12, 18, 24, 30, 36]
+// 60 = 5 years, 120 = 10 years — long warranties for solar packages.
+export const warrantyMonths = [0, 1, 2, 3, 6, 12, 18, 24, 30, 36, 60, 120]
 
 export const warrantyDurationByType = {
   ips: 24,

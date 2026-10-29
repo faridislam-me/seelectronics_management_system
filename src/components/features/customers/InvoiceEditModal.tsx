@@ -4,6 +4,7 @@ import { getInvoiceForEdit, updateInvoiceById } from "@/actions";
 import { Modal, Spinner } from "@/components";
 import SellerSelect from "@/components/features/sellers/SellerSelect";
 import { productTypes, warrantyMonths } from "@/constants";
+import { formatWarrantyDuration } from "@/utils";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -174,7 +175,7 @@ export default function InvoiceEditModal({
                     <td className="px-2 py-1.5"><input type="number" min={0} value={r.unitPrice} onChange={(e) => update(i, { unitPrice: Number(e.target.value) })} className={input} /></td>
                     <td className="px-2 py-1.5">
                       <select value={r.warrantyDurationMonths} onChange={(e) => update(i, { warrantyDurationMonths: Number(e.target.value) })} className={input}>
-                        {warrantyMonths.map((m) => <option key={m} value={m}>{m === 0 ? "None" : `${m} mo`}</option>)}
+                        {warrantyMonths.map((m) => <option key={m} value={m}>{formatWarrantyDuration(m)}</option>)}
                       </select>
                     </td>
                     <td className="px-2 py-1.5"><input type="date" value={r.warrantyStartDate} onChange={(e) => update(i, { warrantyStartDate: e.target.value })} className={input} /></td>

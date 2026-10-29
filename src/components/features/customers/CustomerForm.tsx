@@ -11,6 +11,7 @@ import { getProducts } from "@/actions/productActions";
 import { SellerSelect } from "@/components/features/sellers";
 import { InputField, Modal, Spinner } from "@/components/ui";
 import { paymentTypes, productTypes, warrantyMonths } from "@/constants";
+import { formatWarrantyDuration } from "@/utils";
 import { CustomerData, Product } from "@/types";
 import { computeManualDiscount, parseManualDiscount, stripManualDiscount, type ManualDiscountType } from "@/lib/invoiceDiscount";
 import { useEffect, useState } from "react";
@@ -766,17 +767,11 @@ export default function CustomerForm({
                               )
                             }
                           >
-                            {warrantyMonths.map((m) =>
-                              m === 0 ? (
-                                <option key={m} value={m}>
-                                  NONE
-                                </option>
-                              ) : (
-                                <option key={m} value={m}>
-                                  {m} {m === 1 ? "Month" : "Months"}
-                                </option>
-                              ),
-                            )}
+                            {warrantyMonths.map((m) => (
+                              <option key={m} value={m}>
+                                {m === 0 ? "NONE" : formatWarrantyDuration(m)}
+                              </option>
+                            ))}
                           </select>
                         </td>
                         <td className="p-2">

@@ -9,6 +9,7 @@ import {
   services,
 } from "@/db/schema";
 import { sendSMS, verifySession } from "@/lib";
+import { getMramBroadcastIds, sendVoiceCall } from "@/lib/mram";
 import { generateRandomId } from "@/utils";
 import { and, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -324,7 +325,7 @@ export async function decideSellerPaymentRequest(
       return { success: true, message: "রিকোয়েস্ট বাতিল করা হয়েছে" };
     }
 
-    const applied = await applyToDue(req.targetType, req.targetRef, req.amount, req.paymentMethod);
+    const applied = await applyToDue(req.targetType as SellerPayTargetType, req.targetRef, req.amount, req.paymentMethod);
     if (!applied.ok) return { success: false, message: applied.message };
     await db
       .update(sellerPaymentRequests)
@@ -465,5 +466,109 @@ export async function recordSellerDuePayment(input: {
   } catch (error) {
     console.error(error);
     return { success: false, message: "পেমেন্ট রেকর্ড করা যায়নি" };
+  }
+}
+
+/** One seller payment (by its SPR- request id) with the shop + target label, for the receipt PDF. */
+export async function getSellerPaymentForReceipt(requestId: string) {
+  try {
+    const req = await db.query.sellerPaymentRequests.findFirst({
+      where: eq(sellerPaymentRequests.requestId, requestId),
+      with: { seller: { columns: { sellerId: true, shopName: true, ownerName: true, phone: true } } },
+    });
+    if (!req) return { success: false as const, message: "রশিদটি পাওয়া যায়নি" };
+
+    const target = await loadTarget(req.sellerId, req.targetType as SellerPayTargetType, req.targetRef);
+    return {
+      success: true as const,
+      data: {
+        requestId: req.requestId,
+        date: req.processedAt ?? req.createdAt,
+        amount: req.amount,
+        paymentMethod: req.paymentMethod as "cash" | "bkash" | "nagad" | "rocket" | "bank",
+        senderNumber: req.senderNumber,
+        transactionId: req.transactionId,
+        note: req.note,
+        adminNote: req.adminNote,
+        status: req.status,
+        targetType: req.targetType as SellerPayTargetType,
+        targetLabel: target?.label ?? req.targetRef,
+        seller: {
+          sellerId: req.seller?.sellerId ?? req.sellerId,
+          shopName: req.seller?.shopName ?? "",
+          ownerName: req.seller?.ownerName ?? "",
+          phone: req.seller?.phone ?? "",
+        },
+      },
+    };
+  } catch (error) {
+    console.error(error);
+    return { success: false as const, message: "রশিদ লোড করা যায়নি" };
+  }
+}
+
+/** The seller's total outstanding due (purchases + service charges) in one number. */
+async function sellerTotalDue(sellerId: string) {
+  const [purchases, charges] = await Promise.all([
+    db.query.sellerPurchases.findMany({
+      where: eq(sellerPurchases.sellerId, sellerId),
+      columns: { totalAmount: true, paidAmount: true },
+    }),
+    db.query.serviceCharges.findMany({
+      where: eq(serviceCharges.sellerId, sellerId),
+      columns: { amount: true, paidAmount: true, status: true },
+    }),
+  ]);
+  let due = 0;
+  for (const p of purchases) due += Math.max(0, p.totalAmount - p.paidAmount);
+  for (const c of charges) if (c.status === "due") due += Math.max(0, c.amount - c.paidAmount);
+  return due;
+}
+
+/**
+ * Admin triggers a due-collection reminder to a seller: an SMS always, plus a
+ * pre-recorded voice call when a `seller_due` broadcast is configured in MRAM
+ * (MRAM_VOICE_BROADCAST_ID JSON). Nothing is charged/changed on the account.
+ */
+export async function sendSellerDueVoiceAndSms(sellerId: string) {
+  try {
+    const session = await verifySession(false, "admin");
+    if (!session) return { success: false, message: "Unauthorized" };
+
+    const seller = await db.query.sellers.findFirst({
+      where: eq(sellers.sellerId, sellerId),
+      columns: { shopName: true, ownerName: true, phone: true },
+    });
+    if (!seller?.phone) return { success: false, message: "সেলারের ফোন নম্বর পাওয়া যায়নি" };
+
+    const due = await sellerTotalDue(sellerId);
+    if (due <= 0.01) return { success: false, message: "এই সেলারের কোনো বকেয়া নেই" };
+
+    const who = seller.shopName || seller.ownerName || "ডিলার";
+    const smsText = `প্রিয় ডিলার ${who}, এস ই ইলেকট্রনিক্সে আপনার বকেয়া ${money(due)}। অনুগ্রহ করে বকেয়া পরিশোধ করুন। বিস্তারিত: 09649355555, 09639673600`;
+
+    const broadcastIds = getMramBroadcastIds();
+    const voiceId = broadcastIds?.seller_due;
+
+    const [smsRes, voiceRes] = await Promise.allSettled([
+      sendSMS(seller.phone, smsText),
+      voiceId ? sendVoiceCall(seller.phone, voiceId, "Seller Due Reminder") : Promise.resolve(null),
+    ]);
+
+    const smsOk = smsRes.status === "fulfilled";
+    const voiceSent =
+      voiceId &&
+      voiceRes.status === "fulfilled" &&
+      voiceRes.value !== null &&
+      (voiceRes.value as { success?: boolean }).success;
+
+    let message = `SMS ${smsOk ? "পাঠানো হয়েছে" : "ব্যর্থ"}`;
+    if (!voiceId) message += "; ভয়েস কল সেট করা নেই (MRAM-এ seller_due রেকর্ডিং যোগ করুন)";
+    else message += `; ভয়েস কল ${voiceSent ? "পাঠানো হয়েছে" : "ব্যর্থ"}`;
+
+    return { success: smsOk, message };
+  } catch (error) {
+    console.error(error);
+    return { success: false, message: "রিমাইন্ডার পাঠানো যায়নি" };
   }
 }

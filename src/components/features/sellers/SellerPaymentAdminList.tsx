@@ -200,6 +200,14 @@ export default function SellerPaymentAdminList({
                       >
                         যাচাই করুন
                       </button>
+                    ) : r.status === "approved" ? (
+                      <a
+                        href={`/pdf/download?type=seller-payment&id=${r.requestId}`}
+                        target="_blank"
+                        className="inline-flex items-center h-8 px-3 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100"
+                      >
+                        রশিদ ডাউনলোড
+                      </a>
                     ) : (
                       <span className="text-xs text-gray-400 font-medium">{r.adminNote ? r.adminNote : "Processed"}</span>
                     )}

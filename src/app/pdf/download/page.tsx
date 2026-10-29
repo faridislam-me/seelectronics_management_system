@@ -39,6 +39,7 @@ export default function DocDownloadPage() {
             'payment': 'SE_ELECTRONICS_PAYMENT_RECEIPT.pdf',
             'invoice': 'SE_ELECTRONICS_INVOICE.pdf',
             'seller-invoice': 'SE_ELECTRONICS_SELLER_INVOICE.pdf',
+            'seller-payment': 'SE_ELECTRONICS_SELLER_PAYMENT_RECEIPT.pdf',
             'certificate': 'SE_ELECTRONICS_CERTIFICATE.pdf',
             'seller-certificate': 'SE_ELECTRONICS_SELLER_CERTIFICATE.pdf',
             'complaint': 'SE_ELECTRONICS_COMPLAINT.pdf',

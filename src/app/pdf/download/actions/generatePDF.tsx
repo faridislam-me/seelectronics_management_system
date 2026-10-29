@@ -201,6 +201,31 @@ export default async function generatePDF({
         break;
       }
 
+      case "seller-payment": {
+        const SellerPaymentReceiptTemplate = (
+          await import("@/components/features/sellers/SellerPaymentReceiptTemplate")
+        ).default;
+        const { getSellerPaymentForReceipt } = await import("@/actions/sellerPaymentActions");
+        const response = await getSellerPaymentForReceipt(finalId);
+        if (!response.success || !response.data)
+          throw new AppError("রশিদটি পাওয়া যায়নি।");
+        const sp = response.data;
+
+        const templatePath = path.join(
+          process.cwd(),
+          "src",
+          "assets",
+          "images",
+          "payment-receipt.jpg",
+        );
+        const backgroundBase64 = await convertToBase64(templatePath);
+
+        html = renderToStaticMarkup(
+          <SellerPaymentReceiptTemplate data={{ ...sp, bgImage: backgroundBase64 }} />,
+        );
+        break;
+      }
+
       case "id-card": {
         const IdCardTemplate = (
           await import("@/components/features/staff/IdCardTemplate")

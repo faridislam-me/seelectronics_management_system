@@ -211,12 +211,14 @@ export default async function generatePDF({
           throw new AppError("রশিদটি পাওয়া যায়নি।");
         const sp = response.data;
 
+        // Use the clean blue letterhead (same as the seller/customer invoice) so no
+        // baked-in receipt title overlaps our own heading.
         const templatePath = path.join(
           process.cwd(),
           "src",
           "assets",
           "images",
-          "payment-receipt.jpg",
+          "customer-invoice-paid.png",
         );
         const backgroundBase64 = await convertToBase64(templatePath);
 

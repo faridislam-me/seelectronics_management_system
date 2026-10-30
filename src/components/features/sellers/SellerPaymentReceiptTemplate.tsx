@@ -19,12 +19,19 @@ export interface SellerPaymentReceiptData {
   };
 }
 
-const Cell = ({ label, value, strong }: { label: string; value: React.ReactNode; strong?: boolean }) => (
-  <tr>
-    <td className="border border-gray-400 px-4 py-2.5 font-bold w-1/3 bg-transparent uppercase text-xs">
-      {label} :
+// Same letterhead-based layout as the (blue) customer / seller InvoiceTemplate: the
+// background PNG already carries the header, seal, notes and signatures, so the
+// receipt body is absolutely positioned below the header band and kept short so it
+// never collides with the baked-in footer. No title is printed over the letterhead.
+const Row = ({ label, value, bangla }: { label: string; value: React.ReactNode; bangla?: boolean }) => (
+  <tr className="border border-black">
+    <td className="py-2 px-3 text-sm font-semibold border-r border-black align-top w-1/3 whitespace-nowrap">
+      {label}
     </td>
-    <td className={`border border-gray-400 px-4 py-2.5 ${strong ? "font-black text-blue-900" : "font-semibold text-gray-800"}`}>
+    <td
+      className="py-2 px-3 text-sm border-black align-top break-words"
+      style={bangla ? { fontFamily: "SolaimanLipi, 'Tiro Bangla', sans-serif" } : undefined}
+    >
       {value}
     </td>
   </tr>
@@ -32,62 +39,77 @@ const Cell = ({ label, value, strong }: { label: string; value: React.ReactNode;
 
 export default function SellerPaymentReceiptTemplate({ data }: { data: SellerPaymentReceiptData }) {
   const wallet = data.paymentMethod !== "cash" && data.paymentMethod !== "bank";
+  const headerBg = "bg-[#D7E6F5]";
+  const paidForText = `${data.targetType === "purchase" ? "মালের বাকি টাকা" : "সার্ভিস চার্জ"} — ${data.targetLabel}`;
+
   return (
     <div
-      className="relative w-[210mm] h-[297mm] mx-auto bg-white p-[20mm]"
+      className="relative w-[210mm] h-[297mm] mx-auto bg-white bg-center bg-no-repeat bg-cover overflow-hidden"
       style={{
         backgroundImage: `url(${data.bgImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        fontFamily: `'SolaimanLipi', sans-serif`,
+        fontFamily: `Inter, 'Tiro Bangla', SolaimanLipi, sans-serif`,
       }}
     >
-      <div className="text-center pt-10 mb-6">
-        <h1 className="text-2xl font-black tracking-widest uppercase text-gray-800">Seller Payment Receipt</h1>
-        <p className="text-sm font-bold text-gray-500 mt-1">সেলার বকেয়া পরিশোধ রশিদ</p>
-      </div>
-
-      <div className="flex justify-between text-gray-800 font-bold mb-6 px-6">
-        <span>Receipt No: {data.requestId}</span>
-        <span>Date: {formatDate(data.date)}</span>
-      </div>
-
-      <div className="space-y-8 px-6">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-3 pb-1">Seller Information</h2>
-          <table className="w-full border-collapse">
-            <tbody>
-              <Cell label="Shop Name" value={<span className="uppercase tracking-wide">{data.seller.shopName}</span>} />
-              <Cell label="Owner" value={data.seller.ownerName} />
-              <Cell label="Seller ID" value={data.seller.sellerId} />
-              <Cell label="Phone" value={data.seller.phone} />
-            </tbody>
-          </table>
+      <div className="absolute top-[200px] left-[40px] right-[40px]">
+        <div className="text-right text-xl font-bold tracking-wide mb-4">
+          PAYMENT RECEIPT
         </div>
 
-        <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-3 pb-1">Payment Information</h2>
-          <table className="w-full border-collapse">
-            <tbody>
-              <Cell label="Paid For" value={`${data.targetType === "purchase" ? "মালের বাকি টাকা" : "সার্ভিস চার্জ"} — ${data.targetLabel}`} />
-              <Cell label="Method" value={<span className="uppercase">{data.paymentMethod}</span>} />
-              {wallet && <Cell label="Sender Number" value={data.senderNumber || "N/A"} />}
-              {wallet && <Cell label="Transaction ID" value={data.transactionId || "N/A"} />}
-              {data.note && <Cell label="Note" value={data.note} />}
-              <tr className="bg-gray-100">
-                <td className="border border-gray-400 px-4 py-3 font-bold uppercase text-sm">Amount Received :</td>
-                <td className="border border-gray-400 px-4 py-3 font-black text-xl text-blue-900">
-                  {Math.round(data.amount).toLocaleString()} TK
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="flex justify-between mb-4 text-sm">
+          <div className="space-y-1">
+            <div>
+              <span className="font-semibold text-xl">Received From</span>
+            </div>
+            <div>
+              <span className="font-semibold">Shop :</span> {data.seller.shopName}
+            </div>
+            <div>
+              <span className="font-semibold">Owner :</span> {data.seller.ownerName}
+            </div>
+            <div>
+              <span className="font-semibold">Phone :</span> {data.seller.phone}
+            </div>
+          </div>
+          <div className="text-right space-y-1">
+            <div>
+              <span className="font-semibold">Receipt No #</span> {data.requestId}
+            </div>
+            <div>
+              <span className="font-semibold">Date :</span> {formatDate(data.date)}
+            </div>
+            <div>
+              <span className="font-semibold">Seller ID :</span> {data.seller.sellerId}
+            </div>
+          </div>
         </div>
 
-        <p className="text-sm text-gray-600 italic pt-2">
-          এই রশিদটি কম্পিউটার জেনারেটেড। যেকোনো তথ্যের জন্য যোগাযোগ: 09649355555, 09639673600
-        </p>
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className={`border border-black ${headerBg}`}>
+              <th className="text-left py-2 px-3 font-bold text-sm whitespace-nowrap border-r border-black w-1/3">
+                Payment Details
+              </th>
+              <th className="text-left py-2 px-3 font-bold text-sm whitespace-nowrap border-black">
+                Information
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <Row label="Paid For" value={paidForText} bangla />
+            <Row label="Payment Method" value={data.paymentMethod.toUpperCase()} />
+            {wallet && <Row label="Sender Number" value={data.senderNumber || "N/A"} />}
+            {wallet && <Row label="Transaction ID" value={data.transactionId || "N/A"} />}
+            {data.note && <Row label="Note" value={data.note} bangla />}
+            <tr className={`border border-black ${headerBg}`}>
+              <td className="py-2 px-3 text-sm font-bold border-r border-black whitespace-nowrap">
+                Amount Received
+              </td>
+              <td className="py-2 px-3 text-base font-bold border-black whitespace-nowrap">
+                {Math.round(data.amount).toLocaleString()} TK
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -11,6 +11,8 @@ import {
   CustomerComplaintTemplateData,
   HearingNoticeTemplateData,
   IdCardTemplateData,
+  InstallmentInvoiceTemplateData,
+  InstallmentStickerTemplateData,
   InvoiceTemplateData,
   PaymentReceiptTemplateData,
   PunishmentTemplateData,
@@ -759,6 +761,120 @@ export default async function generatePDF({
         options = {
           format: "A4",
           printBackground: true,
+          margin: { top: 0, right: 0, bottom: 0, left: 0 },
+        };
+        break;
+      }
+
+      case "installment-invoice": {
+        const InstallmentInvoiceTemplate = (
+          await import("@/components/features/installments/InstallmentInvoiceTemplate")
+        ).default;
+        const { db } = await import("@/db/drizzle");
+        const { installmentPlans, installmentSchedule } = await import("@/db/schema");
+        const { eq } = await import("drizzle-orm");
+
+        const plan = await db.query.installmentPlans.findFirst({
+          where: eq(installmentPlans.planCode, finalId),
+        });
+        if (!plan) throw new AppError("কিস্তি প্ল্যানটি পাওয়া যায়নি।");
+
+        const schedule = await db
+          .select()
+          .from(installmentSchedule)
+          .where(eq(installmentSchedule.planId, plan.id))
+          .orderBy(installmentSchedule.installmentNo);
+
+        const paidRows = schedule.filter((s) => s.status === "paid");
+        const paidTotal =
+          Math.round(paidRows.reduce((sum, s) => sum + s.paidAmount, 0) * 100) / 100;
+
+        const templatePath = path.join(
+          process.cwd(),
+          "src",
+          "assets",
+          "images",
+          "customer-invoice-paid.png",
+        );
+        const backgroundBase64 = await convertToBase64(templatePath);
+
+        const data: InstallmentInvoiceTemplateData = {
+          bgImage: backgroundBase64,
+          planCode: plan.planCode,
+          customerName: plan.customerName,
+          customerPhone: plan.customerPhone,
+          customerAddress: plan.customerAddress,
+          customerId: plan.customerId,
+          productType: plan.productType
+            ? productMap[plan.productType] ?? plan.productType
+            : null,
+          productModel: plan.productModel,
+          serialNumber: plan.serialNumber,
+          cashPrice: plan.cashPrice,
+          extraCharge: plan.extraCharge,
+          totalPayable: plan.totalPayable,
+          downPayment: plan.downPayment,
+          financedAmount: plan.financedAmount,
+          months: plan.months,
+          monthlyAmount: plan.monthlyAmount,
+          startDate: plan.startDate,
+          endDate: plan.endDate,
+          status: plan.status,
+          guarantorName: plan.guarantorName,
+          guarantorPhone: plan.guarantorPhone,
+          notes: plan.notes,
+          schedule: schedule.map((s) => ({
+            installmentNo: s.installmentNo,
+            dueDate: s.dueDate,
+            amount: s.amount,
+            status: s.status,
+            paidAmount: s.paidAmount,
+            paidAt: s.paidAt,
+            paymentMethod: s.paymentMethod,
+          })),
+          paidTotal,
+          remainingTotal: Math.round((plan.financedAmount - paidTotal) * 100) / 100,
+          paidCount: paidRows.length,
+        };
+
+        html = renderToStaticMarkup(<InstallmentInvoiceTemplate data={data} />);
+        break;
+      }
+
+      case "installment-sticker": {
+        const InstallmentStickerTemplate = (
+          await import("@/components/features/installments/InstallmentStickerTemplate")
+        ).default;
+        const { db } = await import("@/db/drizzle");
+        const { installmentPlans } = await import("@/db/schema");
+        const { eq } = await import("drizzle-orm");
+
+        const plan = await db.query.installmentPlans.findFirst({
+          where: eq(installmentPlans.planCode, finalId),
+        });
+        if (!plan) throw new AppError("কিস্তি প্ল্যানটি পাওয়া যায়নি।");
+
+        const { qrcode } = await import("@/lib/id-gen");
+        const qr = await qrcode(plan.planCode);
+
+        const data: InstallmentStickerTemplateData = {
+          planCode: plan.planCode,
+          productModel: plan.productModel,
+          productType: plan.productType
+            ? productMap[plan.productType] ?? plan.productType
+            : null,
+          serialNumber: plan.serialNumber,
+          customerName: plan.customerName,
+          monthlyAmount: plan.monthlyAmount,
+          months: plan.months,
+          qrcode: qr,
+        };
+
+        html = renderToStaticMarkup(<InstallmentStickerTemplate data={data} />);
+        options = {
+          printBackground: true,
+          width: "80mm",
+          height: "110mm",
           margin: { top: 0, right: 0, bottom: 0, left: 0 },
         };
         break;

@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Clock,
   CreditCard,
+  Download,
   Phone,
   Wallet,
 } from "lucide-react";
@@ -54,6 +55,15 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
         </span>
         <span className={clsx("shrink-0 text-[10px] font-extrabold uppercase px-2 py-1 rounded-full", s.cls)}>{s.label}</span>
       </div>
+
+      {/* Download invoice */}
+      <Link
+        href={`/pdf/download?type=installment-invoice&id=${plan.planCode}`}
+        target="_blank"
+        className="flex items-center justify-center gap-1.5 h-9 rounded-md bg-white border border-[#dfe6f2] text-[#0b3d91] text-[13px] font-extrabold"
+      >
+        <Download size={16} /> ইনভয়েস ডাউনলোড
+      </Link>
 
       {/* Next due / Pay Now */}
       {plan.status === "active" && nextDue && (

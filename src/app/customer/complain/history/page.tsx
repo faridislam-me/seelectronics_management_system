@@ -15,6 +15,8 @@ function toneFor(status: string): Tone {
     return { label: "DISMISSED", chip: "bg-[#ffe9ec] text-[#c81f38]", badge: "bg-[#e0243f]", strip: "bg-[#fff1f3] text-[#c81f38]", icon: XCircle, msg: "আপনার অভিযোগটি খারিজ করা হয়েছে।" };
   if (status === "hearing")
     return { label: "HEARING", chip: "bg-[#fff6e3] text-[#b8620b]", badge: "bg-[#e0a11b]", strip: "bg-[#fffaf0] text-[#b8620b]", icon: Gavel, msg: "আপনার অভিযোগটির শুনানি চলছে।" };
+  if (status === "customer_absent")
+    return { label: "গ্রাহক উপস্থিত ছিলেন না", chip: "bg-[#fff0e3] text-[#b8560b]", badge: "bg-[#b8560b]", strip: "bg-[#fff6ec] text-[#b8560b]", icon: Clock, msg: "যাচাইয়ের সময় আপনাকে পাওয়া যায়নি। অনুগ্রহ করে দ্রুত যোগাযোগ করুন।" };
   return { label: status === "processing" ? "IN PROGRESS" : status.replace(/_/g, " ").toUpperCase(), chip: "bg-[#e8f1ff] text-[#1b6fd6]", badge: "bg-[#0b3d91]", strip: "bg-[#eef4fd] text-[#1b6fd6]", icon: Clock, msg: "আপনার অভিযোগটি প্রক্রিয়াধীন রয়েছে।" };
 }
 

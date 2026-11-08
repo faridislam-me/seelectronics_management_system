@@ -22,6 +22,7 @@ import {
   Clock,
   MapPin,
   AlertTriangle,
+  UserX,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -125,6 +126,7 @@ export default function ComplaintDetailsPage() {
       processing: { label: "Processing", color: "text-blue-600 bg-blue-50 border-blue-100" },
       hearing: { label: "Hearing Issued", color: "text-amber-600 bg-amber-50 border-amber-100" },
       completed: { label: "Completed", color: "text-emerald-600 bg-emerald-50 border-emerald-100" },
+      customer_absent: { label: "গ্রাহক উপস্থিত ছিলেন না", color: "text-orange-600 bg-orange-50 border-orange-100" },
     };
     return statuses[status as keyof typeof statuses] || { label: status, color: "bg-gray-100" };
   };
@@ -383,6 +385,18 @@ export default function ComplaintDetailsPage() {
                 </div>
               )}
 
+              {/* Customer-absent outcome — available while verifying (before hearing) */}
+              {(complaint.status === "under_trial" || complaint.status === "processing") && (
+                <button
+                  onClick={() => handleStatusUpdate("customer_absent")}
+                  disabled={isUpdating}
+                  className="w-full py-4 bg-orange-500 hover:bg-orange-600 rounded-xl font-bold transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
+                >
+                  <UserX size={18} className="group-hover:scale-110 transition-transform" />
+                  গ্রাহক উপস্থিত ছিলেন না
+                </button>
+              )}
+
               {/* Completion Section */}
               {complaint.status === "hearing" && (
                 <div className="space-y-6">
@@ -521,6 +535,23 @@ export default function ComplaintDetailsPage() {
                   </div>
                   <h4 className="text-lg font-black text-white">Issue Resolved</h4>
                   <p className="text-white/40 text-sm">This complaint has been officially closed and the decision has been sent to the customer.</p>
+                </div>
+              )}
+
+              {complaint.status === "customer_absent" && (
+                <div className="text-center py-6 space-y-4">
+                  <div className="size-16 bg-orange-500/20 text-orange-400 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <UserX size={32} />
+                  </div>
+                  <h4 className="text-lg font-black text-white">গ্রাহক উপস্থিত ছিলেন না</h4>
+                  <p className="text-white/40 text-sm">যাচাইয়ের সময় গ্রাহককে পাওয়া যায়নি। গ্রাহককে SMS ও ভয়েস কলে জানানো হয়েছে।</p>
+                  <button
+                    onClick={() => handleStatusUpdate("processing")}
+                    disabled={isUpdating}
+                    className="w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-sm transition-all disabled:opacity-50"
+                  >
+                    পুনরায় প্রক্রিয়াকরণ করুন
+                  </button>
                 </div>
               )}
             </div>

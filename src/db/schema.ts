@@ -104,6 +104,7 @@ export const reportStatusEnum = pgEnum("reportStatus", [
   "under_trial",
   "hearing",
   "completed",
+  "customer_absent",
 ]);
 
 export const statusTypesEnum = pgEnum("statusTypes", ["system", "custom"]);

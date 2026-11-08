@@ -80,6 +80,7 @@ export default async function CustomerProductDetailPage({ params }: { params: Pr
               <Row icon={p.warrantyActive ? Clock : XCircle} label={p.warrantyActive ? "শেষ হবে" : "শেষ হয়েছে"} value={formatDate(p.warrantyEnd)} tone={p.warrantyActive ? "green" : "red"} />
             )}
             <Row icon={Hash} label="Invoice No" value={`#${p.invoiceNumber}`} />
+            <Row icon={Hash} label="সিরিয়াল নম্বর" value={p.serialNumber || "নেই"} />
             <Row icon={User} label="Customer ID" value={`#${customerIdShown}`} />
             <Row icon={CreditCard} label="পেমেন্ট" value={<>{String(p.paymentType).toUpperCase()} · {p.invoiceDue > 0 ? <span className="text-[#c81f38]">বকেয়া ৳{p.invoiceDue.toLocaleString()}</span> : <span className="text-[#178a42]">পরিশোধিত</span>}</>} />
           </div>

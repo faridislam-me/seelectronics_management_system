@@ -3,11 +3,14 @@
 import { db } from "@/db/drizzle";
 import {
   customers,
+  installmentApplications,
   installmentPlans,
   installmentSchedule,
 } from "@/db/schema";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { verifySession } from "@/lib";
+import { putObject, getObjectUrl } from "@/lib/s3";
+import { compressImage } from "@/lib/sharp";
 import { generateRandomId } from "@/utils";
 import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -421,5 +424,339 @@ export const getMyInstallmentPlanByCode = async (code: string) => {
   } catch (error) {
     console.error("getMyInstallmentPlanByCode error:", error);
     return { success: false, message: "প্ল্যান আনা যায়নি" };
+  }
+};
+
+// ============================================================
+// Installment Applications (customer self-apply → admin review)
+// ============================================================
+
+const appCode = () => "KSTA" + generateRandomId(5).replace(/^SE/, "");
+
+/** Customer submits an installment application with KYC docs (FormData). */
+export const submitInstallmentApplication = async (formData: FormData) => {
+  try {
+    const session = await verifyCustomerSession();
+    if (!session.isAuth || !session.customer) return UNAUTHORIZED;
+
+    const customerId = session.customer.customerId;
+    const productModel = formData.get("productModel") as string;
+    const productType = (formData.get("productType") as string) || undefined;
+    const notes = (formData.get("notes") as string) || undefined;
+    const guarantorName = (formData.get("guarantorName") as string) || undefined;
+    const guarantorPhone = (formData.get("guarantorPhone") as string) || undefined;
+    const guarantorAddress = (formData.get("guarantorAddress") as string) || undefined;
+
+    if (!productModel?.trim()) {
+      return { success: false, message: "পণ্যের মডেল আবশ্যক" };
+    }
+
+    // File extractions
+    const photo = formData.get("photo") as File | null;
+    const nidFront = formData.get("nidFront") as File | null;
+    const nidBack = formData.get("nidBack") as File | null;
+    const signature = formData.get("signature") as File | null;
+    const guarantorNidFront = formData.get("guarantorNidFront") as File | null;
+    const guarantorNidBack = formData.get("guarantorNidBack") as File | null;
+
+    if (!photo || !nidFront || !nidBack) {
+      return { success: false, message: "ছবি, NID সামনে ও পিছনে আবশ্যক" };
+    }
+
+    const customer = await db.query.customers.findFirst({
+      where: eq(customers.customerId, customerId),
+      columns: { customerId: true, name: true, phone: true, address: true },
+    });
+    if (!customer) return { success: false, message: "Customer not found" };
+
+    // Generate unique code
+    let code = appCode();
+    for (let i = 0; i < 5; i++) {
+      const exists = await db.query.installmentApplications.findFirst({
+        where: eq(installmentApplications.applicationCode, code),
+        columns: { id: true },
+      });
+      if (!exists) break;
+      code = appCode();
+    }
+
+    // R2 keys
+    const prefix = `installment-apps/${code}`;
+    const photoKey = `${prefix}/photo.webp`;
+    const nidFrontKey = `${prefix}/nid-front.webp`;
+    const nidBackKey = `${prefix}/nid-back.webp`;
+    const signatureKey = signature ? `${prefix}/signature.png` : undefined;
+    const gNidFrontKey = guarantorNidFront ? `${prefix}/guarantor-nid-front.webp` : undefined;
+    const gNidBackKey = guarantorNidBack ? `${prefix}/guarantor-nid-back.webp` : undefined;
+
+    // Insert DB row first
+    await db.insert(installmentApplications).values({
+      applicationCode: code,
+      customerId: customer.customerId,
+      customerName: customer.name,
+      customerPhone: customer.phone,
+      customerAddress: customer.address,
+      productType: productType as any,
+      productModel: productModel.trim(),
+      photoKey,
+      nidFrontPhotoKey: nidFrontKey,
+      nidBackPhotoKey: nidBackKey,
+      signatureKey,
+      guarantorName,
+      guarantorPhone,
+      guarantorAddress,
+      guarantorNidFrontPhotoKey: gNidFrontKey,
+      guarantorNidBackPhotoKey: gNidBackKey,
+      notes,
+    });
+
+    // Compress & upload images in parallel
+    const uploads: Promise<any>[] = [];
+    const [photoBuf, nidFBuf, nidBBuf] = await Promise.all([
+      compressImage(Buffer.from(await photo.arrayBuffer()), "portrait"),
+      compressImage(Buffer.from(await nidFront.arrayBuffer()), "nid"),
+      compressImage(Buffer.from(await nidBack.arrayBuffer()), "nid"),
+    ]);
+    uploads.push(
+      putObject({ Key: photoKey, Body: photoBuf, ContentType: "image/webp" }),
+      putObject({ Key: nidFrontKey, Body: nidFBuf, ContentType: "image/webp" }),
+      putObject({ Key: nidBackKey, Body: nidBBuf, ContentType: "image/webp" }),
+    );
+    if (signature && signatureKey) {
+      const sigBuf = Buffer.from(await signature.arrayBuffer());
+      uploads.push(putObject({ Key: signatureKey, Body: sigBuf, ContentType: "image/png" }));
+    }
+    if (guarantorNidFront && gNidFrontKey) {
+      const buf = await compressImage(Buffer.from(await guarantorNidFront.arrayBuffer()), "nid");
+      uploads.push(putObject({ Key: gNidFrontKey, Body: buf, ContentType: "image/webp" }));
+    }
+    if (guarantorNidBack && gNidBackKey) {
+      const buf = await compressImage(Buffer.from(await guarantorNidBack.arrayBuffer()), "nid");
+      uploads.push(putObject({ Key: gNidBackKey, Body: buf, ContentType: "image/webp" }));
+    }
+    await Promise.all(uploads);
+
+    revalidatePath("/customer/installments");
+    return { success: true, applicationCode: code, message: "আবেদন জমা হয়েছে" };
+  } catch (error) {
+    console.error("submitInstallmentApplication error:", error);
+    return { success: false, message: "আবেদন জমা দেওয়া যায়নি" };
+  }
+};
+
+/** Customer: list own installment applications */
+export const getMyInstallmentApplications = async () => {
+  try {
+    const session = await verifyCustomerSession();
+    if (!session.isAuth || !session.customer) return UNAUTHORIZED;
+
+    const rows = await db
+      .select()
+      .from(installmentApplications)
+      .where(eq(installmentApplications.customerId, session.customer.customerId))
+      .orderBy(desc(installmentApplications.createdAt));
+
+    return { success: true, data: rows };
+  } catch (error) {
+    console.error("getMyInstallmentApplications error:", error);
+    return { success: false, message: "আবেদন তালিকা আনা যায়নি" };
+  }
+};
+
+/** Admin: list all installment applications */
+export const getInstallmentApplications = async ({
+  query = "",
+  status,
+}: {
+  query?: string;
+  status?: string;
+}) => {
+  try {
+    if (!(await requireAdmin())) return UNAUTHORIZED;
+
+    const q = `%${query}%`;
+    const where = and(
+      query
+        ? or(
+            ilike(installmentApplications.applicationCode, q),
+            ilike(installmentApplications.customerName, q),
+            ilike(installmentApplications.customerPhone, q),
+            ilike(installmentApplications.productModel, q),
+          )
+        : undefined,
+      status ? eq(installmentApplications.status, status as any) : undefined,
+    );
+
+    const rows = await db
+      .select()
+      .from(installmentApplications)
+      .where(where)
+      .orderBy(desc(installmentApplications.createdAt));
+
+    return { success: true, data: rows };
+  } catch (error) {
+    console.error("getInstallmentApplications error:", error);
+    return { success: false, message: "আবেদন তালিকা আনা যায়নি" };
+  }
+};
+
+/** Admin: get one installment application by code, with signed image URLs */
+export const getInstallmentApplicationByCode = async (code: string) => {
+  try {
+    if (!(await requireAdmin())) return UNAUTHORIZED;
+
+    const app = await db.query.installmentApplications.findFirst({
+      where: eq(installmentApplications.applicationCode, code),
+    });
+    if (!app) return { success: false, message: "আবেদন পাওয়া যায়নি" };
+
+    // Generate signed URLs for all uploaded images
+    const urls: Record<string, string | null> = {
+      photo: null,
+      nidFront: null,
+      nidBack: null,
+      signature: null,
+      guarantorNidFront: null,
+      guarantorNidBack: null,
+    };
+    if (app.photoKey) urls.photo = await getObjectUrl(app.photoKey);
+    if (app.nidFrontPhotoKey) urls.nidFront = await getObjectUrl(app.nidFrontPhotoKey);
+    if (app.nidBackPhotoKey) urls.nidBack = await getObjectUrl(app.nidBackPhotoKey);
+    if (app.signatureKey) urls.signature = await getObjectUrl(app.signatureKey);
+    if (app.guarantorNidFrontPhotoKey) urls.guarantorNidFront = await getObjectUrl(app.guarantorNidFrontPhotoKey);
+    if (app.guarantorNidBackPhotoKey) urls.guarantorNidBack = await getObjectUrl(app.guarantorNidBackPhotoKey);
+
+    return { success: true, data: { ...app, urls } };
+  } catch (error) {
+    console.error("getInstallmentApplicationByCode error:", error);
+    return { success: false, message: "আবেদন আনা যায়নি" };
+  }
+};
+
+/** Admin: approve → creates installment plan, or reject */
+export const reviewInstallmentApplication = async (
+  code: string,
+  action: "approve" | "reject",
+  payload?: {
+    cashPrice?: number;
+    extraCharge?: number;
+    downPayment?: number;
+    months?: number;
+    startDate?: string;
+    serialNumber?: string;
+    rejectReason?: string;
+    adminNotes?: string;
+  },
+) => {
+  try {
+    if (!(await requireAdmin())) return UNAUTHORIZED;
+
+    const app = await db.query.installmentApplications.findFirst({
+      where: eq(installmentApplications.applicationCode, code),
+    });
+    if (!app) return { success: false, message: "আবেদন পাওয়া যায়নি" };
+    if (app.status === "approved") return { success: false, message: "আবেদন ইতোমধ্যে অনুমোদিত" };
+    if (app.status === "rejected") return { success: false, message: "আবেদন ইতোমধ্যে প্রত্যাখ্যাত" };
+
+    if (action === "reject") {
+      await db
+        .update(installmentApplications)
+        .set({
+          status: "rejected",
+          rejectReason: payload?.rejectReason || undefined,
+          adminNotes: payload?.adminNotes || undefined,
+        })
+        .where(eq(installmentApplications.id, app.id));
+      revalidatePath("/installments");
+      return { success: true, message: "আবেদন প্রত্যাখ্যাত হয়েছে" };
+    }
+
+    // Approve → validate pricing fields then create plan
+    if (!payload?.cashPrice || !payload?.months || !payload?.startDate) {
+      return { success: false, message: "ক্যাশ দাম, মেয়াদ ও শুরুর তারিখ আবশ্যক" };
+    }
+
+    const cashPrice = payload.cashPrice;
+    const extraCharge = payload.extraCharge || 0;
+    const downPayment = payload.downPayment || 0;
+    const months = payload.months;
+    const totalPayable = round2(cashPrice + extraCharge);
+    const financedAmount = round2(totalPayable - downPayment);
+    if (financedAmount <= 0) {
+      return { success: false, message: "ডাউন পেমেন্ট পুরো দাম কভার করে ফেলেছে" };
+    }
+    const monthlyAmount = round2(financedAmount / months);
+    const start = new Date(payload.startDate);
+    if (isNaN(start.getTime())) return { success: false, message: "Invalid start date" };
+    const endDate = addMonths(start, months);
+
+    // Unique plan code
+    let pCode = planCode();
+    for (let i = 0; i < 5; i++) {
+      const exists = await db.query.installmentPlans.findFirst({
+        where: eq(installmentPlans.planCode, pCode),
+        columns: { id: true },
+      });
+      if (!exists) break;
+      pCode = planCode();
+    }
+
+    const [plan] = await db
+      .insert(installmentPlans)
+      .values({
+        planCode: pCode,
+        customerId: app.customerId,
+        customerName: app.customerName,
+        customerPhone: app.customerPhone,
+        customerAddress: app.customerAddress,
+        productType: app.productType,
+        productModel: app.productModel,
+        serialNumber: payload.serialNumber,
+        cashPrice,
+        extraCharge,
+        totalPayable,
+        downPayment,
+        financedAmount,
+        months,
+        monthlyAmount,
+        startDate: start,
+        endDate,
+        guarantorName: app.guarantorName,
+        guarantorPhone: app.guarantorPhone,
+        guarantorAddress: app.guarantorAddress,
+      })
+      .returning({ id: installmentPlans.id, planCode: installmentPlans.planCode });
+
+    // Build schedule
+    const rows = [];
+    let allocated = 0;
+    for (let i = 1; i <= months; i++) {
+      const isLast = i === months;
+      const amount = isLast ? round2(financedAmount - allocated) : monthlyAmount;
+      allocated = round2(allocated + amount);
+      rows.push({
+        planId: plan.id,
+        installmentNo: i,
+        dueDate: addMonths(start, i),
+        amount,
+      });
+    }
+    await db.insert(installmentSchedule).values(rows);
+
+    // Mark application approved
+    await db
+      .update(installmentApplications)
+      .set({
+        status: "approved",
+        planId: plan.id,
+        adminNotes: payload.adminNotes || undefined,
+      })
+      .where(eq(installmentApplications.id, app.id));
+
+    revalidatePath("/installments");
+    return { success: true, planCode: plan.planCode, message: "আবেদন অনুমোদিত ও কিস্তি প্ল্যান তৈরি হয়েছে" };
+  } catch (error) {
+    console.error("reviewInstallmentApplication error:", error);
+    return { success: false, message: "আবেদন পর্যালোচনা করা যায়নি" };
   }
 };

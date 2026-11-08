@@ -1557,3 +1557,73 @@ export const installmentScheduleRelations = relations(
     }),
   }),
 );
+
+// ─── Installment applications (customer self-apply → admin review) ────────
+
+export const installmentAppStatusEnum = pgEnum("installmentAppStatus", [
+  "pending",
+  "under_review",
+  "approved",
+  "rejected",
+]);
+
+export const installmentApplications = pgTable(
+  "installment_applications",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    /** Human-friendly code, e.g. KSTA-AB12CD */
+    applicationCode: varchar({ length: 255 }).unique().notNull(),
+    customerId: varchar({ length: 255 })
+      .references(() => customers.customerId, { onDelete: "cascade" })
+      .notNull(),
+    /** Snapshot at submission */
+    customerName: varchar({ length: 255 }).notNull(),
+    customerPhone: varchar({ length: 255 }).notNull(),
+    customerAddress: text(),
+    // Desired product
+    productType: productTypeEnum(),
+    productModel: varchar({ length: 255 }).notNull(),
+    // KYC documents (R2 keys)
+    photoKey: varchar({ length: 512 }),
+    nidFrontPhotoKey: varchar({ length: 512 }),
+    nidBackPhotoKey: varchar({ length: 512 }),
+    signatureKey: varchar({ length: 512 }),
+    // Guarantor
+    guarantorName: varchar({ length: 255 }),
+    guarantorPhone: varchar({ length: 255 }),
+    guarantorAddress: text(),
+    guarantorNidFrontPhotoKey: varchar({ length: 512 }),
+    guarantorNidBackPhotoKey: varchar({ length: 512 }),
+    // Status + review
+    status: installmentAppStatusEnum().default("pending").notNull(),
+    rejectReason: text(),
+    notes: text(),
+    adminNotes: text(),
+    /** If approved, link to the created plan */
+    planId: uuid().references(() => installmentPlans.id),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp({ withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("installment_app_code_idx").on(table.applicationCode),
+    index("installment_app_customer_idx").on(table.customerId),
+    index("installment_app_status_idx").on(table.status),
+  ],
+);
+
+export const installmentApplicationsRelations = relations(
+  installmentApplications,
+  ({ one }) => ({
+    customer: one(customers, {
+      fields: [installmentApplications.customerId],
+      references: [customers.customerId],
+    }),
+    plan: one(installmentPlans, {
+      fields: [installmentApplications.planId],
+      references: [installmentPlans.id],
+    }),
+  }),
+);

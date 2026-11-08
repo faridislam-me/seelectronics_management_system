@@ -1433,3 +1433,127 @@ export const devicePushTokens = pgTable(
   },
   (table) => [index("device_push_user_idx").on(table.role, table.userId)],
 );
+
+// ============================================================
+// Installment (কিস্তি) module — Phase 1: admin-managed plans + schedule
+// ============================================================
+
+export const installmentPlanStatusEnum = pgEnum("installmentPlanStatus", [
+  "active",
+  "completed",
+  "defaulted",
+  "banned",
+  "cancelled",
+]);
+
+export const installmentDueStatusEnum = pgEnum("installmentDueStatus", [
+  "pending",
+  "paid",
+  "overdue",
+]);
+
+export const installmentPlans = pgTable(
+  "installment_plans",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    /** Human-friendly code printed on paperwork, e.g. KST-AB12CD */
+    planCode: varchar({ length: 255 }).unique().notNull(),
+    customerId: varchar({ length: 255 })
+      .references(() => customers.customerId, { onDelete: "cascade" })
+      .notNull(),
+    /** Contact snapshot at creation (customers can be merged/renamed later) */
+    customerName: varchar({ length: 255 }).notNull(),
+    customerPhone: varchar({ length: 255 }).notNull(),
+    customerAddress: text(),
+    // Item sold on installment
+    productType: productTypeEnum(),
+    productModel: varchar({ length: 255 }).notNull(),
+    serialNumber: varchar({ length: 255 }),
+    productImageKey: varchar({ length: 255 }),
+    // Money — all admin-entered; financedAmount & monthlyAmount are derived
+    cashPrice: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
+    extraCharge: numeric({ precision: 12, scale: 2, mode: "number" })
+      .default(0)
+      .notNull(),
+    totalPayable: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
+    downPayment: numeric({ precision: 12, scale: 2, mode: "number" })
+      .default(0)
+      .notNull(),
+    financedAmount: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
+    months: integer().notNull(),
+    monthlyAmount: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
+    // Schedule window
+    startDate: timestamp({ withTimezone: true }).notNull(),
+    endDate: timestamp({ withTimezone: true }).notNull(),
+    status: installmentPlanStatusEnum().default("active").notNull(),
+    // Guarantor (জামিনদার) — basic fields; full KYC/doc uploads come with the apply form
+    guarantorName: varchar({ length: 255 }),
+    guarantorPhone: varchar({ length: 255 }),
+    guarantorAddress: text(),
+    notes: text(),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp({ withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("installment_plan_code_idx").on(table.planCode),
+    index("installment_plan_customer_idx").on(table.customerId),
+    index("installment_plan_status_idx").on(table.status),
+  ],
+);
+
+export const installmentSchedule = pgTable(
+  "installment_schedule",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    planId: uuid()
+      .references(() => installmentPlans.id, { onDelete: "cascade" })
+      .notNull(),
+    /** 1-based position within the plan */
+    installmentNo: integer().notNull(),
+    dueDate: timestamp({ withTimezone: true }).notNull(),
+    amount: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
+    status: installmentDueStatusEnum().default("pending").notNull(),
+    paidAmount: numeric({ precision: 12, scale: 2, mode: "number" })
+      .default(0)
+      .notNull(),
+    paidAt: timestamp({ withTimezone: true }),
+    paymentMethod: paymentTypesEnum(),
+    transactionId: varchar({ length: 255 }),
+    /** Set when a due reminder (SMS/voice) was sent, so a cron never double-sends */
+    remindedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp({ withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("installment_schedule_plan_idx").on(table.planId),
+    index("installment_schedule_due_idx").on(table.dueDate),
+    index("installment_schedule_status_idx").on(table.status),
+  ],
+);
+
+export const installmentPlansRelations = relations(
+  installmentPlans,
+  ({ one, many }) => ({
+    customer: one(customers, {
+      fields: [installmentPlans.customerId],
+      references: [customers.customerId],
+    }),
+    schedule: many(installmentSchedule),
+  }),
+);
+
+export const installmentScheduleRelations = relations(
+  installmentSchedule,
+  ({ one }) => ({
+    plan: one(installmentPlans, {
+      fields: [installmentSchedule.planId],
+      references: [installmentPlans.id],
+    }),
+  }),
+);

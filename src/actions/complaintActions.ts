@@ -94,9 +94,23 @@ export async function submitComplaint(_prevState: any, formData: FormData) {
       link: `/complaints`,
     });
 
-    // 4. Send SMS to admin
+    // 4. Send SMS — admin alert + a confirmation to the customer who filed it.
+    // Previously only the admin was notified on submit; the customer got nothing.
+    // Sends are made resilient (a gateway hiccup must never fail the submission,
+    // since the complaint is already saved above).
     const adminSMS = `New Complaint Alert!\nID: ${complaintId}\nCustomer: ${customer?.name}\nStaff: ${staff?.name}\nSubject: ${validated.subject}\nCheck dashboard for details.`;
-    await sendSMS(contactDetails.sms, adminSMS);
+    const smsJobs: Promise<unknown>[] = [
+      sendSMS(contactDetails.sms, adminSMS).catch((e) => console.error("admin complaint SMS failed:", e)),
+    ];
+    if (customer?.phone) {
+      smsJobs.push(
+        sendSMS(
+          toAsciiDigits(customer.phone),
+          `SE Electronics: আপনার অভিযোগ (${complaintId}) আমরা পেয়েছি। যাচাই-বাছাই করে শীঘ্রই প্রয়োজনীয় ব্যবস্থা নেওয়া হবে। অ্যাপে বিস্তারিত দেখুন।`,
+        ).catch((e) => console.error("customer complaint SMS failed:", e)),
+      );
+    }
+    await Promise.all(smsJobs);
 
     revalidatePath("/customer/profile");
     revalidatePath("/customer/complain/history");

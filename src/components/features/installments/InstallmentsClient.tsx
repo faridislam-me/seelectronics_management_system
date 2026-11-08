@@ -2,7 +2,7 @@
 
 import { getInstallmentPlans } from "@/actions/installmentActions";
 import clsx from "clsx";
-import { CreditCard, Loader2, Plus, Search } from "lucide-react";
+import { ClipboardList, CreditCard, Loader2, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import CreateInstallmentModal from "./CreateInstallmentModal";
@@ -77,9 +77,14 @@ export default function InstallmentsClient({ initialPlans }: { initialPlans: Ins
             <p className="text-xs text-gray-500">মোট {plans.length} টি প্ল্যান</p>
           </div>
         </div>
-        <button onClick={() => setShowCreate(true)} className="__btn flex items-center gap-2">
-          <Plus size={18} strokeWidth={2.5} /> নতুন কিস্তি
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/installments/applications" className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-blue-200 bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100">
+            <ClipboardList size={15} /> আবেদন
+          </Link>
+          <button onClick={() => setShowCreate(true)} className="__btn flex items-center gap-2">
+            <Plus size={18} strokeWidth={2.5} /> নতুন কিস্তি
+          </button>
+        </div>
       </div>
 
       {/* Search + filter */}

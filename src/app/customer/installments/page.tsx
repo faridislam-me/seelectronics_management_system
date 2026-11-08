@@ -3,7 +3,7 @@ import { verifyCustomerSession } from "@/actions/customerActions";
 import { CustomerLayout } from "@/components/layout";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
-import { CheckCircle2, ChevronRight, CreditCard } from "lucide-react";
+import { CheckCircle2, ChevronRight, CreditCard, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -37,6 +37,19 @@ export default async function CustomerInstallmentsPage() {
             <span className="text-[11px] font-semibold text-[#5b6784]">আপনার চলমান ও সম্পন্ন কিস্তির তথ্য</span>
           </span>
         </div>
+
+        {/* Apply button */}
+        <Link
+          href="/customer/installments/apply"
+          className="rounded-md bg-[linear-gradient(105deg,#0a2f70,#1f7cf0)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(11,61,145,0.25)]"
+        >
+          <span className="size-11 rounded-md bg-white/15 border border-white/25 flex items-center justify-center shrink-0"><PlusCircle size={22} /></span>
+          <span className="flex flex-col leading-tight flex-1">
+            <span className="text-[14px] font-extrabold">কিস্তির আবেদন করুন</span>
+            <span className="text-[11px] font-semibold text-white/80">নতুন পণ্যের জন্য কিস্তির আবেদন জমা দিন</span>
+          </span>
+          <ChevronRight size={20} className="shrink-0 text-white/60" />
+        </Link>
 
         {plans.length === 0 ? (
           <div className="rounded-md bg-white border border-dashed border-[#c9d3e6] p-8 text-center flex flex-col items-center gap-2">

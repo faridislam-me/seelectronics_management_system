@@ -1627,3 +1627,61 @@ export const installmentApplicationsRelations = relations(
     }),
   }),
 );
+
+// ─── Mobile Recharge Requests (from referral balance) ─────────────────────
+
+export const mobileOperatorEnum = pgEnum("mobileOperator", [
+  "grameenphone",
+  "banglalink",
+  "robi",
+  "airtel",
+  "teletalk",
+]);
+
+export const rechargeStatusEnum = pgEnum("rechargeStatus", [
+  "pending",
+  "processing",
+  "completed",
+  "rejected",
+]);
+
+export const mobileRechargeRequests = pgTable(
+  "mobile_recharge_requests",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    requestCode: varchar({ length: 255 }).unique().notNull(),
+    customerId: varchar({ length: 255 })
+      .references(() => customers.customerId, { onDelete: "cascade" })
+      .notNull(),
+    customerName: varchar({ length: 255 }).notNull(),
+    customerPhone: varchar({ length: 255 }).notNull(),
+    /** The phone number to recharge (may differ from customer's own phone) */
+    rechargePhone: varchar({ length: 255 }).notNull(),
+    operator: mobileOperatorEnum().notNull(),
+    amount: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
+    status: rechargeStatusEnum().default("pending").notNull(),
+    rejectReason: text(),
+    adminNotes: text(),
+    processedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp({ withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("recharge_code_idx").on(table.requestCode),
+    index("recharge_customer_idx").on(table.customerId),
+    index("recharge_status_idx").on(table.status),
+  ],
+);
+
+export const mobileRechargeRequestsRelations = relations(
+  mobileRechargeRequests,
+  ({ one }) => ({
+    customer: one(customers, {
+      fields: [mobileRechargeRequests.customerId],
+      references: [customers.customerId],
+    }),
+  }),
+);

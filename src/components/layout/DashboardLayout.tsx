@@ -25,6 +25,7 @@ import {
   Wallet,
   Wrench,
   Zap,
+  Smartphone,
   Truck,
 } from "lucide-react";
 import Image from "next/image";
@@ -139,6 +140,12 @@ const links = [
     href: "/referral-payments",
     icon: ArrowUpRight,
     sectionTitle: "Referral Payment Requests",
+  },
+  {
+    name: "মোবাইল রিচার্জ",
+    href: "/recharge-requests",
+    icon: Smartphone,
+    sectionTitle: "Mobile Recharge Requests",
   },
   {
     name: "Payments",

@@ -1,6 +1,6 @@
 "use client";
 
-import { Banknote, Calendar, ChevronRight, ClipboardList, History, Package, Phone, User, Wallet } from "lucide-react";
+import { Banknote, Calendar, ChevronRight, ClipboardList, History, Package, Phone, Smartphone, User, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useReferral } from "./_components/ReferralProvider";
 
@@ -36,14 +36,18 @@ export default function CustomerReferralPage() {
       </section>
 
       {/* Actions */}
-      <div className="grid grid-cols-2 gap-2">
-        <Link href="/customer/referral/cash-out" className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-2.5 shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.98] transition-all">
-          <span className="size-11 rounded-full bg-[#e9f9ef] text-[#1a9c4b] flex items-center justify-center shrink-0"><Banknote size={22} /></span>
-          <span className="text-[15px] font-extrabold flex-1">ক্যাশ আউট</span><ChevronRight size={16} className="text-[#9aa4b8]" />
+      <div className="grid grid-cols-3 gap-2">
+        <Link href="/customer/referral/cash-out" className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.98] transition-all">
+          <span className="size-10 rounded-full bg-[#e9f9ef] text-[#1a9c4b] flex items-center justify-center shrink-0"><Banknote size={20} /></span>
+          <span className="text-[12.5px] font-extrabold">ক্যাশ আউট</span>
         </Link>
-        <Link href="/customer/referral/history" className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-2.5 shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.98] transition-all">
-          <span className="size-11 rounded-full bg-[#f3e9ff] text-[#8b3fe8] flex items-center justify-center shrink-0"><History size={22} /></span>
-          <span className="text-[15px] font-extrabold flex-1">ইতিহাস</span><ChevronRight size={16} className="text-[#9aa4b8]" />
+        <Link href="/customer/referral/recharge" className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.98] transition-all">
+          <span className="size-10 rounded-full bg-[#fff6e3] text-[#b8620b] flex items-center justify-center shrink-0"><Smartphone size={20} /></span>
+          <span className="text-[12.5px] font-extrabold">রিচার্জ</span>
+        </Link>
+        <Link href="/customer/referral/history" className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.98] transition-all">
+          <span className="size-10 rounded-full bg-[#f3e9ff] text-[#8b3fe8] flex items-center justify-center shrink-0"><History size={20} /></span>
+          <span className="text-[12.5px] font-extrabold">ইতিহাস</span>
         </Link>
       </div>
 

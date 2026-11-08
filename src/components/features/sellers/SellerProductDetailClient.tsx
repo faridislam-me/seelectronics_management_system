@@ -149,6 +149,7 @@ export default function SellerProductDetailClient({ product: p, siblings }: { pr
           <Row icon={ShieldCheck} label="ওয়ারেন্টি" value={noWarranty ? "নেই" : `${p.warrantyDurationMonths} মাস (${formatDate(p.warrantyStartDate)} থেকে)`} />
           {!noWarranty && <Row icon={p.warrantyActive ? Clock : XCircle} label={p.warrantyActive ? "শেষ হবে" : "শেষ হয়েছে"} value={formatDate(p.warrantyEnd)} tone={p.warrantyActive ? "green" : "red"} />}
           <Row icon={Hash} label="Invoice No" value={`#${p.invoiceNumber}`} />
+          <Row icon={Hash} label="সিরিয়াল নম্বর" value={p.serialNumber || "নেই"} />
           <Row icon={CreditCard} label="পেমেন্ট" value={<>{String(p.paymentType).toUpperCase()} · {p.invoiceDue > 0 ? <span className="text-[#c81f38]">বাকি ৳{p.invoiceDue.toLocaleString()}</span> : <span className="text-[#178a42]">পরিশোধিত</span>}</>} />
         </div>
         <a href={`/pdf/download?type=invoice&id=${p.invoiceNumber}`} target="_blank" className="mt-1 h-11 rounded-md bg-[#0b3d91] text-white text-[13px] font-extrabold tracking-wide inline-flex items-center justify-between px-3 shadow-[0_6px_14px_rgba(11,61,145,0.3)]">

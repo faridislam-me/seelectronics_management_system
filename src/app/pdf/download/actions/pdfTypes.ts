@@ -207,6 +207,56 @@ export interface StaffNotGuiltyTemplateData {
   officerDesignation?: string;
 }
 
+export interface InstallmentScheduleRow {
+  installmentNo: number;
+  dueDate: Date;
+  amount: number;
+  status: string;
+  paidAmount: number;
+  paidAt: Date | null;
+  paymentMethod: string | null;
+}
+
+export interface InstallmentInvoiceTemplateData {
+  bgImage: string;
+  planCode: string;
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string | null;
+  customerId: string;
+  productType: string | null;
+  productModel: string;
+  serialNumber: string | null;
+  cashPrice: number;
+  extraCharge: number;
+  totalPayable: number;
+  downPayment: number;
+  financedAmount: number;
+  months: number;
+  monthlyAmount: number;
+  startDate: Date;
+  endDate: Date;
+  status: string;
+  guarantorName: string | null;
+  guarantorPhone: string | null;
+  notes: string | null;
+  schedule: InstallmentScheduleRow[];
+  paidTotal: number;
+  remainingTotal: number;
+  paidCount: number;
+}
+
+export interface InstallmentStickerTemplateData {
+  planCode: string;
+  productModel: string;
+  productType: string | null;
+  serialNumber: string | null;
+  customerName: string;
+  monthlyAmount: number;
+  months: number;
+  qrcode: string;
+}
+
 export interface PunishmentTemplateData {
   orderNumber?: string;
   customerName: string;

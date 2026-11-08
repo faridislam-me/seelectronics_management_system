@@ -31,7 +31,9 @@ export type DocType =
   | "staff-not-guilty"
   | "seller-invoice"
   | "seller-certificate"
-  | "seller-payment";
+  | "seller-payment"
+  | "installment-invoice"
+  | "installment-sticker";
 
 export type CertificateData = {
   staffId?: string;

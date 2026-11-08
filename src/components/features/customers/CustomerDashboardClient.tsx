@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   Banknote,
   Boxes,
+  CreditCard,
   Crown,
   FileText,
   Loader2,
@@ -88,6 +89,13 @@ export default function CustomerDashboardClient({
       href: "/customer/invoice",
       color: "text-purple-500",
       bg: "bg-purple-50",
+    },
+    {
+      label: "কিস্তি",
+      icon: CreditCard,
+      href: "/customer/installments",
+      color: "text-blue-600",
+      bg: "bg-blue-50",
     },
     {
       label: "Warranty",

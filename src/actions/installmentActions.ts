@@ -6,6 +6,7 @@ import {
   installmentPlans,
   installmentSchedule,
 } from "@/db/schema";
+import { verifyCustomerSession } from "@/actions/customerActions";
 import { verifySession } from "@/lib";
 import { generateRandomId } from "@/utils";
 import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
@@ -322,5 +323,103 @@ export const updateInstallmentPlanStatus = async (
   } catch (error) {
     console.error("updateInstallmentPlanStatus error:", error);
     return { success: false, message: "আপডেট করা যায়নি" };
+  }
+};
+
+// ============================================================
+// Customer-facing (read-only, scoped to the logged-in customer)
+// ============================================================
+
+const planProgress = (
+  financedAmount: number,
+  months: number,
+  rows: { status: string; paidAmount: number }[],
+) => {
+  const paid = rows.filter((r) => r.status === "paid");
+  const paidAmount = round2(paid.reduce((s, r) => s + r.paidAmount, 0));
+  return {
+    paidCount: paid.length,
+    paidAmount,
+    remainingAmount: round2(financedAmount - paidAmount),
+    remainingCount: months - paid.length,
+  };
+};
+
+export const getMyInstallmentPlans = async () => {
+  try {
+    const session = await verifyCustomerSession();
+    if (!session.isAuth || !session.customer) return UNAUTHORIZED;
+
+    const plans = await db
+      .select()
+      .from(installmentPlans)
+      .where(eq(installmentPlans.customerId, session.customer.customerId))
+      .orderBy(desc(installmentPlans.createdAt));
+
+    const ids = plans.map((p) => p.id);
+    const rows =
+      ids.length > 0
+        ? await db
+            .select({
+              planId: installmentSchedule.planId,
+              status: installmentSchedule.status,
+              paidAmount: installmentSchedule.paidAmount,
+            })
+            .from(installmentSchedule)
+            .where(inArray(installmentSchedule.planId, ids))
+        : [];
+    const byPlan = new Map<string, { status: string; paidAmount: number }[]>();
+    for (const r of rows) {
+      const arr = byPlan.get(r.planId) || [];
+      arr.push({ status: r.status, paidAmount: r.paidAmount });
+      byPlan.set(r.planId, arr);
+    }
+
+    const data = plans.map((p) => ({
+      ...p,
+      ...planProgress(p.financedAmount, p.months, byPlan.get(p.id) || []),
+    }));
+
+    return { success: true, data };
+  } catch (error) {
+    console.error("getMyInstallmentPlans error:", error);
+    return { success: false, message: "কিস্তি তথ্য আনা যায়নি" };
+  }
+};
+
+export const getMyInstallmentPlanByCode = async (code: string) => {
+  try {
+    const session = await verifyCustomerSession();
+    if (!session.isAuth || !session.customer) return UNAUTHORIZED;
+
+    const plan = await db.query.installmentPlans.findFirst({
+      where: eq(installmentPlans.planCode, code),
+    });
+    // Never leak another customer's plan.
+    if (!plan || plan.customerId !== session.customer.customerId) {
+      return { success: false, message: "প্ল্যান পাওয়া যায়নি" };
+    }
+
+    const schedule = await db
+      .select()
+      .from(installmentSchedule)
+      .where(eq(installmentSchedule.planId, plan.id))
+      .orderBy(installmentSchedule.installmentNo);
+
+    // Next unpaid due (for the "Pay Now" call-to-action)
+    const nextDue = schedule.find((s) => s.status !== "paid") || null;
+
+    return {
+      success: true,
+      data: {
+        plan,
+        schedule,
+        nextDue,
+        ...planProgress(plan.financedAmount, plan.months, schedule),
+      },
+    };
+  } catch (error) {
+    console.error("getMyInstallmentPlanByCode error:", error);
+    return { success: false, message: "প্ল্যান আনা যায়নি" };
   }
 };

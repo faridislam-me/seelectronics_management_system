@@ -64,6 +64,12 @@ const links = [
     sectionTitle: "Invoice",
   },
   {
+    name: "কিস্তি (Installments)",
+    href: "/installments",
+    icon: CreditCard,
+    sectionTitle: "Installments",
+  },
+  {
     name: "Service List",
     href: "/services/repairs",
     icon: Wrench,

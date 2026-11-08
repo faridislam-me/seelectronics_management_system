@@ -1,0 +1,1 @@
+ALTER TYPE "public"."reportStatus" ADD VALUE 'customer_absent';

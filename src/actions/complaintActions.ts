@@ -202,7 +202,7 @@ export async function getAllComplaints() {
 
 export async function updateComplaintStatus(
   complaintId: string,
-  newStatus: "under_trial" | "processing" | "hearing" | "completed",
+  newStatus: "under_trial" | "processing" | "hearing" | "completed" | "customer_absent",
   adminNote?: string,
   customerNote?: string,
   extraData?: {
@@ -374,12 +374,18 @@ const PUNISHMENT_BN: Record<string, string> = {
   not_guilty: "দোষী সাব্যস্ত হননি",
 };
 
+// Voice broadcast ids (MRAM) for complaint stages. Hardcoded (like the warranty
+// recordings) so they work without touching Vercel env. Client-provided.
+const COMPLAINT_VOICE_RESOLVED_CUSTOMER = 3786; // নিষ্পত্তি → customer
+const COMPLAINT_VOICE_ABSENT_CUSTOMER = 3787; // গ্রাহক উপস্থিত ছিলেন না → customer
+
 async function notifyComplaintStatusSMS(
   complaintId: string,
-  newStatus: "under_trial" | "processing" | "hearing" | "completed",
+  newStatus: "under_trial" | "processing" | "hearing" | "completed" | "customer_absent",
   officer?: { name: string; phone: string; designation: string },
 ) {
   const { sendSMS } = await import("@/lib");
+  const { sendVoiceCall } = await import("@/lib/mram");
   const c = await db.query.staffComplaints.findFirst({
     where: (t, { eq }) => eq(t.complaintId, complaintId),
     with: {
@@ -394,6 +400,9 @@ async function notifyComplaintStatusSMS(
   const sends: Promise<unknown>[] = [];
   const send = (phone: string | null | undefined, msg: string) => {
     if (phone) sends.push(sendSMS(toAsciiDigits(phone), msg).catch((e) => console.error("SMS error:", e)));
+  };
+  const voice = (phone: string | null | undefined, broadcastId: number, title: string) => {
+    if (phone) sends.push(sendVoiceCall(toAsciiDigits(phone), broadcastId, title).catch((e) => console.error("voice error:", e)));
   };
 
   if (newStatus === "processing") {
@@ -411,6 +420,10 @@ async function notifyComplaintStatusSMS(
     const p = c.punishmentType ? PUNISHMENT_BN[c.punishmentType] || c.punishmentType : "";
     send(customerPhone, `SE Electronics: আপনার অভিযোগ (${complaintId}) নিষ্পত্তি হয়েছে।${p ? ` গৃহীত ব্যবস্থা: ${p}।` : ""} অ্যাপে বিস্তারিত দেখুন।`);
     send(staffPhone, `SE Electronics: অভিযোগ ${complaintId} নিষ্পত্তি হয়েছে।${p ? ` সিদ্ধান্ত: ${p}।` : ""} অ্যাপে বিস্তারিত দেখুন।`);
+    voice(customerPhone, COMPLAINT_VOICE_RESOLVED_CUSTOMER, "Complaint Resolved");
+  } else if (newStatus === "customer_absent") {
+    send(customerPhone, `SE Electronics: আপনার অভিযোগ (${complaintId}) যাচাইয়ের সময় আপনাকে উপস্থিত/যোগাযোগযোগ্য পাওয়া যায়নি। অনুগ্রহ করে দ্রুত যোগাযোগ করুন — 09649355555।`);
+    voice(customerPhone, COMPLAINT_VOICE_ABSENT_CUSTOMER, "Complaint Customer Absent");
   } else if (newStatus === "under_trial") {
     send(customerPhone, `SE Electronics: আপনার অভিযোগ (${complaintId}) বিচারাধীন রয়েছে।`);
   }

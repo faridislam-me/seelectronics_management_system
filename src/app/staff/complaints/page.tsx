@@ -13,12 +13,14 @@ const statusLabel: Record<string, string> = {
   under_trial: "বিচারাধীন",
   processing: "প্রক্রিয়াধীন",
   hearing: "শুনানি",
+  customer_absent: "গ্রাহক উপস্থিত ছিলেন না",
 };
 
 const statusTone = (status: string) => {
   switch (status) {
     case "pending": return { chip: "bg-[#ffe9ec] text-[#c81f38] border-[#f7c3ca]", icon: Clock, tile: "bg-[#ffe9ec] text-[#c81f38]" };
     case "completed": return { chip: "bg-[#e9f9ef] text-[#178a42] border-[#bfe8cd]", icon: CheckCircle, tile: "bg-[#e9f9ef] text-[#178a42]" };
+    case "customer_absent": return { chip: "bg-[#fff0e3] text-[#b8560b] border-[#f5cfa0]", icon: FileText, tile: "bg-[#fff0e3] text-[#b8560b]" };
     case "under_trial":
     case "processing":
     case "hearing": return { chip: "bg-[#fff6e3] text-[#b8620b] border-[#f5dfa0]", icon: Gavel, tile: "bg-[#fff6e3] text-[#b8620b]" };

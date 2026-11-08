@@ -8,7 +8,10 @@ import { CheckCircle, ChevronRight, ClipboardList, FileText, Home, PlusCircle } 
 import Link from "next/link";
 
 const statusChip = (s: string) =>
-  s === "completed" ? "bg-[#e9f9ef] text-[#178a42] border-[#bfe8cd]" : s === "hearing" ? "bg-[#fff6e3] text-[#b8620b] border-[#f5dfa0]" : "bg-[#e8f1ff] text-[#1b6fd6] border-[#cfe0fb]";
+  s === "completed" ? "bg-[#e9f9ef] text-[#178a42] border-[#bfe8cd]" : s === "hearing" ? "bg-[#fff6e3] text-[#b8620b] border-[#f5dfa0]" : s === "customer_absent" ? "bg-[#fff0e3] text-[#b8560b] border-[#f5cfa0]" : "bg-[#e8f1ff] text-[#1b6fd6] border-[#cfe0fb]";
+
+// Only the new customer_absent status needs a Bangla label here; the rest keep their existing display.
+const dispStatus = (s: string) => (s === "customer_absent" ? "গ্রাহক উপস্থিত ছিলেন না" : s.replace("_", " "));
 
 export default async function ComplainDashboardPage() {
   const session = await verifyCustomerSession();
@@ -82,7 +85,7 @@ export default async function ComplainDashboardPage() {
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="flex items-center gap-1.5">
                   <span className="text-[11.5px] font-extrabold text-[#8a4a05] bg-[#fff6e3] border border-[#f5dfa0] px-2 py-1 rounded-md">আবেদনের অবস্থা</span>
-                  <span className={clsx("text-[11.5px] font-extrabold px-2 py-1 rounded-md border capitalize", statusChip(st!))}>{st!.replace("_", " ")}</span>
+                  <span className={clsx("text-[11.5px] font-extrabold px-2 py-1 rounded-md border capitalize", statusChip(st!))}>{dispStatus(st!)}</span>
                 </span>
                 <Link href={`/customer/complain/doc/${last.complaintId}`} className="inline-flex items-center gap-1 h-9 px-3 rounded-md bg-[#0b3d91] text-white text-[12.5px] font-extrabold">বিস্তারিত দেখুন<ChevronRight size={14} /></Link>
               </div>
@@ -102,7 +105,7 @@ export default async function ComplainDashboardPage() {
                 <Link key={c.complaintId} href={`/customer/complain/doc/${c.complaintId}`} className="grid grid-cols-[1fr_auto_auto] items-center gap-x-3 rounded-md bg-[#f5f7fb] px-2.5 py-2">
                   <span className="text-[13px] font-extrabold truncate">{c.staff?.name}</span>
                   <span className="text-[11.5px] font-semibold text-[#5b6784]">{formatDate(c.createdAt)}</span>
-                  <span className={clsx("text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase border", statusChip(c.status))}>{c.status.replace("_", " ")}</span>
+                  <span className={clsx("text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase border", statusChip(c.status))}>{dispStatus(c.status)}</span>
                 </Link>
               ))}
             </>

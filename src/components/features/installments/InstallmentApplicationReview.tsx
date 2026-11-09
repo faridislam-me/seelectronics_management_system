@@ -13,6 +13,7 @@ import {
   CreditCard,
   Home,
   Loader2,
+  RefreshCw,
   ShieldCheck,
   User,
 } from "lucide-react";
@@ -33,17 +34,20 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
   under_review: { label: "পর্যালোচনায়", cls: "bg-blue-50 text-blue-700 border-blue-200" },
   approved: { label: "অনুমোদিত", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
   rejected: { label: "প্রত্যাখ্যাত", cls: "bg-red-50 text-red-700 border-red-200" },
+  cancelled: { label: "বাতিল", cls: "bg-gray-100 text-gray-700 border-gray-300" },
+  reapply: { label: "পুনরায় আবেদন", cls: "bg-orange-50 text-orange-700 border-orange-200" },
 };
 
-function ImgCard({ src, label }: { src: string | null; label: string }) {
+function ImgCard({ src, label, aspect = "nid" }: { src: string | null; label: string; aspect?: "passport" | "nid" | "signature" }) {
   const [open, setOpen] = useState(false);
   if (!src) return null;
+  const h = aspect === "passport" ? "h-40" : aspect === "signature" ? "h-24" : "h-28";
   return (
     <>
-      <button onClick={() => setOpen(true)} className="rounded-lg border border-gray-200 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+      <button onClick={() => setOpen(true)} className="rounded-lg border border-gray-200 overflow-hidden flex flex-col hover:shadow-md transition-shadow bg-gray-50">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={label} className="w-full h-32 object-cover bg-gray-50" />
-        <span className="text-[11px] font-bold text-gray-500 px-2 py-1.5">{label}</span>
+        <img src={src} alt={label} className={clsx("w-full object-cover", h)} />
+        <span className="text-[11px] font-bold text-gray-600 px-2 py-1.5 text-center w-full bg-white border-t border-gray-100">{label}</span>
       </button>
       {open && (
         <Modal isVisible title={label} onClose={() => setOpen(false)}>
@@ -71,7 +75,7 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
   const router = useRouter();
   const sm = STATUS_META[data.status] || STATUS_META.pending;
   const urls = data.urls || {};
-  const isPending = data.status === "pending" || data.status === "under_review";
+  const isPending = data.status === "pending" || data.status === "under_review" || data.status === "reapply";
 
   // Approve form state
   const [showApprove, setShowApprove] = useState(false);
@@ -163,6 +167,21 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
     }
   };
 
+  const handleStatusAction = async (action: "cancel" | "reapply") => {
+    const msg = action === "cancel" ? "আবেদন বাতিল করতে চান?" : "পুনরায় আবেদনের সুযোগ দিতে চান?";
+    if (!confirm(msg)) return;
+    setSaving(true);
+    const res = await reviewInstallmentApplication(data.applicationCode, action);
+    setSaving(false);
+    if (res.success) {
+      toast.success(res.message);
+      router.push("/installments/applications");
+      router.refresh();
+    } else {
+      toast.error(res.message || "ত্রুটি হয়েছে");
+    }
+  };
+
   const Field = ({ label, value }: { label: string; value: string | null | undefined }) =>
     value ? (
       <p className="text-sm text-gray-600">
@@ -185,12 +204,18 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
           </div>
         </div>
         {isPending && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button onClick={() => setShowApprove(true)} className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100">
               <CheckCircle2 size={15} /> অনুমোদন
             </button>
             <button onClick={() => setShowReject(true)} className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-red-200 bg-red-50 text-red-700 text-xs font-bold hover:bg-red-100">
               <Ban size={15} /> প্রত্যাখ্যান
+            </button>
+            <button onClick={() => handleStatusAction("cancel")} disabled={saving} className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-gray-300 bg-gray-50 text-gray-700 text-xs font-bold hover:bg-gray-100">
+              <Ban size={15} /> বাতিল
+            </button>
+            <button onClick={() => handleStatusAction("reapply")} disabled={saving} className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-orange-200 bg-orange-50 text-orange-700 text-xs font-bold hover:bg-orange-100">
+              <RefreshCw size={15} /> পুনরায় আবেদন
             </button>
           </div>
         )}
@@ -268,12 +293,12 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
       {/* KYC images */}
       <div className="rounded-lg bg-white border border-gray-200 p-3.5">
         <p className="flex items-center gap-2 text-sm font-black text-gray-900 mb-3"><Camera size={16} className="text-[#0b3d91]" /> আবেদনকারীর ডকুমেন্ট</p>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
-          <ImgCard src={urls.photo} label="ছবি" />
-          <ImgCard src={urls.nidFront} label="NID সামনে" />
-          <ImgCard src={urls.nidBack} label="NID পিছনে" />
-          <ImgCard src={urls.signature} label="স্বাক্ষর" />
-          <ImgCard src={urls.bankCheck} label="ব্যাংক চেক" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+          <ImgCard src={urls.photo} label="ছবি" aspect="passport" />
+          <ImgCard src={urls.nidFront} label="NID সামনে" aspect="nid" />
+          <ImgCard src={urls.nidBack} label="NID পিছনে" aspect="nid" />
+          <ImgCard src={urls.signature} label="স্বাক্ষর" aspect="signature" />
+          <ImgCard src={urls.bankCheck} label="ব্যাংক চেক" aspect="nid" />
         </div>
       </div>
 
@@ -281,11 +306,11 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
       {(urls.guarantorPhoto || urls.guarantorSignature || urls.guarantorNidFront || urls.guarantorNidBack) && (
         <div className="rounded-lg bg-white border border-gray-200 p-3.5">
           <p className="flex items-center gap-2 text-sm font-black text-gray-900 mb-3"><ShieldCheck size={16} className="text-[#0b3d91]" /> জামিনদারের ডকুমেন্ট</p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
-            <ImgCard src={urls.guarantorPhoto} label="জামিনদার ছবি" />
-            <ImgCard src={urls.guarantorSignature} label="জামিনদার স্বাক্ষর" />
-            <ImgCard src={urls.guarantorNidFront} label="জামিনদার NID সামনে" />
-            <ImgCard src={urls.guarantorNidBack} label="জামিনদার NID পিছনে" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <ImgCard src={urls.guarantorPhoto} label="জামিনদার ছবি" aspect="passport" />
+            <ImgCard src={urls.guarantorSignature} label="জামিনদার স্বাক্ষর" aspect="signature" />
+            <ImgCard src={urls.guarantorNidFront} label="জামিনদার NID সামনে" aspect="nid" />
+            <ImgCard src={urls.guarantorNidBack} label="জামিনদার NID পিছনে" aspect="nid" />
           </div>
         </div>
       )}

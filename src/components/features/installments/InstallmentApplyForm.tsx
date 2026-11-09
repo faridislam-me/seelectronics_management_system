@@ -51,7 +51,7 @@ function FileInput({
   const ref = useRef<HTMLInputElement>(null);
   return (
     <div>
-      <label className="text-[11px] font-bold text-[#5b6784] mb-1 block">
+      <label className="text-[13px] font-bold text-[#3d4f72] mb-1 block">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       <input
@@ -75,8 +75,8 @@ function FileInput({
           <img src={preview} alt={label} className="h-20 rounded object-contain" />
         ) : (
           <>
-            <Upload size={20} className="text-[#5b6784]" />
-            <span className="text-[11px] font-semibold text-[#5b6784]">ছবি আপলোড করুন</span>
+            <Upload size={22} className="text-[#3d4f72]" />
+            <span className="text-[13px] font-semibold text-[#3d4f72]">ছবি আপলোড করুন</span>
           </>
         )}
       </button>
@@ -109,16 +109,16 @@ async function compressFileClient(file: File, maxW = 1200, quality = 0.7): Promi
 }
 
 const inputCls =
-  "w-full h-10 rounded-md border border-[#dfe6f2] px-3 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none";
+  "w-full h-11 rounded-md border border-[#dfe6f2] px-3 text-[14px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none text-[#16213a]";
 const textareaCls =
-  "w-full rounded-md border border-[#dfe6f2] px-3 py-2 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none resize-none";
-const labelCls = "text-[11px] font-bold text-[#5b6784] mb-1 block";
+  "w-full rounded-md border border-[#dfe6f2] px-3 py-2.5 text-[14px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none resize-none text-[#16213a]";
+const labelCls = "text-[13px] font-bold text-[#3d4f72] mb-1 block";
 
 function Section({ icon: Icon, title, children }: { icon: typeof CreditCard; title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
-      <p className="flex items-center gap-2 text-[13px] font-extrabold text-[#0b3d91]">
-        <Icon size={16} /> {title}
+    <div className="rounded-md bg-white border border-[#dfe6f2] p-3.5 flex flex-col gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+      <p className="flex items-center gap-2 text-[15px] font-extrabold text-[#0b3d91]">
+        <Icon size={18} /> {title}
       </p>
       {children}
     </div>
@@ -384,9 +384,9 @@ export default function InstallmentApplyForm() {
             type="checkbox"
             checked={termsAccepted}
             onChange={(e) => setTermsAccepted(e.target.checked)}
-            className="size-4 mt-0.5 shrink-0 rounded accent-[#0b3d91]"
+            className="size-5 mt-0.5 shrink-0 rounded accent-[#0b3d91]"
           />
-          <span className="text-[12px] font-semibold text-[#5b6784] leading-relaxed">
+          <span className="text-[14px] font-semibold text-[#3d4f72] leading-relaxed">
             আমি <a href="/customer/installments/terms" target="_blank" className="text-[#0b3d91] font-extrabold underline underline-offset-2" onClick={(e) => e.stopPropagation()}>SE Electronics-এর কিস্তির শর্তাবলী</a> পড়েছি এবং সম্মতি দিচ্ছি। <span className="text-red-500">*</span>
           </span>
         </label>
@@ -396,13 +396,13 @@ export default function InstallmentApplyForm() {
       <button
         onClick={handleSubmit}
         disabled={loading}
-        className="w-full h-11 rounded-md bg-[#0b3d91] text-white text-[14px] font-extrabold inline-flex items-center justify-center gap-2 shadow-[0_6px_18px_rgba(11,61,145,0.3)] disabled:opacity-60"
+        className="w-full h-12 rounded-md bg-[#0b3d91] text-white text-[15px] font-extrabold inline-flex items-center justify-center gap-2 shadow-[0_6px_18px_rgba(11,61,145,0.3)] disabled:opacity-60"
       >
         {loading ? <Loader2 className="size-5 animate-spin" /> : <CreditCard size={18} />}
         {loading ? "জমা হচ্ছে..." : "আবেদন জমা দিন"}
       </button>
 
-      <p className="text-[11px] text-center text-[#5b6784] px-4">
+      <p className="text-[12px] text-center text-[#3d4f72] px-4">
         আবেদন জমা দেওয়ার পর অ্যাডমিন পর্যালোচনা করে অনুমোদন দিবেন।
       </p>
     </div>

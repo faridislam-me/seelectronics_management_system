@@ -1576,6 +1576,8 @@ export const installmentAppStatusEnum = pgEnum("installmentAppStatus", [
   "under_review",
   "approved",
   "rejected",
+  "cancelled",
+  "reapply",
 ]);
 
 export const installmentApplications = pgTable(

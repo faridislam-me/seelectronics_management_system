@@ -4,6 +4,7 @@ import { ProfileLinkButton } from "@/components/features/staff";
 import { CopyButton } from "@/components/ui";
 import { SearchParams } from "@/types";
 import { formatDate } from "@/utils";
+import { Phone } from "lucide-react";
 import ServiceActionButtons from "./ServiceActionButtons";
 
 const STATUS_CONFIG: Record<string, { name: string; styles: string }> = {
@@ -178,8 +179,8 @@ export default async function ServiceList(
         </div>
         <SellerTag seller={(service as any).customer?.seller} />
       </td>
-      <td className="py-3 px-4 whitespace-nowrap text-gray-700 font-bold text-sm sm:text-base">
-        {service.customerPhone}
+      <td className="py-3 px-4 whitespace-nowrap text-sm sm:text-base font-bold">
+        <a href={`tel:${service.customerPhone}`} className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700"><Phone size={13} />{service.customerPhone}</a>
       </td>
       <td className="py-3 px-4 whitespace-nowrap">
         <p
@@ -222,8 +223,8 @@ export default async function ServiceList(
               )}
             </div>
           </td>
-          <td className="py-3 px-4 whitespace-nowrap text-gray-600 text-sm sm:text-sm font-bold">
-            {service.staffPhone || "--"}
+          <td className="py-3 px-4 whitespace-nowrap text-sm sm:text-sm font-bold">
+            {service.staffPhone ? <a href={`tel:${service.staffPhone}`} className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700"><Phone size={13} />{service.staffPhone}</a> : <span className="text-gray-400">--</span>}
           </td>
         </>
       )}

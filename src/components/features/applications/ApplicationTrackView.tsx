@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-type Status = "pending" | "processing" | "approved" | "rejected" | "expired";
+type Status = "pending" | "processing" | "approved" | "rejected" | "expired" | "cancelled" | "reapply";
 
 const typeConfig: Record<ApplicationTypes, { banner: string; sub: string; icon: LucideIcon; chip: string; steps: [string, string, string, string]; stepIcons: [LucideIcon, LucideIcon, LucideIcon, LucideIcon]; profileHref: string; noun: string }> = {
   seller_application: { banner: "Seller Tracking", sub: "আপনার সেলার আবেদনের বর্তমান অবস্থা", icon: Truck, chip: "SE Electronics Seller", steps: ["আবেদন জমা", "যাচাই প্রক্রিয়া", "ট্রেড লাইসেন্স", "সম্পূর্ণ"], stepIcons: [Send, Search, FileBadge, BadgeCheck], profileHref: "/seller/login", noun: "সেলার আবেদন" },
@@ -25,6 +25,8 @@ const statusMeta: Record<Status, { label: string; chip: string; title: (noun: st
   approved: { label: "APPROVED", chip: "bg-[#e8f1ff] text-[#0b3d91] border-[#9cc2f7]", title: (n) => `আপনার ${n} অনুমোদিত হয়েছে` },
   rejected: { label: "REJECTED", chip: "bg-[#ffe9ec] text-[#c81f38] border-[#f3a3ae]", title: (n) => `আপনার ${n} বাতিল হয়েছে` },
   expired: { label: "EXPIRED", chip: "bg-gray-100 text-gray-600 border-gray-300", title: (n) => `আপনার ${n} এর মেয়াদ শেষ` },
+  cancelled: { label: "CANCELLED", chip: "bg-gray-100 text-gray-700 border-gray-300", title: (n) => `আপনার ${n} বাতিল করা হয়েছে` },
+  reapply: { label: "REAPPLY", chip: "bg-orange-50 text-orange-700 border-orange-200", title: (n) => `আপনার ${n} পুনরায় আবেদন করুন` },
 };
 
 export type ApplicationTrackViewProps = {

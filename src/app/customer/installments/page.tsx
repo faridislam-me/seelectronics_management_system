@@ -77,7 +77,7 @@ export default async function CustomerInstallmentsPage() {
             <span className="text-[10px] font-bold text-white/60 uppercase">মোট পরিশোধ</span>
             <span className="text-[18px] font-extrabold leading-tight">{bdt(totalPaid)}</span>
             {totalRemaining > 0 && (
-              <span className="text-[11px] font-bold text-[#ff8a8a]">বাকি {bdt(totalRemaining)}</span>
+              <span className="text-[11px] font-bold text-white/90">বাকি {bdt(totalRemaining)}</span>
             )}
           </div>
         </div>
@@ -118,19 +118,24 @@ export default async function CustomerInstallmentsPage() {
 
         {/* Action grid */}
         <div className="grid grid-cols-3 gap-2">
-          <Link href="/customer/installments/apply" className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.98] transition-all">
+          <Link href="/customer/installments/apply" className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.97] active:shadow-none transition-all">
             <span className="size-10 rounded-full bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center shrink-0"><PlusCircle size={20} /></span>
             <span className="text-[12px] font-extrabold">কিস্তির আবেদন</span>
           </Link>
-          <Link href="#applications" className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.98] transition-all relative">
-            <span className="size-10 rounded-full bg-[#fff6e3] text-[#b8620b] flex items-center justify-center shrink-0"><ClipboardList size={20} /></span>
-            <span className="text-[12px] font-extrabold">আবেদন ট্র্যাক</span>
-            {pendingApps.length > 0 && (
+          {pendingApps.length > 0 ? (
+            <Link href={`/customer/installments/applications/${pendingApps[0].applicationCode}`} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.97] active:shadow-none transition-all relative">
+              <span className="size-10 rounded-full bg-[#fff6e3] text-[#b8620b] flex items-center justify-center shrink-0"><ClipboardList size={20} /></span>
+              <span className="text-[12px] font-extrabold">আবেদন ট্র্যাক</span>
               <span className="absolute top-1.5 right-1.5 size-5 rounded-full bg-[#c81f38] text-white text-[10px] font-extrabold flex items-center justify-center">{pendingApps.length}</span>
-            )}
-          </Link>
+            </Link>
+          ) : (
+            <div className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center opacity-50">
+              <span className="size-10 rounded-full bg-[#fff6e3] text-[#b8620b] flex items-center justify-center shrink-0"><ClipboardList size={20} /></span>
+              <span className="text-[12px] font-extrabold">আবেদন ট্র্যাক</span>
+            </div>
+          )}
           {firstPlanCode ? (
-            <Link href={`/customer/installments/${firstPlanCode}`} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.98] transition-all">
+            <Link href={`/customer/installments/${firstPlanCode}`} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.97] active:shadow-none transition-all">
               <span className="size-10 rounded-full bg-[#f3e9ff] text-[#8b3fe8] flex items-center justify-center shrink-0"><History size={20} /></span>
               <span className="text-[12px] font-extrabold">পেমেন্ট</span>
             </Link>
@@ -140,17 +145,33 @@ export default async function CustomerInstallmentsPage() {
               <span className="text-[12px] font-extrabold">পেমেন্ট</span>
             </div>
           )}
-          <div className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)]">
-            <span className="size-10 rounded-full bg-[#e9f9ef] text-[#1a9c4b] flex items-center justify-center shrink-0"><CreditCard size={20} /></span>
-            <span className="text-[12px] font-extrabold">চলমান কিস্তি</span>
-            <span className="text-[15px] font-extrabold text-[#1a9c4b] -mt-1">{activePlans.length}</span>
-          </div>
-          <div className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)]">
-            <span className="size-10 rounded-full bg-[#ffe9ec] text-[#c81f38] flex items-center justify-center shrink-0"><AlertTriangle size={20} /></span>
-            <span className="text-[12px] font-extrabold">বাকি কিস্তি</span>
-            <span className="text-[15px] font-extrabold text-[#c81f38] -mt-1">{overdueCount}</span>
-          </div>
-          <a href="tel:09649355555" className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.98] transition-all">
+          {primaryPlan ? (
+            <Link href={`/customer/installments/${primaryPlan.planCode}`} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.97] active:shadow-none transition-all">
+              <span className="size-10 rounded-full bg-[#e9f9ef] text-[#1a9c4b] flex items-center justify-center shrink-0"><CreditCard size={20} /></span>
+              <span className="text-[12px] font-extrabold">চলমান কিস্তি</span>
+              <span className="text-[15px] font-extrabold text-[#1a9c4b] -mt-1">{activePlans.length}</span>
+            </Link>
+          ) : (
+            <div className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center opacity-50">
+              <span className="size-10 rounded-full bg-[#e9f9ef] text-[#1a9c4b] flex items-center justify-center shrink-0"><CreditCard size={20} /></span>
+              <span className="text-[12px] font-extrabold">চলমান কিস্তি</span>
+              <span className="text-[15px] font-extrabold text-[#1a9c4b] -mt-1">{activePlans.length}</span>
+            </div>
+          )}
+          {primaryPlan ? (
+            <Link href={`/customer/installments/${primaryPlan.planCode}`} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.97] active:shadow-none transition-all">
+              <span className="size-10 rounded-full bg-[#ffe9ec] text-[#c81f38] flex items-center justify-center shrink-0"><AlertTriangle size={20} /></span>
+              <span className="text-[12px] font-extrabold">বাকি কিস্তি</span>
+              <span className="text-[15px] font-extrabold text-[#c81f38] -mt-1">{overdueCount}</span>
+            </Link>
+          ) : (
+            <div className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center opacity-50">
+              <span className="size-10 rounded-full bg-[#ffe9ec] text-[#c81f38] flex items-center justify-center shrink-0"><AlertTriangle size={20} /></span>
+              <span className="text-[12px] font-extrabold">বাকি কিস্তি</span>
+              <span className="text-[15px] font-extrabold text-[#c81f38] -mt-1">{overdueCount}</span>
+            </div>
+          )}
+          <a href="tel:09649355555" className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.97] active:shadow-none transition-all">
             <span className="size-10 rounded-full bg-[#e0f7f5] text-[#0e8a7d] flex items-center justify-center shrink-0"><Phone size={20} /></span>
             <span className="text-[12px] font-extrabold">যোগাযোগ</span>
           </a>
@@ -231,7 +252,7 @@ export default async function CustomerInstallmentsPage() {
         )}
 
         <p className="text-[11px] text-center text-[#5b6784] px-4">
-          কিস্তি সংক্রান্ত তথ্যের জন্য যোগাযোগ করুন — 09649355555
+          কিস্তি সংক্রান্ত তথ্যের জন্য যোগাযোগ করুন — <a href="tel:09649355555" className="font-bold text-[#1f5fc9]">09649355555</a>
         </p>
       </div>
     </CustomerLayout>

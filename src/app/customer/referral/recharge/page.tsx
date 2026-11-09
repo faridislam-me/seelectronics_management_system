@@ -3,12 +3,26 @@
 import { requestMobileRecharge, getMyRechargeRequests } from "@/actions/rechargeActions";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
-import { ArrowLeft, CheckCircle2, Clock, Loader2, Smartphone, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock, Gift, Globe, Loader2, Package, Smartphone, XCircle, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useReferral } from "../_components/ReferralProvider";
+
+const RECHARGE_TYPES = [
+  { value: "recharge", label: "রিচার্জ", icon: Smartphone, color: "bg-[#0b3d91]" },
+  { value: "regular_pack", label: "রেগুলার প্যাক", icon: Gift, color: "bg-[#e84393]" },
+  { value: "drive_pack", label: "ড্রাইভ প্যাক", icon: Package, color: "bg-[#00b894]" },
+  { value: "drive_offer", label: "ড্রাইভ অফার", icon: Zap, color: "bg-[#f39c12]" },
+];
+
+const RECHARGE_TYPE_LABELS: Record<string, string> = {
+  recharge: "রিচার্জ",
+  regular_pack: "রেগুলার প্যাক",
+  drive_pack: "ড্রাইভ প্যাক",
+  drive_offer: "ড্রাইভ অফার",
+};
 
 const OPERATORS = [
   { value: "grameenphone", label: "Grameenphone", color: "text-[#00a550]" },
@@ -30,6 +44,7 @@ export default function MobileRechargePage() {
   const { data } = useReferral();
   const balance = Number(data.balance || 0);
 
+  const [rechargeType, setRechargeType] = useState("recharge");
   const [rechargePhone, setRechargePhone] = useState("");
   const [operator, setOperator] = useState("");
   const [amount, setAmount] = useState("");
@@ -54,6 +69,7 @@ export default function MobileRechargePage() {
       rechargePhone: rechargePhone.trim(),
       operator,
       amount: amt,
+      rechargeType,
     });
     setLoading(false);
 
@@ -63,13 +79,14 @@ export default function MobileRechargePage() {
       setOperator("");
       setAmount("");
       router.refresh();
-      // Refresh list
       const updated = await getMyRechargeRequests();
       if (updated.success && Array.isArray(updated.data)) setRequests(updated.data);
     } else {
       toast.error(res.message);
     }
   };
+
+  const selectedType = RECHARGE_TYPES.find((t) => t.value === rechargeType) || RECHARGE_TYPES[0];
 
   return (
     <>
@@ -91,8 +108,40 @@ export default function MobileRechargePage() {
         </span>
       </div>
 
+      {/* Category grid */}
+      <div className="grid grid-cols-4 gap-2">
+        {RECHARGE_TYPES.map((rt) => {
+          const Icon = rt.icon;
+          const active = rechargeType === rt.value;
+          return (
+            <button
+              key={rt.value}
+              type="button"
+              onClick={() => setRechargeType(rt.value)}
+              className={clsx(
+                "flex flex-col items-center gap-1.5 p-2.5 rounded-lg border transition-all",
+                active
+                  ? "border-[#0b3d91] bg-[#e8f1ff] shadow-[0_4px_12px_rgba(11,61,145,0.15)]"
+                  : "border-[#dfe6f2] bg-white hover:bg-[#f5f7fb]",
+              )}
+            >
+              <span className={clsx("size-10 rounded-lg flex items-center justify-center text-white", rt.color)}>
+                <Icon size={20} />
+              </span>
+              <span className={clsx("text-[10.5px] font-extrabold leading-tight text-center", active ? "text-[#0b3d91]" : "text-[#5b6784]")}>
+                {rt.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Form */}
       <div className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+        <p className="flex items-center gap-2 text-[13px] font-extrabold text-[#0b3d91]">
+          <selectedType.icon size={16} /> {selectedType.label} অনুরোধ
+        </p>
+
         <div>
           <label className="text-[11px] font-bold text-[#5b6784] mb-1 block">রিচার্জ নম্বর *</label>
           <input
@@ -139,8 +188,8 @@ export default function MobileRechargePage() {
           disabled={loading}
           className="w-full h-11 rounded-md bg-[#0b3d91] text-white text-[14px] font-extrabold inline-flex items-center justify-center gap-2 shadow-[0_6px_18px_rgba(11,61,145,0.3)] disabled:opacity-60"
         >
-          {loading ? <Loader2 className="size-5 animate-spin" /> : <Smartphone size={18} />}
-          {loading ? "জমা হচ্ছে..." : "রিচার্জ অনুরোধ করুন"}
+          {loading ? <Loader2 className="size-5 animate-spin" /> : <selectedType.icon size={18} />}
+          {loading ? "জমা হচ্ছে..." : `${selectedType.label} অনুরোধ করুন`}
         </button>
       </div>
 
@@ -151,12 +200,13 @@ export default function MobileRechargePage() {
           {requests.map((r) => {
             const sm = STATUS_META[r.status] || STATUS_META.pending;
             const Icon = sm.icon;
+            const typeLabel = RECHARGE_TYPE_LABELS[r.rechargeType] || "রিচার্জ";
             return (
               <div key={r.id} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-3 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
                 <span className={clsx("size-10 rounded-full flex items-center justify-center shrink-0", sm.cls)}><Icon size={18} /></span>
                 <span className="flex flex-col min-w-0 flex-1 leading-tight">
                   <span className="text-[13px] font-extrabold">{r.rechargePhone} · {OPERATORS.find((o) => o.value === r.operator)?.label || r.operator}</span>
-                  <span className="text-[11px] font-semibold text-[#5b6784]">{formatDate(r.createdAt)} · {r.requestCode}</span>
+                  <span className="text-[11px] font-semibold text-[#5b6784]">{typeLabel} · {formatDate(r.createdAt)} · {r.requestCode}</span>
                 </span>
                 <span className="flex flex-col items-end shrink-0">
                   <span className="text-[14px] font-extrabold">৳{Number(r.amount).toLocaleString()}</span>

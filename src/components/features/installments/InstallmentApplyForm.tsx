@@ -1,18 +1,36 @@
 "use client";
 
 import { submitInstallmentApplication } from "@/actions/installmentActions";
-import { ArrowLeft, Camera, CreditCard, FileText, Loader2, Upload, User } from "lucide-react";
+import {
+  ArrowLeft,
+  Camera,
+  CheckSquare,
+  CreditCard,
+  FileText,
+  Home,
+  Loader2,
+  Upload,
+  User,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 const PRODUCT_TYPES = [
-  { value: "", label: "নির্বাচন করুন (ঐচ্ছিক)" },
-  { value: "ips", label: "IPS" },
-  { value: "battery", label: "Battery" },
-  { value: "stabilizer", label: "Stabilizer" },
-  { value: "others", label: "Others" },
+  { value: "", label: "নির্বাচন করুন *" },
+  { value: "fridge", label: "ফ্রিজ" },
+  { value: "ac", label: "এসি / এয়ারকন্ডিশন" },
+  { value: "tv", label: "টিভি" },
+  { value: "oven", label: "ওভেন" },
+  { value: "washing_machine", label: "ওয়াশিং মেশিন" },
+  { value: "mobile", label: "মোবাইল" },
+  { value: "ips", label: "আই পি এস" },
+  { value: "battery", label: "ব্যাটারি" },
+  { value: "ips_package", label: "আই পি এস প্যাকেজ" },
+  { value: "stabilizer", label: "স্ট্যাবিলাইজার" },
+  { value: "blender", label: "ব্লেন্ডার" },
+  { value: "others", label: "অন্যান্য" },
 ];
 
 function FileInput({
@@ -66,21 +84,51 @@ function FileInput({
   );
 }
 
+const inputCls =
+  "w-full h-10 rounded-md border border-[#dfe6f2] px-3 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none";
+const textareaCls =
+  "w-full rounded-md border border-[#dfe6f2] px-3 py-2 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none resize-none";
+const labelCls = "text-[11px] font-bold text-[#5b6784] mb-1 block";
+
 export default function InstallmentApplyForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [productModel, setProductModel] = useState("");
+
+  // Personal info
+  const [fatherName, setFatherName] = useState("");
+  const [motherName, setMotherName] = useState("");
+  const [currentAddress, setCurrentAddress] = useState("");
+  const [permanentAddress, setPermanentAddress] = useState("");
+  const [isRenting, setIsRenting] = useState(false);
+  const [landlordName, setLandlordName] = useState("");
+  const [landlordPhone, setLandlordPhone] = useState("");
+
+  // Product
   const [productType, setProductType] = useState("");
+  const [productTypeOther, setProductTypeOther] = useState("");
+  const [productModel, setProductModel] = useState("");
+  const [desiredMonths, setDesiredMonths] = useState("");
+  const [desiredDownPayment, setDesiredDownPayment] = useState("");
+
+  // Notes
   const [notes, setNotes] = useState("");
+
+  // Guarantor
   const [guarantorName, setGuarantorName] = useState("");
   const [guarantorPhone, setGuarantorPhone] = useState("");
   const [guarantorAddress, setGuarantorAddress] = useState("");
+
+  // Terms
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Files
   const [photo, setPhoto] = useState<File | null>(null);
   const [nidFront, setNidFront] = useState<File | null>(null);
   const [nidBack, setNidBack] = useState<File | null>(null);
   const [signature, setSignature] = useState<File | null>(null);
+  const [bankCheck, setBankCheck] = useState<File | null>(null);
+  const [gPhoto, setGPhoto] = useState<File | null>(null);
+  const [gSignature, setGSignature] = useState<File | null>(null);
   const [gNidFront, setGNidFront] = useState<File | null>(null);
   const [gNidBack, setGNidBack] = useState<File | null>(null);
 
@@ -88,6 +136,14 @@ export default function InstallmentApplyForm() {
   const preview = (f: File | null) => (f ? URL.createObjectURL(f) : null);
 
   const handleSubmit = async () => {
+    if (!productType) {
+      toast.error("পণ্যের ধরন নির্বাচন করুন");
+      return;
+    }
+    if (productType === "others" && !productTypeOther.trim()) {
+      toast.error("পণ্যের ধরন লিখুন");
+      return;
+    }
     if (!productModel.trim()) {
       toast.error("পণ্যের মডেল আবশ্যক");
       return;
@@ -96,21 +152,51 @@ export default function InstallmentApplyForm() {
       toast.error("ছবি, NID সামনে ও পিছনে আবশ্যক");
       return;
     }
+    if (!termsAccepted) {
+      toast.error("শর্তাবলীতে সম্মতি দিন");
+      return;
+    }
 
     setLoading(true);
     const fd = new FormData();
+
+    // Personal info
+    if (fatherName.trim()) fd.append("fatherName", fatherName.trim());
+    if (motherName.trim()) fd.append("motherName", motherName.trim());
+    if (currentAddress.trim()) fd.append("currentAddress", currentAddress.trim());
+    if (permanentAddress.trim()) fd.append("permanentAddress", permanentAddress.trim());
+    fd.append("isRenting", String(isRenting));
+    if (isRenting && landlordName.trim()) fd.append("landlordName", landlordName.trim());
+    if (isRenting && landlordPhone.trim()) fd.append("landlordPhone", landlordPhone.trim());
+
+    // Product
+    fd.append("productType", productType);
+    if (productType === "others" && productTypeOther.trim()) fd.append("productTypeOther", productTypeOther.trim());
     fd.append("productModel", productModel.trim());
-    if (productType) fd.append("productType", productType);
+    if (desiredMonths) fd.append("desiredMonths", desiredMonths);
+    if (desiredDownPayment) fd.append("desiredDownPayment", desiredDownPayment);
+
+    // Notes
     if (notes.trim()) fd.append("notes", notes.trim());
+
+    // KYC files
     fd.append("photo", photo);
     fd.append("nidFront", nidFront);
     fd.append("nidBack", nidBack);
     if (signature) fd.append("signature", signature);
+    if (bankCheck) fd.append("bankCheck", bankCheck);
+
+    // Guarantor
     if (guarantorName.trim()) fd.append("guarantorName", guarantorName.trim());
     if (guarantorPhone.trim()) fd.append("guarantorPhone", guarantorPhone.trim());
     if (guarantorAddress.trim()) fd.append("guarantorAddress", guarantorAddress.trim());
+    if (gPhoto) fd.append("guarantorPhoto", gPhoto);
+    if (gSignature) fd.append("guarantorSignature", gSignature);
     if (gNidFront) fd.append("guarantorNidFront", gNidFront);
     if (gNidBack) fd.append("guarantorNidBack", gNidBack);
+
+    // Terms
+    fd.append("termsAccepted", "true");
 
     const res = await submitInstallmentApplication(fd);
     setLoading(false);
@@ -146,30 +232,71 @@ export default function InstallmentApplyForm() {
         </span>
       </div>
 
-      {/* Product info */}
-      <Section icon={CreditCard} title="পণ্যের তথ্য">
+      {/* Personal info */}
+      <Section icon={User} title="ব্যক্তিগত তথ্য">
         <div>
-          <label className="text-[11px] font-bold text-[#5b6784] mb-1 block">
-            পণ্যের মডেল <span className="text-red-500">*</span>
-          </label>
-          <input
-            value={productModel}
-            onChange={(e) => setProductModel(e.target.value)}
-            placeholder="যেমন: Luminous Eco Volt 1050"
-            className="w-full h-10 rounded-md border border-[#dfe6f2] px-3 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none"
-          />
+          <label className={labelCls}>পিতার নাম</label>
+          <input value={fatherName} onChange={(e) => setFatherName(e.target.value)} placeholder="পিতার নাম" className={inputCls} />
         </div>
         <div>
-          <label className="text-[11px] font-bold text-[#5b6784] mb-1 block">পণ্যের ধরন</label>
-          <select
-            value={productType}
-            onChange={(e) => setProductType(e.target.value)}
-            className="w-full h-10 rounded-md border border-[#dfe6f2] px-3 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none"
-          >
+          <label className={labelCls}>মাতার নাম</label>
+          <input value={motherName} onChange={(e) => setMotherName(e.target.value)} placeholder="মাতার নাম" className={inputCls} />
+        </div>
+        <div>
+          <label className={labelCls}>বর্তমান ঠিকানা</label>
+          <textarea value={currentAddress} onChange={(e) => setCurrentAddress(e.target.value)} placeholder="বর্তমান ঠিকানা" rows={2} className={textareaCls} />
+        </div>
+        <div>
+          <label className={labelCls}>স্থায়ী ঠিকানা</label>
+          <textarea value={permanentAddress} onChange={(e) => setPermanentAddress(e.target.value)} placeholder="স্থায়ী ঠিকানা" rows={2} className={textareaCls} />
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" checked={isRenting} onChange={(e) => setIsRenting(e.target.checked)} className="size-4 rounded accent-[#0b3d91]" />
+          <span className="text-[12px] font-bold text-[#5b6784]">ভাড়াটিয়া</span>
+        </label>
+        {isRenting && (
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelCls}>বাড়ির মালিকের নাম</label>
+              <input value={landlordName} onChange={(e) => setLandlordName(e.target.value)} placeholder="মালিকের নাম" className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>বাড়ির মালিকের ফোন</label>
+              <input value={landlordPhone} onChange={(e) => setLandlordPhone(e.target.value)} placeholder="01XXXXXXXXX" className={inputCls} />
+            </div>
+          </div>
+        )}
+      </Section>
+
+      {/* Product info */}
+      <Section icon={CreditCard} title="পণ্য ও কিস্তির তথ্য">
+        <div>
+          <label className={labelCls}>পণ্যের ধরন <span className="text-red-500">*</span></label>
+          <select value={productType} onChange={(e) => setProductType(e.target.value)} className={inputCls}>
             {PRODUCT_TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
           </select>
+        </div>
+        {productType === "others" && (
+          <div>
+            <label className={labelCls}>পণ্যের ধরন লিখুন <span className="text-red-500">*</span></label>
+            <input value={productTypeOther} onChange={(e) => setProductTypeOther(e.target.value)} placeholder="পণ্যের নাম লিখুন" className={inputCls} />
+          </div>
+        )}
+        <div>
+          <label className={labelCls}>পণ্যের মডেল <span className="text-red-500">*</span></label>
+          <input value={productModel} onChange={(e) => setProductModel(e.target.value)} placeholder="যেমন: Luminous Eco Volt 1050" className={inputCls} />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className={labelCls}>কিস্তির মেয়াদ (মাস)</label>
+            <input type="number" min="1" value={desiredMonths} onChange={(e) => setDesiredMonths(e.target.value)} placeholder="কত মাস?" className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>ডাউন পেমেন্ট (৳)</label>
+            <input type="number" min="0" value={desiredDownPayment} onChange={(e) => setDesiredDownPayment(e.target.value)} placeholder="৳ পরিমাণ" className={inputCls} />
+          </div>
         </div>
       </Section>
 
@@ -183,29 +310,18 @@ export default function InstallmentApplyForm() {
           <FileInput id="nidFront" label="NID সামনে" required onChange={setNidFront} preview={preview(nidFront)} />
           <FileInput id="nidBack" label="NID পিছনে" required onChange={setNidBack} preview={preview(nidBack)} />
         </div>
+        <FileInput id="bankCheck" label="ব্যাংক চেক-এর ছবি" onChange={setBankCheck} preview={preview(bankCheck)} />
       </Section>
 
       {/* Guarantor */}
-      <Section icon={User} title="জামিনদারের তথ্য (ঐচ্ছিক)">
-        <input
-          value={guarantorName}
-          onChange={(e) => setGuarantorName(e.target.value)}
-          placeholder="জামিনদারের নাম"
-          className="w-full h-10 rounded-md border border-[#dfe6f2] px-3 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none"
-        />
-        <input
-          value={guarantorPhone}
-          onChange={(e) => setGuarantorPhone(e.target.value)}
-          placeholder="জামিনদারের মোবাইল নম্বর"
-          className="w-full h-10 rounded-md border border-[#dfe6f2] px-3 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none"
-        />
-        <textarea
-          value={guarantorAddress}
-          onChange={(e) => setGuarantorAddress(e.target.value)}
-          placeholder="জামিনদারের ঠিকানা"
-          rows={2}
-          className="w-full rounded-md border border-[#dfe6f2] px-3 py-2 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none resize-none"
-        />
+      <Section icon={Home} title="জামিনদারের তথ্য (ঐচ্ছিক)">
+        <input value={guarantorName} onChange={(e) => setGuarantorName(e.target.value)} placeholder="জামিনদারের নাম" className={inputCls} />
+        <input value={guarantorPhone} onChange={(e) => setGuarantorPhone(e.target.value)} placeholder="জামিনদারের মোবাইল নম্বর" className={inputCls} />
+        <textarea value={guarantorAddress} onChange={(e) => setGuarantorAddress(e.target.value)} placeholder="জামিনদারের ঠিকানা" rows={2} className={textareaCls} />
+        <div className="grid grid-cols-2 gap-2">
+          <FileInput id="gPhoto" label="জামিনদারের ছবি" onChange={setGPhoto} preview={preview(gPhoto)} />
+          <FileInput id="gSignature" label="জামিনদারের স্বাক্ষর" onChange={setGSignature} preview={preview(gSignature)} />
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <FileInput id="gNidFront" label="জামিনদার NID সামনে" onChange={setGNidFront} preview={preview(gNidFront)} />
           <FileInput id="gNidBack" label="জামিনদার NID পিছনে" onChange={setGNidBack} preview={preview(gNidBack)} />
@@ -214,13 +330,22 @@ export default function InstallmentApplyForm() {
 
       {/* Notes */}
       <Section icon={FileText} title="অতিরিক্ত তথ্য (ঐচ্ছিক)">
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="আপনার অনুরোধ বা মন্তব্য..."
-          rows={3}
-          className="w-full rounded-md border border-[#dfe6f2] px-3 py-2 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none resize-none"
-        />
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="আপনার অনুরোধ বা মন্তব্য..." rows={3} className={textareaCls} />
+      </Section>
+
+      {/* Terms & Conditions */}
+      <Section icon={CheckSquare} title="শর্তাবলী">
+        <label className="flex items-start gap-2.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={termsAccepted}
+            onChange={(e) => setTermsAccepted(e.target.checked)}
+            className="size-4 mt-0.5 shrink-0 rounded accent-[#0b3d91]"
+          />
+          <span className="text-[12px] font-semibold text-[#5b6784] leading-relaxed">
+            আমি <b className="text-[#0b3d91]">SE Electronics</b>-এর কিস্তির শর্তাবলী পড়েছি এবং সম্মতি দিচ্ছি। <span className="text-red-500">*</span>
+          </span>
+        </label>
       </Section>
 
       {/* Submit */}

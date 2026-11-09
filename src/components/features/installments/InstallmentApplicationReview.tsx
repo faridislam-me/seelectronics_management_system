@@ -10,6 +10,7 @@ import {
   Camera,
   CheckCircle2,
   CreditCard,
+  Home,
   Loader2,
   ShieldCheck,
   User,
@@ -18,6 +19,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "react-toastify";
+
+const PRODUCT_LABELS: Record<string, string> = {
+  fridge: "ফ্রিজ", ac: "এসি", tv: "টিভি", oven: "ওভেন",
+  washing_machine: "ওয়াশিং মেশিন", mobile: "মোবাইল",
+  ips: "আই পি এস", battery: "ব্যাটারি", ips_package: "আই পি এস প্যাকেজ",
+  stabilizer: "স্ট্যাবিলাইজার", blender: "ব্লেন্ডার", others: "অন্যান্য",
+};
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
   pending: { label: "অপেক্ষমান", cls: "bg-amber-50 text-amber-700 border-amber-200" },
@@ -162,15 +170,36 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
         <div className="rounded-lg bg-white border border-gray-200 p-3.5">
           <p className="flex items-center gap-2 text-sm font-black text-gray-900 mb-2"><CreditCard size={16} className="text-[#0b3d91]" /> পণ্যের তথ্য</p>
           <Field label="মডেল" value={data.productModel} />
-          <Field label="ধরন" value={data.productType} />
+          <Field label="ধরন" value={data.productType ? (PRODUCT_LABELS[data.productType] || data.productType) : undefined} />
+          {data.productType === "others" && <Field label="অন্যান্য পণ্য" value={data.productTypeOther} />}
+          <Field label="আবেদিত মেয়াদ" value={data.desiredMonths ? `${data.desiredMonths} মাস` : undefined} />
+          <Field label="আবেদিত ডাউন পেমেন্ট" value={data.desiredDownPayment ? `৳${Number(data.desiredDownPayment).toLocaleString()}` : undefined} />
         </div>
         <div className="rounded-lg bg-white border border-gray-200 p-3.5">
           <p className="flex items-center gap-2 text-sm font-black text-gray-900 mb-2"><User size={16} className="text-[#0b3d91]" /> গ্রাহক</p>
           <Field label="নাম" value={data.customerName} />
           <Field label="ফোন" value={data.customerPhone} />
           <Field label="ঠিকানা" value={data.customerAddress} />
+          <Field label="পিতার নাম" value={data.fatherName} />
+          <Field label="মাতার নাম" value={data.motherName} />
         </div>
       </div>
+
+      {/* Addresses */}
+      {(data.currentAddress || data.permanentAddress) && (
+        <div className="rounded-lg bg-white border border-gray-200 p-3.5">
+          <p className="flex items-center gap-2 text-sm font-black text-gray-900 mb-2"><Home size={16} className="text-[#0b3d91]" /> ঠিকানা বিবরণ</p>
+          <Field label="বর্তমান ঠিকানা" value={data.currentAddress} />
+          <Field label="স্থায়ী ঠিকানা" value={data.permanentAddress} />
+          {data.isRenting && (
+            <>
+              <p className="text-xs font-bold text-amber-600 mt-1">ভাড়াটিয়া</p>
+              <Field label="বাড়ির মালিকের নাম" value={data.landlordName} />
+              <Field label="বাড়ির মালিকের ফোন" value={data.landlordPhone} />
+            </>
+          )}
+        </div>
+      )}
 
       {/* Guarantor */}
       {(data.guarantorName || data.guarantorPhone) && (
@@ -191,16 +220,28 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
 
       {/* KYC images */}
       <div className="rounded-lg bg-white border border-gray-200 p-3.5">
-        <p className="flex items-center gap-2 text-sm font-black text-gray-900 mb-3"><Camera size={16} className="text-[#0b3d91]" /> ডকুমেন্ট</p>
+        <p className="flex items-center gap-2 text-sm font-black text-gray-900 mb-3"><Camera size={16} className="text-[#0b3d91]" /> আবেদনকারীর ডকুমেন্ট</p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
           <ImgCard src={urls.photo} label="ছবি" />
           <ImgCard src={urls.nidFront} label="NID সামনে" />
           <ImgCard src={urls.nidBack} label="NID পিছনে" />
           <ImgCard src={urls.signature} label="স্বাক্ষর" />
-          <ImgCard src={urls.guarantorNidFront} label="জামিনদার NID সামনে" />
-          <ImgCard src={urls.guarantorNidBack} label="জামিনদার NID পিছনে" />
+          <ImgCard src={urls.bankCheck} label="ব্যাংক চেক" />
         </div>
       </div>
+
+      {/* Guarantor images */}
+      {(urls.guarantorPhoto || urls.guarantorSignature || urls.guarantorNidFront || urls.guarantorNidBack) && (
+        <div className="rounded-lg bg-white border border-gray-200 p-3.5">
+          <p className="flex items-center gap-2 text-sm font-black text-gray-900 mb-3"><ShieldCheck size={16} className="text-[#0b3d91]" /> জামিনদারের ডকুমেন্ট</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+            <ImgCard src={urls.guarantorPhoto} label="জামিনদার ছবি" />
+            <ImgCard src={urls.guarantorSignature} label="জামিনদার স্বাক্ষর" />
+            <ImgCard src={urls.guarantorNidFront} label="জামিনদার NID সামনে" />
+            <ImgCard src={urls.guarantorNidBack} label="জামিনদার NID পিছনে" />
+          </div>
+        </div>
+      )}
 
       {data.rejectReason && (
         <div className="rounded-lg bg-red-50 border border-red-200 p-3.5">

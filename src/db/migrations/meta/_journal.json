@@ -190,6 +190,27 @@
       "when": 1794170803256,
       "tag": "0026_gray_tusk",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1794210885121,
+      "tag": "0027_left_quentin_quire",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1794210979565,
+      "tag": "0028_boring_silver_fox",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1794211288334,
+      "tag": "0029_swift_morlocks",
+      "breakpoints": true
     }
   ]
 }

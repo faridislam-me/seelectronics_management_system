@@ -12,7 +12,7 @@ export type UrlConfig =
   | { type: "certificate-download"; params: { token: string } }
   | { type: "customer-login"; params?: {} };
 
-export type ProductTypes = "ips" | "battery" | "stabilizer" | "others";
+export type ProductTypes = "ips" | "battery" | "stabilizer" | "others" | "fridge" | "ac" | "tv" | "oven" | "washing_machine" | "mobile" | "ips_package" | "blender";
 export type ApplicationTypes =
   | "service_application"
   | "staff_application"
@@ -87,7 +87,7 @@ export type CustomerData = {
 
 export type Product = {
   id: string;
-  type: "ips" | "battery" | "stabilizer" | "others";
+  type: ProductTypes;
   invoiceId: string;
   model: string;
   serialNumber?: string | null;

@@ -24,6 +24,13 @@ const OPERATORS: Record<string, string> = {
   teletalk: "Teletalk",
 };
 
+const RECHARGE_TYPE_LABELS: Record<string, string> = {
+  recharge: "রিচার্জ",
+  regular_pack: "রেগুলার প্যাক",
+  drive_pack: "ড্রাইভ প্যাক",
+  drive_offer: "ড্রাইভ অফার",
+};
+
 const FILTERS = [
   { value: "", label: "সব" },
   { value: "pending", label: "অপেক্ষমান" },
@@ -113,6 +120,7 @@ export default function RechargeRequestsClient({ requests }: { requests: any[] }
               <th className="text-left font-semibold px-3 py-2.5">গ্রাহক</th>
               <th className="text-left font-semibold px-3 py-2.5">রিচার্জ নম্বর</th>
               <th className="text-left font-semibold px-3 py-2.5">অপারেটর</th>
+              <th className="text-left font-semibold px-3 py-2.5">ধরন</th>
               <th className="text-right font-semibold px-3 py-2.5">পরিমাণ</th>
               <th className="text-left font-semibold px-3 py-2.5">তারিখ</th>
               <th className="text-center font-semibold px-3 py-2.5">অবস্থা</th>
@@ -121,7 +129,7 @@ export default function RechargeRequestsClient({ requests }: { requests: any[] }
           </thead>
           <tbody className="divide-y divide-gray-100">
             {requests.length === 0 ? (
-              <tr><td colSpan={8} className="text-center py-8 text-gray-400">কোনো অনুরোধ নেই</td></tr>
+              <tr><td colSpan={9} className="text-center py-8 text-gray-400">কোনো অনুরোধ নেই</td></tr>
             ) : (
               requests.map((r) => {
                 const sm = STATUS_META[r.status] || STATUS_META.pending;
@@ -135,6 +143,7 @@ export default function RechargeRequestsClient({ requests }: { requests: any[] }
                     </td>
                     <td className="px-3 py-2.5 font-semibold font-mono">{r.rechargePhone}</td>
                     <td className="px-3 py-2.5 font-semibold">{OPERATORS[r.operator] || r.operator}</td>
+                    <td className="px-3 py-2.5 text-xs font-bold">{RECHARGE_TYPE_LABELS[r.rechargeType] || "রিচার্জ"}</td>
                     <td className="px-3 py-2.5 text-right font-bold">{bdt(r.amount)}</td>
                     <td className="px-3 py-2.5 text-gray-500">{formatDate(r.createdAt)}</td>
                     <td className="px-3 py-2.5 text-center">

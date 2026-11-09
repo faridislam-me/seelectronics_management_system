@@ -1,0 +1,2 @@
+ALTER TABLE "installment_applications" ADD COLUMN "trackingStep" varchar(50) DEFAULT 'pending' NOT NULL;--> statement-breakpoint
+ALTER TABLE "installment_schedule" ADD COLUMN "paymentNumber" varchar(255);

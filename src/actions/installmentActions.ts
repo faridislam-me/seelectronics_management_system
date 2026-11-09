@@ -392,6 +392,60 @@ export const getMyInstallmentPlans = async () => {
   }
 };
 
+export const getMyInstallmentDashboard = async () => {
+  try {
+    const session = await verifyCustomerSession();
+    if (!session.isAuth || !session.customer) return UNAUTHORIZED;
+    const cid = session.customer.customerId;
+
+    const [plans, apps] = await Promise.all([
+      db.select().from(installmentPlans).where(eq(installmentPlans.customerId, cid)).orderBy(desc(installmentPlans.createdAt)),
+      db.select().from(installmentApplications).where(eq(installmentApplications.customerId, cid)).orderBy(desc(installmentApplications.createdAt)),
+    ]);
+
+    const ids = plans.map((p) => p.id);
+    const scheduleRows = ids.length > 0
+      ? await db.select({ planId: installmentSchedule.planId, status: installmentSchedule.status, paidAmount: installmentSchedule.paidAmount }).from(installmentSchedule).where(inArray(installmentSchedule.planId, ids))
+      : [];
+
+    const byPlan = new Map<string, { status: string; paidAmount: number }[]>();
+    for (const r of scheduleRows) {
+      const arr = byPlan.get(r.planId) || [];
+      arr.push({ status: r.status, paidAmount: r.paidAmount });
+      byPlan.set(r.planId, arr);
+    }
+
+    const plansData = plans.map((p) => ({ ...p, ...planProgress(p.financedAmount, p.months, byPlan.get(p.id) || []) }));
+
+    const overdueCount = scheduleRows.filter((r) => r.status === "overdue").length;
+    const totalPaid = round2(scheduleRows.filter((r) => r.status === "paid").reduce((s, r) => s + r.paidAmount, 0));
+    const totalRemaining = round2(plans.reduce((s, p) => s + p.financedAmount, 0) - totalPaid);
+
+    let photoUrl: string | null = null;
+    const appWithPhoto = apps.find((a) => a.photoKey);
+    if (appWithPhoto?.photoKey) {
+      try { photoUrl = await getObjectUrl(appWithPhoto.photoKey); } catch {}
+    }
+
+    const customer = session.customer;
+    return {
+      success: true,
+      data: {
+        customer: { name: customer.name, phone: customer.phone, address: customer.address, customerId: customer.customerId },
+        photoUrl,
+        plans: plansData,
+        applications: apps,
+        overdueCount,
+        totalPaid,
+        totalRemaining,
+      },
+    };
+  } catch (error) {
+    console.error("getMyInstallmentDashboard error:", error);
+    return { success: false, message: "ড্যাশবোর্ড তথ্য আনা যায়নি" };
+  }
+};
+
 export const getMyInstallmentPlanByCode = async (code: string) => {
   try {
     const session = await verifyCustomerSession();

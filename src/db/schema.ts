@@ -56,6 +56,8 @@ export const applicationStatusEnum = pgEnum("applicationStatus", [
   "approved",
   "rejected",
   "expired",
+  "cancelled",
+  "reapply",
 ]);
 
 export const applicationTypesEnum = pgEnum("applicationTypes", [

@@ -752,7 +752,7 @@ export const getInstallmentApplicationByCode = async (code: string) => {
 /** Admin: approve → creates installment plan, or reject */
 export const reviewInstallmentApplication = async (
   code: string,
-  action: "approve" | "reject",
+  action: "approve" | "reject" | "cancel" | "reapply",
   payload?: {
     cashPrice?: number;
     extraCharge?: number;
@@ -773,6 +773,31 @@ export const reviewInstallmentApplication = async (
     if (!app) return { success: false, message: "আবেদন পাওয়া যায়নি" };
     if (app.status === "approved") return { success: false, message: "আবেদন ইতোমধ্যে অনুমোদিত" };
     if (app.status === "rejected") return { success: false, message: "আবেদন ইতোমধ্যে প্রত্যাখ্যাত" };
+    if (app.status === "cancelled") return { success: false, message: "আবেদন ইতোমধ্যে বাতিল করা হয়েছে" };
+
+    if (action === "cancel") {
+      await db
+        .update(installmentApplications)
+        .set({
+          status: "cancelled",
+          adminNotes: payload?.adminNotes || undefined,
+        })
+        .where(eq(installmentApplications.id, app.id));
+      revalidatePath("/installments");
+      return { success: true, message: "আবেদন বাতিল করা হয়েছে" };
+    }
+
+    if (action === "reapply") {
+      await db
+        .update(installmentApplications)
+        .set({
+          status: "reapply",
+          adminNotes: payload?.adminNotes || undefined,
+        })
+        .where(eq(installmentApplications.id, app.id));
+      revalidatePath("/installments");
+      return { success: true, message: "পুনরায় আবেদনের সুযোগ দেওয়া হয়েছে" };
+    }
 
     if (action === "reject") {
       await db

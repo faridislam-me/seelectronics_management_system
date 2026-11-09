@@ -6,15 +6,15 @@ import { ArrowLeft, Check, Circle, ClipboardList } from "lucide-react";
 import Link from "next/link";
 
 const STEPS = [
-  { key: "pending", label: "আবেদন গৃহীত", desc: "আপনার আবেদন জমা হয়েছে" },
-  { key: "processing", label: "প্রক্রিয়াধীন", desc: "আবেদন পর্যালোচনা শুরু হয়েছে" },
-  { key: "nid_verify", label: "এনআইডি যাচাই", desc: "জাতীয় পরিচয়পত্র যাচাই করা হচ্ছে" },
-  { key: "address_verify", label: "ঠিকানা যাচাই", desc: "বর্তমান ও স্থায়ী ঠিকানা যাচাই" },
-  { key: "guarantor_verify", label: "জামিনদার যাচাই", desc: "জামিনদারের তথ্য যাচাই করা হচ্ছে" },
-  { key: "bank_check_verify", label: "ব্যাংক চেক যাচাই", desc: "ব্যাংক একাউন্ট ও চেক যাচাই" },
-  { key: "documents_verified", label: "কাগজপত্র যাচাই শেষ", desc: "সকল ডকুমেন্ট সফলভাবে যাচাই হয়েছে" },
-  { key: "approved", label: "অনুমোদিত", desc: "কিস্তির জন্য অনুমোদিত হয়েছে" },
-  { key: "ready_for_delivery", label: "পণ্য বুঝিয়ে দিতে প্রস্তুত", desc: "অফিস থেকে পণ্যটি নিয়ে যান" },
+  { key: "pending", label: "পেন্ডিং আছে", desc: "আপনার কিস্তির আবেদনটি সফলভাবে জমা হয়েছে। পর্যালোচনার জন্য এটি অপেক্ষমাণ রয়েছে।" },
+  { key: "processing", label: "প্রসেসিং হচ্ছে", desc: "আপনার আবেদনটি আমাদের টিম যাচাই-বাছাই শুরু করেছে।" },
+  { key: "nid_verify", label: "এনআইডি ভেরিফাই", desc: "আপনার জাতীয় পরিচয়পত্র (NID) সংক্রান্ত তথ্য যাচাই করা হচ্ছে।" },
+  { key: "address_verify", label: "ঠিকানা যাচাই", desc: "আপনার দেওয়া বর্তমান ও স্থায়ী ঠিকানা যাচাই কার্যক্রম চলছে।" },
+  { key: "guarantor_verify", label: "জামিনদার ভেরিফাই", desc: "আপনার জামিনদারের (Guarantor) দেওয়া তথ্য ও পরিচয় যাচাই করা হচ্ছে।" },
+  { key: "bank_check_verify", label: "ব্যাংক অ্যাকাউন্ট চেক ভেরিফাই", desc: "আপনার ব্যাংক চেক অ্যাকাউন্ট সংক্রান্ত তথ্য পরীক্ষা করা হচ্ছে।" },
+  { key: "documents_verified", label: "সকল কাগজপত্র যাচাই সম্পন্ন", desc: "আপনার জমা দেওয়া সকল প্রয়োজনীয় কাগজপত্র সফলভাবে যাচাই করা হয়েছে।" },
+  { key: "approved", label: "কিস্তির জন্য অনুমোদিত", desc: "অভিনন্দন! আপনার কিস্তির আবেদনটি চূড়ান্তভাবে অনুমোদন করা হয়েছে।" },
+  { key: "ready_for_delivery", label: "পণ্য হস্তান্তরের জন্য প্রস্তুত", desc: "আপনার কিস্তির পণ্যটি প্রস্তুত। আপনি এখন নির্দিষ্ট শোরুম বা ডেলিভারি পয়েন্ট থেকে পণ্যটি গ্রহণ করতে পারেন।" },
 ];
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {

@@ -51,6 +51,7 @@ type Schedule = {
   paidAt: string | Date | null;
   paymentMethod: string | null;
   transactionId: string | null;
+  paymentNumber: string | null;
 };
 
 export default function InstallmentPlanDetail({ data }: { data: any }) {
@@ -63,6 +64,7 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
   const [paidAmount, setPaidAmount] = useState("");
   const [method, setMethod] = useState("cash");
   const [txn, setTxn] = useState("");
+  const [payNum, setPayNum] = useState("");
   const [saving, setSaving] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
 
@@ -71,6 +73,7 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
     setPaidAmount(String(row.amount));
     setMethod("cash");
     setTxn("");
+    setPayNum("");
   };
 
   const confirmPay = async () => {
@@ -80,7 +83,8 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
       scheduleId: payRow.id,
       paidAmount: paidAmount || undefined,
       paymentMethod: method,
-      transactionId: txn,
+      transactionId: txn || undefined,
+      paymentNumber: payNum || undefined,
     });
     setSaving(false);
     if (res.success) {
@@ -228,7 +232,11 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
                         <dm.icon size={11} />{dm.label}
                       </span>
                       {row.status === "paid" && row.paidAt && (
-                        <span className="block text-[10px] text-gray-400 mt-0.5">{formatDate(row.paidAt)}{row.paymentMethod ? ` · ${row.paymentMethod}` : ""}</span>
+                        <span className="block text-[10px] text-gray-400 mt-0.5">
+                          {formatDate(row.paidAt)}{row.paymentMethod ? ` · ${row.paymentMethod === "cash" ? "অফিসে নগদ" : row.paymentMethod}` : ""}
+                          {row.paymentNumber ? ` · ${row.paymentNumber}` : ""}
+                          {row.transactionId ? ` · TxID: ${row.transactionId}` : ""}
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-right">
@@ -260,8 +268,14 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
                 {METHODS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
               </select>
             </div>
+            {method !== "cash" && (
+              <div>
+                <label className="text-xs font-semibold text-gray-500">পেমেন্ট নম্বর (যে নম্বর থেকে পাঠিয়েছে)</label>
+                <input value={payNum} onChange={(e) => setPayNum(e.target.value)} className="__input" placeholder="01XXXXXXXXX" />
+              </div>
+            )}
             <div>
-              <label className="text-xs font-semibold text-gray-500">ট্রানজেকশন আইডি (optional)</label>
+              <label className="text-xs font-semibold text-gray-500">ট্রানজেকশন আইডি {method === "cash" ? "(optional)" : ""}</label>
               <input value={txn} onChange={(e) => setTxn(e.target.value)} className="__input" placeholder="TrxID" />
             </div>
             <div className="flex justify-end gap-2 pt-2">

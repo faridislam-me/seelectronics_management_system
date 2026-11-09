@@ -84,6 +84,30 @@ function FileInput({
   );
 }
 
+async function compressFileClient(file: File, maxW = 1200, quality = 0.7): Promise<File> {
+  if (file.size < 200_000) return file;
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxW / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const c = document.createElement("canvas");
+      c.width = w;
+      c.height = h;
+      c.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      c.toBlob(
+        (blob) => resolve(blob ? new File([blob], file.name, { type: "image/jpeg" }) : file),
+        "image/jpeg",
+        quality,
+      );
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => resolve(file);
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 const inputCls =
   "w-full h-10 rounded-md border border-[#dfe6f2] px-3 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none";
 const textareaCls =
@@ -169,6 +193,7 @@ export default function InstallmentApplyForm() {
     }
 
     setLoading(true);
+    try {
     const fd = new FormData();
 
     // Personal info
@@ -190,21 +215,34 @@ export default function InstallmentApplyForm() {
     // Notes
     if (notes.trim()) fd.append("notes", notes.trim());
 
+    // Compress images client-side (phone cameras produce 3-8MB each; Vercel has 4.5MB body limit)
+    const [cPhoto, cNidF, cNidB, cSig, cBank, cGP, cGS, cGNF, cGNB] = await Promise.all([
+      compressFileClient(photo, 800, 0.75),
+      compressFileClient(nidFront, 1200, 0.7),
+      compressFileClient(nidBack, 1200, 0.7),
+      signature ? compressFileClient(signature, 800, 0.7) : null,
+      bankCheck ? compressFileClient(bankCheck, 1200, 0.7) : null,
+      gPhoto ? compressFileClient(gPhoto, 800, 0.75) : null,
+      gSignature ? compressFileClient(gSignature, 800, 0.7) : null,
+      gNidFront ? compressFileClient(gNidFront, 1200, 0.7) : null,
+      gNidBack ? compressFileClient(gNidBack, 1200, 0.7) : null,
+    ]);
+
     // KYC files
-    fd.append("photo", photo);
-    fd.append("nidFront", nidFront);
-    fd.append("nidBack", nidBack);
-    if (signature) fd.append("signature", signature);
-    if (bankCheck) fd.append("bankCheck", bankCheck);
+    fd.append("photo", cPhoto);
+    fd.append("nidFront", cNidF);
+    fd.append("nidBack", cNidB);
+    if (cSig) fd.append("signature", cSig);
+    if (cBank) fd.append("bankCheck", cBank);
 
     // Guarantor
     if (guarantorName.trim()) fd.append("guarantorName", guarantorName.trim());
     if (guarantorPhone.trim()) fd.append("guarantorPhone", guarantorPhone.trim());
     if (guarantorAddress.trim()) fd.append("guarantorAddress", guarantorAddress.trim());
-    if (gPhoto) fd.append("guarantorPhoto", gPhoto);
-    if (gSignature) fd.append("guarantorSignature", gSignature);
-    if (gNidFront) fd.append("guarantorNidFront", gNidFront);
-    if (gNidBack) fd.append("guarantorNidBack", gNidBack);
+    if (cGP) fd.append("guarantorPhoto", cGP);
+    if (cGS) fd.append("guarantorSignature", cGS);
+    if (cGNF) fd.append("guarantorNidFront", cGNF);
+    if (cGNB) fd.append("guarantorNidBack", cGNB);
 
     // Terms
     fd.append("termsAccepted", "true");
@@ -218,6 +256,10 @@ export default function InstallmentApplyForm() {
       router.refresh();
     } else {
       toast.error(res.message || "আবেদন জমা দেওয়া যায়নি");
+    }
+    } catch {
+      setLoading(false);
+      toast.error("আবেদন জমা দেওয়া যায়নি। আবার চেষ্টা করুন।");
     }
   };
 

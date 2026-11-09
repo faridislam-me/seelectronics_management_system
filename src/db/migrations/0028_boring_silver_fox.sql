@@ -1,0 +1,1 @@
+ALTER TABLE "mobile_recharge_requests" ADD COLUMN "rechargeType" varchar(50) DEFAULT 'recharge' NOT NULL;

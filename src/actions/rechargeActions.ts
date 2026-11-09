@@ -30,12 +30,13 @@ export const requestMobileRecharge = async (input: {
   rechargePhone: string;
   operator: string;
   amount: number;
+  rechargeType?: string;
 }) => {
   try {
     const session = await verifyCustomerSession();
     if (!session.isAuth || !session.customer) return UNAUTHORIZED;
 
-    const { rechargePhone, operator, amount } = input;
+    const { rechargePhone, operator, amount, rechargeType = "recharge" } = input;
 
     if (!rechargePhone?.trim()) return { success: false, message: "রিচার্জ নম্বর আবশ্যক" };
     if (!operator || !OPERATORS[operator]) return { success: false, message: "অপারেটর নির্বাচন করুন" };
@@ -70,6 +71,7 @@ export const requestMobileRecharge = async (input: {
       rechargePhone: rechargePhone.trim(),
       operator: operator as any,
       amount,
+      rechargeType,
     });
 
     revalidatePath("/customer/referral");

@@ -41,7 +41,7 @@ const planCode = () => "KST" + generateRandomId(6).replace(/^SE/, "");
 const CreateSchema = z.object({
   customerId: z.string().min(1, "Customer is required"),
   productType: z
-    .preprocess((v) => (v === "" ? undefined : v), z.enum(["ips", "battery", "stabilizer", "others"]).optional()),
+    .preprocess((v) => (v === "" ? undefined : v), z.enum(["ips", "battery", "stabilizer", "others", "fridge", "ac", "tv", "oven", "washing_machine", "mobile", "ips_package", "blender"]).optional()),
   productModel: z.string().min(1, "Product model is required"),
   serialNumber: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
   cashPrice: z.coerce.number().positive("Cash price must be greater than 0"),
@@ -262,6 +262,7 @@ const MarkPaidSchema = z.object({
   paidAmount: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number().positive().optional()),
   paymentMethod: z.preprocess((v) => (v === "" ? undefined : v), z.enum(["cash", "bkash", "nagad", "rocket", "bank"]).optional()),
   transactionId: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
+  paymentNumber: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
 });
 
 export const markInstallmentPaid = async (input: z.input<typeof MarkPaidSchema>) => {
@@ -269,7 +270,7 @@ export const markInstallmentPaid = async (input: z.input<typeof MarkPaidSchema>)
     if (!(await requireAdmin())) return UNAUTHORIZED;
     const parsed = MarkPaidSchema.safeParse(input);
     if (!parsed.success) return { success: false, message: "Invalid input" };
-    const { scheduleId, paidAmount, paymentMethod, transactionId } = parsed.data;
+    const { scheduleId, paidAmount, paymentMethod, transactionId, paymentNumber } = parsed.data;
 
     const row = await db.query.installmentSchedule.findFirst({
       where: eq(installmentSchedule.id, scheduleId),
@@ -285,6 +286,7 @@ export const markInstallmentPaid = async (input: z.input<typeof MarkPaidSchema>)
         paidAt: new Date(),
         paymentMethod: paymentMethod,
         transactionId,
+        paymentNumber,
       })
       .where(eq(installmentSchedule.id, scheduleId));
 
@@ -442,13 +444,35 @@ export const submitInstallmentApplication = async (formData: FormData) => {
     const customerId = session.customer.customerId;
     const productModel = formData.get("productModel") as string;
     const productType = (formData.get("productType") as string) || undefined;
+    const productTypeOther = (formData.get("productTypeOther") as string) || undefined;
     const notes = (formData.get("notes") as string) || undefined;
     const guarantorName = (formData.get("guarantorName") as string) || undefined;
     const guarantorPhone = (formData.get("guarantorPhone") as string) || undefined;
     const guarantorAddress = (formData.get("guarantorAddress") as string) || undefined;
 
+    // New personal info fields
+    const fatherName = (formData.get("fatherName") as string) || undefined;
+    const motherName = (formData.get("motherName") as string) || undefined;
+    const currentAddress = (formData.get("currentAddress") as string) || undefined;
+    const permanentAddress = (formData.get("permanentAddress") as string) || undefined;
+    const isRenting = formData.get("isRenting") === "true";
+    const landlordName = isRenting ? ((formData.get("landlordName") as string) || undefined) : undefined;
+    const landlordPhone = isRenting ? ((formData.get("landlordPhone") as string) || undefined) : undefined;
+
+    // Desired plan fields
+    const desiredMonthsRaw = formData.get("desiredMonths") as string;
+    const desiredMonths = desiredMonthsRaw ? parseInt(desiredMonthsRaw, 10) || undefined : undefined;
+    const desiredDownPaymentRaw = formData.get("desiredDownPayment") as string;
+    const desiredDownPayment = desiredDownPaymentRaw ? parseFloat(desiredDownPaymentRaw) || undefined : undefined;
+
+    // Terms
+    const termsAccepted = formData.get("termsAccepted") === "true";
+
     if (!productModel?.trim()) {
       return { success: false, message: "পণ্যের মডেল আবশ্যক" };
+    }
+    if (!termsAccepted) {
+      return { success: false, message: "শর্তাবলীতে সম্মতি আবশ্যক" };
     }
 
     // File extractions
@@ -456,6 +480,9 @@ export const submitInstallmentApplication = async (formData: FormData) => {
     const nidFront = formData.get("nidFront") as File | null;
     const nidBack = formData.get("nidBack") as File | null;
     const signature = formData.get("signature") as File | null;
+    const bankCheck = formData.get("bankCheck") as File | null;
+    const guarantorPhoto = formData.get("guarantorPhoto") as File | null;
+    const guarantorSignature = formData.get("guarantorSignature") as File | null;
     const guarantorNidFront = formData.get("guarantorNidFront") as File | null;
     const guarantorNidBack = formData.get("guarantorNidBack") as File | null;
 
@@ -486,6 +513,9 @@ export const submitInstallmentApplication = async (formData: FormData) => {
     const nidFrontKey = `${prefix}/nid-front.webp`;
     const nidBackKey = `${prefix}/nid-back.webp`;
     const signatureKey = signature ? `${prefix}/signature.png` : undefined;
+    const bankCheckKey = bankCheck ? `${prefix}/bank-check.webp` : undefined;
+    const gPhotoKey = guarantorPhoto ? `${prefix}/guarantor-photo.webp` : undefined;
+    const gSignatureKey = guarantorSignature ? `${prefix}/guarantor-signature.png` : undefined;
     const gNidFrontKey = guarantorNidFront ? `${prefix}/guarantor-nid-front.webp` : undefined;
     const gNidBackKey = guarantorNidBack ? `${prefix}/guarantor-nid-back.webp` : undefined;
 
@@ -497,17 +527,31 @@ export const submitInstallmentApplication = async (formData: FormData) => {
       customerPhone: customer.phone,
       customerAddress: customer.address,
       productType: productType as any,
+      productTypeOther,
       productModel: productModel.trim(),
       photoKey,
       nidFrontPhotoKey: nidFrontKey,
       nidBackPhotoKey: nidBackKey,
       signatureKey,
+      bankCheckPhotoKey: bankCheckKey,
       guarantorName,
       guarantorPhone,
       guarantorAddress,
+      guarantorPhotoKey: gPhotoKey,
+      guarantorSignatureKey: gSignatureKey,
       guarantorNidFrontPhotoKey: gNidFrontKey,
       guarantorNidBackPhotoKey: gNidBackKey,
       notes,
+      fatherName,
+      motherName,
+      currentAddress,
+      permanentAddress,
+      isRenting,
+      landlordName,
+      landlordPhone,
+      desiredMonths,
+      desiredDownPayment,
+      termsAccepted,
     });
 
     // Compress & upload images in parallel
@@ -525,6 +569,18 @@ export const submitInstallmentApplication = async (formData: FormData) => {
     if (signature && signatureKey) {
       const sigBuf = Buffer.from(await signature.arrayBuffer());
       uploads.push(putObject({ Key: signatureKey, Body: sigBuf, ContentType: "image/png" }));
+    }
+    if (bankCheck && bankCheckKey) {
+      const buf = await compressImage(Buffer.from(await bankCheck.arrayBuffer()), "nid");
+      uploads.push(putObject({ Key: bankCheckKey, Body: buf, ContentType: "image/webp" }));
+    }
+    if (guarantorPhoto && gPhotoKey) {
+      const buf = await compressImage(Buffer.from(await guarantorPhoto.arrayBuffer()), "portrait");
+      uploads.push(putObject({ Key: gPhotoKey, Body: buf, ContentType: "image/webp" }));
+    }
+    if (guarantorSignature && gSignatureKey) {
+      const buf = Buffer.from(await guarantorSignature.arrayBuffer());
+      uploads.push(putObject({ Key: gSignatureKey, Body: buf, ContentType: "image/png" }));
     }
     if (guarantorNidFront && gNidFrontKey) {
       const buf = await compressImage(Buffer.from(await guarantorNidFront.arrayBuffer()), "nid");
@@ -616,6 +672,9 @@ export const getInstallmentApplicationByCode = async (code: string) => {
       nidFront: null,
       nidBack: null,
       signature: null,
+      bankCheck: null,
+      guarantorPhoto: null,
+      guarantorSignature: null,
       guarantorNidFront: null,
       guarantorNidBack: null,
     };
@@ -623,6 +682,9 @@ export const getInstallmentApplicationByCode = async (code: string) => {
     if (app.nidFrontPhotoKey) urls.nidFront = await getObjectUrl(app.nidFrontPhotoKey);
     if (app.nidBackPhotoKey) urls.nidBack = await getObjectUrl(app.nidBackPhotoKey);
     if (app.signatureKey) urls.signature = await getObjectUrl(app.signatureKey);
+    if (app.bankCheckPhotoKey) urls.bankCheck = await getObjectUrl(app.bankCheckPhotoKey);
+    if (app.guarantorPhotoKey) urls.guarantorPhoto = await getObjectUrl(app.guarantorPhotoKey);
+    if (app.guarantorSignatureKey) urls.guarantorSignature = await getObjectUrl(app.guarantorSignatureKey);
     if (app.guarantorNidFrontPhotoKey) urls.guarantorNidFront = await getObjectUrl(app.guarantorNidFrontPhotoKey);
     if (app.guarantorNidBackPhotoKey) urls.guarantorNidBack = await getObjectUrl(app.guarantorNidBackPhotoKey);
 
@@ -758,5 +820,62 @@ export const reviewInstallmentApplication = async (
   } catch (error) {
     console.error("reviewInstallmentApplication error:", error);
     return { success: false, message: "আবেদন পর্যালোচনা করা যায়নি" };
+  }
+};
+
+const TRACKING_STEPS = [
+  "pending",
+  "processing",
+  "nid_verify",
+  "address_verify",
+  "guarantor_verify",
+  "bank_check_verify",
+  "documents_verified",
+  "approved",
+  "ready_for_delivery",
+] as const;
+
+/** Admin: update the tracking step of an application */
+export const updateApplicationTrackingStep = async (code: string, step: string) => {
+  try {
+    if (!(await requireAdmin())) return UNAUTHORIZED;
+    if (!TRACKING_STEPS.includes(step as any)) return { success: false, message: "Invalid tracking step" };
+
+    const app = await db.query.installmentApplications.findFirst({
+      where: eq(installmentApplications.applicationCode, code),
+      columns: { id: true, status: true },
+    });
+    if (!app) return { success: false, message: "আবেদন পাওয়া যায়নি" };
+
+    const updates: any = { trackingStep: step };
+    if (step === "processing" && app.status === "pending") updates.status = "under_review";
+    if (step === "approved") updates.status = "approved";
+
+    await db.update(installmentApplications).set(updates).where(eq(installmentApplications.id, app.id));
+    revalidatePath("/installments");
+    return { success: true, message: "ট্র্যাকিং আপডেট হয়েছে" };
+  } catch (error) {
+    console.error("updateApplicationTrackingStep error:", error);
+    return { success: false, message: "আপডেট করা যায়নি" };
+  }
+};
+
+/** Customer: get own application with tracking info */
+export const getMyApplicationByCode = async (code: string) => {
+  try {
+    const session = await verifyCustomerSession();
+    if (!session.isAuth || !session.customer) return UNAUTHORIZED;
+
+    const app = await db.query.installmentApplications.findFirst({
+      where: eq(installmentApplications.applicationCode, code),
+    });
+    if (!app || app.customerId !== session.customer.customerId) {
+      return { success: false, message: "আবেদন পাওয়া যায়নি" };
+    }
+
+    return { success: true, data: app };
+  } catch (error) {
+    console.error("getMyApplicationByCode error:", error);
+    return { success: false, message: "আবেদন আনা যায়নি" };
   }
 };

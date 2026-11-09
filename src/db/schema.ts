@@ -20,6 +20,14 @@ export const productTypeEnum = pgEnum("productType", [
   "battery",
   "stabilizer",
   "others",
+  "fridge",
+  "ac",
+  "tv",
+  "oven",
+  "washing_machine",
+  "mobile",
+  "ips_package",
+  "blender",
 ]);
 
 export const serviceTypeEnum = pgEnum("serviceType", ["install", "repair"]);
@@ -1522,6 +1530,7 @@ export const installmentSchedule = pgTable(
     paidAt: timestamp({ withTimezone: true }),
     paymentMethod: paymentTypesEnum(),
     transactionId: varchar({ length: 255 }),
+    paymentNumber: varchar({ length: 255 }),
     /** Set when a due reminder (SMS/voice) was sent, so a cron never double-sends */
     remindedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
@@ -1580,21 +1589,40 @@ export const installmentApplications = pgTable(
     customerName: varchar({ length: 255 }).notNull(),
     customerPhone: varchar({ length: 255 }).notNull(),
     customerAddress: text(),
+    // Personal details (PDF spec)
+    fatherName: varchar({ length: 255 }),
+    motherName: varchar({ length: 255 }),
+    currentAddress: text(),
+    permanentAddress: text(),
+    isRenting: boolean().default(false),
+    landlordName: varchar({ length: 255 }),
+    landlordPhone: varchar({ length: 255 }),
     // Desired product
     productType: productTypeEnum(),
     productModel: varchar({ length: 255 }).notNull(),
+    /** Free-text when productType is "others" */
+    productTypeOther: varchar({ length: 255 }),
+    // Desired installment terms (customer preference, admin may override)
+    desiredMonths: integer(),
+    desiredDownPayment: numeric({ precision: 12, scale: 2, mode: "number" }),
     // KYC documents (R2 keys)
     photoKey: varchar({ length: 512 }),
     nidFrontPhotoKey: varchar({ length: 512 }),
     nidBackPhotoKey: varchar({ length: 512 }),
     signatureKey: varchar({ length: 512 }),
+    bankCheckPhotoKey: varchar({ length: 512 }),
     // Guarantor
     guarantorName: varchar({ length: 255 }),
     guarantorPhone: varchar({ length: 255 }),
     guarantorAddress: text(),
+    guarantorPhotoKey: varchar({ length: 512 }),
+    guarantorSignatureKey: varchar({ length: 512 }),
     guarantorNidFrontPhotoKey: varchar({ length: 512 }),
     guarantorNidBackPhotoKey: varchar({ length: 512 }),
+    // Terms & conditions
+    termsAccepted: boolean().default(false).notNull(),
     // Status + review
+    trackingStep: varchar({ length: 50 }).default("pending").notNull(),
     status: installmentAppStatusEnum().default("pending").notNull(),
     rejectReason: text(),
     notes: text(),
@@ -1658,6 +1686,8 @@ export const mobileRechargeRequests = pgTable(
     /** The phone number to recharge (may differ from customer's own phone) */
     rechargePhone: varchar({ length: 255 }).notNull(),
     operator: mobileOperatorEnum().notNull(),
+    /** recharge | drive_pack | drive_offer | regular_pack */
+    rechargeType: varchar({ length: 50 }).default("recharge").notNull(),
     amount: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
     status: rechargeStatusEnum().default("pending").notNull(),
     rejectReason: text(),

@@ -90,6 +90,17 @@ const textareaCls =
   "w-full rounded-md border border-[#dfe6f2] px-3 py-2 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none resize-none";
 const labelCls = "text-[11px] font-bold text-[#5b6784] mb-1 block";
 
+function Section({ icon: Icon, title, children }: { icon: typeof CreditCard; title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+      <p className="flex items-center gap-2 text-[13px] font-extrabold text-[#0b3d91]">
+        <Icon size={16} /> {title}
+      </p>
+      {children}
+    </div>
+  );
+}
+
 export default function InstallmentApplyForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -209,15 +220,6 @@ export default function InstallmentApplyForm() {
       toast.error(res.message || "আবেদন জমা দেওয়া যায়নি");
     }
   };
-
-  const Section = ({ icon: Icon, title, children }: { icon: typeof CreditCard; title: string; children: React.ReactNode }) => (
-    <div className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
-      <p className="flex items-center gap-2 text-[13px] font-extrabold text-[#0b3d91]">
-        <Icon size={16} /> {title}
-      </p>
-      {children}
-    </div>
-  );
 
   return (
     <div className="flex flex-col gap-2.5 px-2 pt-2 pb-2 text-[#16213a]">

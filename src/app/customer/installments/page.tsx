@@ -1,9 +1,9 @@
-import { getMyInstallmentPlans } from "@/actions/installmentActions";
+import { getMyInstallmentPlans, getMyInstallmentApplications } from "@/actions/installmentActions";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { CustomerLayout } from "@/components/layout";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
-import { CheckCircle2, ChevronRight, CreditCard, PlusCircle } from "lucide-react";
+import { CheckCircle2, ChevronRight, ClipboardList, CreditCard, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -23,8 +23,9 @@ export default async function CustomerInstallmentsPage() {
   const session = await verifyCustomerSession();
   if (!session.isAuth || !session.customer) redirect("/customer/login");
 
-  const res = await getMyInstallmentPlans();
-  const plans = (res.success && Array.isArray(res.data) ? res.data : []) as any[];
+  const [plansRes, appsRes] = await Promise.all([getMyInstallmentPlans(), getMyInstallmentApplications()]);
+  const plans = (plansRes.success && Array.isArray(plansRes.data) ? plansRes.data : []) as any[];
+  const applications = (appsRes.success && Array.isArray(appsRes.data) ? appsRes.data : []) as any[];
 
   return (
     <CustomerLayout>
@@ -50,6 +51,38 @@ export default async function CustomerInstallmentsPage() {
           </span>
           <ChevronRight size={20} className="shrink-0 text-white/60" />
         </Link>
+
+        {/* Pending applications */}
+        {applications.filter((a: any) => a.status !== "approved").length > 0 && (
+          <div className="flex flex-col gap-2">
+            <span className="text-[14px] font-extrabold flex items-center gap-1.5"><ClipboardList size={16} className="text-[#0b3d91]" /> আমার আবেদন</span>
+            {applications.filter((a: any) => a.status !== "approved").map((a: any) => {
+              const APP_ST: Record<string, { label: string; cls: string }> = {
+                pending: { label: "অপেক্ষমান", cls: "bg-amber-50 text-amber-700 border-amber-200" },
+                under_review: { label: "পর্যালোচনাধীন", cls: "bg-blue-50 text-blue-700 border-blue-200" },
+                rejected: { label: "প্রত্যাখ্যাত", cls: "bg-red-50 text-red-700 border-red-200" },
+              };
+              const st = APP_ST[a.status] || APP_ST.pending;
+              return (
+                <Link
+                  key={a.applicationCode}
+                  href={`/customer/installments/applications/${a.applicationCode}`}
+                  className="rounded-md bg-white border border-[#dfe6f2] p-3 flex items-center gap-3 shadow-[0_4px_14px_rgba(11,61,145,0.06)]"
+                >
+                  <span className="size-10 rounded-full bg-[#f5f7fb] flex items-center justify-center shrink-0"><ClipboardList size={18} className="text-[#5b6784]" /></span>
+                  <span className="flex flex-col min-w-0 flex-1 leading-tight">
+                    <span className="text-[13px] font-extrabold truncate">{a.productModel}</span>
+                    <span className="text-[11px] font-semibold text-[#5b6784]">{a.applicationCode} · {formatDate(a.createdAt)}</span>
+                  </span>
+                  <span className="flex flex-col items-end shrink-0 gap-1">
+                    <span className={clsx("text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border", st.cls)}>{st.label}</span>
+                    <span className="text-[11px] font-extrabold text-[#0b3d91]">ট্র্যাক করুন</span>
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
 
         {plans.length === 0 ? (
           <div className="rounded-md bg-white border border-dashed border-[#c9d3e6] p-8 text-center flex flex-col items-center gap-2">

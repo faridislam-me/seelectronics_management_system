@@ -6,10 +6,12 @@ import { formatDate } from "@/utils";
 import clsx from "clsx";
 import {
   ArrowLeft,
+  Banknote,
   CheckCircle2,
   Clock,
   CreditCard,
   Download,
+  History,
   Phone,
   Wallet,
 } from "lucide-react";
@@ -32,10 +34,29 @@ const PAY_METHODS = [
   { key: "rocket", label: "Rocket", color: "text-[#8a2be2]", number: paymentDetails.rocket.number },
 ];
 
+const METHOD_LABELS: Record<string, string> = {
+  cash: "অফিসে নগদ",
+  bkash: "bKash",
+  nagad: "Nagad",
+  rocket: "Rocket",
+  bank: "ব্যাংক",
+};
+
+const METHOD_COLORS: Record<string, string> = {
+  cash: "text-[#178a42] bg-[#e9f9ef]",
+  bkash: "text-[#d1137b] bg-[#fce7f3]",
+  nagad: "text-[#ec1c24] bg-[#fee2e2]",
+  rocket: "text-[#8a2be2] bg-[#f3e8ff]",
+  bank: "text-[#0b3d91] bg-[#e8f1ff]",
+};
+
 export default function CustomerInstallmentDetail({ data }: { data: any }) {
   const { plan, schedule, nextDue } = data;
   const s = STATUS[plan.status] || STATUS.active;
   const [showPay, setShowPay] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+
+  const paidSchedules = schedule.filter((r: any) => r.status === "paid");
 
   const Stat = ({ label, value, accent }: { label: string; value: string; accent?: boolean }) => (
     <div className="rounded-md bg-white border border-[#dfe6f2] p-2.5">
@@ -56,14 +77,22 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
         <span className={clsx("shrink-0 text-[10px] font-extrabold uppercase px-2 py-1 rounded-full", s.cls)}>{s.label}</span>
       </div>
 
-      {/* Download invoice */}
-      <Link
-        href={`/pdf/download?type=installment-invoice&id=${plan.planCode}`}
-        target="_blank"
-        className="flex items-center justify-center gap-1.5 h-9 rounded-md bg-white border border-[#dfe6f2] text-[#0b3d91] text-[13px] font-extrabold"
-      >
-        <Download size={16} /> ইনভয়েস ডাউনলোড
-      </Link>
+      {/* Action buttons */}
+      <div className="grid grid-cols-2 gap-2">
+        <Link
+          href={`/pdf/download?type=installment-invoice&id=${plan.planCode}`}
+          target="_blank"
+          className="flex items-center justify-center gap-1.5 h-10 rounded-md bg-white border border-[#dfe6f2] text-[#0b3d91] text-[13px] font-extrabold"
+        >
+          <Download size={16} /> ইনভয়েস
+        </Link>
+        <button
+          onClick={() => setShowHistory(true)}
+          className="flex items-center justify-center gap-1.5 h-10 rounded-md bg-white border border-[#dfe6f2] text-[#0b3d91] text-[13px] font-extrabold"
+        >
+          <History size={16} /> পেমেন্ট হিস্টোরি
+        </button>
+      </div>
 
       {/* Next due / Pay Now */}
       {plan.status === "active" && nextDue && (
@@ -102,7 +131,17 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
                 </span>
                 <span className="flex flex-col min-w-0 flex-1 leading-tight">
                   <span className="text-[13px] font-extrabold">কিস্তি #{row.installmentNo}</span>
-                  <span className="text-[11px] font-semibold text-[#5b6784]">{formatDate(row.dueDate)}{paid && row.paidAt ? ` · পরিশোধিত ${formatDate(row.paidAt)}` : ""}</span>
+                  <span className="text-[11px] font-semibold text-[#5b6784]">
+                    {formatDate(row.dueDate)}
+                    {paid && row.paidAt ? ` · পরিশোধিত ${formatDate(row.paidAt)}` : ""}
+                  </span>
+                  {paid && row.paymentMethod && (
+                    <span className="text-[10px] font-bold text-[#5b6784] mt-0.5">
+                      {METHOD_LABELS[row.paymentMethod] || row.paymentMethod}
+                      {row.paymentNumber ? ` · ${row.paymentNumber}` : ""}
+                      {row.transactionId ? ` · TxID: ${row.transactionId}` : ""}
+                    </span>
+                  )}
                 </span>
                 <span className="flex flex-col items-end shrink-0">
                   <span className="text-[13px] font-extrabold">{bdt(row.amount)}</span>
@@ -114,7 +153,61 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
         </div>
       </div>
 
-      {/* Pay Now popup — payment info only (no gateway) */}
+      {/* Payment History Modal */}
+      {showHistory && (
+        <Modal isVisible title="পেমেন্ট হিস্টোরি" onClose={() => setShowHistory(false)}>
+          <div className="space-y-3 max-w-md">
+            {paidSchedules.length === 0 ? (
+              <p className="text-center text-[#5b6784] py-6">এখনো কোনো পেমেন্ট হয়নি</p>
+            ) : (
+              paidSchedules.map((row: any) => {
+                const mc = METHOD_COLORS[row.paymentMethod] || "text-gray-600 bg-gray-50";
+                return (
+                  <div key={row.id} className="rounded-md border border-[#dfe6f2] p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[14px] font-extrabold">কিস্তি #{row.installmentNo}</span>
+                      <span className="text-[15px] font-extrabold text-[#178a42]">{bdt(row.paidAmount || row.amount)}</span>
+                    </div>
+                    <div className="space-y-1.5 text-[12px]">
+                      <div className="flex items-center gap-2">
+                        <Clock size={13} className="text-[#5b6784] shrink-0" />
+                        <span className="font-semibold text-[#5b6784]">
+                          {row.paidAt ? new Date(row.paidAt).toLocaleString("bn-BD", { dateStyle: "long", timeStyle: "short" }) : formatDate(row.paidAt)}
+                        </span>
+                      </div>
+                      {row.paymentMethod && (
+                        <div className="flex items-center gap-2">
+                          <Banknote size={13} className="text-[#5b6784] shrink-0" />
+                          <span className={clsx("font-extrabold text-[11px] px-2 py-0.5 rounded-full", mc)}>
+                            {METHOD_LABELS[row.paymentMethod] || row.paymentMethod}
+                          </span>
+                        </div>
+                      )}
+                      {row.paymentNumber && (
+                        <div className="flex items-center gap-2">
+                          <Phone size={13} className="text-[#5b6784] shrink-0" />
+                          <span className="font-bold text-[#16213a]">নম্বর: <span className="font-mono">{row.paymentNumber}</span></span>
+                        </div>
+                      )}
+                      {row.transactionId && (
+                        <div className="flex items-center gap-2">
+                          <CreditCard size={13} className="text-[#5b6784] shrink-0" />
+                          <span className="font-bold text-[#16213a]">TxID: <span className="font-mono">{row.transactionId}</span></span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <button onClick={() => setShowHistory(false)} className="w-full h-10 rounded-md bg-[#0b3d91] text-white text-[13px] font-extrabold">
+              বন্ধ করুন
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Pay Now popup */}
       {showPay && (
         <Modal isVisible title="কিস্তি পরিশোধ" onClose={() => setShowPay(false)}>
           <div className="space-y-3 max-w-sm text-[#16213a]">
@@ -141,7 +234,10 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
 
             <div className="rounded-md bg-[#fff8e6] border border-[#f5dfa0] p-2.5 text-[12px] text-[#8a5a12] font-semibold flex items-start gap-2">
               <Phone size={15} className="shrink-0 mt-0.5" />
-              পেমেন্টের পর অনুগ্রহ করে <b>{contactDetails.customerCare}</b> নম্বরে জানান, আমরা আপনার কিস্তি আপডেট করে দেব।
+              <span>
+                পেমেন্ট করার পর <b>পেমেন্ট নম্বর</b> ও <b>ট্রানজেকশন আইডি</b> সহ <b>{contactDetails.customerCare}</b> নম্বরে জানান।
+                অফিসে নগদ পরিশোধ করলেও জানিয়ে দিন।
+              </span>
             </div>
 
             <button onClick={() => setShowPay(false)} className="w-full h-10 rounded-md bg-[#0b3d91] text-white text-[13px] font-extrabold inline-flex items-center justify-center gap-2">

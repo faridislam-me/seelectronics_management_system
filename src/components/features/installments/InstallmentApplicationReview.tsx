@@ -1,6 +1,6 @@
 "use client";
 
-import { reviewInstallmentApplication } from "@/actions/installmentActions";
+import { reviewInstallmentApplication, updateApplicationTrackingStep } from "@/actions/installmentActions";
 import { Modal } from "@/components/ui";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
@@ -9,6 +9,7 @@ import {
   Ban,
   Camera,
   CheckCircle2,
+  ClipboardList,
   CreditCard,
   Home,
   Loader2,
@@ -54,6 +55,18 @@ function ImgCard({ src, label }: { src: string | null; label: string }) {
   );
 }
 
+const TRACKING_STEPS = [
+  { key: "pending", label: "আবেদন গৃহীত" },
+  { key: "processing", label: "প্রক্রিয়াধীন" },
+  { key: "nid_verify", label: "এনআইডি যাচাই" },
+  { key: "address_verify", label: "ঠিকানা যাচাই" },
+  { key: "guarantor_verify", label: "জামিনদার যাচাই" },
+  { key: "bank_check_verify", label: "ব্যাংক চেক যাচাই" },
+  { key: "documents_verified", label: "কাগজপত্র যাচাই শেষ" },
+  { key: "approved", label: "অনুমোদিত" },
+  { key: "ready_for_delivery", label: "পণ্য বুঝিয়ে দিতে প্রস্তুত" },
+];
+
 export default function InstallmentApplicationReview({ data }: { data: any }) {
   const router = useRouter();
   const sm = STATUS_META[data.status] || STATUS_META.pending;
@@ -74,6 +87,24 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
   // Reject state
   const [showReject, setShowReject] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+
+  // Tracking step
+  const [trackingStep, setTrackingStep] = useState(data.trackingStep || "pending");
+  const [trackingSaving, setTrackingSaving] = useState(false);
+
+  const handleTrackingUpdate = async (step: string) => {
+    setTrackingStep(step);
+    setTrackingSaving(true);
+    const res = await updateApplicationTrackingStep(data.applicationCode, step);
+    setTrackingSaving(false);
+    if (res.success) {
+      toast.success(res.message);
+      router.refresh();
+    } else {
+      toast.error(res.message);
+      setTrackingStep(data.trackingStep || "pending");
+    }
+  };
 
   const cp = Number(cashPrice) || 0;
   const ec = Number(extraCharge) || 0;
@@ -164,6 +195,22 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
           </div>
         )}
       </div>
+
+      {/* Tracking step */}
+      {isPending && (
+        <div className="rounded-lg bg-white border border-gray-200 p-3.5 flex items-center gap-3 flex-wrap">
+          <p className="text-sm font-black text-gray-900 flex items-center gap-2"><ClipboardList size={16} className="text-[#0b3d91]" /> ট্র্যাকিং স্টেপ:</p>
+          <select
+            value={trackingStep}
+            onChange={(e) => handleTrackingUpdate(e.target.value)}
+            disabled={trackingSaving}
+            className="__input w-auto min-w-[200px] text-sm font-bold"
+          >
+            {TRACKING_STEPS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+          </select>
+          {trackingSaving && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
+        </div>
+      )}
 
       {/* Info cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

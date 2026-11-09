@@ -13,6 +13,7 @@ import {
   CreditCard,
   Home,
   Loader2,
+  Phone,
   RefreshCw,
   ShieldCheck,
   User,
@@ -184,8 +185,8 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
 
   const Field = ({ label, value }: { label: string; value: string | null | undefined }) =>
     value ? (
-      <p className="text-sm text-gray-600">
-        <span className="text-gray-400">{label}:</span> <b>{value}</b>
+      <p className="text-sm text-[#16213a]">
+        <span className="text-[#0a2f70] font-semibold">{label}:</span> <b>{value}</b>
       </p>
     ) : null;
 
@@ -200,7 +201,7 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
               <h1 className="text-xl font-black text-gray-900 truncate">{data.customerName}</h1>
               <span className={clsx("text-[10px] font-bold uppercase px-2 py-1 rounded-full border", sm.cls)}>{sm.label}</span>
             </div>
-            <p className="text-xs text-gray-500 font-mono">{data.applicationCode} · {data.customerPhone}</p>
+            <p className="text-xs text-[#3d4f72] font-mono flex items-center gap-1.5">{data.applicationCode} · <a href={`tel:${data.customerPhone}`} className="inline-flex items-center gap-1 font-bold text-blue-600 hover:text-blue-700"><Phone size={12} />{data.customerPhone}</a></p>
           </div>
         </div>
         {isPending && (
@@ -224,7 +225,7 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
       {/* Tracking step */}
       {isPending && (
         <div className="rounded-lg bg-white border border-gray-200 p-3.5 flex items-center gap-3 flex-wrap">
-          <p className="text-sm font-black text-gray-900 flex items-center gap-2"><ClipboardList size={16} className="text-[#0b3d91]" /> ট্র্যাকিং স্টেপ:</p>
+          <p className="text-sm font-black text-[#0a2f70] flex items-center gap-2"><ClipboardList size={16} className="text-[#0b3d91]" /> ট্র্যাকিং স্টেপ:</p>
           <select
             value={trackingStep}
             onChange={(e) => handleTrackingUpdate(e.target.value)}
@@ -240,7 +241,7 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
       {/* Info cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="rounded-lg bg-white border border-gray-200 p-3.5">
-          <p className="flex items-center gap-2 text-sm font-black text-gray-900 mb-2"><CreditCard size={16} className="text-[#0b3d91]" /> পণ্যের তথ্য</p>
+          <p className="flex items-center gap-2 text-sm font-black text-[#0a2f70] mb-2"><CreditCard size={16} className="text-[#0b3d91]" /> পণ্যের তথ্য</p>
           <Field label="মডেল" value={data.productModel} />
           <Field label="ধরন" value={data.productType ? (PRODUCT_LABELS[data.productType] || data.productType) : undefined} />
           {data.productType === "others" && <Field label="অন্যান্য পণ্য" value={data.productTypeOther} />}
@@ -248,9 +249,14 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
           <Field label="আবেদিত ডাউন পেমেন্ট" value={data.desiredDownPayment ? `৳${Number(data.desiredDownPayment).toLocaleString()}` : undefined} />
         </div>
         <div className="rounded-lg bg-white border border-gray-200 p-3.5">
-          <p className="flex items-center gap-2 text-sm font-black text-gray-900 mb-2"><User size={16} className="text-[#0b3d91]" /> গ্রাহক</p>
+          <p className="flex items-center gap-2 text-sm font-black text-[#0a2f70] mb-2"><User size={16} className="text-[#0b3d91]" /> গ্রাহক</p>
           <Field label="নাম" value={data.customerName} />
-          <Field label="ফোন" value={data.customerPhone} />
+          {data.customerPhone && (
+            <p className="text-sm text-gray-600 flex items-center gap-2">
+              <span className="text-gray-400">ফোন:</span>
+              <a href={`tel:${data.customerPhone}`} className="inline-flex items-center gap-1.5 font-bold text-blue-600 hover:text-blue-700"><Phone size={13} />{data.customerPhone}</a>
+            </p>
+          )}
           <Field label="ঠিকানা" value={data.customerAddress} />
           <Field label="পিতার নাম" value={data.fatherName} />
           <Field label="মাতার নাম" value={data.motherName} />
@@ -260,14 +266,19 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
       {/* Addresses */}
       {(data.currentAddress || data.permanentAddress) && (
         <div className="rounded-lg bg-white border border-gray-200 p-3.5">
-          <p className="flex items-center gap-2 text-sm font-black text-gray-900 mb-2"><Home size={16} className="text-[#0b3d91]" /> ঠিকানা বিবরণ</p>
+          <p className="flex items-center gap-2 text-sm font-black text-[#0a2f70] mb-2"><Home size={16} className="text-[#0b3d91]" /> ঠিকানা বিবরণ</p>
           <Field label="বর্তমান ঠিকানা" value={data.currentAddress} />
           <Field label="স্থায়ী ঠিকানা" value={data.permanentAddress} />
           {data.isRenting && (
             <>
               <p className="text-xs font-bold text-amber-600 mt-1">ভাড়াটিয়া</p>
               <Field label="বাড়ির মালিকের নাম" value={data.landlordName} />
-              <Field label="বাড়ির মালিকের ফোন" value={data.landlordPhone} />
+              {data.landlordPhone && (
+                <p className="text-sm text-gray-600 flex items-center gap-2">
+                  <span className="text-gray-400">বাড়ির মালিকের ফোন:</span>
+                  <a href={`tel:${data.landlordPhone}`} className="inline-flex items-center gap-1.5 font-bold text-blue-600 hover:text-blue-700"><Phone size={13} />{data.landlordPhone}</a>
+                </p>
+              )}
             </>
           )}
         </div>
@@ -276,23 +287,28 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
       {/* Guarantor */}
       {(data.guarantorName || data.guarantorPhone) && (
         <div className="rounded-lg bg-white border border-gray-200 p-3.5">
-          <p className="flex items-center gap-2 text-sm font-black text-gray-900 mb-2"><ShieldCheck size={16} className="text-[#0b3d91]" /> জামিনদার</p>
+          <p className="flex items-center gap-2 text-sm font-black text-[#0a2f70] mb-2"><ShieldCheck size={16} className="text-[#0b3d91]" /> জামিনদার</p>
           <Field label="নাম" value={data.guarantorName} />
-          <Field label="ফোন" value={data.guarantorPhone} />
+          {data.guarantorPhone && (
+            <p className="text-sm text-gray-600 flex items-center gap-2">
+              <span className="text-gray-400">ফোন:</span>
+              <a href={`tel:${data.guarantorPhone}`} className="inline-flex items-center gap-1.5 font-bold text-blue-600 hover:text-blue-700"><Phone size={13} />{data.guarantorPhone}</a>
+            </p>
+          )}
           <Field label="ঠিকানা" value={data.guarantorAddress} />
         </div>
       )}
 
       {data.notes && (
         <div className="rounded-lg bg-white border border-gray-200 p-3.5">
-          <p className="text-sm font-black text-gray-900 mb-1">গ্রাহকের নোট</p>
-          <p className="text-sm text-gray-600">{data.notes}</p>
+          <p className="text-sm font-black text-[#0a2f70] mb-1">গ্রাহকের নোট</p>
+          <p className="text-sm text-[#16213a]">{data.notes}</p>
         </div>
       )}
 
       {/* KYC images */}
       <div className="rounded-lg bg-white border border-gray-200 p-3.5">
-        <p className="flex items-center gap-2 text-sm font-black text-gray-900 mb-3"><Camera size={16} className="text-[#0b3d91]" /> আবেদনকারীর ডকুমেন্ট</p>
+        <p className="flex items-center gap-2 text-sm font-black text-[#0a2f70] mb-3"><Camera size={16} className="text-[#0b3d91]" /> আবেদনকারীর ডকুমেন্ট</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
           <ImgCard src={urls.photo} label="ছবি" aspect="passport" />
           <ImgCard src={urls.nidFront} label="NID সামনে" aspect="nid" />
@@ -305,7 +321,7 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
       {/* Guarantor images */}
       {(urls.guarantorPhoto || urls.guarantorSignature || urls.guarantorNidFront || urls.guarantorNidBack) && (
         <div className="rounded-lg bg-white border border-gray-200 p-3.5">
-          <p className="flex items-center gap-2 text-sm font-black text-gray-900 mb-3"><ShieldCheck size={16} className="text-[#0b3d91]" /> জামিনদারের ডকুমেন্ট</p>
+          <p className="flex items-center gap-2 text-sm font-black text-[#0a2f70] mb-3"><ShieldCheck size={16} className="text-[#0b3d91]" /> জামিনদারের ডকুমেন্ট</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <ImgCard src={urls.guarantorPhoto} label="জামিনদার ছবি" aspect="passport" />
             <ImgCard src={urls.guarantorSignature} label="জামিনদার স্বাক্ষর" aspect="signature" />
@@ -328,7 +344,7 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
         </div>
       )}
 
-      <p className="text-xs text-gray-400">আবেদনের তারিখ: {formatDate(data.createdAt)}</p>
+      <p className="text-xs text-[#3d4f72]">আবেদনের তারিখ: {formatDate(data.createdAt)}</p>
 
       {/* Approve modal */}
       {showApprove && (

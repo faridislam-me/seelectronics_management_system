@@ -3,7 +3,7 @@ import { CopyButton } from "@/components/ui";
 import { SearchParams } from "@/types";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
-import { Crown } from "lucide-react";
+import { Crown, Phone } from "lucide-react";
 import InvoicePreviewButton from "../../features/invoices/InvoicePreviewButton";
 import SellerTag from "@/components/ui/SellerTag";
 import CustomerActionButtons from "./CustomerActionButtons";
@@ -114,8 +114,10 @@ export default async function CustomerList(
         <SellerTag seller={customer.seller} />
       </td>
       <td className="py-3 px-4 whitespace-nowrap text-gray-700 font-bold text-sm sm:text-base">
-        <span>{customer.phone}</span>
-        <CopyButton content={customer.phone} />
+        <span className="inline-flex items-center gap-1.5">
+          <a href={`tel:${customer.phone}`} className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700"><Phone size={13} />{customer.phone}</a>
+          <CopyButton content={customer.phone} />
+        </span>
       </td>
       <td className="py-3 px-4 whitespace-nowrap">
         <p

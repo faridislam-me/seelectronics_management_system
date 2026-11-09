@@ -67,7 +67,7 @@ export default function StaffListClient({ staffs }: { staffs: StaffsType[] }) {
               </div>
 
               <div className="flex flex-col sm:gap-1.5 md:gap-2  sm:pt-2 border-t border-gray-50">
-                <div className="flex items-center justify-center gap-1 sm:gap-2 text-gray-500">
+                <a href={`tel:${staff.phone}`} className="flex items-center justify-center gap-1 sm:gap-2 text-gray-500 hover:text-blue-600 transition-colors">
                   <Phone
                     size={10}
                     className="text-brand/40 sm:w-3.5 sm:h-3.5"
@@ -75,7 +75,7 @@ export default function StaffListClient({ staffs }: { staffs: StaffsType[] }) {
                   <span className="text-[10px] sm:text-sm md:text-sm font-bold">
                     {staff.phone}
                   </span>
-                </div>
+                </a>
                 <div className="flex items-center justify-center gap-1 sm:gap-2 text-gray-500">
                   <MapPin
                     size={10}

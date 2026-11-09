@@ -142,7 +142,7 @@ export default function ApplicationTrackingClient({ app }: { app: any }) {
       )}
 
       <p className="text-[12px] text-center text-[#3d4f72] px-4">
-        আবেদন সংক্রান্ত তথ্যের জন্য যোগাযোগ করুন — 09649355555
+        আবেদন সংক্রান্ত তথ্যের জন্য যোগাযোগ করুন — <a href="tel:09649355555" className="font-bold text-[#1f5fc9]">09649355555</a>
       </p>
     </div>
   );

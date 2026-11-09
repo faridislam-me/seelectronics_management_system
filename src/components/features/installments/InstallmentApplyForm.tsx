@@ -387,7 +387,7 @@ export default function InstallmentApplyForm() {
             className="size-4 mt-0.5 shrink-0 rounded accent-[#0b3d91]"
           />
           <span className="text-[12px] font-semibold text-[#5b6784] leading-relaxed">
-            আমি <b className="text-[#0b3d91]">SE Electronics</b>-এর কিস্তির শর্তাবলী পড়েছি এবং সম্মতি দিচ্ছি। <span className="text-red-500">*</span>
+            আমি <a href="/customer/installments/terms" target="_blank" className="text-[#0b3d91] font-extrabold underline underline-offset-2" onClick={(e) => e.stopPropagation()}>SE Electronics-এর কিস্তির শর্তাবলী</a> পড়েছি এবং সম্মতি দিচ্ছি। <span className="text-red-500">*</span>
           </span>
         </label>
       </Section>

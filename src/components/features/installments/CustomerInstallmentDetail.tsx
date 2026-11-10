@@ -119,7 +119,7 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
       </div>
 
       {/* Schedule */}
-      <div className="rounded-md bg-white border border-[#dfe6f2] overflow-hidden shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+      <div id="schedule" className="rounded-md bg-white border border-[#dfe6f2] overflow-hidden shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
         <p className="px-3 py-2.5 text-[14px] font-extrabold border-b border-[#eef1f6]">কিস্তির সময়সূচি</p>
         <div className="divide-y divide-[#eef1f6]">
           {schedule.map((row: any) => {

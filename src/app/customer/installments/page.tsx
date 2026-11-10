@@ -33,6 +33,8 @@ const APP_STATUS: Record<string, { label: string; cls: string }> = {
   pending: { label: "অপেক্ষমান", cls: "bg-amber-50 text-amber-700 border-amber-200" },
   under_review: { label: "পর্যালোচনাধীন", cls: "bg-blue-50 text-blue-700 border-blue-200" },
   rejected: { label: "প্রত্যাখ্যাত", cls: "bg-red-50 text-red-700 border-red-200" },
+  cancelled: { label: "বাতিল", cls: "bg-gray-100 text-gray-700 border-gray-300" },
+  reapply: { label: "পুনরায় আবেদন", cls: "bg-orange-50 text-orange-700 border-orange-200" },
 };
 
 export default async function CustomerInstallmentsPage() {
@@ -159,7 +161,7 @@ export default async function CustomerInstallmentsPage() {
             </div>
           )}
           {primaryPlan ? (
-            <Link href={`/customer/installments/${primaryPlan.planCode}`} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.97] active:shadow-none transition-all">
+            <Link href={`/customer/installments/${primaryPlan.planCode}#schedule`} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.97] active:shadow-none transition-all">
               <span className="size-10 rounded-full bg-[#ffe9ec] text-[#c81f38] flex items-center justify-center shrink-0"><AlertTriangle size={20} /></span>
               <span className="text-[12px] font-extrabold">বাকি কিস্তি</span>
               <span className="text-[15px] font-extrabold text-[#c81f38] -mt-1">{overdueCount}</span>

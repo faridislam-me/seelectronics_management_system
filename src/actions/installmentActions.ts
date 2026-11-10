@@ -952,7 +952,12 @@ export const getMyApplicationByCode = async (code: string) => {
       return { success: false, message: "আবেদন পাওয়া যায়নি" };
     }
 
-    return { success: true, data: app };
+    let photoUrl: string | null = null;
+    if (app.photoKey) {
+      try { photoUrl = await getObjectUrl(app.photoKey); } catch {}
+    }
+
+    return { success: true, data: { ...app, photoUrl } };
   } catch (error) {
     console.error("getMyApplicationByCode error:", error);
     return { success: false, message: "আবেদন আনা যায়নি" };

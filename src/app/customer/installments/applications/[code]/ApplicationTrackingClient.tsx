@@ -2,7 +2,7 @@
 
 import { formatDate } from "@/utils";
 import clsx from "clsx";
-import { ArrowLeft, Ban, Check, Circle, ClipboardList, RefreshCw } from "lucide-react";
+import { ArrowLeft, Ban, Check, Circle, ClipboardList, RefreshCw, User } from "lucide-react";
 import Link from "next/link";
 
 const STEPS = [
@@ -46,10 +46,20 @@ export default function ApplicationTrackingClient({ app }: { app: any }) {
       </div>
 
       {/* Product info */}
-      <div className="rounded-md bg-white border border-[#dfe6f2] p-3.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
-        <p className="text-[13px] font-semibold text-[#3d4f72]">পণ্য</p>
-        <p className="text-[17px] font-extrabold">{app.productModel}</p>
-        <p className="text-[12px] text-[#3d4f72] mt-0.5">আবেদনের তারিখ: {formatDate(app.createdAt)}</p>
+      <div className="rounded-md bg-white border border-[#dfe6f2] p-3.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] flex items-center gap-3">
+        <div className="flex flex-col min-w-0 flex-1">
+          <p className="text-[13px] font-semibold text-[#3d4f72]">পণ্য</p>
+          <p className="text-[17px] font-extrabold">{app.productModel}</p>
+          <p className="text-[12px] text-[#3d4f72] mt-0.5">আবেদনের তারিখ: {formatDate(app.createdAt)}</p>
+        </div>
+        {app.photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={app.photoUrl} alt="আবেদনকারী" className="size-20 rounded-md object-cover border border-[#dfe6f2] shrink-0" />
+        ) : (
+          <span className="size-20 rounded-md bg-[#f5f7fb] border border-[#dfe6f2] flex items-center justify-center shrink-0">
+            <User size={32} className="text-[#b0bdd0]" />
+          </span>
+        )}
       </div>
 
       {/* Rejected message */}

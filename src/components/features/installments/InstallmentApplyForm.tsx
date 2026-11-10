@@ -75,8 +75,8 @@ function FileInput({
           <img src={preview} alt={label} className="h-20 rounded object-contain" />
         ) : (
           <>
-            <Upload size={22} className="text-[#3d4f72]" />
-            <span className="text-[13px] font-semibold text-[#3d4f72]">ছবি আপলোড করুন</span>
+            <Upload size={22} className="text-[#b0bdd0]" />
+            <span className="text-[13px] font-semibold text-[#b0bdd0]">ছবি আপলোড করুন</span>
           </>
         )}
       </button>

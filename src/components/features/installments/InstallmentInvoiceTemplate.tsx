@@ -54,8 +54,8 @@ export default function InstallmentInvoiceTemplate({
         fontFamily: `Inter, 'Tiro Bangla', SolaimanLipi, sans-serif`,
       }}
     >
-      <div className="absolute top-[200px] left-[40px] right-[40px]">
-        <div className="flex items-center justify-between mb-4">
+      <div className="absolute top-[185px] left-[40px] right-[40px]">
+        <div className="flex items-center justify-between mb-3">
           <div className="text-left">
             <div className="text-xl font-bold tracking-wide">
               INSTALLMENT INVOICE
@@ -74,7 +74,7 @@ export default function InstallmentInvoiceTemplate({
         </div>
 
         {/* Customer + product */}
-        <div className="flex justify-between gap-6 mb-4 text-sm">
+        <div className="flex justify-between gap-6 mb-3 text-sm">
           <div className="space-y-1">
             <div className="font-semibold text-base mb-1">Customer</div>
             <div>
@@ -118,7 +118,7 @@ export default function InstallmentInvoiceTemplate({
         </div>
 
         {/* Money breakdown */}
-        <div className="grid grid-cols-2 gap-x-10 mb-4">
+        <div className="grid grid-cols-2 gap-x-10 mb-3">
           <div>
             <MoneyRow label="Cash Price" value={tk(data.cashPrice)} />
             <MoneyRow label="Extra Charge" value={tk(data.extraCharge)} />

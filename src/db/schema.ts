@@ -1460,6 +1460,7 @@ export const installmentDueStatusEnum = pgEnum("installmentDueStatus", [
   "pending",
   "paid",
   "overdue",
+  "claimed",
 ]);
 
 export const installmentPlans = pgTable(

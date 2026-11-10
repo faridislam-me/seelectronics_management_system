@@ -465,8 +465,8 @@ export const getMyInstallmentPlanByCode = async (code: string) => {
       .where(eq(installmentSchedule.planId, plan.id))
       .orderBy(installmentSchedule.installmentNo);
 
-    // Next unpaid due (for the "Pay Now" call-to-action)
-    const nextDue = schedule.find((s) => s.status !== "paid") || null;
+    // Next unpaid due (for the "Pay Now" call-to-action); skip already paid/claimed
+    const nextDue = schedule.find((s) => s.status !== "paid" && s.status !== "claimed") || null;
 
     return {
       success: true,
@@ -961,5 +961,52 @@ export const getMyApplicationByCode = async (code: string) => {
   } catch (error) {
     console.error("getMyApplicationByCode error:", error);
     return { success: false, message: "আবেদন আনা যায়নি" };
+  }
+};
+
+/** Customer claims they paid an installment (admin verifies later). */
+export const claimInstallmentPayment = async (input: {
+  planCode: string;
+  scheduleId: string;
+  paymentMethod: "bkash" | "nagad" | "rocket";
+  transactionId: string;
+  paymentNumber: string;
+}) => {
+  try {
+    const session = await verifyCustomerSession();
+    if (!session.isAuth || !session.customer) return UNAUTHORIZED;
+
+    const plan = await db.query.installmentPlans.findFirst({
+      where: eq(installmentPlans.planCode, input.planCode),
+    });
+    if (!plan || plan.customerId !== session.customer.customerId)
+      return { success: false, message: "প্ল্যান পাওয়া যায়নি" };
+
+    const row = await db.query.installmentSchedule.findFirst({
+      where: and(
+        eq(installmentSchedule.id, input.scheduleId),
+        eq(installmentSchedule.planId, plan.id),
+      ),
+    });
+    if (!row) return { success: false, message: "কিস্তি পাওয়া যায়নি" };
+    if (row.status === "paid") return { success: false, message: "এই কিস্তি ইতোমধ্যে পরিশোধিত" };
+    if (row.status === "claimed") return { success: false, message: "এই কিস্তির পেমেন্ট ইতোমধ্যে জমা দেওয়া হয়েছে, যাচাইয়ের অপেক্ষায়" };
+
+    await db
+      .update(installmentSchedule)
+      .set({
+        status: "claimed",
+        paymentMethod: input.paymentMethod,
+        transactionId: input.transactionId.trim(),
+        paymentNumber: input.paymentNumber.trim(),
+      })
+      .where(eq(installmentSchedule.id, input.scheduleId));
+
+    revalidatePath("/installments");
+    revalidatePath(`/customer/installments/${input.planCode}`);
+    return { success: true, message: "পেমেন্ট তথ্য সফলভাবে জমা হয়েছে। যাচাই করে নিশ্চিত করা হবে।" };
+  } catch (error) {
+    console.error("claimInstallmentPayment error:", error);
+    return { success: false, message: "পেমেন্ট তথ্য জমা দেওয়া যায়নি" };
   }
 };

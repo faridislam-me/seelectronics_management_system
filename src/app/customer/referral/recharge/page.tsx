@@ -1,9 +1,8 @@
 "use client";
 
-import { requestMobileRecharge, getMyRechargeRequests } from "@/actions/rechargeActions";
-import { formatDate } from "@/utils";
+import { requestMobileRecharge, getDrivePackages } from "@/actions/rechargeActions";
 import clsx from "clsx";
-import { ArrowLeft, CheckCircle2, Clock, Gift, Globe, Loader2, Package, Smartphone, XCircle, Zap } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Gift, History, Loader2, Package, Smartphone, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -17,27 +16,16 @@ const RECHARGE_TYPES = [
   { value: "drive_offer", label: "ড্রাইভ অফার", icon: Zap, color: "bg-[#f39c12]" },
 ];
 
-const RECHARGE_TYPE_LABELS: Record<string, string> = {
-  recharge: "রিচার্জ",
-  regular_pack: "রেগুলার প্যাক",
-  drive_pack: "ড্রাইভ প্যাক",
-  drive_offer: "ড্রাইভ অফার",
-};
-
 const OPERATORS = [
   { value: "grameenphone", label: "Grameenphone", color: "text-[#00a550]" },
   { value: "banglalink", label: "Banglalink", color: "text-[#f7941d]" },
   { value: "robi", label: "Robi", color: "text-[#e2001a]" },
   { value: "airtel", label: "Airtel", color: "text-[#e40000]" },
   { value: "teletalk", label: "Teletalk", color: "text-[#0066b3]" },
+  { value: "skitto", label: "Skitto", color: "text-[#6c5ce7]" },
 ];
 
-const STATUS_META: Record<string, { label: string; cls: string; icon: typeof Clock }> = {
-  pending: { label: "অপেক্ষমান", cls: "bg-amber-50 text-amber-700", icon: Clock },
-  processing: { label: "প্রক্রিয়াধীন", cls: "bg-blue-50 text-blue-700", icon: Clock },
-  completed: { label: "সম্পন্ন", cls: "bg-[#e9f9ef] text-[#178a42]", icon: CheckCircle2 },
-  rejected: { label: "প্রত্যাখ্যাত", cls: "bg-red-50 text-red-700", icon: XCircle },
-};
+type DrivePackage = { id: string; name: string; amount: number; description?: string; validity?: string };
 
 export default function MobileRechargePage() {
   const router = useRouter();
@@ -49,19 +37,52 @@ export default function MobileRechargePage() {
   const [operator, setOperator] = useState("");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
-  const [requests, setRequests] = useState<any[]>([]);
+  const [packages, setPackages] = useState<DrivePackage[]>([]);
+  const [loadingPkgs, setLoadingPkgs] = useState(false);
+  const [selectedPkg, setSelectedPkg] = useState<DrivePackage | null>(null);
+
+  const isPackageType = rechargeType !== "recharge";
 
   useEffect(() => {
-    getMyRechargeRequests().then((res) => {
-      if (res.success && Array.isArray(res.data)) setRequests(res.data);
+    if (!isPackageType || !operator) { setPackages([]); setSelectedPkg(null); return; }
+    setLoadingPkgs(true);
+    setSelectedPkg(null);
+    getDrivePackages(operator).then((res) => {
+      if (res.success && Array.isArray(res.data)) {
+        const type = rechargeType === "regular_pack" ? "regular" : "drive";
+        const filtered = res.data.filter((d: any) =>
+          rechargeType === "drive_offer" ? true : (d.type === type || !d.type),
+        );
+        setPackages(filtered.map((d: any) => ({
+          id: d.id || d.package_id || String(d.amount),
+          name: d.name || d.title || `${d.amount} Tk`,
+          amount: Number(d.amount || d.price || 0),
+          description: d.description || d.detail || "",
+          validity: d.validity || "",
+        })));
+      } else {
+        setPackages([]);
+      }
+      setLoadingPkgs(false);
     });
-  }, []);
+  }, [operator, rechargeType, isPackageType]);
 
   const handleSubmit = async () => {
     if (!rechargePhone.trim()) { toast.error("রিচার্জ নম্বর দিন"); return; }
     if (!operator) { toast.error("অপারেটর নির্বাচন করুন"); return; }
-    const amt = Number(amount);
-    if (!amt || amt < 10) { toast.error("ন্যূনতম ৳১০"); return; }
+
+    let amt: number;
+    let pkgId: string | undefined;
+
+    if (isPackageType) {
+      if (!selectedPkg) { toast.error("একটি প্যাকেজ নির্বাচন করুন"); return; }
+      amt = selectedPkg.amount;
+      pkgId = selectedPkg.id;
+    } else {
+      amt = Number(amount);
+      if (!amt || amt < 10) { toast.error("ন্যূনতম ৳১০"); return; }
+    }
+
     if (amt > balance) { toast.error("অপর্যাপ্ত ব্যালেন্স"); return; }
 
     setLoading(true);
@@ -70,6 +91,7 @@ export default function MobileRechargePage() {
       operator,
       amount: amt,
       rechargeType,
+      packageId: pkgId,
     });
     setLoading(false);
 
@@ -78,9 +100,8 @@ export default function MobileRechargePage() {
       setRechargePhone("");
       setOperator("");
       setAmount("");
+      setSelectedPkg(null);
       router.refresh();
-      const updated = await getMyRechargeRequests();
-      if (updated.success && Array.isArray(updated.data)) setRequests(updated.data);
     } else {
       toast.error(res.message);
     }
@@ -93,10 +114,13 @@ export default function MobileRechargePage() {
       {/* Header */}
       <div className="flex items-center gap-2.5">
         <Link href="/customer/referral" className="size-9 rounded-md bg-white border border-[#dfe6f2] flex items-center justify-center shrink-0"><ArrowLeft size={18} /></Link>
-        <span className="flex flex-col leading-tight">
+        <span className="flex flex-col leading-tight flex-1">
           <span className="text-[16px] font-extrabold">মোবাইল রিচার্জ</span>
-          <span className="text-[11px] font-semibold text-[#5b6784]">রেফারেল ব্যালেন্স থেকে রিচার্জ করুন</span>
+          <span className="text-[11px] font-semibold text-[#5b6784]">রেফারেল ব্যালেন্স থেকে ইনস্ট্যান্ট রিচার্জ</span>
         </span>
+        <Link href="/customer/referral/recharge/history" className="size-9 rounded-md bg-white border border-[#dfe6f2] flex items-center justify-center shrink-0">
+          <History size={18} className="text-[#5b6784]" />
+        </Link>
       </div>
 
       {/* Balance banner */}
@@ -117,7 +141,7 @@ export default function MobileRechargePage() {
             <button
               key={rt.value}
               type="button"
-              onClick={() => setRechargeType(rt.value)}
+              onClick={() => { setRechargeType(rt.value); setSelectedPkg(null); }}
               className={clsx(
                 "flex flex-col items-center gap-1.5 p-2.5 rounded-lg border transition-all",
                 active
@@ -139,7 +163,7 @@ export default function MobileRechargePage() {
       {/* Form */}
       <div className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
         <p className="flex items-center gap-2 text-[13px] font-extrabold text-[#0b3d91]">
-          <selectedType.icon size={16} /> {selectedType.label} অনুরোধ
+          <selectedType.icon size={16} /> {selectedType.label}
         </p>
 
         <div>
@@ -171,55 +195,77 @@ export default function MobileRechargePage() {
             ))}
           </div>
         </div>
-        <div>
-          <label className="text-[11px] font-bold text-[#5b6784] mb-1 block">পরিমাণ (৳) *</label>
-          <input
-            type="number"
-            min="10"
-            step="1"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="ন্যূনতম ৳১০"
-            className="w-full h-10 rounded-md border border-[#dfe6f2] px-3 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none"
-          />
-        </div>
+
+        {/* Package list or amount input */}
+        {isPackageType ? (
+          <div>
+            <label className="text-[11px] font-bold text-[#5b6784] mb-1 block">প্যাকেজ নির্বাচন করুন *</label>
+            {!operator ? (
+              <p className="text-[11px] text-[#5b6784] py-3 text-center">প্রথমে অপারেটর নির্বাচন করুন</p>
+            ) : loadingPkgs ? (
+              <div className="flex items-center justify-center py-4"><Loader2 className="size-5 animate-spin text-[#0b3d91]" /></div>
+            ) : packages.length === 0 ? (
+              <p className="text-[11px] text-[#5b6784] py-3 text-center">কোনো প্যাকেজ পাওয়া যায়নি</p>
+            ) : (
+              <div className="max-h-48 overflow-y-auto flex flex-col gap-1.5">
+                {packages.map((pkg) => (
+                  <button
+                    key={pkg.id}
+                    type="button"
+                    onClick={() => setSelectedPkg(pkg)}
+                    className={clsx(
+                      "w-full text-left rounded-md border p-2.5 transition-colors",
+                      selectedPkg?.id === pkg.id
+                        ? "border-[#0b3d91] bg-[#e8f1ff]"
+                        : "border-[#dfe6f2] bg-white hover:bg-[#f5f7fb]",
+                    )}
+                  >
+                    <span className="flex items-center justify-between">
+                      <span className="text-[12px] font-extrabold">{pkg.name}</span>
+                      <span className="text-[13px] font-extrabold text-[#0b3d91]">৳{pkg.amount}</span>
+                    </span>
+                    {(pkg.description || pkg.validity) && (
+                      <span className="text-[10px] text-[#5b6784] mt-0.5 block">
+                        {pkg.description}{pkg.validity ? ` · ${pkg.validity}` : ""}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+            {selectedPkg && (
+              <div className="mt-2 rounded-md bg-[#e8f1ff] border border-[#0b3d91]/20 p-2 text-center">
+                <span className="text-[12px] font-extrabold text-[#0b3d91]">{selectedPkg.name} — ৳{selectedPkg.amount}</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div>
+            <label className="text-[11px] font-bold text-[#5b6784] mb-1 block">পরিমাণ (৳) *</label>
+            <input
+              type="number"
+              min="10"
+              step="1"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="ন্যূনতম ৳১০"
+              className="w-full h-10 rounded-md border border-[#dfe6f2] px-3 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none"
+            />
+          </div>
+        )}
+
         <button
           onClick={handleSubmit}
           disabled={loading}
           className="w-full h-11 rounded-md bg-[#0b3d91] text-white text-[14px] font-extrabold inline-flex items-center justify-center gap-2 shadow-[0_6px_18px_rgba(11,61,145,0.3)] disabled:opacity-60"
         >
-          {loading ? <Loader2 className="size-5 animate-spin" /> : <selectedType.icon size={18} />}
-          {loading ? "জমা হচ্ছে..." : `${selectedType.label} অনুরোধ করুন`}
+          {loading ? <Loader2 className="size-5 animate-spin" /> : <CheckCircle2 size={18} />}
+          {loading ? "রিচার্জ হচ্ছে..." : isPackageType ? `${selectedType.label} কিনুন` : "ইনস্ট্যান্ট রিচার্জ"}
         </button>
       </div>
 
-      {/* Previous requests */}
-      {requests.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <span className="text-[14px] font-extrabold">আগের অনুরোধ</span>
-          {requests.map((r) => {
-            const sm = STATUS_META[r.status] || STATUS_META.pending;
-            const Icon = sm.icon;
-            const typeLabel = RECHARGE_TYPE_LABELS[r.rechargeType] || "রিচার্জ";
-            return (
-              <div key={r.id} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-3 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
-                <span className={clsx("size-10 rounded-full flex items-center justify-center shrink-0", sm.cls)}><Icon size={18} /></span>
-                <span className="flex flex-col min-w-0 flex-1 leading-tight">
-                  <span className="text-[13px] font-extrabold">{r.rechargePhone} · {OPERATORS.find((o) => o.value === r.operator)?.label || r.operator}</span>
-                  <span className="text-[11px] font-semibold text-[#5b6784]">{typeLabel} · {formatDate(r.createdAt)} · {r.requestCode}</span>
-                </span>
-                <span className="flex flex-col items-end shrink-0">
-                  <span className="text-[14px] font-extrabold">৳{Number(r.amount).toLocaleString()}</span>
-                  <span className={clsx("text-[10px] font-extrabold uppercase", sm.cls.split(" ")[1])}>{sm.label}</span>
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       <p className="text-[11px] text-center text-[#5b6784] px-4">
-        অনুরোধ জমা দেওয়ার পর অ্যাডমিন ম্যানুয়ালি রিচার্জ করে সম্পন্ন করবেন।
+        রিচার্জ স্বয়ংক্রিয়ভাবে প্রক্রিয়া হবে এবং ব্যালেন্স কর্তন করা হবে।
       </p>
     </>
   );

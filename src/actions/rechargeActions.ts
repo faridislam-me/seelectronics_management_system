@@ -5,6 +5,7 @@ import { customers, mobileRechargeRequests } from "@/db/schema";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { verifySession } from "@/lib";
 import { generateRandomId } from "@/utils";
+import * as topup from "@/lib/successtopup";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -23,20 +24,22 @@ const OPERATORS: Record<string, string> = {
   robi: "Robi",
   airtel: "Airtel",
   teletalk: "Teletalk",
+  skitto: "Skitto",
 };
 
-/** Customer: submit a mobile recharge request from referral balance */
+/** Customer: submit and auto-process a mobile recharge */
 export const requestMobileRecharge = async (input: {
   rechargePhone: string;
   operator: string;
   amount: number;
   rechargeType?: string;
+  packageId?: string;
 }) => {
   try {
     const session = await verifyCustomerSession();
     if (!session.isAuth || !session.customer) return UNAUTHORIZED;
 
-    const { rechargePhone, operator, amount, rechargeType = "recharge" } = input;
+    const { rechargePhone, operator, amount, rechargeType = "recharge", packageId } = input;
 
     if (!rechargePhone?.trim()) return { success: false, message: "রিচার্জ নম্বর আবশ্যক" };
     if (!operator || !OPERATORS[operator]) return { success: false, message: "অপারেটর নির্বাচন করুন" };
@@ -52,7 +55,6 @@ export const requestMobileRecharge = async (input: {
       return { success: false, message: `অপর্যাপ্ত ব্যালেন্স। আপনার ব্যালেন্স: ৳${Number(customer.referralBalance).toLocaleString()}` };
     }
 
-    // Generate unique code
     let code = reqCode();
     for (let i = 0; i < 5; i++) {
       const exists = await db.query.mobileRechargeRequests.findFirst({
@@ -63,6 +65,19 @@ export const requestMobileRecharge = async (input: {
       code = reqCode();
     }
 
+    const trxid = `SE${Date.now()}${code}`;
+
+    // Call SuccessTopup API
+    const apiRes = await topup.recharge({
+      number: rechargePhone.trim(),
+      operator,
+      amount,
+      trxid,
+      packageId: packageId || undefined,
+    });
+
+    const isSuccess = apiRes.result === true;
+
     await db.insert(mobileRechargeRequests).values({
       requestCode: code,
       customerId: customer.customerId,
@@ -72,13 +87,30 @@ export const requestMobileRecharge = async (input: {
       operator: operator as any,
       amount,
       rechargeType,
+      packageId: packageId || null,
+      apiTrxId: trxid,
+      apiStatus: isSuccess ? "Success" : (apiRes.message || "Failed"),
+      status: isSuccess ? "completed" : "rejected",
+      rejectReason: isSuccess ? null : (apiRes.message || "API রিচার্জ ব্যর্থ"),
+      processedAt: new Date(),
     });
 
+    if (isSuccess) {
+      await db
+        .update(customers)
+        .set({ referralBalance: sql`${customers.referralBalance} - ${amount}` })
+        .where(eq(customers.customerId, customer.customerId));
+    }
+
     revalidatePath("/customer/referral");
-    return { success: true, requestCode: code, message: "রিচার্জ অনুরোধ জমা হয়েছে" };
+    revalidatePath("/recharge-requests");
+
+    return isSuccess
+      ? { success: true, requestCode: code, message: "রিচার্জ সম্পন্ন হয়েছে ✓" }
+      : { success: false, message: apiRes.message || "রিচার্জ ব্যর্থ হয়েছে। পরে আবার চেষ্টা করুন।" };
   } catch (error) {
     console.error("requestMobileRecharge error:", error);
-    return { success: false, message: "রিচার্জ অনুরোধ জমা দেওয়া যায়নি" };
+    return { success: false, message: "রিচার্জ প্রক্রিয়া ব্যর্থ হয়েছে" };
   }
 };
 
@@ -98,6 +130,22 @@ export const getMyRechargeRequests = async () => {
   } catch (error) {
     console.error("getMyRechargeRequests error:", error);
     return { success: false, message: "রিচার্জ তালিকা আনা যায়নি" };
+  }
+};
+
+/** Fetch available drive/bundle packages from SuccessTopup */
+export const getDrivePackages = async (operator: string) => {
+  try {
+    const session = await verifyCustomerSession();
+    if (!session.isAuth || !session.customer) return UNAUTHORIZED;
+
+    const res = await topup.getDrives(operator);
+    if (!res.result) return { success: false, message: "প্যাকেজ লোড করা যায়নি" };
+
+    return { success: true, data: res.drives || [] };
+  } catch (error) {
+    console.error("getDrivePackages error:", error);
+    return { success: false, message: "প্যাকেজ লোড করা যায়নি" };
   }
 };
 
@@ -138,7 +186,25 @@ export const getRechargeRequests = async ({
   }
 };
 
-/** Admin: complete or reject a recharge request */
+/** Admin: check API status for a transaction */
+export const checkRechargeStatus = async (code: string) => {
+  try {
+    if (!(await requireAdmin())) return UNAUTHORIZED;
+
+    const req = await db.query.mobileRechargeRequests.findFirst({
+      where: eq(mobileRechargeRequests.requestCode, code),
+    });
+    if (!req || !req.apiTrxId) return { success: false, message: "ট্র্যানজেকশন পাওয়া যায়নি" };
+
+    const res = await topup.checkStatus(req.apiTrxId);
+    return { success: true, data: res };
+  } catch (error) {
+    console.error("checkRechargeStatus error:", error);
+    return { success: false, message: "স্ট্যাটাস চেক ব্যর্থ" };
+  }
+};
+
+/** Admin: manually complete or reject a recharge request */
 export const reviewRechargeRequest = async (
   code: string,
   action: "complete" | "reject",
@@ -169,7 +235,6 @@ export const reviewRechargeRequest = async (
       return { success: true, message: "অনুরোধ প্রত্যাখ্যাত হয়েছে" };
     }
 
-    // Complete → deduct from referral balance
     const customer = await db.query.customers.findFirst({
       where: eq(customers.customerId, req.customerId),
       columns: { referralBalance: true },
@@ -200,5 +265,18 @@ export const reviewRechargeRequest = async (
   } catch (error) {
     console.error("reviewRechargeRequest error:", error);
     return { success: false, message: "আপডেট করা যায়নি" };
+  }
+};
+
+/** Admin: get SuccessTopup account balance */
+export const getTopupBalance = async () => {
+  try {
+    if (!(await requireAdmin())) return UNAUTHORIZED;
+    const res = await topup.getBalance();
+    if (!res.result) return { success: false, message: "ব্যালেন্স চেক ব্যর্থ" };
+    return { success: true, balance: res.balance, driveBalance: res.driveBalance };
+  } catch (error) {
+    console.error("getTopupBalance error:", error);
+    return { success: false, message: "ব্যালেন্স চেক ব্যর্থ" };
   }
 };

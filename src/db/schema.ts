@@ -1669,6 +1669,7 @@ export const mobileOperatorEnum = pgEnum("mobileOperator", [
   "robi",
   "airtel",
   "teletalk",
+  "skitto",
 ]);
 
 export const rechargeStatusEnum = pgEnum("rechargeStatus", [
@@ -1693,8 +1694,11 @@ export const mobileRechargeRequests = pgTable(
     operator: mobileOperatorEnum().notNull(),
     /** recharge | drive_pack | drive_offer | regular_pack */
     rechargeType: varchar({ length: 50 }).default("recharge").notNull(),
+    packageId: varchar({ length: 100 }),
     amount: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
     status: rechargeStatusEnum().default("pending").notNull(),
+    apiTrxId: varchar({ length: 100 }),
+    apiStatus: varchar({ length: 50 }),
     rejectReason: text(),
     adminNotes: text(),
     processedAt: timestamp({ withTimezone: true }),

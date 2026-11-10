@@ -1,19 +1,19 @@
 "use client";
 
-import { reviewRechargeRequest } from "@/actions/rechargeActions";
+import { reviewRechargeRequest, getTopupBalance } from "@/actions/rechargeActions";
 import { Modal } from "@/components/ui";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
-import { Ban, CheckCircle2, Loader2, Search, Smartphone } from "lucide-react";
+import { Ban, CheckCircle2, Loader2, Search, Smartphone, Wallet, Zap } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
   pending: { label: "অপেক্ষমান", cls: "bg-amber-50 text-amber-700 border-amber-200" },
   processing: { label: "প্রক্রিয়াধীন", cls: "bg-blue-50 text-blue-700 border-blue-200" },
   completed: { label: "সম্পন্ন", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  rejected: { label: "প্রত্যাখ্যাত", cls: "bg-red-50 text-red-700 border-red-200" },
+  rejected: { label: "ব্যর্থ", cls: "bg-red-50 text-red-700 border-red-200" },
 };
 
 const OPERATORS: Record<string, string> = {
@@ -22,6 +22,7 @@ const OPERATORS: Record<string, string> = {
   robi: "Robi",
   airtel: "Airtel",
   teletalk: "Teletalk",
+  skitto: "Skitto",
 };
 
 const RECHARGE_TYPE_LABELS: Record<string, string> = {
@@ -35,7 +36,7 @@ const FILTERS = [
   { value: "", label: "সব" },
   { value: "pending", label: "অপেক্ষমান" },
   { value: "completed", label: "সম্পন্ন" },
-  { value: "rejected", label: "প্রত্যাখ্যাত" },
+  { value: "rejected", label: "ব্যর্থ" },
 ];
 
 const bdt = (n: number) => `৳${Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
@@ -45,13 +46,19 @@ export default function RechargeRequestsClient({ requests }: { requests: any[] }
   const pathname = usePathname();
   const sp = useSearchParams();
   const [query, setQuery] = useState(sp.get("query") || "");
+  const [apiBalance, setApiBalance] = useState<number | null>(null);
 
-  // Action state
   const [target, setTarget] = useState<any>(null);
   const [actionType, setActionType] = useState<"complete" | "reject">("complete");
   const [rejectReason, setRejectReason] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getTopupBalance().then((res) => {
+      if (res.success) setApiBalance(res.balance);
+    });
+  }, []);
 
   const push = (key: string, val: string) => {
     const p = new URLSearchParams(sp.toString());
@@ -88,6 +95,12 @@ export default function RechargeRequestsClient({ requests }: { requests: any[] }
           <h1 className="text-lg font-black text-gray-900">মোবাইল রিচার্জ</h1>
           <span className="text-xs font-bold text-gray-400">({requests.length})</span>
         </div>
+        {apiBalance !== null && (
+          <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 bg-gray-50 border border-gray-200 rounded-md px-2.5 py-1.5">
+            <Wallet size={14} className="text-[#0b3d91]" />
+            API ব্যালেন্স: <span className="text-[#0b3d91] font-extrabold">{bdt(apiBalance)}</span>
+          </div>
+        )}
       </div>
 
       {/* Search + filter */}
@@ -134,9 +147,13 @@ export default function RechargeRequestsClient({ requests }: { requests: any[] }
               requests.map((r) => {
                 const sm = STATUS_META[r.status] || STATUS_META.pending;
                 const isPending = r.status === "pending" || r.status === "processing";
+                const isAuto = !!r.apiTrxId;
                 return (
                   <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2.5 font-mono font-bold text-xs">{r.requestCode}</td>
+                    <td className="px-3 py-2.5 font-mono font-bold text-xs">
+                      {r.requestCode}
+                      {isAuto && <Zap size={10} className="inline ml-1 text-amber-500" />}
+                    </td>
                     <td className="px-3 py-2.5">
                       <p className="font-bold">{r.customerName}</p>
                       <p className="text-xs text-gray-400">{r.customerPhone}</p>
@@ -176,6 +193,7 @@ export default function RechargeRequestsClient({ requests }: { requests: any[] }
               <p><span className="text-gray-400">অপারেটর:</span> <b>{OPERATORS[target.operator]}</b></p>
               <p><span className="text-gray-400">পরিমাণ:</span> <b className="text-[#0b3d91]">{bdt(target.amount)}</b></p>
               <p><span className="text-gray-400">গ্রাহক:</span> <b>{target.customerName}</b> ({target.customerPhone})</p>
+              {target.apiTrxId && <p><span className="text-gray-400">API TrxID:</span> <b className="font-mono text-xs">{target.apiTrxId}</b></p>}
             </div>
 
             {actionType === "complete" ? (

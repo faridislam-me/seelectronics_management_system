@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal } from "@/components/ui";
+import { claimInstallmentPayment } from "@/actions/installmentActions";
 import { contactDetails, paymentDetails } from "@/constants";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
@@ -8,15 +9,19 @@ import {
   ArrowLeft,
   Banknote,
   CheckCircle2,
+  ChevronRight,
   Clock,
   CreditCard,
   Download,
   History,
+  Loader2,
   Phone,
+  Send,
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 const bdt = (n: number) => `৳${Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 
@@ -29,9 +34,9 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 };
 
 const PAY_METHODS = [
-  { key: "bkash", label: "bKash", color: "text-[#d1137b]", number: paymentDetails.bkash.number },
-  { key: "nagad", label: "Nagad", color: "text-[#ec1c24]", number: paymentDetails.nagad.number },
-  { key: "rocket", label: "Rocket", color: "text-[#8a2be2]", number: paymentDetails.rocket.number },
+  { key: "bkash" as const, label: "bKash", color: "text-[#d1137b]", bg: "bg-[#e2136e]", number: paymentDetails.bkash.number },
+  { key: "nagad" as const, label: "Nagad", color: "text-[#ec1c24]", bg: "bg-[#ec1c24]", number: paymentDetails.nagad.number },
+  { key: "rocket" as const, label: "Rocket", color: "text-[#8a2be2]", bg: "bg-[#8a2be2]", number: paymentDetails.rocket.number },
 ];
 
 const METHOD_LABELS: Record<string, string> = {
@@ -55,8 +60,38 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
   const s = STATUS[plan.status] || STATUS.active;
   const [showPay, setShowPay] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState<typeof PAY_METHODS[number] | null>(null);
+  const [txId, setTxId] = useState("");
+  const [payNum, setPayNum] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const paidSchedules = schedule.filter((r: any) => r.status === "paid");
+
+  const resetPayModal = () => {
+    setShowPay(false);
+    setSelectedMethod(null);
+    setTxId("");
+    setPayNum("");
+  };
+
+  const handlePaymentClaim = async () => {
+    if (!txId.trim() || !payNum.trim() || !selectedMethod || !nextDue) return;
+    setSubmitting(true);
+    const res = await claimInstallmentPayment({
+      planCode: plan.planCode,
+      scheduleId: nextDue.id,
+      paymentMethod: selectedMethod.key,
+      transactionId: txId.trim(),
+      paymentNumber: payNum.trim(),
+    });
+    setSubmitting(false);
+    if (res.success) {
+      toast.success(res.message);
+      resetPayModal();
+    } else {
+      toast.error(res.message || "জমা দেওয়া যায়নি");
+    }
+  };
 
   const Stat = ({ label, value, accent }: { label: string; value: string; accent?: boolean }) => (
     <div className="rounded-md bg-white border border-[#dfe6f2] p-2.5">
@@ -124,10 +159,11 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
         <div className="divide-y divide-[#eef1f6]">
           {schedule.map((row: any) => {
             const paid = row.status === "paid";
+            const claimed = row.status === "claimed";
             return (
               <div key={row.id} className="flex items-center gap-3 px-3 py-2.5">
-                <span className={clsx("size-8 rounded-full flex items-center justify-center shrink-0 text-[12px] font-extrabold", paid ? "bg-[#e9f9ef] text-[#178a42]" : "bg-[#f5f7fb] text-[#5b6784]")}>
-                  {paid ? <CheckCircle2 size={16} /> : row.installmentNo}
+                <span className={clsx("size-8 rounded-full flex items-center justify-center shrink-0 text-[12px] font-extrabold", paid ? "bg-[#e9f9ef] text-[#178a42]" : claimed ? "bg-[#fff6e3] text-[#b8620b]" : "bg-[#f5f7fb] text-[#5b6784]")}>
+                  {paid ? <CheckCircle2 size={16} /> : claimed ? <Clock size={16} /> : row.installmentNo}
                 </span>
                 <span className="flex flex-col min-w-0 flex-1 leading-tight">
                   <span className="text-[13px] font-extrabold">কিস্তি #{row.installmentNo}</span>
@@ -135,7 +171,7 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
                     {formatDate(row.dueDate)}
                     {paid && row.paidAt ? ` · পরিশোধিত ${formatDate(row.paidAt)}` : ""}
                   </span>
-                  {paid && row.paymentMethod && (
+                  {(paid || claimed) && row.paymentMethod && (
                     <span className="text-[10px] font-bold text-[#5b6784] mt-0.5">
                       {METHOD_LABELS[row.paymentMethod] || row.paymentMethod}
                       {row.paymentNumber ? ` · ${row.paymentNumber}` : ""}
@@ -145,7 +181,7 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
                 </span>
                 <span className="flex flex-col items-end shrink-0">
                   <span className="text-[13px] font-extrabold">{bdt(row.amount)}</span>
-                  <span className={clsx("text-[10px] font-extrabold uppercase", paid ? "text-[#178a42]" : "text-[#b8620b]")}>{paid ? "পরিশোধিত" : "বাকি"}</span>
+                  <span className={clsx("text-[10px] font-extrabold uppercase", paid ? "text-[#178a42]" : claimed ? "text-[#b8620b]" : "text-[#b8620b]")}>{paid ? "পরিশোধিত" : claimed ? "যাচাইয়ের অপেক্ষায়" : "বাকি"}</span>
                 </span>
               </div>
             );
@@ -207,42 +243,118 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
         </Modal>
       )}
 
-      {/* Pay Now popup */}
+      {/* Pay Now popup — 2-step: method select → form */}
       {showPay && (
-        <Modal isVisible title="কিস্তি পরিশোধ" onClose={() => setShowPay(false)}>
+        <Modal isVisible title={selectedMethod ? `${selectedMethod.label} পেমেন্ট` : "কিস্তি পরিশোধ"} onClose={resetPayModal}>
           <div className="space-y-3 max-w-sm text-[#16213a]">
+            {/* Amount header */}
             <div className="rounded-md bg-[#eef3fb] border border-[#dfe6f2] p-3 text-center">
               <p className="text-[12px] font-semibold text-[#5b6784]">এই কিস্তির পরিমাণ</p>
               <p className="text-[24px] font-extrabold text-[#0b3d91]">{bdt(nextDue?.amount || plan.monthlyAmount)}</p>
               {nextDue && <p className="text-[11px] text-[#5b6784]">কিস্তি #{nextDue.installmentNo} · {formatDate(nextDue.dueDate)}</p>}
             </div>
 
-            <p className="text-[12.5px] font-semibold text-[#5b6784]">নিচের যেকোনো নম্বরে <b className="text-[#16213a]">Send Money</b> করুন অথবা অফিসে নগদ পরিশোধ করুন:</p>
+            {!selectedMethod ? (
+              <>
+                {/* Step 1: Method selection */}
+                <p className="text-[12.5px] font-semibold text-[#5b6784]">নিচের যেকোনো নম্বরে <b className="text-[#16213a]">Send Money</b> করে পেমেন্ট জমা দিন:</p>
 
-            <div className="space-y-2">
-              {PAY_METHODS.map((m) => (
-                <div key={m.key} className="flex items-center justify-between rounded-md border border-[#dfe6f2] px-3 py-2">
-                  <span className={clsx("text-[13px] font-extrabold", m.color)}>{m.label}</span>
-                  <span className="text-[14px] font-extrabold font-mono tracking-wide">{m.number}</span>
+                <div className="space-y-2">
+                  {PAY_METHODS.map((m) => (
+                    <button
+                      key={m.key}
+                      onClick={() => setSelectedMethod(m)}
+                      className="w-full flex items-center justify-between rounded-md border border-[#dfe6f2] px-3 py-2.5 hover:bg-[#f5f7fb] active:scale-[0.98] transition-all"
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <span className={clsx("size-8 rounded-full text-white flex items-center justify-center text-[11px] font-extrabold", m.bg)}>
+                          {m.label[0]}
+                        </span>
+                        <span className="flex flex-col text-left leading-tight">
+                          <span className={clsx("text-[13px] font-extrabold", m.color)}>{m.label}</span>
+                          <span className="text-[11px] font-mono text-[#5b6784]">{m.number}</span>
+                        </span>
+                      </span>
+                      <ChevronRight size={16} className="text-[#b0bdd0]" />
+                    </button>
+                  ))}
+                  <div className="flex items-center justify-between rounded-md border border-[#dfe6f2] px-3 py-2.5">
+                    <span className="flex items-center gap-2.5">
+                      <span className="size-8 rounded-full bg-[#0b3d91] text-white flex items-center justify-center text-[11px] font-extrabold">B</span>
+                      <span className="flex flex-col text-left leading-tight">
+                        <span className="text-[13px] font-extrabold text-[#0b3d91]">Bank Transfer</span>
+                        <span className="text-[11px] font-mono text-[#5b6784]">{paymentDetails.bank.accountNumber}</span>
+                      </span>
+                    </span>
+                  </div>
                 </div>
-              ))}
-              <div className="flex items-center justify-between rounded-md border border-[#dfe6f2] px-3 py-2">
-                <span className="text-[13px] font-extrabold text-[#0b3d91]">Bank</span>
-                <span className="text-[12px] font-bold text-right">{paymentDetails.bank.bankName}<br />{paymentDetails.bank.accountNumber}</span>
-              </div>
-            </div>
 
-            <div className="rounded-md bg-[#fff8e6] border border-[#f5dfa0] p-2.5 text-[12px] text-[#8a5a12] font-semibold flex items-start gap-2">
-              <Phone size={15} className="shrink-0 mt-0.5" />
-              <span>
-                পেমেন্ট করার পর <b>পেমেন্ট নম্বর</b> ও <b>ট্রানজেকশন আইডি</b> সহ <b>{contactDetails.customerCare}</b> নম্বরে জানান।
-                অফিসে নগদ পরিশোধ করলেও জানিয়ে দিন।
-              </span>
-            </div>
+                <div className="rounded-md bg-[#fff8e6] border border-[#f5dfa0] p-2.5 text-[12px] text-[#8a5a12] font-semibold flex items-start gap-2">
+                  <Phone size={15} className="shrink-0 mt-0.5" />
+                  <span>অফিসে নগদ পরিশোধ করলে <b>{contactDetails.customerCare}</b> নম্বরে জানান।</span>
+                </div>
 
-            <button onClick={() => setShowPay(false)} className="w-full h-10 rounded-md bg-[#0b3d91] text-white text-[13px] font-extrabold inline-flex items-center justify-center gap-2">
-              <CreditCard size={16} /> বুঝেছি
-            </button>
+                <button onClick={resetPayModal} className="w-full h-10 rounded-md bg-[#0b3d91] text-white text-[13px] font-extrabold">
+                  বন্ধ করুন
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Step 2: Payment claim form */}
+                <p className="text-[12.5px] font-semibold text-[#5b6784]">
+                  <span className={clsx("font-extrabold", selectedMethod.color)}>{selectedMethod.label}</span> এ <b className="font-mono">{selectedMethod.number}</b> নম্বরে Send Money করে নিচের তথ্য দিন:
+                </p>
+
+                <div className="space-y-2.5">
+                  <div>
+                    <label className="text-[11px] font-bold text-[#5b6784] mb-1 block">কাস্টমার আইডি</label>
+                    <div className="h-10 rounded-md border border-[#dfe6f2] bg-[#f5f7fb] px-3 flex items-center text-[13px] font-bold text-[#5b6784]">
+                      {plan.customerId}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-[#5b6784] mb-1 block">নাম</label>
+                    <div className="h-10 rounded-md border border-[#dfe6f2] bg-[#f5f7fb] px-3 flex items-center text-[13px] font-bold text-[#5b6784]">
+                      {plan.customerName}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-[#5b6784] mb-1 block">ট্রানজেকশন আইডি *</label>
+                    <input
+                      type="text"
+                      value={txId}
+                      onChange={(e) => setTxId(e.target.value)}
+                      placeholder="যেমন: TXN1234ABCD"
+                      className="w-full h-10 rounded-md border border-[#dfe6f2] px-3 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-[#5b6784] mb-1 block">যে নম্বর থেকে পাঠিয়েছেন *</label>
+                    <input
+                      type="tel"
+                      value={payNum}
+                      onChange={(e) => setPayNum(e.target.value)}
+                      placeholder="01XXXXXXXXX"
+                      className="w-full h-10 rounded-md border border-[#dfe6f2] px-3 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => setSelectedMethod(null)} className="flex-1 h-10 rounded-md border border-[#dfe6f2] text-[#5b6784] text-[13px] font-extrabold">
+                    ← পিছনে
+                  </button>
+                  <button
+                    onClick={handlePaymentClaim}
+                    disabled={!txId.trim() || !payNum.trim() || submitting}
+                    className="flex-[2] h-10 rounded-md bg-[#0b3d91] text-white text-[13px] font-extrabold inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={14} />}
+                    {submitting ? "জমা হচ্ছে..." : "পেমেন্ট জমা দিন"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </Modal>
       )}

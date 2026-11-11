@@ -421,8 +421,11 @@ export const getMyInstallmentDashboard = async () => {
     const totalPaid = round2(scheduleRows.filter((r) => r.status === "paid").reduce((s, r) => s + r.paidAmount, 0));
     const totalRemaining = round2(plans.reduce((s, p) => s + p.financedAmount, 0) - totalPaid);
 
+    // Profile photo = the customer's ORIGINAL (first) application photo. `apps` is
+    // ordered newest-first, so scan from the end to find the oldest one with a photo.
+    // A new application must never overwrite the established profile photo.
     let photoUrl: string | null = null;
-    const appWithPhoto = apps.find((a) => a.photoKey);
+    const appWithPhoto = [...apps].reverse().find((a) => a.photoKey);
     if (appWithPhoto?.photoKey) {
       try { photoUrl = await getObjectUrl(appWithPhoto.photoKey); } catch {}
     }
@@ -468,12 +471,19 @@ export const getMyInstallmentPlanByCode = async (code: string) => {
     // Next unpaid due (for the "Pay Now" call-to-action); skip already paid/claimed
     const nextDue = schedule.find((s) => s.status !== "paid" && s.status !== "claimed") || null;
 
+    // Optional product photo (admin-set); shown on the product profile page.
+    let productImageUrl: string | null = null;
+    if (plan.productImageKey) {
+      try { productImageUrl = await getObjectUrl(plan.productImageKey); } catch {}
+    }
+
     return {
       success: true,
       data: {
         plan,
         schedule,
         nextDue,
+        productImageUrl,
         ...planProgress(plan.financedAmount, plan.months, schedule),
       },
     };

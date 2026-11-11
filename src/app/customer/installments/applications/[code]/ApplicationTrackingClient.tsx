@@ -5,6 +5,13 @@ import clsx from "clsx";
 import { ArrowLeft, Ban, Check, Circle, ClipboardList, RefreshCw, User } from "lucide-react";
 import Link from "next/link";
 
+const PRODUCT_LABELS: Record<string, string> = {
+  fridge: "ফ্রিজ", ac: "এসি", tv: "টিভি", oven: "ওভেন",
+  washing_machine: "ওয়াশিং মেশিন", mobile: "মোবাইল",
+  ips: "আই পি এস", battery: "ব্যাটারি", ips_package: "আই পি এস প্যাকেজ",
+  stabilizer: "স্ট্যাবিলাইজার", blender: "ব্লেন্ডার", others: "অন্যান্য",
+};
+
 const STEPS = [
   { key: "pending", label: "পেন্ডিং আছে", desc: "আপনার কিস্তির আবেদনটি সফলভাবে জমা হয়েছে। পর্যালোচনার জন্য এটি অপেক্ষমাণ রয়েছে।" },
   { key: "processing", label: "প্রসেসিং হচ্ছে", desc: "আপনার আবেদনটি আমাদের টিম যাচাই-বাছাই শুরু করেছে।" },
@@ -13,8 +20,8 @@ const STEPS = [
   { key: "guarantor_verify", label: "জামিনদার ভেরিফাই", desc: "আপনার জামিনদারের (Guarantor) দেওয়া তথ্য ও পরিচয় যাচাই করা হচ্ছে।" },
   { key: "bank_check_verify", label: "ব্যাংক অ্যাকাউন্ট চেক ভেরিফাই", desc: "আপনার ব্যাংক চেক অ্যাকাউন্ট সংক্রান্ত তথ্য পরীক্ষা করা হচ্ছে।" },
   { key: "documents_verified", label: "সকল কাগজপত্র যাচাই সম্পন্ন", desc: "আপনার জমা দেওয়া সকল প্রয়োজনীয় কাগজপত্র সফলভাবে যাচাই করা হয়েছে।" },
-  { key: "approved", label: "কিস্তির জন্য অনুমোদিত", desc: "অভিনন্দন! আপনার কিস্তির আবেদনটি চূড়ান্তভাবে অনুমোদন করা হয়েছে।" },
-  { key: "ready_for_delivery", label: "পণ্য হস্তান্তরের জন্য প্রস্তুত", desc: "আপনার কিস্তির পণ্যটি প্রস্তুত। আপনি এখন নির্দিষ্ট শোরুম বা ডেলিভারি পয়েন্ট থেকে পণ্যটি গ্রহণ করতে পারেন।" },
+  { key: "approved", label: "কিস্তির জন্য অনুমোদিত", desc: "অভিনন্দন! আপনার কিস্তির আবেদনটি চূড়ান্তভাবে অনুমোদন করা হয়েছে। এস ই ইলেকট্রনিকস অফিসে যোগাযোগ করুন।" },
+  { key: "ready_for_delivery", label: "পণ্য হস্তান্তরের জন্য প্রস্তুত", desc: "আপনার কিস্তির পণ্যটি আমরা দিতে প্রস্তুত। আপনি এখন নির্দিষ্ট সময়ে শোরুম থেকে ডেলিভারি নিতে ডাউন পেমেন্ট দিয়ে পণ্যটি গ্রহণ করতে পারেন।" },
 ];
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
@@ -48,8 +55,8 @@ export default function ApplicationTrackingClient({ app }: { app: any }) {
       {/* Product info */}
       <div className="rounded-md bg-white border border-[#dfe6f2] p-3.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] flex items-center gap-3">
         <div className="flex flex-col min-w-0 flex-1">
-          <p className="text-[13px] font-semibold text-[#3d4f72]">পণ্য</p>
-          <p className="text-[17px] font-extrabold">{app.productModel}</p>
+          <p className="text-[13px] font-semibold text-[#3d4f72]">{PRODUCT_LABELS[app.productType] || app.productTypeOther || "পণ্য"}{app.productSpec ? ` · ${app.productSpec}` : ""}</p>
+          <p className="text-[17px] font-extrabold">{app.productBrand ? `${app.productBrand} ` : ""}{app.productModel}</p>
           <p className="text-[12px] text-[#3d4f72] mt-0.5">আবেদনের তারিখ: {formatDate(app.createdAt)}</p>
         </div>
         {app.photoUrl ? (

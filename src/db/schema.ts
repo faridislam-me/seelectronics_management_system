@@ -1607,6 +1607,10 @@ export const installmentApplications = pgTable(
     productModel: varchar({ length: 255 }).notNull(),
     /** Free-text when productType is "others" */
     productTypeOther: varchar({ length: 255 }),
+    /** Brand name (Samsung, Walton, etc.) */
+    productBrand: varchar({ length: 255 }),
+    /** Product spec: TV inch, AC ton, Fridge liter */
+    productSpec: varchar({ length: 100 }),
     // Desired installment terms (customer preference, admin may override)
     desiredMonths: integer(),
     desiredDownPayment: numeric({ precision: 12, scale: 2, mode: "number" }),

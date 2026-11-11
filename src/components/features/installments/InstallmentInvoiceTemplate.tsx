@@ -5,12 +5,20 @@ import clsx from "clsx";
 const tk = (n: number) =>
   `${Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 })} Tk`;
 
-// The letterhead background keeps a baked footer (seal / signature) near the
-// bottom, so the content column lives between the header and that footer. The
-// schedule can hold many months, so it flows into side-by-side columns to stay
-// clear of the footer instead of running off the page.
+// The letterhead background keeps a baked footer (customer-care note box + seal /
+// signatures) near the bottom (~y=720px on the A4 render), so the content column
+// must finish above it. The schedule flows into side-by-side columns — capped at
+// ROWS_PER_COLUMN rows each — so the table height stays bounded no matter how many
+// months the plan runs, keeping the table (and the guarantor / notes block that
+// follows it) clear of the baked footer instead of running into it.
+const ROWS_PER_COLUMN = 6;
+const MAX_COLUMNS = 4;
+
 function scheduleColumns(rows: InstallmentScheduleRow[]): InstallmentScheduleRow[][] {
-  const cols = rows.length > 24 ? 3 : rows.length > 12 ? 2 : 1;
+  const cols = Math.min(
+    MAX_COLUMNS,
+    Math.max(1, Math.ceil(rows.length / ROWS_PER_COLUMN)),
+  );
   const per = Math.ceil(rows.length / cols);
   const out: InstallmentScheduleRow[][] = [];
   for (let i = 0; i < rows.length; i += per) out.push(rows.slice(i, i + per));
@@ -37,7 +45,7 @@ export default function InstallmentInvoiceTemplate({
   }) => (
     <div
       className={clsx(
-        "flex justify-between gap-4 py-1 border-b border-slate-200 text-sm",
+        "flex justify-between gap-4 py-0.5 border-b border-slate-200 text-sm",
         bold && "font-bold",
       )}
     >
@@ -55,7 +63,7 @@ export default function InstallmentInvoiceTemplate({
       }}
     >
       <div className="absolute top-[185px] left-[40px] right-[40px]">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-2">
           <div className="text-left">
             <div className="text-xl font-bold tracking-wide">
               INSTALLMENT INVOICE
@@ -74,7 +82,7 @@ export default function InstallmentInvoiceTemplate({
         </div>
 
         {/* Customer + product */}
-        <div className="flex justify-between gap-6 mb-3 text-sm">
+        <div className="flex justify-between gap-6 mb-2 text-sm">
           <div className="space-y-1">
             <div className="font-semibold text-base mb-1">Customer</div>
             <div>
@@ -118,7 +126,7 @@ export default function InstallmentInvoiceTemplate({
         </div>
 
         {/* Money breakdown */}
-        <div className="grid grid-cols-2 gap-x-10 mb-3">
+        <div className="grid grid-cols-2 gap-x-10 mb-2">
           <div>
             <MoneyRow label="Cash Price" value={tk(data.cashPrice)} />
             <MoneyRow label="Extra Charge" value={tk(data.extraCharge)} />
@@ -151,10 +159,10 @@ export default function InstallmentInvoiceTemplate({
             >
               <thead>
                 <tr className="bg-[#D7E6F5] border border-black">
-                  <th className="text-left py-1 px-1.5 font-bold border-r border-black w-5">#</th>
-                  <th className="text-left py-1 px-1.5 font-bold border-r border-black">Due</th>
-                  <th className="text-right py-1 px-1.5 font-bold border-r border-black">Amount</th>
-                  <th className="text-center py-1 px-1.5 font-bold">St.</th>
+                  <th className="text-left py-0.5 px-1.5 font-bold border-r border-black w-5">#</th>
+                  <th className="text-left py-0.5 px-1.5 font-bold border-r border-black">Due</th>
+                  <th className="text-right py-0.5 px-1.5 font-bold border-r border-black">Amount</th>
+                  <th className="text-center py-0.5 px-1.5 font-bold">St.</th>
                 </tr>
               </thead>
               <tbody>
@@ -162,10 +170,10 @@ export default function InstallmentInvoiceTemplate({
                   const paid = row.status === "paid";
                   return (
                     <tr key={row.installmentNo} className="border border-black">
-                      <td className="py-1 px-1.5 border-r border-black">
+                      <td className="py-0.5 px-1.5 border-r border-black">
                         {row.installmentNo}
                       </td>
-                      <td className="py-1 px-1.5 border-r border-black whitespace-nowrap">
+                      <td className="py-0.5 px-1.5 border-r border-black whitespace-nowrap">
                         {formatDate(row.dueDate)}
                         {paid && row.paidAt && (
                           <span className="block text-[9px] text-emerald-700">
@@ -173,12 +181,12 @@ export default function InstallmentInvoiceTemplate({
                           </span>
                         )}
                       </td>
-                      <td className="py-1 px-1.5 text-right border-r border-black whitespace-nowrap">
+                      <td className="py-0.5 px-1.5 text-right border-r border-black whitespace-nowrap">
                         {Number(row.amount).toLocaleString()}
                       </td>
                       <td
                         className={clsx(
-                          "py-1 px-1.5 text-center font-bold whitespace-nowrap",
+                          "py-0.5 px-1.5 text-center font-bold whitespace-nowrap",
                           paid ? "text-emerald-700" : "text-amber-700",
                         )}
                       >

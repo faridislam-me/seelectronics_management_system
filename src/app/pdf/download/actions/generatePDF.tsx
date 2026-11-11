@@ -855,7 +855,26 @@ export default async function generatePDF({
         if (!plan) throw new AppError("কিস্তি প্ল্যানটি পাওয়া যায়নি।");
 
         const { qrcode } = await import("@/lib/id-gen");
+        const { code128Svg } = await import("@/lib/code128");
         const qr = await qrcode(plan.planCode);
+        // Pure-JS SVG barcode (no canvas), encoding the serial for scanning at
+        // the counter; falls back to the plan code when no serial is on file.
+        const barcodeSvg = code128Svg(plan.serialNumber || plan.planCode, {
+          height: 40,
+          module: 1.4,
+        });
+        const logoBase64 = await convertToBase64(
+          path.join(process.cwd(), "src", "assets", "images", "logo.jpg"),
+        ).catch(() => "");
+
+        // VA/Watt, Volt and Display only make sense for IPS-like electrical units;
+        // a fridge / other appliance shows just its own relevant fields.
+        const electricalTypes = new Set([
+          "ips",
+          "ips_package",
+          "stabilizer",
+          "battery",
+        ]);
 
         const data: InstallmentStickerTemplateData = {
           planCode: plan.planCode,
@@ -864,17 +883,21 @@ export default async function generatePDF({
             ? productMap[plan.productType] ?? plan.productType
             : null,
           serialNumber: plan.serialNumber,
-          customerName: plan.customerName,
-          monthlyAmount: plan.monthlyAmount,
+          price: plan.cashPrice,
           months: plan.months,
+          isElectrical: plan.productType
+            ? electricalTypes.has(plan.productType)
+            : false,
+          logo: logoBase64,
+          barcode: barcodeSvg,
           qrcode: qr,
         };
 
         html = renderToStaticMarkup(<InstallmentStickerTemplate data={data} />);
         options = {
           printBackground: true,
-          width: "80mm",
-          height: "110mm",
+          width: "76mm",
+          height: "76mm",
           margin: { top: 0, right: 0, bottom: 0, left: 0 },
         };
         break;

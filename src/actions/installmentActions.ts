@@ -499,6 +499,8 @@ export const submitInstallmentApplication = async (formData: FormData) => {
     const productModel = formData.get("productModel") as string;
     const productType = (formData.get("productType") as string) || undefined;
     const productTypeOther = (formData.get("productTypeOther") as string) || undefined;
+    const productBrand = (formData.get("productBrand") as string) || undefined;
+    const productSpec = (formData.get("productSpec") as string) || undefined;
     const notes = (formData.get("notes") as string) || undefined;
     const guarantorName = (formData.get("guarantorName") as string) || undefined;
     const guarantorPhone = (formData.get("guarantorPhone") as string) || undefined;
@@ -582,6 +584,8 @@ export const submitInstallmentApplication = async (formData: FormData) => {
       customerAddress: customer.address,
       productType: productType as any,
       productTypeOther,
+      productBrand,
+      productSpec,
       productModel: productModel.trim(),
       photoKey,
       nidFrontPhotoKey: nidFrontKey,

@@ -71,9 +71,9 @@ export default async function CustomerInstallmentsPage() {
           )}
           <div className="flex flex-col gap-0.5 min-w-0 flex-1">
             <span className="text-[16px] font-extrabold truncate">{customer.name}</span>
-            <span className="text-[12px] font-semibold text-white/90">{customer.phone}</span>
-            {customer.address && <span className="text-[11px] text-white/75 truncate">{customer.address}</span>}
-            <span className="text-[10px] font-mono text-white/60 mt-0.5">{customer.customerId}</span>
+            <span className="text-[13px] font-bold text-white/95">{customer.phone}</span>
+            {customer.address && <span className="text-[12px] font-semibold text-white/90 truncate">{customer.address}</span>}
+            <span className="text-[11px] font-bold font-mono text-white/80 mt-0.5">{customer.customerId}</span>
           </div>
           <div className="flex flex-col items-end shrink-0 gap-1">
             <span className="text-[10px] font-bold text-white/60 uppercase">মোট পরিশোধ</span>

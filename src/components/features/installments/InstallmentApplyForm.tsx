@@ -6,15 +6,17 @@ import {
   Camera,
   CheckSquare,
   CreditCard,
+  Eraser,
   FileText,
   Home,
   Loader2,
+  PenLine,
   Upload,
   User,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 const PRODUCT_TYPES = [
@@ -32,6 +34,111 @@ const PRODUCT_TYPES = [
   { value: "blender", label: "ব্লেন্ডার" },
   { value: "others", label: "অন্যান্য" },
 ];
+
+const PRODUCT_SPECS: Record<string, { label: string; options: { value: string; label: string }[] }> = {
+  tv: {
+    label: "স্ক্রিন সাইজ (ইঞ্চি)",
+    options: [
+      { value: "", label: "নির্বাচন করুন" },
+      { value: "24", label: '24"' }, { value: "32", label: '32"' },
+      { value: "40", label: '40"' }, { value: "43", label: '43"' },
+      { value: "50", label: '50"' }, { value: "55", label: '55"' },
+      { value: "65", label: '65"' }, { value: "75", label: '75"' },
+    ],
+  },
+  ac: {
+    label: "ক্যাপাসিটি (টন)",
+    options: [
+      { value: "", label: "নির্বাচন করুন" },
+      { value: "1 Ton", label: "১ টন" }, { value: "1.5 Ton", label: "১.৫ টন" },
+      { value: "2 Ton", label: "২ টন" }, { value: "2.5 Ton", label: "২.৫ টন" },
+    ],
+  },
+  fridge: {
+    label: "ক্যাপাসিটি (লিটার)",
+    options: [
+      { value: "", label: "নির্বাচন করুন" },
+      { value: "180L", label: "১৮০ লিটার" }, { value: "200L", label: "২০০ লিটার" },
+      { value: "220L", label: "২২০ লিটার" }, { value: "250L", label: "২৫০ লিটার" },
+      { value: "280L", label: "২৮০ লিটার" }, { value: "300L", label: "৩০০ লিটার" },
+      { value: "350L", label: "৩৫০ লিটার" }, { value: "400L", label: "৪০০ লিটার" },
+      { value: "500L", label: "৫০০ লিটার" },
+    ],
+  },
+  oven: {
+    label: "ক্যাপাসিটি (লিটার)",
+    options: [
+      { value: "", label: "নির্বাচন করুন" },
+      { value: "20L", label: "২০ লিটার" }, { value: "23L", label: "২৩ লিটার" },
+      { value: "25L", label: "২৫ লিটার" }, { value: "28L", label: "২৮ লিটার" },
+      { value: "30L", label: "৩০ লিটার" }, { value: "32L", label: "৩২ লিটার" },
+    ],
+  },
+  washing_machine: {
+    label: "ক্যাপাসিটি (কেজি)",
+    options: [
+      { value: "", label: "নির্বাচন করুন" },
+      { value: "6kg", label: "৬ কেজি" }, { value: "7kg", label: "৭ কেজি" },
+      { value: "8kg", label: "৮ কেজি" }, { value: "9kg", label: "৯ কেজি" },
+      { value: "10kg", label: "১০ কেজি" }, { value: "12kg", label: "১২ কেজি" },
+    ],
+  },
+  mobile: {
+    label: "স্টোরেজ / RAM",
+    options: [
+      { value: "", label: "নির্বাচন করুন" },
+      { value: "2/32GB", label: "2/32 GB" }, { value: "3/32GB", label: "3/32 GB" },
+      { value: "4/64GB", label: "4/64 GB" }, { value: "4/128GB", label: "4/128 GB" },
+      { value: "6/128GB", label: "6/128 GB" }, { value: "8/128GB", label: "8/128 GB" },
+      { value: "8/256GB", label: "8/256 GB" }, { value: "12/256GB", label: "12/256 GB" },
+    ],
+  },
+  ips: {
+    label: "ক্যাপাসিটি (VA)",
+    options: [
+      { value: "", label: "নির্বাচন করুন" },
+      { value: "600VA", label: "৬০০ VA" }, { value: "800VA", label: "৮০০ VA" },
+      { value: "1000VA", label: "১০০০ VA" }, { value: "1200VA", label: "১২০০ VA" },
+      { value: "1500VA", label: "১৫০০ VA" }, { value: "2000VA", label: "২০০০ VA" },
+    ],
+  },
+  battery: {
+    label: "ক্যাপাসিটি (Ah)",
+    options: [
+      { value: "", label: "নির্বাচন করুন" },
+      { value: "100Ah", label: "১০০ Ah" }, { value: "130Ah", label: "১৩০ Ah" },
+      { value: "150Ah", label: "১৫০ Ah" }, { value: "180Ah", label: "১৮০ Ah" },
+      { value: "200Ah", label: "২০০ Ah" },
+    ],
+  },
+  ips_package: {
+    label: "প্যাকেজ সাইজ (VA)",
+    options: [
+      { value: "", label: "নির্বাচন করুন" },
+      { value: "600VA", label: "৬০০ VA" }, { value: "800VA", label: "৮০০ VA" },
+      { value: "1000VA", label: "১০০০ VA" }, { value: "1200VA", label: "১২০০ VA" },
+      { value: "1500VA", label: "১৫০০ VA" }, { value: "2000VA", label: "২০০০ VA" },
+    ],
+  },
+  stabilizer: {
+    label: "ক্যাপাসিটি (VA)",
+    options: [
+      { value: "", label: "নির্বাচন করুন" },
+      { value: "1000VA", label: "১০০০ VA" }, { value: "1500VA", label: "১৫০০ VA" },
+      { value: "2000VA", label: "২০০০ VA" }, { value: "3000VA", label: "৩০০০ VA" },
+      { value: "5000VA", label: "৫০০০ VA" },
+    ],
+  },
+  blender: {
+    label: "পাওয়ার (ওয়াট)",
+    options: [
+      { value: "", label: "নির্বাচন করুন" },
+      { value: "250W", label: "২৫০ ওয়াট" }, { value: "350W", label: "৩৫০ ওয়াট" },
+      { value: "500W", label: "৫০০ ওয়াট" }, { value: "750W", label: "৭৫০ ওয়াট" },
+      { value: "1000W", label: "১০০০ ওয়াট" },
+    ],
+  },
+};
 
 function FileInput({
   id,
@@ -80,6 +187,107 @@ function FileInput({
           </>
         )}
       </button>
+    </div>
+  );
+}
+
+function SignaturePad({ label, onSignature }: { label: string; onSignature: (blob: Blob | null) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [drawing, setDrawing] = useState(false);
+  const [hasDrawn, setHasDrawn] = useState(false);
+
+  const getPos = (e: React.TouchEvent | React.MouseEvent) => {
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if ("touches" in e) {
+      const t = e.touches[0];
+      return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
+    }
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+  };
+
+  const startDraw = (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
+    setDrawing(true);
+    const ctx = canvasRef.current!.getContext("2d")!;
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  };
+
+  const draw = (e: React.TouchEvent | React.MouseEvent) => {
+    if (!drawing) return;
+    e.preventDefault();
+    const ctx = canvasRef.current!.getContext("2d")!;
+    const pos = getPos(e);
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#16213a";
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    setHasDrawn(true);
+  };
+
+  const stopDraw = useCallback(() => {
+    if (!drawing) return;
+    setDrawing(false);
+    const canvas = canvasRef.current!;
+    canvas.toBlob((blob) => onSignature(blob), "image/png");
+  }, [drawing, onSignature]);
+
+  const clear = () => {
+    const canvas = canvasRef.current!;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    setHasDrawn(false);
+    onSignature(null);
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current!;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }, []);
+
+  return (
+    <div>
+      <label className="text-[13px] font-bold text-[#3d4f72] mb-1 flex items-center gap-1.5">
+        <PenLine size={14} /> {label}
+      </label>
+      <div className="relative rounded-md border border-[#c9d3e6] bg-white overflow-hidden">
+        <canvas
+          ref={canvasRef}
+          width={600}
+          height={200}
+          className="w-full h-[100px] touch-none cursor-crosshair"
+          onMouseDown={startDraw}
+          onMouseMove={draw}
+          onMouseUp={stopDraw}
+          onMouseLeave={stopDraw}
+          onTouchStart={startDraw}
+          onTouchMove={draw}
+          onTouchEnd={stopDraw}
+        />
+        {!hasDrawn && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="text-[13px] font-semibold text-[#b0bdd0]">আঙুল দিয়ে স্বাক্ষর করুন</span>
+          </div>
+        )}
+        {hasDrawn && (
+          <button
+            type="button"
+            onClick={clear}
+            className="absolute top-1.5 right-1.5 size-7 rounded-full bg-white/90 border border-[#dfe6f2] flex items-center justify-center text-[#3d4f72] hover:bg-red-50 hover:text-red-600"
+          >
+            <Eraser size={14} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -141,6 +349,8 @@ export default function InstallmentApplyForm() {
   // Product
   const [productType, setProductType] = useState("");
   const [productTypeOther, setProductTypeOther] = useState("");
+  const [productBrand, setProductBrand] = useState("");
+  const [productSpec, setProductSpec] = useState("");
   const [productModel, setProductModel] = useState("");
   const [desiredMonths, setDesiredMonths] = useState("");
   const [desiredDownPayment, setDesiredDownPayment] = useState("");
@@ -160,15 +370,17 @@ export default function InstallmentApplyForm() {
   const [photo, setPhoto] = useState<File | null>(null);
   const [nidFront, setNidFront] = useState<File | null>(null);
   const [nidBack, setNidBack] = useState<File | null>(null);
-  const [signature, setSignature] = useState<File | null>(null);
+  const [signatureBlob, setSignatureBlob] = useState<Blob | null>(null);
   const [bankCheck, setBankCheck] = useState<File | null>(null);
   const [gPhoto, setGPhoto] = useState<File | null>(null);
-  const [gSignature, setGSignature] = useState<File | null>(null);
+  const [gSignatureBlob, setGSignatureBlob] = useState<Blob | null>(null);
   const [gNidFront, setGNidFront] = useState<File | null>(null);
   const [gNidBack, setGNidBack] = useState<File | null>(null);
 
   // Previews
   const preview = (f: File | null) => (f ? URL.createObjectURL(f) : null);
+
+  const specConfig = PRODUCT_SPECS[productType];
 
   const handleSubmit = async () => {
     if (!productType) {
@@ -208,6 +420,8 @@ export default function InstallmentApplyForm() {
     // Product
     fd.append("productType", productType);
     if (productType === "others" && productTypeOther.trim()) fd.append("productTypeOther", productTypeOther.trim());
+    if (productBrand.trim()) fd.append("productBrand", productBrand.trim());
+    if (productSpec) fd.append("productSpec", productSpec);
     fd.append("productModel", productModel.trim());
     if (desiredMonths) fd.append("desiredMonths", desiredMonths);
     if (desiredDownPayment) fd.append("desiredDownPayment", desiredDownPayment);
@@ -216,14 +430,12 @@ export default function InstallmentApplyForm() {
     if (notes.trim()) fd.append("notes", notes.trim());
 
     // Compress images client-side (phone cameras produce 3-8MB each; Vercel has 4.5MB body limit)
-    const [cPhoto, cNidF, cNidB, cSig, cBank, cGP, cGS, cGNF, cGNB] = await Promise.all([
+    const [cPhoto, cNidF, cNidB, cBank, cGP, cGNF, cGNB] = await Promise.all([
       compressFileClient(photo, 800, 0.75),
       compressFileClient(nidFront, 1200, 0.7),
       compressFileClient(nidBack, 1200, 0.7),
-      signature ? compressFileClient(signature, 800, 0.7) : null,
       bankCheck ? compressFileClient(bankCheck, 1200, 0.7) : null,
       gPhoto ? compressFileClient(gPhoto, 800, 0.75) : null,
-      gSignature ? compressFileClient(gSignature, 800, 0.7) : null,
       gNidFront ? compressFileClient(gNidFront, 1200, 0.7) : null,
       gNidBack ? compressFileClient(gNidBack, 1200, 0.7) : null,
     ]);
@@ -232,7 +444,7 @@ export default function InstallmentApplyForm() {
     fd.append("photo", cPhoto);
     fd.append("nidFront", cNidF);
     fd.append("nidBack", cNidB);
-    if (cSig) fd.append("signature", cSig);
+    if (signatureBlob) fd.append("signature", new File([signatureBlob], "signature.png", { type: "image/png" }));
     if (cBank) fd.append("bankCheck", cBank);
 
     // Guarantor
@@ -240,7 +452,7 @@ export default function InstallmentApplyForm() {
     if (guarantorPhone.trim()) fd.append("guarantorPhone", guarantorPhone.trim());
     if (guarantorAddress.trim()) fd.append("guarantorAddress", guarantorAddress.trim());
     if (cGP) fd.append("guarantorPhoto", cGP);
-    if (cGS) fd.append("guarantorSignature", cGS);
+    if (gSignatureBlob) fd.append("guarantorSignature", new File([gSignatureBlob], "guarantor-signature.png", { type: "image/png" }));
     if (cGNF) fd.append("guarantorNidFront", cGNF);
     if (cGNB) fd.append("guarantorNidBack", cGNB);
 
@@ -316,7 +528,7 @@ export default function InstallmentApplyForm() {
       <Section icon={CreditCard} title="পণ্য ও কিস্তির তথ্য">
         <div>
           <label className={labelCls}>পণ্যের ধরন <span className="text-red-500">*</span></label>
-          <select value={productType} onChange={(e) => setProductType(e.target.value)} className={inputCls}>
+          <select value={productType} onChange={(e) => { setProductType(e.target.value); setProductSpec(""); }} className={inputCls}>
             {PRODUCT_TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
@@ -326,6 +538,22 @@ export default function InstallmentApplyForm() {
           <div>
             <label className={labelCls}>পণ্যের ধরন লিখুন <span className="text-red-500">*</span></label>
             <input value={productTypeOther} onChange={(e) => setProductTypeOther(e.target.value)} placeholder="পণ্যের নাম লিখুন" className={inputCls} />
+          </div>
+        )}
+        {productType && (
+          <div>
+            <label className={labelCls}>ব্র্যান্ড</label>
+            <input value={productBrand} onChange={(e) => setProductBrand(e.target.value)} placeholder="যেমন: Samsung, Walton, Singer..." className={inputCls} />
+          </div>
+        )}
+        {specConfig && (
+          <div>
+            <label className={labelCls}>{specConfig.label}</label>
+            <select value={productSpec} onChange={(e) => setProductSpec(e.target.value)} className={inputCls}>
+              {specConfig.options.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
           </div>
         )}
         <div>
@@ -348,13 +576,13 @@ export default function InstallmentApplyForm() {
       <Section icon={Camera} title="আপনার ডকুমেন্ট">
         <div className="grid grid-cols-2 gap-2">
           <FileInput id="photo" label="পাসপোর্ট সাইজ ছবি" required onChange={setPhoto} preview={preview(photo)} />
-          <FileInput id="signature" label="স্বাক্ষর" onChange={setSignature} preview={preview(signature)} />
+          <FileInput id="bankCheck" label="ব্যাংক চেক-এর ছবি" onChange={setBankCheck} preview={preview(bankCheck)} />
         </div>
         <div className="grid grid-cols-2 gap-2">
           <FileInput id="nidFront" label="NID সামনে" required onChange={setNidFront} preview={preview(nidFront)} />
           <FileInput id="nidBack" label="NID পিছনে" required onChange={setNidBack} preview={preview(nidBack)} />
         </div>
-        <FileInput id="bankCheck" label="ব্যাংক চেক-এর ছবি" onChange={setBankCheck} preview={preview(bankCheck)} />
+        <SignaturePad label="আপনার স্বাক্ষর" onSignature={setSignatureBlob} />
       </Section>
 
       {/* Guarantor */}
@@ -364,12 +592,12 @@ export default function InstallmentApplyForm() {
         <textarea value={guarantorAddress} onChange={(e) => setGuarantorAddress(e.target.value)} placeholder="জামিনদারের ঠিকানা" rows={2} className={textareaCls} />
         <div className="grid grid-cols-2 gap-2">
           <FileInput id="gPhoto" label="জামিনদারের ছবি" onChange={setGPhoto} preview={preview(gPhoto)} />
-          <FileInput id="gSignature" label="জামিনদারের স্বাক্ষর" onChange={setGSignature} preview={preview(gSignature)} />
+          <div className="grid grid-cols-2 gap-2">
+            <FileInput id="gNidFront" label="জামিনদার NID সামনে" onChange={setGNidFront} preview={preview(gNidFront)} />
+            <FileInput id="gNidBack" label="জামিনদার NID পিছনে" onChange={setGNidBack} preview={preview(gNidBack)} />
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <FileInput id="gNidFront" label="জামিনদার NID সামনে" onChange={setGNidFront} preview={preview(gNidFront)} />
-          <FileInput id="gNidBack" label="জামিনদার NID পিছনে" onChange={setGNidBack} preview={preview(gNidBack)} />
-        </div>
+        <SignaturePad label="জামিনদারের স্বাক্ষর" onSignature={setGSignatureBlob} />
       </Section>
 
       {/* Notes */}

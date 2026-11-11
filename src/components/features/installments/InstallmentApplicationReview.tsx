@@ -245,6 +245,8 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
           <Field label="মডেল" value={data.productModel} />
           <Field label="ধরন" value={data.productType ? (PRODUCT_LABELS[data.productType] || data.productType) : undefined} />
           {data.productType === "others" && <Field label="অন্যান্য পণ্য" value={data.productTypeOther} />}
+          <Field label="ব্র্যান্ড" value={data.productBrand} />
+          <Field label="স্পেসিফিকেশন" value={data.productSpec} />
           <Field label="আবেদিত মেয়াদ" value={data.desiredMonths ? `${data.desiredMonths} মাস` : undefined} />
           <Field label="আবেদিত ডাউন পেমেন্ট" value={data.desiredDownPayment ? `৳${Number(data.desiredDownPayment).toLocaleString()}` : undefined} />
         </div>

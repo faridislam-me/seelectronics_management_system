@@ -549,6 +549,7 @@ export async function createService(prevState: any, formData: FormData) {
           ApplicationMessages.service.ADMIN_NOTIF,
         ),
       ]);
+      import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("customer_service_request")).catch(() => {});
     } else if (originSource === "dashboard") {
       const messageTemplate = validatedCustomerData.type === 'install' 
         ? ServiceMessages.INSTALL_CONFIRMATION 
@@ -1307,6 +1308,7 @@ export const reportService = async ({
       } catch (e) {
         console.error("Failed to send MRAM voice call:", e);
       }
+      import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("service_completed")).catch(() => {});
     }
 
     return { success: true, message: "Service Reported Successfully" };

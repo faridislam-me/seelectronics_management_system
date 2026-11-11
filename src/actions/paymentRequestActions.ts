@@ -135,6 +135,7 @@ export async function requestPayment(_prevState: any, formData: FormData) {
     } catch (e) {
       console.error("Failed to create admin notification:", e);
     }
+    import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("staff_payment_request")).catch(() => {});
 
     revalidatePath("/staff/profile");
     revalidatePath("/staff/payments");

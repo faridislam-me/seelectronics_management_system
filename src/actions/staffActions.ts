@@ -669,6 +669,7 @@ export const createStaff = async (_prevState: any, formData: FormData) => {
           }),
         }),
       );
+      import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("staff_application")).catch(() => {});
     }
 
     revalidatePath("/staffs", "layout");

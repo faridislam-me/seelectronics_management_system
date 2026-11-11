@@ -649,6 +649,7 @@ export const submitInstallmentApplication = async (formData: FormData) => {
       uploads.push(putObject({ Key: gNidBackKey, Body: buf, ContentType: "image/webp" }));
     }
     await Promise.all(uploads);
+    import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("installment_application")).catch(() => {});
 
     revalidatePath("/customer/installments");
     return { success: true, applicationCode: code, message: "আবেদন জমা হয়েছে" };

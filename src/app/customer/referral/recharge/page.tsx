@@ -57,7 +57,7 @@ const OPERATOR_BN: Record<string, string> = {
 
 export default function MobileRechargePage() {
   const router = useRouter();
-  const { data } = useReferral();
+  const { data, refetch } = useReferral();
   const balance = Number(data.balance || 0);
 
   const [rechargeType, setRechargeType] = useState("recharge");
@@ -131,9 +131,11 @@ export default function MobileRechargePage() {
       setOperator("");
       setAmount("");
       setSelectedPkg(null);
+      await refetch();
       router.refresh();
     } else if (res.success) {
       toast.success(res.message);
+      await refetch();
       router.refresh();
     } else {
       toast.error(res.message);

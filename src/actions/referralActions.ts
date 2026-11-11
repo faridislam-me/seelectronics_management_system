@@ -3,7 +3,7 @@
 import { db } from "@/db/drizzle";
 import { customers, referralBonuses, referralPaymentRequests } from "@/db/schema";
 import { verifySession } from "@/lib";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -103,18 +103,41 @@ export const requestReferralPayment = async (data: {
       return { success: false, message: "Insufficient balance" };
     }
 
+    // Reserve (deduct) the balance now so the customer can't request more than they have.
+    // Atomic guard: only succeeds if the balance is still sufficient (prevents double-spend
+    // from concurrent requests — neon-http has no interactive transactions).
+    const reserved = await db
+      .update(customers)
+      .set({ referralBalance: sql`${customers.referralBalance} - ${data.amount}` })
+      .where(and(eq(customers.customerId, customerId), gte(customers.referralBalance, data.amount)))
+      .returning({ customerId: customers.customerId });
+
+    if (reserved.length === 0) {
+      return { success: false, message: "Insufficient balance" };
+    }
+
     const { generateRandomId } = await import("@/utils");
     const requestId = `RPR-${generateRandomId().slice(0, 8).toUpperCase()}`;
 
-    await db.insert(referralPaymentRequests).values({
-      requestId,
-      customerId,
-      vipCardNumber: customer.vipCardNumber,
-      amount: data.amount,
-      paymentMethod: data.paymentMethod,
-      walletNumber: data.walletNumber,
-      status: "requested",
-    });
+    try {
+      await db.insert(referralPaymentRequests).values({
+        requestId,
+        customerId,
+        vipCardNumber: customer.vipCardNumber,
+        amount: data.amount,
+        paymentMethod: data.paymentMethod,
+        walletNumber: data.walletNumber,
+        status: "requested",
+        balanceReserved: true,
+      });
+    } catch (insertErr) {
+      // Roll back the reservation if the request row could not be created.
+      await db
+        .update(customers)
+        .set({ referralBalance: sql`${customers.referralBalance} + ${data.amount}` })
+        .where(eq(customers.customerId, customerId));
+      throw insertErr;
+    }
 
     // Notify Admin
     try {
@@ -201,16 +224,29 @@ export const updateReferralPaymentStatus = async (
       })
       .where(eq(referralPaymentRequests.id, id));
 
-    // 2. If completed, deduct from customer balance
-    if (data.status === "completed") {
+    // 2a. On completion: for new requests the balance was already reserved (deducted) at
+    //     request time, so only legacy requests (balanceReserved = false) are deducted here.
+    if (data.status === "completed" && !request.balanceReserved) {
       await db
         .update(customers)
         .set({
           referralBalance: sql`${customers.referralBalance} - ${request.amount}`,
         })
         .where(eq(customers.customerId, request.customerId));
+    }
 
-      // Notify customer
+    // 2b. On rejection: refund the amount that was reserved at request time.
+    if (data.status === "rejected" && request.balanceReserved) {
+      await db
+        .update(customers)
+        .set({
+          referralBalance: sql`${customers.referralBalance} + ${request.amount}`,
+        })
+        .where(eq(customers.customerId, request.customerId));
+    }
+
+    // Notify customer when the payout is completed.
+    if (data.status === "completed") {
       try {
         const { notifyCustomer } = await import("./notificationActions");
         const customer = await db.query.customers.findFirst({

@@ -245,6 +245,8 @@ export const referralPaymentRequests = pgTable(
     paymentMethod: paymentTypesEnum().notNull(),
     walletNumber: varchar({ length: 255 }).notNull(),
     status: paymentStatusEnum().default("requested").notNull(),
+    /** true = balance already deducted (reserved) at request time; false = legacy, deduct on completion */
+    balanceReserved: boolean().default(false).notNull(),
     transactionId: varchar({ length: 255 }),
     senderNumber: varchar({ length: 255 }),
     adminNote: text(),

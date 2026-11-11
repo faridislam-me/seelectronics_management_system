@@ -2,7 +2,7 @@
 
 import { requestMobileRecharge, getDrivePackages } from "@/actions/rechargeActions";
 import clsx from "clsx";
-import { ArrowLeft, CheckCircle2, Gift, History, Loader2, Package, Smartphone, Zap } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Copy, Gift, History, Home, Loader2, Package, Smartphone, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -27,6 +27,34 @@ const OPERATORS = [
 
 type DrivePackage = { id: string; name: string; amount: number; description?: string; validity?: string };
 
+type RechargeResult = {
+  phone: string;
+  operator: string;
+  operatorKey: string;
+  amount: number;
+  trxId: string;
+  newBalance: number;
+  time: string;
+};
+
+const OPERATOR_COLORS: Record<string, string> = {
+  grameenphone: "#00a550",
+  banglalink: "#f7941d",
+  robi: "#e2001a",
+  airtel: "#e40000",
+  teletalk: "#0066b3",
+  skitto: "#6c5ce7",
+};
+
+const OPERATOR_BN: Record<string, string> = {
+  grameenphone: "গ্রামীণফোন",
+  banglalink: "বাংলালিংক",
+  robi: "রবি",
+  airtel: "এয়ারটেল",
+  teletalk: "টেলিটক",
+  skitto: "স্কিটো",
+};
+
 export default function MobileRechargePage() {
   const router = useRouter();
   const { data } = useReferral();
@@ -40,6 +68,8 @@ export default function MobileRechargePage() {
   const [packages, setPackages] = useState<DrivePackage[]>([]);
   const [loadingPkgs, setLoadingPkgs] = useState(false);
   const [selectedPkg, setSelectedPkg] = useState<DrivePackage | null>(null);
+  const [successResult, setSuccessResult] = useState<RechargeResult | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const isPackageType = rechargeType !== "recharge";
 
@@ -95,12 +125,15 @@ export default function MobileRechargePage() {
     });
     setLoading(false);
 
-    if (res.success) {
-      toast.success(res.message);
+    if (res.success && "detail" in res && res.detail) {
+      setSuccessResult(res.detail as RechargeResult);
       setRechargePhone("");
       setOperator("");
       setAmount("");
       setSelectedPkg(null);
+      router.refresh();
+    } else if (res.success) {
+      toast.success(res.message);
       router.refresh();
     } else {
       toast.error(res.message);
@@ -267,6 +300,90 @@ export default function MobileRechargePage() {
       <p className="text-[11px] text-center text-[#5b6784] px-4">
         রিচার্জ স্বয়ংক্রিয়ভাবে প্রক্রিয়া হবে এবং ব্যালেন্স কর্তন করা হবে।
       </p>
+
+      {/* Success popup */}
+      {successResult && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-[#0b3d91] to-[#1f7cf0]">
+          <div className="flex flex-col items-center pt-10 pb-6 px-4">
+            <div className="size-20 rounded-full bg-[#22c55e] flex items-center justify-center shadow-[0_8px_30px_rgba(34,197,94,0.4)]">
+              <CheckCircle2 size={44} className="text-white" />
+            </div>
+            <p className="text-[22px] font-extrabold text-white mt-4">আপনার রিচার্জ</p>
+            <p className="text-[20px] font-extrabold text-[#22c55e]">সফল হয়েছে</p>
+          </div>
+
+          <div className="flex-1 px-4 pb-4 overflow-auto">
+            {/* Operator card */}
+            <div className="rounded-xl bg-white p-4 flex items-center gap-3 shadow-lg">
+              <span
+                className="size-12 rounded-full flex items-center justify-center text-white font-extrabold text-[18px] shrink-0"
+                style={{ backgroundColor: OPERATOR_COLORS[successResult.operatorKey] || "#0b3d91" }}
+              >
+                {(OPERATOR_BN[successResult.operatorKey] || successResult.operator).charAt(0)}
+              </span>
+              <span className="flex flex-col flex-1 min-w-0">
+                <span className="text-[15px] font-extrabold text-[#0f1729]">
+                  {OPERATOR_BN[successResult.operatorKey] || successResult.operator}
+                </span>
+                <span className="text-[13px] font-semibold text-[#5b6784]">{successResult.phone}</span>
+              </span>
+              <span className="shrink-0 text-[11px] font-extrabold text-[#22c55e] bg-[#22c55e]/10 px-2.5 py-1 rounded-full border border-[#22c55e]/20">সম্পন্ন</span>
+            </div>
+
+            {/* Transaction details */}
+            <div className="rounded-xl bg-white mt-3 p-4 shadow-lg">
+              <p className="text-[14px] font-extrabold text-[#0f1729] mb-3">লেনদেনের বিবরণ</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold text-[#5b6784]">সময়</p>
+                  <p className="text-[12px] font-bold text-[#0f1729] mt-0.5">
+                    {new Date(successResult.time).toLocaleString("bn-BD", { dateStyle: "short", timeStyle: "short" })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold text-[#5b6784]">ট্রানজেকশন আইডি</p>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <p className="text-[11px] font-bold text-[#0f1729] truncate">{successResult.trxId}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(successResult.trxId);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      className="shrink-0"
+                    >
+                      <Copy size={14} className={copied ? "text-[#22c55e]" : "text-[#b0bdd0]"} />
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold text-[#5b6784]">সর্বমোট</p>
+                  <p className="text-[14px] font-extrabold text-[#0b3d91] mt-0.5">৳{successResult.amount.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold text-[#5b6784]">নতুন ব্যালেন্স</p>
+                  <p className="text-[14px] font-extrabold text-[#0f1729] mt-0.5">৳{successResult.newBalance.toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Home button */}
+          <div className="px-4 pb-6 pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                setSuccessResult(null);
+                router.push("/customer/referral");
+              }}
+              className="w-full h-12 rounded-xl bg-white text-[#0b3d91] text-[15px] font-extrabold inline-flex items-center justify-center gap-2 shadow-lg"
+            >
+              <Home size={18} /> হোম-এ ফিরে যাই
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

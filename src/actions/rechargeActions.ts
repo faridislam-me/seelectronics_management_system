@@ -105,9 +105,27 @@ export const requestMobileRecharge = async (input: {
     revalidatePath("/customer/referral");
     revalidatePath("/recharge-requests");
 
-    return isSuccess
-      ? { success: true, requestCode: code, message: "রিচার্জ সম্পন্ন হয়েছে ✓" }
-      : { success: false, message: apiRes.message || "রিচার্জ ব্যর্থ হয়েছে। পরে আবার চেষ্টা করুন।" };
+    if (isSuccess) {
+      const updatedCustomer = await db.query.customers.findFirst({
+        where: eq(customers.customerId, customer.customerId),
+        columns: { referralBalance: true },
+      });
+      return {
+        success: true,
+        requestCode: code,
+        message: "রিচার্জ সম্পন্ন হয়েছে ✓",
+        detail: {
+          phone: rechargePhone.trim(),
+          operator: OPERATORS[operator] || operator,
+          operatorKey: operator,
+          amount,
+          trxId: trxid,
+          newBalance: Number(updatedCustomer?.referralBalance ?? 0),
+          time: new Date().toISOString(),
+        },
+      };
+    }
+    return { success: false, message: apiRes.message || "রিচার্জ ব্যর্থ হয়েছে। পরে আবার চেষ্টা করুন।" };
   } catch (error) {
     console.error("requestMobileRecharge error:", error);
     return { success: false, message: "রিচার্জ প্রক্রিয়া ব্যর্থ হয়েছে" };

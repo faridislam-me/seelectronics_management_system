@@ -111,11 +111,12 @@ export async function submitComplaint(_prevState: any, formData: FormData) {
       );
     }
     await Promise.all(smsJobs);
+    import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("customer_complaint")).catch(() => {});
 
     revalidatePath("/customer/profile");
     revalidatePath("/customer/complain/history");
     revalidatePath("/complaints");
-    
+
     return {
       success: true,
       data: complaintId,
@@ -416,14 +417,19 @@ async function notifyComplaintStatusSMS(
     const offText = off ? ` দায়িত্বপ্রাপ্ত কর্মকর্তা: ${off.name}, ${toAsciiDigits(off.phone)}` : "";
     send(customerPhone, `SE Electronics: আপনার অভিযোগ (${complaintId}) এর শুনানি চলছে।${offText}`);
     send(staffPhone, `SE Electronics: অভিযোগ ${complaintId} এর শুনানি শুরু হয়েছে।${offText}`);
+    voice(customerPhone, 4620, "Complaint Hearing Customer");
+    voice(staffPhone, 4619, "Complaint Hearing Staff");
   } else if (newStatus === "completed") {
     const p = c.punishmentType ? PUNISHMENT_BN[c.punishmentType] || c.punishmentType : "";
     send(customerPhone, `SE Electronics: আপনার অভিযোগ (${complaintId}) নিষ্পত্তি হয়েছে।${p ? ` গৃহীত ব্যবস্থা: ${p}।` : ""} অ্যাপে বিস্তারিত দেখুন।`);
     send(staffPhone, `SE Electronics: অভিযোগ ${complaintId} নিষ্পত্তি হয়েছে।${p ? ` সিদ্ধান্ত: ${p}।` : ""} অ্যাপে বিস্তারিত দেখুন।`);
     voice(customerPhone, COMPLAINT_VOICE_RESOLVED_CUSTOMER, "Complaint Resolved");
+    voice(customerPhone, 4636, "Hearing Settlement Customer");
+    voice(staffPhone, 4637, "Hearing Order Staff");
   } else if (newStatus === "customer_absent") {
     send(customerPhone, `SE Electronics: আপনার অভিযোগ (${complaintId}) যাচাইয়ের সময় আপনাকে উপস্থিত/যোগাযোগযোগ্য পাওয়া যায়নি। অনুগ্রহ করে দ্রুত যোগাযোগ করুন — 09649355555।`);
     voice(customerPhone, COMPLAINT_VOICE_ABSENT_CUSTOMER, "Complaint Customer Absent");
+    voice(customerPhone, 4635, "Hearing Absent Customer");
   } else if (newStatus === "under_trial") {
     send(customerPhone, `SE Electronics: আপনার অভিযোগ (${complaintId}) বিচারাধীন রয়েছে।`);
   }

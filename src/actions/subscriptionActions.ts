@@ -359,6 +359,7 @@ export const createSubscriber = async (prevState: any, formData: FormData) => {
       }
 
       await Promise.all(promises);
+      import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("customer_subscription")).catch(() => {});
     }
 
     revalidatePath("/subscribers");

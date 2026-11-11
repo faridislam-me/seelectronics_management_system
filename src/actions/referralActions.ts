@@ -127,6 +127,7 @@ export const requestReferralPayment = async (data: {
     } catch (e) {
       console.error("Failed to notify admin:", e);
     }
+    import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("referral_withdraw")).catch(() => {});
 
     revalidatePath("/customer/referral");
     return {

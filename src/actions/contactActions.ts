@@ -58,6 +58,7 @@ export async function sendContactMessage(_prevState: any, formData: FormData) {
       customerId: session.userId as string,
     });
     await notifyAdminOfChatMessage(session.userId as string, messageId);
+    import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("customer_chat")).catch(() => {});
 
     revalidatePath("/customer/profile");
     return { success: true, message: "Message sent! Admin will respond soon." };
@@ -193,6 +194,7 @@ export async function sendMyChatMessage(text: string) {
     });
 
     await notifyAdminOfChatMessage(customerId, messageId);
+    import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("customer_chat")).catch(() => {});
 
     revalidatePath("/messages");
     return { success: true, message: "Message sent" };

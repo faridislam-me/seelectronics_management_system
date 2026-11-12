@@ -34,9 +34,9 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 };
 
 const PAY_METHODS = [
-  { key: "bkash" as const, label: "bKash", color: "text-[#d1137b]", bg: "bg-[#e2136e]", number: paymentDetails.bkash.number },
-  { key: "nagad" as const, label: "Nagad", color: "text-[#ec1c24]", bg: "bg-[#ec1c24]", number: paymentDetails.nagad.number },
-  { key: "rocket" as const, label: "Rocket", color: "text-[#8a2be2]", bg: "bg-[#8a2be2]", number: paymentDetails.rocket.number },
+  { key: "bkash" as const, label: "bKash", color: "text-[#d1137b]", bg: "bg-[#e2136e]", logo: "/payment-methods/bkash.jpg", number: paymentDetails.bkash.number },
+  { key: "nagad" as const, label: "Nagad", color: "text-[#ec1c24]", bg: "bg-[#ec1c24]", logo: "/payment-methods/nagad.jpg", number: paymentDetails.nagad.number },
+  { key: "rocket" as const, label: "Rocket", color: "text-[#8a2be2]", bg: "bg-[#8a2be2]", logo: "/payment-methods/rocket.jpg", number: paymentDetails.rocket.number },
 ];
 
 const METHOD_LABELS: Record<string, string> = {
@@ -326,8 +326,9 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
                       className="w-full flex items-center justify-between rounded-md border border-[#dfe6f2] px-3 py-2.5 hover:bg-[#f5f7fb] active:scale-[0.98] transition-all"
                     >
                       <span className="flex items-center gap-2.5">
-                        <span className={clsx("size-8 rounded-full text-white flex items-center justify-center text-[11px] font-extrabold", m.bg)}>
-                          {m.label[0]}
+                        <span className="size-9 rounded-md bg-white border border-[#dfe6f2] overflow-hidden flex items-center justify-center shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={m.logo} alt={m.label} className="w-full h-full object-contain" />
                         </span>
                         <span className="flex flex-col text-left leading-tight">
                           <span className={clsx("text-[13px] font-extrabold", m.color)}>{m.label}</span>
@@ -339,7 +340,10 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
                   ))}
                   <div className="flex items-center justify-between rounded-md border border-[#dfe6f2] px-3 py-2.5">
                     <span className="flex items-center gap-2.5">
-                      <span className="size-8 rounded-full bg-[#0b3d91] text-white flex items-center justify-center text-[11px] font-extrabold">B</span>
+                      <span className="size-9 rounded-md bg-white border border-[#dfe6f2] overflow-hidden flex items-center justify-center shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/payment-methods/bank.jpg" alt="Bank" className="w-full h-full object-contain" />
+                      </span>
                       <span className="flex flex-col text-left leading-tight">
                         <span className="text-[13px] font-extrabold text-[#0b3d91]">Bank Transfer</span>
                         <span className="text-[11px] font-mono text-[#5b6784]">{paymentDetails.bank.accountNumber}</span>

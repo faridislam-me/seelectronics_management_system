@@ -249,11 +249,31 @@ export interface InstallmentInvoiceTemplateData {
 export interface InstallmentStickerTemplateData {
   planCode: string;
   productModel: string;
+  /** Human-readable product category label, e.g. "আইপিএস (IPS)". */
   productType: string | null;
   serialNumber: string | null;
-  customerName: string;
-  monthlyAmount: number;
+  /** Cash price printed as প্রাইজ. */
+  price: number;
   months: number;
+  /**
+   * Optional product specs — rendered only when a value is present. The
+   * electrical trio (VA/Watt, Volt, Display) is also gated on `isElectrical`
+   * so a fridge/other unit shows its own relevant fields instead of IPS-only
+   * ones. These are free-text so the sticker can carry real data as the plan
+   * schema grows to capture them.
+   */
+  vaWatt?: string | null;
+  volt?: string | null;
+  display?: string | null;
+  productName?: string | null;
+  brand?: string | null;
+  /** True for IPS-like units that have VA/Watt, Volt and Display specs. */
+  isElectrical: boolean;
+  /** base64 company logo. */
+  logo: string;
+  /** Code 128 barcode as inline SVG markup. */
+  barcode: string;
+  /** base64 QR code (encodes the plan code). */
   qrcode: string;
 }
 

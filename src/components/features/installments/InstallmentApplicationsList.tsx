@@ -22,6 +22,29 @@ const FILTERS = [
   { value: "rejected", label: "প্রত্যাখ্যাত" },
 ];
 
+// Human-readable category labels for the stored productType codes.
+const PRODUCT_TYPE_LABELS: Record<string, string> = {
+  fridge: "ফ্রিজ",
+  ac: "এসি",
+  tv: "টিভি",
+  oven: "ওভেন",
+  washing_machine: "ওয়াশিং মেশিন",
+  mobile: "মোবাইল",
+  ips: "আই পি এস",
+  battery: "ব্যাটারি",
+  ips_package: "আই পি এস প্যাকেজ",
+  stabilizer: "স্ট্যাবিলাইজার",
+  blender: "ব্লেন্ডার",
+  others: "অন্যান্য",
+};
+
+/** Category label: free-text "others" value wins, else the mapped type label. */
+function categoryLabel(a: any): string | null {
+  if (a.productType === "others" && a.productTypeOther) return a.productTypeOther;
+  if (a.productType) return PRODUCT_TYPE_LABELS[a.productType] || a.productType;
+  return a.productTypeOther || null;
+}
+
 export default function InstallmentApplicationsList({ apps }: { apps: any[] }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -94,7 +117,16 @@ export default function InstallmentApplicationsList({ apps }: { apps: any[] }) {
                       <p className="font-bold">{a.customerName}</p>
                       <p className="text-xs text-gray-400">{a.customerPhone}</p>
                     </td>
-                    <td className="px-3 py-2.5 font-semibold">{a.productModel}</td>
+                    <td className="px-3 py-2.5">
+                      <p className="font-bold">
+                        {a.productBrand ? `${a.productBrand} ` : ""}{a.productModel}
+                      </p>
+                      {(categoryLabel(a) || a.productSpec) && (
+                        <p className="text-xs text-gray-500">
+                          {[categoryLabel(a), a.productSpec].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
+                    </td>
                     <td className="px-3 py-2.5 text-gray-500">{formatDate(a.createdAt)}</td>
                     <td className="px-3 py-2.5 text-center">
                       <span className={clsx("text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border", sm.cls)}>{sm.label}</span>

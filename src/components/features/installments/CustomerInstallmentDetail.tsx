@@ -56,7 +56,7 @@ const METHOD_COLORS: Record<string, string> = {
 };
 
 export default function CustomerInstallmentDetail({ data }: { data: any }) {
-  const { plan, schedule, nextDue } = data;
+  const { plan, schedule, nextDue, productImageUrl } = data;
   const s = STATUS[plan.status] || STATUS.active;
   const [showPay, setShowPay] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -111,6 +111,14 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
         </span>
         <span className={clsx("shrink-0 text-[10px] font-extrabold uppercase px-2 py-1 rounded-full", s.cls)}>{s.label}</span>
       </div>
+
+      {/* Product photo (admin-set, when available) */}
+      {productImageUrl && (
+        <div className="rounded-md bg-white border border-[#dfe6f2] overflow-hidden shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={productImageUrl} alt={plan.productModel} className="w-full h-44 object-contain bg-[#f5f7fb]" />
+        </div>
+      )}
 
       {/* Action buttons */}
       <div className="grid grid-cols-2 gap-2">

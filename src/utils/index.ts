@@ -226,6 +226,12 @@ export function renderText(text: string, data?: any) {
   return text.replace(/{([^}]+)}/g, (match, key) => data[key] || "");
 }
 
+/** Convert ASCII digits in a string/number to Bangla numerals (০-৯). */
+export function toBanglaNumber(value: string | number): string {
+  const bn = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
+  return String(value).replace(/\d/g, (d) => bn[Number(d)]);
+}
+
 export function isNumber(str: string | number) {
   return !isNaN(str as number) && !Number.isNaN(str);
 }

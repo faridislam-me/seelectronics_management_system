@@ -22,6 +22,22 @@ export const warrantyDurationByType = {
   others: 6,
 }
 export const productTypes = ["ips", "battery", "stabilizer", "others"]
+
+// Installment term options. The extra charge is a fixed 2% per month, so the
+// percentage is always `months * 2`. These are the ONLY valid customer-facing terms.
+export const installmentTermOptions = [
+  { months: 3, chargePercent: 6 },
+  { months: 6, chargePercent: 12 },
+  { months: 9, chargePercent: 18 },
+  { months: 12, chargePercent: 24 },
+  { months: 18, chargePercent: 36 },
+  { months: 24, chargePercent: 48 },
+  { months: 30, chargePercent: 60 },
+  { months: 36, chargePercent: 72 },
+] as const
+
+/** Extra-charge percentage for a given term (2% per month). */
+export const installmentChargePercent = (months: number) => months * 2
 export const paymentTypes = ["Cash", "Bkash", "Nagad", "Rocket", "Bank"]
 export const serviceStatuses = [
     "pending",

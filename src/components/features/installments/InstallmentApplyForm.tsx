@@ -1,9 +1,13 @@
 "use client";
 
 import { submitInstallmentApplication } from "@/actions/installmentActions";
+import { Modal } from "@/components/ui";
+import { installmentTermOptions } from "@/constants";
+import { toBanglaNumber } from "@/utils";
 import {
   ArrowLeft,
   Camera,
+  Check,
   CheckSquare,
   CreditCard,
   Eraser,
@@ -11,12 +15,13 @@ import {
   Home,
   Loader2,
   PenLine,
+  ShieldCheck,
   Upload,
   User,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 const PRODUCT_TYPES = [
@@ -34,6 +39,19 @@ const PRODUCT_TYPES = [
   { value: "blender", label: "ব্লেন্ডার" },
   { value: "others", label: "অন্যান্য" },
 ];
+
+// Terms & Conditions shown on the gate screen before the apply form (9 points).
+const INSTALLMENT_TERMS = [
+  { num: "১", title: "বয়স ও নাগরিকত্ব", body: "আবেদনকারীকে অবশ্যই বাংলাদেশের নাগরিক হতে হবে এবং বয়স কমপক্ষে ১৮ বছর হতে হবে।" },
+  { num: "২", title: "সঠিক তথ্য প্রদান", body: "ফরম পূরণের সময় নিজের জাতীয় পরিচয়পত্র (NID), সচল মোবাইল নম্বর এবং সঠিক বর্তমান ঠিকানা প্রদান করতে হবে।" },
+  { num: "৩", title: "প্রয়োজনীয় কাগজপত্র", body: "যাচাইয়ের জন্য ক্রেতা ও জামিনদারের NID কার্ডের ফটোকপি এবং পাসপোর্ট সাইজ ছবি প্রস্তুত রাখতে হবে।" },
+  { num: "৪", title: "ডাউন পেমেন্ট", body: "পছন্দকৃত এসি, ফ্রিজ, ওয়াশিং মেশিন বা অন্যান্য পণ্যের ধরন অনুযায়ী নির্ধারিত ডাউন পেমেন্ট পরিশোধ সাপেক্ষে কিস্তি সুবিধা কার্যকর হবে।" },
+  { num: "৫", title: "কিস্তি পরিশোধের নিয়ম", body: "প্রতি মাসের নির্দিষ্ট সময়ের মধ্যে নির্ধারিত কিস্তির টাকা নিয়মিত পরিশোধ করতে হবে।" },
+  { num: "৬", title: "ওয়ারেন্টি সুবিধা", body: "প্রতিটি পণ্যের সাথে প্রস্তুতকারক কোম্পানির অফিশিয়াল ওয়ারেন্টি বা সার্ভিস ওয়ারেন্টি প্রদান করা হবে।" },
+  { num: "৭", title: "ডেলিভারি ও ইনস্টলেশন", body: "আবেদন অনুমোদিত হওয়ার পর কোম্পানির পক্ষ থেকে নির্দিষ্ট ঠিকানায় পণ্য পৌঁছে দেওয়া হবে এবং বড় পণ্যের ক্ষেত্রে ইনস্টলেশনে সহায়তা করা হবে।" },
+  { num: "৮", title: "বিলম্ব ফি ও সতর্কতা", body: "নির্ধারিত সময়ের মধ্যে কিস্তি পরিশোধে ব্যর্থ হলে কোম্পানির নিয়ম অনুযায়ী নির্দিষ্ট জরিমানা বা বিলম্ব ফি প্রযোজ্য হতে পারে।" },
+  { num: "৯", title: "রিকাভারি ও আইনগত ব্যবস্থা", body: "কিস্তি পরিশোধে দেরি, অবহেলা বা কিস্তি প্রদান না করলে এস ই ইলেকট্রনিকস প্রথম নোটিশ দিয়ে কিস্তিতে নেওয়া পণ্যটি রিকাভারি করে নিয়ে যাবে অথবা আপনার বিরুদ্ধে আইনগত ব্যবস্থা গ্রহণ করবে।" },
+] as const;
 
 const PRODUCT_SPECS: Record<string, { label: string; options: { value: string; label: string }[] }> = {
   tv: {
@@ -191,10 +209,18 @@ function FileInput({
   );
 }
 
+/**
+ * Signature capture. The inline box is just a preview/trigger; tapping it opens
+ * a large modal where the user can sign comfortably. "OK" saves the drawing,
+ * which then appears in the inline box. Saved value stays a PNG Blob (unchanged
+ * contract) so the form submits it exactly as before.
+ */
 function SignaturePad({ label, onSignature }: { label: string; onSignature: (blob: Blob | null) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [drawing, setDrawing] = useState(false);
+  const drawingRef = useRef(false);
+  const [open, setOpen] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const getPos = (e: React.TouchEvent | React.MouseEvent) => {
     const canvas = canvasRef.current!;
@@ -208,9 +234,17 @@ function SignaturePad({ label, onSignature }: { label: string; onSignature: (blo
     return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
   };
 
+  const prepareCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  };
+
   const startDraw = (e: React.TouchEvent | React.MouseEvent) => {
     e.preventDefault();
-    setDrawing(true);
+    drawingRef.current = true;
     const ctx = canvasRef.current!.getContext("2d")!;
     const pos = getPos(e);
     ctx.beginPath();
@@ -218,11 +252,11 @@ function SignaturePad({ label, onSignature }: { label: string; onSignature: (blo
   };
 
   const draw = (e: React.TouchEvent | React.MouseEvent) => {
-    if (!drawing) return;
+    if (!drawingRef.current) return;
     e.preventDefault();
     const ctx = canvasRef.current!.getContext("2d")!;
     const pos = getPos(e);
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 3;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = "#16213a";
@@ -231,28 +265,42 @@ function SignaturePad({ label, onSignature }: { label: string; onSignature: (blo
     setHasDrawn(true);
   };
 
-  const stopDraw = useCallback(() => {
-    if (!drawing) return;
-    setDrawing(false);
-    const canvas = canvasRef.current!;
-    canvas.toBlob((blob) => onSignature(blob), "image/png");
-  }, [drawing, onSignature]);
+  const stopDraw = () => {
+    drawingRef.current = false;
+  };
 
-  const clear = () => {
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext("2d")!;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const clearCanvas = () => {
+    prepareCanvas();
+    setHasDrawn(false);
+  };
+
+  const removeSignature = () => {
+    setPreviewUrl(null);
     setHasDrawn(false);
     onSignature(null);
   };
 
-  useEffect(() => {
+  const confirm = () => {
     const canvas = canvasRef.current!;
-    const ctx = canvas.getContext("2d")!;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }, []);
+    if (!hasDrawn) {
+      setOpen(false);
+      return;
+    }
+    canvas.toBlob((blob) => onSignature(blob), "image/png");
+    setPreviewUrl(canvas.toDataURL("image/png"));
+    setOpen(false);
+  };
+
+  // (Re)initialise the modal canvas whenever it opens.
+  useEffect(() => {
+    if (open) {
+      // Defer so the canvas element is mounted inside the modal.
+      requestAnimationFrame(() => {
+        prepareCanvas();
+        setHasDrawn(false);
+      });
+    }
+  }, [open]);
 
   return (
     <div>
@@ -260,34 +308,70 @@ function SignaturePad({ label, onSignature }: { label: string; onSignature: (blo
         <PenLine size={14} /> {label}
       </label>
       <div className="relative rounded-md border border-[#c9d3e6] bg-white overflow-hidden">
-        <canvas
-          ref={canvasRef}
-          width={600}
-          height={200}
-          className="w-full h-[100px] touch-none cursor-crosshair"
-          onMouseDown={startDraw}
-          onMouseMove={draw}
-          onMouseUp={stopDraw}
-          onMouseLeave={stopDraw}
-          onTouchStart={startDraw}
-          onTouchMove={draw}
-          onTouchEnd={stopDraw}
-        />
-        {!hasDrawn && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <span className="text-[13px] font-semibold text-[#b0bdd0]">আঙুল দিয়ে স্বাক্ষর করুন</span>
-          </div>
-        )}
-        {hasDrawn && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="w-full h-[100px] flex items-center justify-center bg-white hover:bg-[#f5f7fb] transition-colors"
+        >
+          {previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={previewUrl} alt={label} className="h-[88px] object-contain" />
+          ) : (
+            <span className="flex flex-col items-center gap-1 text-[#b0bdd0]">
+              <PenLine size={22} />
+              <span className="text-[13px] font-semibold">স্বাক্ষর করতে ট্যাপ করুন</span>
+            </span>
+          )}
+        </button>
+        {previewUrl && (
           <button
             type="button"
-            onClick={clear}
+            onClick={removeSignature}
             className="absolute top-1.5 right-1.5 size-7 rounded-full bg-white/90 border border-[#dfe6f2] flex items-center justify-center text-[#3d4f72] hover:bg-red-50 hover:text-red-600"
           >
             <Eraser size={14} />
           </button>
         )}
       </div>
+
+      {open && (
+        <Modal isVisible title={label} width="600" onClose={() => setOpen(false)}>
+          <div className="flex flex-col gap-3 text-[#16213a]">
+            <p className="text-[13px] font-semibold text-[#5b6784]">নিচের বক্সে আঙুল বা মাউস দিয়ে স্বাক্ষর করুন।</p>
+            <div className="rounded-md border-2 border-dashed border-[#c9d3e6] bg-white overflow-hidden">
+              <canvas
+                ref={canvasRef}
+                width={600}
+                height={320}
+                className="w-full h-[260px] touch-none cursor-crosshair"
+                onMouseDown={startDraw}
+                onMouseMove={draw}
+                onMouseUp={stopDraw}
+                onMouseLeave={stopDraw}
+                onTouchStart={startDraw}
+                onTouchMove={draw}
+                onTouchEnd={stopDraw}
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={clearCanvas}
+                className="flex-1 h-11 rounded-md border border-[#dfe6f2] text-[#5b6784] text-[14px] font-extrabold inline-flex items-center justify-center gap-1.5"
+              >
+                <Eraser size={16} /> মুছুন
+              </button>
+              <button
+                type="button"
+                onClick={confirm}
+                className="flex-[2] h-11 rounded-md bg-[#0b3d91] text-white text-[14px] font-extrabold inline-flex items-center justify-center gap-1.5"
+              >
+                <Check size={18} /> ঠিক আছে
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -363,7 +447,8 @@ export default function InstallmentApplyForm() {
   const [guarantorPhone, setGuarantorPhone] = useState("");
   const [guarantorAddress, setGuarantorAddress] = useState("");
 
-  // Terms
+  // Terms — the customer must read & agree on the gate screen before the form shows.
+  const [agreed, setAgreed] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Files
@@ -475,6 +560,61 @@ export default function InstallmentApplyForm() {
     }
   };
 
+  // Terms & Conditions gate — shown first; agreeing reveals the apply form.
+  if (!agreed) {
+    return (
+      <div className="flex flex-col gap-2.5 px-2 pt-2 pb-6 text-[#16213a]">
+        {/* Header */}
+        <div className="flex items-center gap-2.5">
+          <Link href="/customer/installments" className="size-9 rounded-md bg-white border border-[#dfe6f2] flex items-center justify-center shrink-0">
+            <ArrowLeft size={18} />
+          </Link>
+          <span className="flex flex-col leading-tight min-w-0 flex-1">
+            <span className="text-[16px] font-extrabold truncate">কিস্তির শর্তাবলী</span>
+            <span className="text-[11px] font-semibold text-[#5b6784]">আবেদনের আগে পড়ুন ও সম্মতি দিন</span>
+          </span>
+          <ShieldCheck size={22} className="text-[#0b3d91] shrink-0" />
+        </div>
+
+        {/* Intro */}
+        <div className="rounded-md bg-white border border-[#dfe6f2] p-3.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] flex flex-col gap-3">
+          <div className="flex items-center gap-2 text-[#0b3d91]">
+            <FileText size={18} />
+            <h2 className="text-[14px] font-extrabold">কিস্তিতে পণ্য ক্রয়ের শর্তাবলী ও নির্দেশিকা</h2>
+          </div>
+          <p className="text-[12px] leading-relaxed text-[#3a4660]">
+            প্রিয় গ্রাহক, সহজে এবং সাশ্রয়ী মূল্যে কিস্তিতে আপনার পছন্দের এসি, ফ্রিজ, ওয়াশিং মেশিন, আইপিএস, ব্যাটারি, টিভি, ওভেন, মোবাইল বা স্টেবিলাইজার ক্রয়ের জন্য আবেদন করতে আপনাকে স্বাগতম। আবেদন প্রক্রিয়া দ্রুত ও সফলভাবে সম্পন্ন করতে নিচের শর্তাবলী ও নির্দেশিকাগুলো মনোযোগ সহকারে পড়ার অনুরোধ করা হচ্ছে।
+          </p>
+
+          <div className="flex flex-col gap-2.5 text-[12px] leading-relaxed text-[#3a4660]">
+            {INSTALLMENT_TERMS.map((t) => (
+              <div key={t.num} className="flex gap-2">
+                <span className="shrink-0 size-5 rounded-full bg-[#e8f1ff] text-[#0b3d91] text-[11px] font-extrabold flex items-center justify-center">{t.num}</span>
+                <p><b className="text-[#16213a]">{t.title}:</b> {t.body}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-md bg-[#f0f6ff] border border-[#d0e0f7] p-3 text-[11px] text-[#0b3d91] font-semibold leading-relaxed">
+            “সম্মত আছি” বাটনে ক্লিক করার মাধ্যমে আপনি উপরোক্ত সকল শর্তাবলী পড়েছেন এবং সম্মতি প্রদান করেছেন বলে গণ্য হবে।
+          </div>
+        </div>
+
+        {/* Agree button */}
+        <button
+          onClick={() => { setAgreed(true); setTermsAccepted(true); }}
+          className="w-full h-12 rounded-md bg-[#0b3d91] text-white text-[15px] font-extrabold inline-flex items-center justify-center gap-2 shadow-[0_6px_18px_rgba(11,61,145,0.3)]"
+        >
+          <Check size={18} /> আমি সম্মত আছি — আবেদন শুরু করুন
+        </button>
+
+        <p className="text-[11px] text-center text-[#5b6784] px-4">
+          কিস্তি সংক্রান্ত তথ্যের জন্য যোগাযোগ করুন — <a href="tel:09649355555" className="font-bold text-[#1f5fc9]">09649355555</a>
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-2.5 px-2 pt-2 pb-2 text-[#16213a]">
       {/* Header */}
@@ -562,8 +702,15 @@ export default function InstallmentApplyForm() {
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className={labelCls}>কিস্তির মেয়াদ (মাস)</label>
-            <input type="number" min="1" value={desiredMonths} onChange={(e) => setDesiredMonths(e.target.value)} placeholder="কত মাস?" className={inputCls} />
+            <label className={labelCls}>কিস্তির মেয়াদ</label>
+            <select value={desiredMonths} onChange={(e) => setDesiredMonths(e.target.value)} className={inputCls}>
+              <option value="">নির্বাচন করুন</option>
+              {installmentTermOptions.map((t) => (
+                <option key={t.months} value={t.months}>
+                  {toBanglaNumber(t.months)} মাস ({toBanglaNumber(t.chargePercent)}% চার্জ)
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className={labelCls}>ডাউন পেমেন্ট (৳)</label>

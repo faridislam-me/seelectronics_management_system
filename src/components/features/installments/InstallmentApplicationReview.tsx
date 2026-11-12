@@ -2,7 +2,8 @@
 
 import { reviewInstallmentApplication, updateApplicationTrackingStep } from "@/actions/installmentActions";
 import { Modal } from "@/components/ui";
-import { formatDate } from "@/utils";
+import { installmentChargePercent, installmentTermOptions } from "@/constants";
+import { formatDate, toBanglaNumber } from "@/utils";
 import clsx from "clsx";
 import {
   ArrowLeft,
@@ -20,7 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 const PRODUCT_LABELS: Record<string, string> = {
@@ -83,7 +84,14 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
   const [cashPrice, setCashPrice] = useState("");
   const [extraCharge, setExtraCharge] = useState("0");
   const [downPayment, setDownPayment] = useState("0");
-  const [months, setMonths] = useState("12");
+  // Prefill from the customer's requested term when it matches an allowed option.
+  const [months, setMonths] = useState(() => {
+    const req = Number(data.desiredMonths);
+    return installmentTermOptions.some((t) => t.months === req) ? String(req) : "12";
+  });
+  // When true, extraCharge auto-follows the term's fixed % (months × 2% of cash price).
+  // Disabled the moment the admin edits the charge by hand.
+  const [autoCharge, setAutoCharge] = useState(true);
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [serialNumber, setSerialNumber] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
@@ -118,6 +126,15 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
   const total = cp + ec;
   const financed = total - dp;
   const monthly = financed > 0 ? Math.round((financed / m) * 100) / 100 : 0;
+  const chargePercent = installmentChargePercent(m);
+
+  // Keep the extra charge in sync with the selected term (2%/month of cash price),
+  // unless the admin has manually overridden it.
+  useEffect(() => {
+    if (!autoCharge) return;
+    const auto = Math.round(cp * (chargePercent / 100) * 100) / 100;
+    setExtraCharge(String(auto));
+  }, [cp, chargePercent, autoCharge]);
 
   const handleApprove = async () => {
     if (!cp || !m || !startDate) {
@@ -358,16 +375,24 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
                 <input type="number" min="0" step="0.01" value={cashPrice} onChange={(e) => setCashPrice(e.target.value)} className="__input" placeholder="0" />
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500">অতিরিক্ত চার্জ</label>
-                <input type="number" min="0" step="0.01" value={extraCharge} onChange={(e) => setExtraCharge(e.target.value)} className="__input" />
+                <label className="text-xs font-semibold text-gray-500">মেয়াদ *</label>
+                <select value={months} onChange={(e) => setMonths(e.target.value)} className="__input">
+                  {installmentTermOptions.map((t) => (
+                    <option key={t.months} value={t.months}>
+                      {toBanglaNumber(t.months)} মাস ({toBanglaNumber(t.chargePercent)}%)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500">
+                  অতিরিক্ত চার্জ {autoCharge && <span className="text-[10px] text-[#0b3d91]">({toBanglaNumber(chargePercent)}% অটো)</span>}
+                </label>
+                <input type="number" min="0" step="0.01" value={extraCharge} onChange={(e) => { setAutoCharge(false); setExtraCharge(e.target.value); }} className="__input" />
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500">ডাউন পেমেন্ট</label>
                 <input type="number" min="0" step="0.01" value={downPayment} onChange={(e) => setDownPayment(e.target.value)} className="__input" />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-gray-500">মেয়াদ (মাস) *</label>
-                <input type="number" min="1" max="120" value={months} onChange={(e) => setMonths(e.target.value)} className="__input" />
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500">শুরুর তারিখ *</label>

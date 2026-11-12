@@ -5,11 +5,10 @@ import { formatDate } from "@/utils";
 import clsx from "clsx";
 import {
   AlertTriangle,
-  CheckCircle2,
   ChevronRight,
   ClipboardList,
   CreditCard,
-  History,
+  Package,
   Phone,
   PlusCircle,
   User,
@@ -54,7 +53,6 @@ export default async function CustomerInstallmentsPage() {
   const activePlans = plans.filter((p: any) => p.status === "active");
   const primaryPlan = activePlans[0] as any | undefined;
   const pendingApps = (applications as any[]).filter((a: any) => a.status !== "approved");
-  const firstPlanCode = plans.length > 0 ? (plans[0] as any).planCode : null;
 
   return (
     <CustomerLayout>
@@ -136,15 +134,15 @@ export default async function CustomerInstallmentsPage() {
               <span className="text-[12px] font-extrabold">আবেদন ট্র্যাক</span>
             </div>
           )}
-          {firstPlanCode ? (
-            <Link href={`/customer/installments/${firstPlanCode}`} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.97] active:shadow-none transition-all">
-              <span className="size-10 rounded-full bg-[#f3e9ff] text-[#8b3fe8] flex items-center justify-center shrink-0"><History size={20} /></span>
-              <span className="text-[12px] font-extrabold">পেমেন্ট</span>
+          {plans.length > 0 ? (
+            <Link href="/customer/installments/products" className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.97] active:shadow-none transition-all">
+              <span className="size-10 rounded-full bg-[#f3e9ff] text-[#8b3fe8] flex items-center justify-center shrink-0"><Package size={20} /></span>
+              <span className="text-[12px] font-extrabold">আমার কিস্তিপণ্য</span>
             </Link>
           ) : (
             <div className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center opacity-50">
-              <span className="size-10 rounded-full bg-[#f3e9ff] text-[#8b3fe8] flex items-center justify-center shrink-0"><History size={20} /></span>
-              <span className="text-[12px] font-extrabold">পেমেন্ট</span>
+              <span className="size-10 rounded-full bg-[#f3e9ff] text-[#8b3fe8] flex items-center justify-center shrink-0"><Package size={20} /></span>
+              <span className="text-[12px] font-extrabold">আমার কিস্তিপণ্য</span>
             </div>
           )}
           {primaryPlan ? (
@@ -206,43 +204,19 @@ export default async function CustomerInstallmentsPage() {
           </div>
         )}
 
-        {/* All plans */}
+        {/* Link to the full product list when the customer has more than the ongoing one */}
         {plans.length > 1 && (
-          <div className="flex flex-col gap-2">
-            <span className="text-[13px] font-extrabold flex items-center gap-1.5"><CreditCard size={15} className="text-[#0b3d91]" /> সকল কিস্তি প্ল্যান</span>
-            {(plans as any[]).slice(primaryPlan ? 1 : 0).map((p: any) => {
-              const s = PLAN_STATUS[p.status] || PLAN_STATUS.active;
-              const progress = p.months > 0 ? Math.round((p.paidCount / p.months) * 100) : 0;
-              return (
-                <Link
-                  key={p.planCode}
-                  href={`/customer/installments/${p.planCode}`}
-                  className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]"
-                >
-                  <div className="flex flex-col min-w-0 flex-1 gap-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[13px] font-extrabold truncate">{p.productModel}</span>
-                      <span className={clsx("shrink-0 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border", s.cls)}>{s.label}</span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-[#eef1f6] overflow-hidden">
-                      <div className={clsx("h-full rounded-full", p.status === "completed" ? "bg-[#1a9c4b]" : "bg-[#1f7cf0]")} style={{ width: `${progress}%` }} />
-                    </div>
-                    <div className="flex items-center justify-between text-[10px] font-bold text-[#5b6784]">
-                      <span>{p.paidCount}/{p.months} পরিশোধিত</span>
-                      <span>
-                        {p.status === "completed" ? (
-                          <span className="inline-flex items-center gap-0.5 text-[#178a42]"><CheckCircle2 size={11} /> সম্পন্ন</span>
-                        ) : (
-                          <span className="text-[#c81f38]">বাকি {bdt(p.remainingAmount)}</span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronRight size={16} className="shrink-0 text-[#c9d3e6]" />
-                </Link>
-              );
-            })}
-          </div>
+          <Link
+            href="/customer/installments/products"
+            className="rounded-md bg-white border border-[#dfe6f2] p-3 flex items-center gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]"
+          >
+            <span className="size-9 rounded-full bg-[#f3e9ff] text-[#8b3fe8] flex items-center justify-center shrink-0"><Package size={18} /></span>
+            <span className="flex flex-col min-w-0 flex-1 leading-tight">
+              <span className="text-[13px] font-extrabold">আমার সকল কিস্তিপণ্য</span>
+              <span className="text-[11px] font-semibold text-[#5b6784]">{plans.length}টি পণ্য — প্রতিটি আলাদা কিস্তি ও সময়সূচি</span>
+            </span>
+            <ChevronRight size={18} className="shrink-0 text-[#c9d3e6]" />
+          </Link>
         )}
 
         {plans.length === 0 && pendingApps.length === 0 && (

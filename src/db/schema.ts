@@ -1502,6 +1502,8 @@ export const installmentPlans = pgTable(
     vaWatt: varchar({ length: 50 }),
     volt: varchar({ length: 50 }),
     displayType: varchar({ length: 50 }),
+    // Free-text size/capacity spec, e.g. "32 inch" (TV) or "1.5 ton" (AC).
+    productSpec: varchar({ length: 100 }),
     // Money — all admin-entered; financedAmount & monthlyAmount are derived
     cashPrice: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
     extraCharge: numeric({ precision: 12, scale: 2, mode: "number" })

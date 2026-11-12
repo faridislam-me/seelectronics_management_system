@@ -78,6 +78,7 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
     productModel: plan.productModel || "",
     serialNumber: plan.serialNumber || "",
     productBrand: plan.productBrand || "",
+    productSpec: plan.productSpec || "",
     vaWatt: plan.vaWatt || "",
     volt: plan.volt || "",
     displayType: plan.displayType || "",
@@ -89,6 +90,7 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
       productModel: plan.productModel || "",
       serialNumber: plan.serialNumber || "",
       productBrand: plan.productBrand || "",
+      productSpec: plan.productSpec || "",
       vaWatt: plan.vaWatt || "",
       volt: plan.volt || "",
       displayType: plan.displayType || "",
@@ -235,6 +237,7 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
           <div className="text-sm space-y-1 text-gray-600 dark:text-gray-300">
             <p><span className="text-gray-400">মডেল:</span> <b>{plan.productModel}</b>{plan.productType ? ` (${plan.productType})` : ""}</p>
             {plan.productBrand && <p><span className="text-gray-400">ব্র্যান্ড:</span> {plan.productBrand}</p>}
+            {plan.productSpec && <p><span className="text-gray-400">সাইজ/স্পেক:</span> {plan.productSpec}</p>}
             {plan.serialNumber && <p><span className="text-gray-400">সিরিয়াল:</span> {plan.serialNumber}</p>}
             {plan.vaWatt && <p><span className="text-gray-400">VA/ওয়াট:</span> {plan.vaWatt}</p>}
             {plan.volt && <p><span className="text-gray-400">ভোল্ট:</span> {plan.volt}</p>}
@@ -352,6 +355,10 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
               <div>
                 <label className="text-xs font-semibold text-gray-500">ব্র্যান্ড</label>
                 <input value={pForm.productBrand} onChange={(e) => setPF("productBrand", e.target.value)} className="__input" placeholder="ঐচ্ছিক" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500">সাইজ / স্পেক (ইঞ্চি/টন)</label>
+                <input value={pForm.productSpec} onChange={(e) => setPF("productSpec", e.target.value)} className="__input" placeholder="যেমন: ৩২ ইঞ্চি / ১.৫ টন" />
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500">সিরিয়াল নম্বর</label>

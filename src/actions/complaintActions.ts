@@ -259,6 +259,18 @@ export async function updateComplaintStatus(
       console.error("complaint status SMS failed:", smsError);
     }
 
+    // Admin office voice alerts for the hearing / judicial stages (separate from
+    // the party SMS/voice above). Fire-and-forget; must never block the update.
+    if (newStatus === "hearing") {
+      import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("complaint_hearing_customer")).catch(() => {});
+      import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("complaint_hearing_staff")).catch(() => {});
+    } else if (newStatus === "customer_absent") {
+      import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("hearing_absent_customer")).catch(() => {});
+    } else if (newStatus === "completed") {
+      import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("hearing_settlement_customer")).catch(() => {});
+      import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("hearing_order_staff")).catch(() => {});
+    }
+
     revalidatePath("/complaints");
     revalidatePath(`/customer/complain/doc/${complaintId}`);
     return {

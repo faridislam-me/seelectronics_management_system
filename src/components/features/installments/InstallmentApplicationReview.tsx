@@ -94,6 +94,9 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
   const [autoCharge, setAutoCharge] = useState(true);
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [serialNumber, setSerialNumber] = useState("");
+  const [vaWatt, setVaWatt] = useState("");
+  const [volt, setVolt] = useState("");
+  const [displayType, setDisplayType] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -153,6 +156,9 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
       months: m,
       startDate,
       serialNumber: serialNumber || undefined,
+      vaWatt: vaWatt || undefined,
+      volt: volt || undefined,
+      displayType: displayType || undefined,
       adminNotes: adminNotes || undefined,
     });
     setSaving(false);
@@ -401,6 +407,18 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
               <div>
                 <label className="text-xs font-semibold text-gray-500">সিরিয়াল নম্বর</label>
                 <input value={serialNumber} onChange={(e) => setSerialNumber(e.target.value)} className="__input" placeholder="ঐচ্ছিক" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500">VA / ওয়াট</label>
+                <input value={vaWatt} onChange={(e) => setVaWatt(e.target.value)} className="__input" placeholder="ঐচ্ছিক" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500">ভোল্ট</label>
+                <input value={volt} onChange={(e) => setVolt(e.target.value)} className="__input" placeholder="ঐচ্ছিক" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500">ডিসপ্লে</label>
+                <input value={displayType} onChange={(e) => setDisplayType(e.target.value)} className="__input" placeholder="ঐচ্ছিক" />
               </div>
             </div>
 

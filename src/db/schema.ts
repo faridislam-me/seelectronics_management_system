@@ -1496,6 +1496,12 @@ export const installmentPlans = pgTable(
     productModel: varchar({ length: 255 }).notNull(),
     serialNumber: varchar({ length: 255 }),
     productImageKey: varchar({ length: 255 }),
+    // Optional product spec fields — printed on the installment product sticker
+    // (blank when not captured). brand carries over from the application.
+    productBrand: varchar({ length: 255 }),
+    vaWatt: varchar({ length: 50 }),
+    volt: varchar({ length: 50 }),
+    displayType: varchar({ length: 50 }),
     // Money — all admin-entered; financedAmount & monthlyAmount are derived
     cashPrice: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
     extraCharge: numeric({ precision: 12, scale: 2, mode: "number" })

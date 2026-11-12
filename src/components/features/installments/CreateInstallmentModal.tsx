@@ -2,6 +2,8 @@
 
 import { createInstallmentPlan } from "@/actions/installmentActions";
 import { searchCustomersForPurchase } from "@/actions/customerAdminActions";
+import { installmentTermOptions, installmentChargePercent } from "@/constants";
+import { toBanglaNumber } from "@/utils";
 import { Modal } from "@/components/ui";
 import { CheckCircle2, Loader2, Search, UserRound, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -44,10 +46,17 @@ export default function CreateInstallmentModal({ onClose }: { onClose: () => voi
   const [productType, setProductType] = useState("");
   const [productModel, setProductModel] = useState("");
   const [serialNumber, setSerialNumber] = useState("");
+  const [productBrand, setProductBrand] = useState("");
+  const [vaWatt, setVaWatt] = useState("");
+  const [volt, setVolt] = useState("");
+  const [displayType, setDisplayType] = useState("");
   const [cashPrice, setCashPrice] = useState("");
   const [extraCharge, setExtraCharge] = useState("");
   const [downPayment, setDownPayment] = useState("");
-  const [months, setMonths] = useState("");
+  const [months, setMonths] = useState("12");
+  // extraCharge auto-follows the term's fixed 2%/month of cash price until the
+  // admin edits the charge by hand.
+  const [autoCharge, setAutoCharge] = useState(true);
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [guarantorName, setGuarantorName] = useState("");
   const [guarantorPhone, setGuarantorPhone] = useState("");
@@ -80,6 +89,14 @@ export default function CreateInstallmentModal({ onClose }: { onClose: () => voi
   const monthsN = parseInt(months) || 0;
   const monthly = monthsN > 0 && financed > 0 ? financed / monthsN : 0;
 
+  // Keep extra charge in sync with the selected term (2%/month of cash price)
+  // until the admin overrides it by typing a charge directly.
+  useEffect(() => {
+    if (!autoCharge) return;
+    const auto = Math.round(num(cashPrice) * (installmentChargePercent(monthsN || 1) / 100) * 100) / 100;
+    setExtraCharge(auto ? String(auto) : "");
+  }, [cashPrice, monthsN, autoCharge]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customer) {
@@ -92,6 +109,10 @@ export default function CreateInstallmentModal({ onClose }: { onClose: () => voi
       productType: productType || undefined,
       productModel,
       serialNumber,
+      productBrand,
+      vaWatt,
+      volt,
+      displayType,
       cashPrice,
       extraCharge: extraCharge || 0,
       downPayment: downPayment || 0,
@@ -187,14 +208,27 @@ export default function CreateInstallmentModal({ onClose }: { onClose: () => voi
               <input value={productModel} onChange={(e) => setProductModel(e.target.value)} className="__input" placeholder="মডেল / পণ্যের নাম" required />
             </div>
             <input value={serialNumber} onChange={(e) => setSerialNumber(e.target.value)} className="__input" placeholder="সিরিয়াল নম্বর (optional)" />
+            {/* Sticker spec fields (optional) */}
+            <div className="grid grid-cols-2 gap-3">
+              <input value={productBrand} onChange={(e) => setProductBrand(e.target.value)} className="__input" placeholder="ব্র্যান্ড (optional)" />
+              <input value={vaWatt} onChange={(e) => setVaWatt(e.target.value)} className="__input" placeholder="VA / ওয়াট (optional)" />
+              <input value={volt} onChange={(e) => setVolt(e.target.value)} className="__input" placeholder="ভোল্ট (optional)" />
+              <input value={displayType} onChange={(e) => setDisplayType(e.target.value)} className="__input" placeholder="ডিসপ্লে (optional)" />
+            </div>
 
             {/* Money */}
             <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 pt-1">৩. হিসাব</label>
             <div className="grid grid-cols-2 gap-3">
               <input type="number" min="0" step="0.01" value={cashPrice} onChange={(e) => setCashPrice(e.target.value)} className="__input" placeholder="ক্যাশ দাম" required />
-              <input type="number" min="0" step="0.01" value={extraCharge} onChange={(e) => setExtraCharge(e.target.value)} className="__input" placeholder="অতিরিক্ত চার্জ" />
+              <select value={months} onChange={(e) => setMonths(e.target.value)} className="__input" required>
+                {installmentTermOptions.map((t) => (
+                  <option key={t.months} value={t.months}>
+                    {toBanglaNumber(t.months)} মাস ({toBanglaNumber(t.chargePercent)}% চার্জ)
+                  </option>
+                ))}
+              </select>
+              <input type="number" min="0" step="0.01" value={extraCharge} onChange={(e) => { setAutoCharge(false); setExtraCharge(e.target.value); }} className="__input" placeholder="অতিরিক্ত চার্জ" />
               <input type="number" min="0" step="0.01" value={downPayment} onChange={(e) => setDownPayment(e.target.value)} className="__input" placeholder="ডাউন পেমেন্ট" />
-              <input type="number" min="1" max="120" value={months} onChange={(e) => setMonths(e.target.value)} className="__input" placeholder="কত মাস" required />
             </div>
             <label className="block text-xs font-semibold text-gray-500">কিস্তি শুরুর তারিখ</label>
             <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="__input" required />

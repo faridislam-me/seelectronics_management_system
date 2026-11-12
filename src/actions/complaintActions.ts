@@ -389,8 +389,6 @@ const PUNISHMENT_BN: Record<string, string> = {
 
 // Voice broadcast ids (MRAM) for complaint stages. Hardcoded (like the warranty
 // recordings) so they work without touching Vercel env. Client-provided.
-const COMPLAINT_VOICE_RESOLVED_CUSTOMER = 3786; // নিষ্পত্তি → customer
-const COMPLAINT_VOICE_ABSENT_CUSTOMER = 3787; // গ্রাহক উপস্থিত ছিলেন না → customer
 
 async function notifyComplaintStatusSMS(
   complaintId: string,
@@ -435,12 +433,13 @@ async function notifyComplaintStatusSMS(
     const p = c.punishmentType ? PUNISHMENT_BN[c.punishmentType] || c.punishmentType : "";
     send(customerPhone, `SE Electronics: আপনার অভিযোগ (${complaintId}) নিষ্পত্তি হয়েছে।${p ? ` গৃহীত ব্যবস্থা: ${p}।` : ""} অ্যাপে বিস্তারিত দেখুন।`);
     send(staffPhone, `SE Electronics: অভিযোগ ${complaintId} নিষ্পত্তি হয়েছে।${p ? ` সিদ্ধান্ত: ${p}।` : ""} অ্যাপে বিস্তারিত দেখুন।`);
-    voice(customerPhone, COMPLAINT_VOICE_RESOLVED_CUSTOMER, "Complaint Resolved");
+    // Single settlement voice to the customer (the legacy "resolved" broadcast
+    // 3786 is dropped to avoid double-calling) + the staff order voice.
     voice(customerPhone, 4636, "Hearing Settlement Customer");
     voice(staffPhone, 4637, "Hearing Order Staff");
   } else if (newStatus === "customer_absent") {
     send(customerPhone, `SE Electronics: আপনার অভিযোগ (${complaintId}) যাচাইয়ের সময় আপনাকে উপস্থিত/যোগাযোগযোগ্য পাওয়া যায়নি। অনুগ্রহ করে দ্রুত যোগাযোগ করুন — 09649355555।`);
-    voice(customerPhone, COMPLAINT_VOICE_ABSENT_CUSTOMER, "Complaint Customer Absent");
+    // Single absent voice (legacy broadcast 3787 dropped to avoid double-calling).
     voice(customerPhone, 4635, "Hearing Absent Customer");
   } else if (newStatus === "under_trial") {
     send(customerPhone, `SE Electronics: আপনার অভিযোগ (${complaintId}) বিচারাধীন রয়েছে।`);

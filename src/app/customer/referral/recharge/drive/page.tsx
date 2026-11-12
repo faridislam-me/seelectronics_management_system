@@ -2,6 +2,7 @@
 
 import { getMyDriveInfo } from "@/actions/driveBalanceActions";
 import { getDrivePackages, requestMobileRecharge } from "@/actions/rechargeActions";
+import OperatorIcon from "@/components/features/recharge/OperatorIcon";
 import clsx from "clsx";
 import {
   ArrowLeft,
@@ -221,12 +222,7 @@ export default function DrivePacksPage() {
                     )}
                     style={active ? { backgroundColor: `${op.color}14`, borderColor: op.color } : undefined}
                   >
-                    <span
-                      className="size-8 rounded-full flex items-center justify-center text-white text-[9px] font-extrabold shrink-0"
-                      style={{ backgroundColor: op.color }}
-                    >
-                      {op.label}
-                    </span>
+                    <OperatorIcon operatorKey={op.key} size={32} shape="circle" />
                     <span
                       className="text-[8.5px] font-bold leading-none text-center"
                       style={{ color: active ? op.color : "#5b6784" }}

@@ -30,9 +30,18 @@ const TYPE_LABELS: Record<string, string> = {
   drive_offer: "ড্রাইভ অফার",
 };
 
+const TYPE_TABS: { key: string; label: string }[] = [
+  { key: "all", label: "সব" },
+  { key: "recharge", label: "রিচার্জ" },
+  { key: "regular_pack", label: "রেগুলার প্যাক" },
+  { key: "drive_pack", label: "ড্রাইভ প্যাক" },
+  { key: "drive_offer", label: "ড্রাইভ অফার" },
+];
+
 export default function RechargeHistoryPage() {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
 
   useEffect(() => {
     getMyRechargeRequests().then((res) => {
@@ -40,6 +49,8 @@ export default function RechargeHistoryPage() {
       setLoading(false);
     });
   }, []);
+
+  const visible = filter === "all" ? requests : requests.filter((r) => r.rechargeType === filter);
 
   return (
     <>
@@ -50,15 +61,35 @@ export default function RechargeHistoryPage() {
         <span className="text-[16px] font-extrabold">রিচার্জ ইতিহাস</span>
       </div>
 
+      {/* Type tabs — each type's history shown separately */}
+      <div className="flex gap-1.5 overflow-x-auto pb-0.5 -mx-2 px-2 [scrollbar-width:none]">
+        {TYPE_TABS.map((t) => {
+          const active = filter === t.key;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setFilter(t.key)}
+              className={clsx(
+                "shrink-0 h-8 px-3 rounded-full border text-[11.5px] font-extrabold transition-colors",
+                active ? "border-[#0b3d91] bg-[#0b3d91] text-white" : "border-[#dfe6f2] bg-white text-[#5b6784] hover:bg-[#f5f7fb]",
+              )}
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center py-8">
           <div className="size-6 border-2 border-[#0b3d91] border-t-transparent rounded-full animate-spin" />
         </div>
-      ) : requests.length === 0 ? (
-        <p className="text-center text-[12px] text-[#5b6784] py-8">কোনো রিচার্জ ইতিহাস নেই</p>
+      ) : visible.length === 0 ? (
+        <p className="text-center text-[12px] text-[#5b6784] py-8">এই ধরনের কোনো রিচার্জ ইতিহাস নেই</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {requests.map((r) => {
+          {visible.map((r) => {
             const sm = STATUS_META[r.status] || STATUS_META.pending;
             const Icon = sm.icon;
             return (

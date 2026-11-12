@@ -5,8 +5,10 @@ import { getDrivePackages, requestMobileRecharge } from "@/actions/rechargeActio
 import OperatorIcon, { OPERATOR_META } from "@/components/features/recharge/OperatorIcon";
 import clsx from "clsx";
 import {
+  AlertTriangle,
   ArrowLeft,
   CheckCircle2,
+  ChevronDown,
   Clock,
   Copy,
   Home,
@@ -125,6 +127,10 @@ function catKey(p: Pack): string {
 
 const bdt = (n: number) => `৳${Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 
+// Shown (collapsible) in the recharge confirm sheet before the customer pays.
+const IMPORTANT_NOTICE =
+  "সকল রিচার্জ ও প্যাকেজ সংশ্লিষ্ট মোবাইল অপারেটরের নিয়ম ও শর্ত অনুযায়ী প্রযোজ্য হবে। রিচার্জ করার আগে নম্বরটি সঠিক কিনা ভালো করে যাচাই করুন — ভুল নম্বরে পাঠানো রিচার্জ ফেরতযোগ্য নয়। প্যাকেজ চালু হতে কিছুটা সময় লাগতে পারে এবং সংশ্লিষ্ট অপারেটরের সর্বশেষ অফার অনুযায়ী প্রযোজ্য হবে। কোনো সমস্যা হলে আমাদের সাথে যোগাযোগ করুন — ০৯৬৪৯৩৫৫৫৫৫।";
+
 type SuccessResult = {
   phone: string;
   operator: string;
@@ -152,6 +158,7 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
   const [packages, setPackages] = useState<Pack[]>([]);
   const [loadingPkgs, setLoadingPkgs] = useState(false);
   const [sheetPkg, setSheetPkg] = useState<Pack | null>(null);
+  const [noticeOpen, setNoticeOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<SuccessResult | null>(null);
   const [copied, setCopied] = useState(false);
@@ -413,6 +420,23 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
                 )}
               </span>
               <span className="text-[16px] font-extrabold" style={{ color: meta.accent }}>{bdt(sheetPkg.amount)}</span>
+            </div>
+
+            {/* Important notice (collapsible) */}
+            <div className="rounded-md border border-[#f5dfa0] bg-[#fff8e6] overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setNoticeOpen((v) => !v)}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2.5"
+              >
+                <span className="flex items-center gap-1.5 text-[12.5px] font-extrabold text-[#8a5a12]">
+                  <AlertTriangle size={15} /> গুরুত্বপূর্ণ নোটিশ
+                </span>
+                <ChevronDown size={16} className={clsx("text-[#8a5a12] transition-transform", noticeOpen && "rotate-180")} />
+              </button>
+              {noticeOpen && (
+                <p className="px-3 pb-3 text-[11.5px] leading-relaxed text-[#8a5a12]">{IMPORTANT_NOTICE}</p>
+              )}
             </div>
 
             {/* Number (editable) */}

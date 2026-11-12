@@ -2,7 +2,23 @@ import { getMyInstallmentPlans } from "@/actions/installmentActions";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { CustomerLayout } from "@/components/layout";
 import clsx from "clsx";
-import { ArrowLeft, CheckCircle2, ChevronRight, CreditCard, Package } from "lucide-react";
+import { AirVent, ArrowLeft, Battery, BatteryCharging, CheckCircle2, ChevronRight, Microwave, Package, Plug, Refrigerator, Smartphone, Tv, WashingMachine } from "lucide-react";
+
+// Per-type fallback icon when a plan has no admin-set product photo.
+const PRODUCT_ICON: Record<string, typeof Package> = {
+  fridge: Refrigerator,
+  ac: AirVent,
+  tv: Tv,
+  oven: Microwave,
+  washing_machine: WashingMachine,
+  mobile: Smartphone,
+  ips: BatteryCharging,
+  ips_package: BatteryCharging,
+  battery: Battery,
+  stabilizer: Plug,
+  blender: Package,
+  others: Package,
+};
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -52,6 +68,8 @@ export default async function MyInstallmentProductsPage() {
               const s = PLAN_STATUS[p.status] || PLAN_STATUS.active;
               const progress = p.months > 0 ? Math.round((p.paidCount / p.months) * 100) : 0;
               const done = p.status === "completed";
+              const Icon = PRODUCT_ICON[p.productType] || Package;
+              const specLine = [p.productSpec, p.displayType, p.vaWatt, p.volt].filter(Boolean).join(" · ");
               return (
                 <Link
                   key={p.planCode}
@@ -61,16 +79,31 @@ export default async function MyInstallmentProductsPage() {
                     done ? "border-l-[#1a9c4b]" : "border-l-[#1f7cf0]",
                   )}
                 >
-                  {/* Top: product + status */}
-                  <div className="flex items-center gap-2.5">
-                    <span className={clsx("size-10 rounded-md flex items-center justify-center shrink-0", done ? "bg-[#e9f9ef] text-[#178a42]" : "bg-[#e8f1ff] text-[#0b3d91]")}>
-                      <CreditCard size={20} />
+                  {/* Top: product image + name/spec + status */}
+                  <div className="flex items-start gap-3">
+                    <span
+                      className={clsx(
+                        "size-14 rounded-md overflow-hidden flex items-center justify-center shrink-0 border",
+                        p.productImageUrl ? "bg-white border-[#e4e9f2]" : done ? "bg-[#e9f9ef] border-[#bfe8cd] text-[#178a42]" : "bg-[#e8f1ff] border-[#cfe0fb] text-[#0b3d91]",
+                      )}
+                    >
+                      {p.productImageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.productImageUrl} alt={p.productModel} className="w-full h-full object-cover" />
+                      ) : (
+                        <Icon size={26} />
+                      )}
                     </span>
-                    <div className="flex flex-col min-w-0 flex-1 leading-tight">
-                      <span className="text-[14px] font-extrabold truncate">{p.productModel}</span>
+                    <div className="flex flex-col min-w-0 flex-1 leading-tight gap-0.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-[14px] font-extrabold leading-tight">
+                          {p.productBrand ? `${p.productBrand} ` : ""}{p.productModel}
+                        </span>
+                        <span className={clsx("shrink-0 text-[9.5px] font-extrabold uppercase px-2 py-0.5 rounded-full border", s.cls)}>{s.label}</span>
+                      </div>
+                      {specLine && <span className="text-[11px] font-semibold text-[#5b6784]">{specLine}</span>}
                       <span className="text-[10.5px] font-bold text-[#8794ab] font-mono">{p.planCode}</span>
                     </div>
-                    <span className={clsx("shrink-0 text-[9.5px] font-extrabold uppercase px-2 py-1 rounded-full border", s.cls)}>{s.label}</span>
                   </div>
 
                   {/* Progress */}

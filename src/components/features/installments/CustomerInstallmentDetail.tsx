@@ -47,6 +47,20 @@ const METHOD_LABELS: Record<string, string> = {
   bank: "ব্যাংক",
 };
 
+// Application approval-journey steps (same order as the apply tracking page),
+// shown as the plan's "ট্র্যাকিং" — NOT the payment schedule.
+const APP_STEPS: { key: string; label: string }[] = [
+  { key: "pending", label: "পেন্ডিং আছে" },
+  { key: "processing", label: "প্রসেসিং হচ্ছে" },
+  { key: "nid_verify", label: "এনআইডি ভেরিফাই" },
+  { key: "address_verify", label: "ঠিকানা যাচাই" },
+  { key: "guarantor_verify", label: "জামিনদার ভেরিফাই" },
+  { key: "bank_check_verify", label: "ব্যাংক চেক ভেরিফাই" },
+  { key: "documents_verified", label: "সকল কাগজপত্র যাচাই সম্পন্ন" },
+  { key: "approved", label: "কিস্তির জন্য অনুমোদিত" },
+  { key: "ready_for_delivery", label: "পণ্য হস্তান্তরের জন্য প্রস্তুত" },
+];
+
 const METHOD_COLORS: Record<string, string> = {
   cash: "text-[#178a42] bg-[#e9f9ef]",
   bkash: "text-[#d1137b] bg-[#fce7f3]",
@@ -67,29 +81,17 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
 
   const paidSchedules = schedule.filter((r: any) => r.status === "paid");
 
-  // Dated tracking timeline for this plan — start, each paid installment (in
-  // the order they were paid), and completion. So the customer can see which
-  // stage happened on which date.
-  const paidSorted = [...paidSchedules].sort(
-    (a: any, b: any) => new Date(a.paidAt || 0).getTime() - new Date(b.paidAt || 0).getTime(),
-  );
-  const trackEvents: { key: string; title: string; date: any; sub: string }[] = [
-    { key: "start", title: "কিস্তি প্ল্যান শুরু হয়েছে", date: plan.startDate, sub: `${plan.months} মাসের কিস্তি · ${bdt(plan.monthlyAmount)}/মাস` },
-    ...paidSorted.map((r: any) => ({
-      key: `pay-${r.id}`,
-      title: `কিস্তি #${r.installmentNo} পরিশোধিত`,
-      date: r.paidAt,
-      sub: `${bdt(r.paidAmount || r.amount)}${r.paymentMethod ? ` · ${METHOD_LABELS[r.paymentMethod] || r.paymentMethod}` : ""}`,
-    })),
-  ];
-  if (plan.status === "completed") {
-    trackEvents.push({
-      key: "done",
-      title: "সকল কিস্তি সম্পন্ন",
-      date: paidSorted.length ? paidSorted[paidSorted.length - 1].paidAt : plan.updatedAt,
-      sub: "কিস্তি পরিশোধ সম্পূর্ণ হয়েছে",
-    });
+  // Application approval-journey tracking from the originating application
+  // (dated steps), shown as the plan's "ট্র্যাকিং" — NOT the payment schedule.
+  const application = data.application;
+  const appTracking: { step: string; createdAt: any }[] = data.appTracking || [];
+  const stepDates: Record<string, string> = {};
+  for (const t of appTracking) {
+    if (!stepDates[t.step]) stepDates[t.step] = t.createdAt;
   }
+  const currentStepIdx = application ? APP_STEPS.findIndex((s) => s.key === application.trackingStep) : -1;
+  // An approved plan's journey is complete at least up to "approved".
+  const lastDoneIdx = currentStepIdx >= 0 ? currentStepIdx : APP_STEPS.length - 1;
 
   const resetPayModal = () => {
     setShowPay(false);
@@ -185,31 +187,35 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
         <Stat label="বাকি" value={bdt(data.remainingAmount)} />
       </div>
 
-      {/* Tracking timeline — dated stages for this plan */}
+      {/* Tracking — the application approval journey (dated), not payments */}
       <div className="rounded-md bg-white border border-[#dfe6f2] p-3.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
         <p className="text-[14px] font-extrabold mb-3 flex items-center gap-2">
-          <History size={18} className="text-[#0b3d91]" /> ট্র্যাকিং
+          <History size={18} className="text-[#0b3d91]" /> আবেদনের ট্র্যাকিং
         </p>
-        <div className="relative pl-6">
-          {trackEvents.map((e, i) => {
-            const isLast = i === trackEvents.length - 1;
-            return (
-              <div key={e.key} className="relative pb-5 last:pb-0">
-                {!isLast && <div className="absolute left-[-14px] top-[22px] w-[2.5px] h-[calc(100%-6px)] bg-[#1a9c4b]" />}
-                <div className="absolute left-[-22px] top-[2px] size-[18px] rounded-full flex items-center justify-center border-2 bg-[#1a9c4b] border-[#1a9c4b]">
-                  <CheckCircle2 size={11} className="text-white" strokeWidth={3} />
+        {application ? (
+          <div className="relative pl-6">
+            {APP_STEPS.map((step, i) => {
+              const done = i <= lastDoneIdx;
+              const isLast = i === APP_STEPS.length - 1;
+              return (
+                <div key={step.key} className="relative pb-5 last:pb-0">
+                  {!isLast && <div className={clsx("absolute left-[-14px] top-[22px] w-[2.5px] h-[calc(100%-6px)]", done ? "bg-[#1a9c4b]" : "bg-[#dfe6f2]")} />}
+                  <div className={clsx("absolute left-[-22px] top-[2px] size-[18px] rounded-full flex items-center justify-center border-2", done ? "bg-[#1a9c4b] border-[#1a9c4b]" : "bg-white border-[#b0bdd0]")}>
+                    {done ? <CheckCircle2 size={11} className="text-white" strokeWidth={3} /> : <span className="size-[6px] rounded-full bg-[#b0bdd0]" />}
+                  </div>
+                  <p className={clsx("text-[13.5px] font-extrabold leading-tight", done ? "text-[#0f1729]" : "text-[#7b8aa3]")}>{step.label}</p>
+                  {stepDates[step.key] && (
+                    <p className="text-[11px] font-bold text-[#178a42] mt-0.5">
+                      {new Date(stepDates[step.key]).toLocaleString("bn-BD", { dateStyle: "medium" })}
+                    </p>
+                  )}
                 </div>
-                <p className="text-[13.5px] font-extrabold leading-tight">{e.title}</p>
-                {e.date && (
-                  <p className="text-[11px] font-bold text-[#178a42] mt-0.5">
-                    {new Date(e.date).toLocaleString("bn-BD", { dateStyle: "medium" })}
-                  </p>
-                )}
-                <p className="text-[11.5px] text-[#5b6784] mt-0.5">{e.sub}</p>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-[12px] text-[#5b6784] text-center py-3">এই প্ল্যানের জন্য আবেদনের ট্র্যাকিং পাওয়া যায়নি।</p>
+        )}
       </div>
 
       {/* Schedule */}

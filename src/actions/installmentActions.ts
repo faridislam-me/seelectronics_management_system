@@ -352,6 +352,7 @@ export const updateInstallmentPlanProduct = async (
     productModel?: string;
     serialNumber?: string;
     productBrand?: string;
+    productSpec?: string;
     vaWatt?: string;
     volt?: string;
     displayType?: string;
@@ -369,6 +370,7 @@ export const updateInstallmentPlanProduct = async (
     const set: Record<string, string | null> = {
       serialNumber: clean(fields.serialNumber),
       productBrand: clean(fields.productBrand),
+      productSpec: clean(fields.productSpec),
       vaWatt: clean(fields.vaWatt),
       volt: clean(fields.volt),
       displayType: clean(fields.displayType),
@@ -436,10 +438,14 @@ export const getMyInstallmentPlans = async () => {
       byPlan.set(r.planId, arr);
     }
 
-    const data = plans.map((p) => ({
-      ...p,
-      ...planProgress(p.financedAmount, p.months, byPlan.get(p.id) || []),
-    }));
+    const data = await Promise.all(
+      plans.map(async (p) => ({
+        ...p,
+        // Admin-set product photo (shown on the list card); null when unset.
+        productImageUrl: p.productImageKey ? await getObjectUrl(p.productImageKey).catch(() => null) : null,
+        ...planProgress(p.financedAmount, p.months, byPlan.get(p.id) || []),
+      })),
+    );
 
     return { success: true, data };
   } catch (error) {
@@ -533,6 +539,22 @@ export const getMyInstallmentPlanByCode = async (code: string) => {
       try { productImageUrl = await getObjectUrl(plan.productImageKey); } catch {}
     }
 
+    // Originating application + its dated approval-journey tracking, so the plan
+    // detail can show the APPLICATION tracking (not the payment schedule). A
+    // plan is linked from installmentApplications.planId; admin-created plans
+    // without an application simply have none.
+    const application = await db.query.installmentApplications.findFirst({
+      where: eq(installmentApplications.planId, plan.id),
+    });
+    let appTracking: { step: string; createdAt: any }[] = [];
+    if (application) {
+      const rows = await db.query.installmentApplicationTracking.findMany({
+        where: eq(installmentApplicationTracking.applicationId, application.id),
+        orderBy: (t, { asc }) => [asc(t.createdAt)],
+      });
+      appTracking = rows.map((r) => ({ step: r.step, createdAt: r.createdAt }));
+    }
+
     return {
       success: true,
       data: {
@@ -540,6 +562,10 @@ export const getMyInstallmentPlanByCode = async (code: string) => {
         schedule,
         nextDue,
         productImageUrl,
+        application: application
+          ? { applicationCode: application.applicationCode, trackingStep: application.trackingStep, status: application.status, createdAt: application.createdAt }
+          : null,
+        appTracking,
         ...planProgress(plan.financedAmount, plan.months, schedule),
       },
     };
@@ -950,6 +976,7 @@ export const reviewInstallmentApplication = async (
         productModel: app.productModel,
         serialNumber: payload.serialNumber,
         productBrand: app.productBrand,
+        productSpec: app.productSpec,
         vaWatt: payload.vaWatt,
         volt: payload.volt,
         displayType: payload.displayType,

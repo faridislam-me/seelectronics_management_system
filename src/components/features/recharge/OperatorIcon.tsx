@@ -14,12 +14,12 @@ export const OPERATOR_META: Record<
   string,
   { short: string; color: string; color2: string; label: string; labelBn: string; logo?: string }
 > = {
-  grameenphone: { short: "GP", color: "#00a550", color2: "#00763a", label: "Grameenphone", labelBn: "গ্রামীণফোন" },
-  banglalink: { short: "bl", color: "#f7941d", color2: "#e07d08", label: "Banglalink", labelBn: "বাংলালিংক" },
-  robi: { short: "robi", color: "#e2001a", color2: "#b00014", label: "Robi", labelBn: "রবি" },
-  airtel: { short: "air", color: "#e40000", color2: "#b00000", label: "Airtel", labelBn: "এয়ারটেল" },
-  teletalk: { short: "TT", color: "#0066b3", color2: "#004e8a", label: "Teletalk", labelBn: "টেলিটক" },
-  skitto: { short: "sk", color: "#6c5ce7", color2: "#4b3dc4", label: "Skitto", labelBn: "স্কিটো" },
+  grameenphone: { short: "GP", color: "#00a550", color2: "#00763a", label: "Grameenphone", labelBn: "গ্রামীণফোন", logo: "/operators/grameenphone.jpg" },
+  banglalink: { short: "bl", color: "#f7941d", color2: "#e07d08", label: "Banglalink", labelBn: "বাংলালিংক", logo: "/operators/banglalink.jpg" },
+  robi: { short: "robi", color: "#e2001a", color2: "#b00014", label: "Robi", labelBn: "রবি", logo: "/operators/robi.jpg" },
+  airtel: { short: "air", color: "#e40000", color2: "#b00000", label: "Airtel", labelBn: "এয়ারটেল", logo: "/operators/airtel.jpg" },
+  teletalk: { short: "TT", color: "#0066b3", color2: "#004e8a", label: "Teletalk", labelBn: "টেলিটক", logo: "/operators/teletalk.jpg" },
+  skitto: { short: "sk", color: "#6c5ce7", color2: "#4b3dc4", label: "Skitto", labelBn: "স্কিটো", logo: "/operators/skitto.jpg" },
 };
 
 export const OPERATOR_COLORS: Record<string, string> = Object.fromEntries(

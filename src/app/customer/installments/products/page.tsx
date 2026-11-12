@@ -47,40 +47,59 @@ export default async function MyInstallmentProductsPage() {
             <span className="text-[12px] text-[#5b6784]">আপনার জন্য কোনো কিস্তি পণ্য নেই।</span>
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2.5">
             {plans.map((p) => {
               const s = PLAN_STATUS[p.status] || PLAN_STATUS.active;
               const progress = p.months > 0 ? Math.round((p.paidCount / p.months) * 100) : 0;
+              const done = p.status === "completed";
               return (
                 <Link
                   key={p.planCode}
                   href={`/customer/installments/${p.planCode}`}
-                  className="rounded-md bg-white border border-[#dfe6f2] p-3 flex items-center gap-3 shadow-[0_4px_14px_rgba(11,61,145,0.06)]"
+                  className={clsx(
+                    "group relative rounded-md bg-white border border-[#e4e9f2] border-l-[3px] p-3 flex flex-col gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.05)] active:scale-[0.995] transition",
+                    done ? "border-l-[#1a9c4b]" : "border-l-[#1f7cf0]",
+                  )}
                 >
-                  <span className="size-11 rounded-md bg-[#e8f1ff] text-[#0b3d91] flex items-center justify-center shrink-0">
-                    <CreditCard size={22} />
-                  </span>
-                  <div className="flex flex-col min-w-0 flex-1 gap-1.5">
-                    <div className="flex items-center justify-between gap-2">
+                  {/* Top: product + status */}
+                  <div className="flex items-center gap-2.5">
+                    <span className={clsx("size-10 rounded-md flex items-center justify-center shrink-0", done ? "bg-[#e9f9ef] text-[#178a42]" : "bg-[#e8f1ff] text-[#0b3d91]")}>
+                      <CreditCard size={20} />
+                    </span>
+                    <div className="flex flex-col min-w-0 flex-1 leading-tight">
                       <span className="text-[14px] font-extrabold truncate">{p.productModel}</span>
-                      <span className={clsx("shrink-0 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border", s.cls)}>{s.label}</span>
+                      <span className="text-[10.5px] font-bold text-[#8794ab] font-mono">{p.planCode}</span>
                     </div>
-                    <span className="text-[10px] font-bold text-[#5b6784] font-mono">{p.planCode}</span>
-                    <div className="h-1.5 rounded-full bg-[#eef1f6] overflow-hidden">
-                      <div className={clsx("h-full rounded-full", p.status === "completed" ? "bg-[#1a9c4b]" : "bg-[#1f7cf0]")} style={{ width: `${progress}%` }} />
+                    <span className={clsx("shrink-0 text-[9.5px] font-extrabold uppercase px-2 py-1 rounded-full border", s.cls)}>{s.label}</span>
+                  </div>
+
+                  {/* Progress */}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between text-[10.5px] font-bold">
+                      <span className="text-[#5b6784]">{p.paidCount}/{p.months} কিস্তি পরিশোধিত</span>
+                      <span className={done ? "text-[#178a42]" : "text-[#0b3d91]"}>{progress}%</span>
                     </div>
-                    <div className="flex items-center justify-between text-[10px] font-bold text-[#5b6784]">
-                      <span>{p.paidCount}/{p.months} কিস্তি পরিশোধিত</span>
-                      <span>
-                        {p.status === "completed" ? (
-                          <span className="inline-flex items-center gap-0.5 text-[#178a42]"><CheckCircle2 size={11} /> সম্পন্ন</span>
-                        ) : (
-                          <span className="text-[#c81f38]">বাকি {bdt(p.remainingAmount)}</span>
-                        )}
-                      </span>
+                    <div className="h-2 rounded-full bg-[#eef1f6] overflow-hidden">
+                      <div
+                        className={clsx("h-full rounded-full transition-all", done ? "bg-[#1a9c4b]" : "bg-[linear-gradient(90deg,#1f7cf0,#0b3d91)]")}
+                        style={{ width: `${progress}%` }}
+                      />
                     </div>
                   </div>
-                  <ChevronRight size={16} className="shrink-0 text-[#c9d3e6]" />
+
+                  {/* Footer: remaining + tracking cue */}
+                  <div className="flex items-center justify-between border-t border-[#eef1f6] pt-2">
+                    <span className="text-[11px] font-bold">
+                      {done ? (
+                        <span className="inline-flex items-center gap-1 text-[#178a42]"><CheckCircle2 size={13} /> সম্পূর্ণ পরিশোধিত</span>
+                      ) : (
+                        <span className="text-[#5b6784]">বাকি <span className="text-[#c81f38] font-extrabold">{bdt(p.remainingAmount)}</span></span>
+                      )}
+                    </span>
+                    <span className="inline-flex items-center gap-0.5 text-[11px] font-extrabold text-[#0b3d91]">
+                      ট্র্যাকিং ও বিস্তারিত <ChevronRight size={14} className="transition group-active:translate-x-0.5" />
+                    </span>
+                  </div>
                 </Link>
               );
             })}

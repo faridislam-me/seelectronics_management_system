@@ -4,6 +4,7 @@ import { db } from "@/db/drizzle";
 import {
   customers,
   installmentApplications,
+  installmentApplicationTracking,
   installmentPlans,
   installmentSchedule,
 } from "@/db/schema";
@@ -641,7 +642,7 @@ export const submitInstallmentApplication = async (formData: FormData) => {
     const gNidBackKey = guarantorNidBack ? `${prefix}/guarantor-nid-back.webp` : undefined;
 
     // Insert DB row first
-    await db.insert(installmentApplications).values({
+    const [createdApp] = await db.insert(installmentApplications).values({
       applicationCode: code,
       customerId: customer.customerId,
       customerName: customer.name,
@@ -675,7 +676,17 @@ export const submitInstallmentApplication = async (formData: FormData) => {
       desiredMonths,
       desiredDownPayment,
       termsAccepted,
-    });
+    }).returning({ id: installmentApplications.id });
+
+    // Seed the first dated tracking stage ("pending") so the timeline shows
+    // when the application was submitted.
+    try {
+      if (createdApp?.id) {
+        await db.insert(installmentApplicationTracking).values({ applicationId: createdApp.id, step: "pending" });
+      }
+    } catch (histErr) {
+      console.error("initial tracking seed failed:", histErr);
+    }
 
     // Compress & upload images in parallel
     const uploads: Promise<any>[] = [];
@@ -848,6 +859,15 @@ export const reviewInstallmentApplication = async (
     if (app.status === "rejected") return { success: false, message: "আবেদন ইতোমধ্যে প্রত্যাখ্যাত" };
     if (app.status === "cancelled") return { success: false, message: "আবেদন ইতোমধ্যে বাতিল করা হয়েছে" };
 
+    // Append a dated history row for the step/decision; never block the review.
+    const track = async (step: string) => {
+      try {
+        await db.insert(installmentApplicationTracking).values({ applicationId: app.id, step });
+      } catch (histErr) {
+        console.error("tracking history insert failed:", histErr);
+      }
+    };
+
     if (action === "cancel") {
       await db
         .update(installmentApplications)
@@ -856,6 +876,7 @@ export const reviewInstallmentApplication = async (
           adminNotes: payload?.adminNotes || undefined,
         })
         .where(eq(installmentApplications.id, app.id));
+      await track("cancelled");
       revalidatePath("/installments");
       return { success: true, message: "আবেদন বাতিল করা হয়েছে" };
     }
@@ -868,6 +889,7 @@ export const reviewInstallmentApplication = async (
           adminNotes: payload?.adminNotes || undefined,
         })
         .where(eq(installmentApplications.id, app.id));
+      await track("reapply");
       revalidatePath("/installments");
       return { success: true, message: "পুনরায় আবেদনের সুযোগ দেওয়া হয়েছে" };
     }
@@ -881,6 +903,7 @@ export const reviewInstallmentApplication = async (
           adminNotes: payload?.adminNotes || undefined,
         })
         .where(eq(installmentApplications.id, app.id));
+      await track("rejected");
       revalidatePath("/installments");
       return { success: true, message: "আবেদন প্রত্যাখ্যাত হয়েছে" };
     }
@@ -970,6 +993,7 @@ export const reviewInstallmentApplication = async (
         adminNotes: payload.adminNotes || undefined,
       })
       .where(eq(installmentApplications.id, app.id));
+    await track("approved");
 
     revalidatePath("/installments");
     return { success: true, planCode: plan.planCode, message: "আবেদন অনুমোদিত ও কিস্তি প্ল্যান তৈরি হয়েছে" };
@@ -1008,7 +1032,15 @@ export const updateApplicationTrackingStep = async (code: string, step: string) 
     if (step === "approved") updates.status = "approved";
 
     await db.update(installmentApplications).set(updates).where(eq(installmentApplications.id, app.id));
+    // Append a dated history row so the customer sees every stage with its
+    // date, not just the latest step. Fire-and-forget; never block the update.
+    try {
+      await db.insert(installmentApplicationTracking).values({ applicationId: app.id, step });
+    } catch (histErr) {
+      console.error("tracking history insert failed:", histErr);
+    }
     revalidatePath("/installments");
+    revalidatePath(`/customer/installments/applications/${code}`);
     return { success: true, message: "ট্র্যাকিং আপডেট হয়েছে" };
   } catch (error) {
     console.error("updateApplicationTrackingStep error:", error);
@@ -1034,7 +1066,14 @@ export const getMyApplicationByCode = async (code: string) => {
       try { photoUrl = await getObjectUrl(app.photoKey); } catch {}
     }
 
-    return { success: true, data: { ...app, photoUrl } };
+    // Dated step history (oldest first) so the timeline can show when each
+    // stage happened. Earlier applications may have no rows yet.
+    const tracking = await db.query.installmentApplicationTracking.findMany({
+      where: eq(installmentApplicationTracking.applicationId, app.id),
+      orderBy: (t, { asc }) => [asc(t.createdAt)],
+    });
+
+    return { success: true, data: { ...app, photoUrl, tracking } };
   } catch (error) {
     console.error("getMyApplicationByCode error:", error);
     return { success: false, message: "আবেদন আনা যায়নি" };

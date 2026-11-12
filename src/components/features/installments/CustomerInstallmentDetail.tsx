@@ -67,6 +67,30 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
 
   const paidSchedules = schedule.filter((r: any) => r.status === "paid");
 
+  // Dated tracking timeline for this plan — start, each paid installment (in
+  // the order they were paid), and completion. So the customer can see which
+  // stage happened on which date.
+  const paidSorted = [...paidSchedules].sort(
+    (a: any, b: any) => new Date(a.paidAt || 0).getTime() - new Date(b.paidAt || 0).getTime(),
+  );
+  const trackEvents: { key: string; title: string; date: any; sub: string }[] = [
+    { key: "start", title: "কিস্তি প্ল্যান শুরু হয়েছে", date: plan.startDate, sub: `${plan.months} মাসের কিস্তি · ${bdt(plan.monthlyAmount)}/মাস` },
+    ...paidSorted.map((r: any) => ({
+      key: `pay-${r.id}`,
+      title: `কিস্তি #${r.installmentNo} পরিশোধিত`,
+      date: r.paidAt,
+      sub: `${bdt(r.paidAmount || r.amount)}${r.paymentMethod ? ` · ${METHOD_LABELS[r.paymentMethod] || r.paymentMethod}` : ""}`,
+    })),
+  ];
+  if (plan.status === "completed") {
+    trackEvents.push({
+      key: "done",
+      title: "সকল কিস্তি সম্পন্ন",
+      date: paidSorted.length ? paidSorted[paidSorted.length - 1].paidAt : plan.updatedAt,
+      sub: "কিস্তি পরিশোধ সম্পূর্ণ হয়েছে",
+    });
+  }
+
   const resetPayModal = () => {
     setShowPay(false);
     setSelectedMethod(null);
@@ -159,6 +183,33 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
         <Stat label="মেয়াদ" value={`${plan.months} মাস`} />
         <Stat label="পরিশোধিত" value={`${data.paidCount}/${plan.months} · ${bdt(data.paidAmount)}`} />
         <Stat label="বাকি" value={bdt(data.remainingAmount)} />
+      </div>
+
+      {/* Tracking timeline — dated stages for this plan */}
+      <div className="rounded-md bg-white border border-[#dfe6f2] p-3.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+        <p className="text-[14px] font-extrabold mb-3 flex items-center gap-2">
+          <History size={18} className="text-[#0b3d91]" /> ট্র্যাকিং
+        </p>
+        <div className="relative pl-6">
+          {trackEvents.map((e, i) => {
+            const isLast = i === trackEvents.length - 1;
+            return (
+              <div key={e.key} className="relative pb-5 last:pb-0">
+                {!isLast && <div className="absolute left-[-14px] top-[22px] w-[2.5px] h-[calc(100%-6px)] bg-[#1a9c4b]" />}
+                <div className="absolute left-[-22px] top-[2px] size-[18px] rounded-full flex items-center justify-center border-2 bg-[#1a9c4b] border-[#1a9c4b]">
+                  <CheckCircle2 size={11} className="text-white" strokeWidth={3} />
+                </div>
+                <p className="text-[13.5px] font-extrabold leading-tight">{e.title}</p>
+                {e.date && (
+                  <p className="text-[11px] font-bold text-[#178a42] mt-0.5">
+                    {new Date(e.date).toLocaleString("bn-BD", { dateStyle: "medium" })}
+                  </p>
+                )}
+                <p className="text-[11.5px] text-[#5b6784] mt-0.5">{e.sub}</p>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Schedule */}

@@ -1674,7 +1674,7 @@ export const installmentApplications = pgTable(
 
 export const installmentApplicationsRelations = relations(
   installmentApplications,
-  ({ one }) => ({
+  ({ one, many }) => ({
     customer: one(customers, {
       fields: [installmentApplications.customerId],
       references: [customers.customerId],
@@ -1682,6 +1682,36 @@ export const installmentApplicationsRelations = relations(
     plan: one(installmentPlans, {
       fields: [installmentApplications.planId],
       references: [installmentPlans.id],
+    }),
+    tracking: many(installmentApplicationTracking),
+  }),
+);
+
+// Append-only history of an application's tracking-step changes, so the
+// customer sees every stage WITH its date — not just the latest step. (The
+// single installmentApplications.trackingStep field only keeps the latest.)
+export const installmentApplicationTracking = pgTable(
+  "installment_application_tracking",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    applicationId: uuid()
+      .references(() => installmentApplications.id, { onDelete: "cascade" })
+      .notNull(),
+    step: varchar({ length: 50 }).notNull(),
+    note: text(),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("installment_app_tracking_app_idx").on(table.applicationId),
+  ],
+);
+
+export const installmentApplicationTrackingRelations = relations(
+  installmentApplicationTracking,
+  ({ one }) => ({
+    application: one(installmentApplications, {
+      fields: [installmentApplicationTracking.applicationId],
+      references: [installmentApplications.id],
     }),
   }),
 );

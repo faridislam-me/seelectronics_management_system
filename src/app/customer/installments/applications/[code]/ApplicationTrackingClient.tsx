@@ -38,6 +38,13 @@ export default function ApplicationTrackingClient({ app }: { app: any }) {
   const st = STATUS_LABEL[app.status] || STATUS_LABEL.pending;
   const isTerminal = app.status === "rejected" || app.status === "cancelled" || app.status === "reapply";
 
+  // Earliest recorded date per stage, so each completed step shows WHEN it
+  // happened. Older applications may have no history rows (dates simply hidden).
+  const stepDates: Record<string, string> = {};
+  for (const t of (app.tracking || []) as { step: string; createdAt: string }[]) {
+    if (!stepDates[t.step]) stepDates[t.step] = t.createdAt;
+  }
+
   return (
     <div className="flex flex-col gap-2.5 px-2 pt-2 pb-4 text-[#0f1729]">
       {/* Header */}
@@ -139,6 +146,11 @@ export default function ApplicationTrackingClient({ app }: { app: any }) {
                       {step.label}
                       {isCurrent && <span className="ml-1.5 text-[10px] font-bold text-[#1f7cf0] bg-[#e8f1ff] px-1.5 py-0.5 rounded-full align-middle">বর্তমান</span>}
                     </p>
+                    {stepDates[step.key] && (
+                      <p className="text-[11px] font-bold text-[#178a42] mt-0.5">
+                        {new Date(stepDates[step.key]).toLocaleString("bn-BD", { dateStyle: "medium", timeStyle: "short" })}
+                      </p>
+                    )}
                     <p className={clsx("text-[12.5px] mt-0.5 leading-relaxed", done ? "text-[#3d4f72]" : "text-[#b0bdd0]")}>{step.desc}</p>
                   </div>
                 </div>

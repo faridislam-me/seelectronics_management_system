@@ -449,6 +449,8 @@ export default function InstallmentApplyForm() {
 
   // Terms — the customer must read & agree on the gate screen before the form shows.
   const [agreed, setAgreed] = useState(false);
+  // Gate consent checkbox — must be ticked before the "সম্মত আছি" button works.
+  const [gateChecked, setGateChecked] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Files
@@ -579,31 +581,45 @@ export default function InstallmentApplyForm() {
         {/* Intro */}
         <div className="rounded-md bg-white border border-[#dfe6f2] p-3.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] flex flex-col gap-3">
           <div className="flex items-center gap-2 text-[#0b3d91]">
-            <FileText size={18} />
-            <h2 className="text-[14px] font-extrabold">কিস্তিতে পণ্য ক্রয়ের শর্তাবলী ও নির্দেশিকা</h2>
+            <FileText size={20} />
+            <h2 className="text-[17px] font-extrabold">কিস্তিতে পণ্য ক্রয়ের শর্তাবলী ও নির্দেশিকা</h2>
           </div>
-          <p className="text-[12px] leading-relaxed text-[#3a4660]">
+          <p className="text-[15px] leading-relaxed text-[#3a4660]">
             প্রিয় গ্রাহক, সহজে এবং সাশ্রয়ী মূল্যে কিস্তিতে আপনার পছন্দের এসি, ফ্রিজ, ওয়াশিং মেশিন, আইপিএস, ব্যাটারি, টিভি, ওভেন, মোবাইল বা স্টেবিলাইজার ক্রয়ের জন্য আবেদন করতে আপনাকে স্বাগতম। আবেদন প্রক্রিয়া দ্রুত ও সফলভাবে সম্পন্ন করতে নিচের শর্তাবলী ও নির্দেশিকাগুলো মনোযোগ সহকারে পড়ার অনুরোধ করা হচ্ছে।
           </p>
 
-          <div className="flex flex-col gap-2.5 text-[12px] leading-relaxed text-[#3a4660]">
+          <div className="flex flex-col gap-3 text-[15px] leading-relaxed text-[#3a4660]">
             {INSTALLMENT_TERMS.map((t) => (
-              <div key={t.num} className="flex gap-2">
-                <span className="shrink-0 size-5 rounded-full bg-[#e8f1ff] text-[#0b3d91] text-[11px] font-extrabold flex items-center justify-center">{t.num}</span>
+              <div key={t.num} className="flex gap-2.5">
+                <span className="shrink-0 size-6 rounded-full bg-[#e8f1ff] text-[#0b3d91] text-[13px] font-extrabold flex items-center justify-center">{t.num}</span>
                 <p><b className="text-[#16213a]">{t.title}:</b> {t.body}</p>
               </div>
             ))}
           </div>
 
-          <div className="rounded-md bg-[#f0f6ff] border border-[#d0e0f7] p-3 text-[11px] text-[#0b3d91] font-semibold leading-relaxed">
-            “সম্মত আছি” বাটনে ক্লিক করার মাধ্যমে আপনি উপরোক্ত সকল শর্তাবলী পড়েছেন এবং সম্মতি প্রদান করেছেন বলে গণ্য হবে।
+          <div className="rounded-md bg-[#f0f6ff] border border-[#d0e0f7] p-3 text-[14px] text-[#0b3d91] font-semibold leading-relaxed">
+            নিচের ঘরে টিক দিয়ে “সম্মত আছি” বাটনে ক্লিক করার মাধ্যমে আপনি উপরোক্ত সকল শর্তাবলী পড়েছেন এবং সম্মতি প্রদান করেছেন বলে গণ্য হবে।
           </div>
+
+          {/* Consent checkbox — must be ticked before continuing */}
+          <label className="flex items-start gap-2.5 cursor-pointer select-none rounded-md border border-[#dfe6f2] bg-white p-3">
+            <input
+              type="checkbox"
+              checked={gateChecked}
+              onChange={(e) => setGateChecked(e.target.checked)}
+              className="size-5 mt-0.5 rounded accent-[#0b3d91] shrink-0"
+            />
+            <span className="text-[15px] font-bold text-[#16213a] leading-snug">
+              আমি উপরোক্ত সকল শর্তাবলী পড়েছি এবং সম্মতি দিচ্ছি। <span className="text-red-500">*</span>
+            </span>
+          </label>
         </div>
 
         {/* Agree button */}
         <button
-          onClick={() => { setAgreed(true); setTermsAccepted(true); }}
-          className="w-full h-12 rounded-md bg-[#0b3d91] text-white text-[15px] font-extrabold inline-flex items-center justify-center gap-2 shadow-[0_6px_18px_rgba(11,61,145,0.3)]"
+          disabled={!gateChecked}
+          onClick={() => { if (!gateChecked) return; setAgreed(true); setTermsAccepted(true); }}
+          className="w-full h-12 rounded-md bg-[#0b3d91] text-white text-[16px] font-extrabold inline-flex items-center justify-center gap-2 shadow-[0_6px_18px_rgba(11,61,145,0.3)] disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed"
         >
           <Check size={18} /> আমি সম্মত আছি — আবেদন শুরু করুন
         </button>

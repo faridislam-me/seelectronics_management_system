@@ -885,6 +885,10 @@ export default async function generatePDF({
           serialNumber: plan.serialNumber,
           price: plan.cashPrice,
           months: plan.months,
+          vaWatt: plan.vaWatt,
+          volt: plan.volt,
+          display: plan.displayType,
+          brand: plan.productBrand,
           isElectrical: plan.productType
             ? electricalTypes.has(plan.productType)
             : false,

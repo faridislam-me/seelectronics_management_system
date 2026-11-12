@@ -44,6 +44,10 @@ const CreateSchema = z.object({
     .preprocess((v) => (v === "" ? undefined : v), z.enum(["ips", "battery", "stabilizer", "others", "fridge", "ac", "tv", "oven", "washing_machine", "mobile", "ips_package", "blender"]).optional()),
   productModel: z.string().min(1, "Product model is required"),
   serialNumber: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
+  productBrand: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
+  vaWatt: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
+  volt: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
+  displayType: z.preprocess((v) => (v === "" ? undefined : v), z.string().optional()),
   cashPrice: z.coerce.number().positive("Cash price must be greater than 0"),
   extraCharge: z.coerce.number().min(0).default(0),
   downPayment: z.coerce.number().min(0).default(0),
@@ -106,6 +110,10 @@ export const createInstallmentPlan = async (input: CreateInstallmentInput) => {
         productType: d.productType,
         productModel: d.productModel,
         serialNumber: d.serialNumber,
+        productBrand: d.productBrand,
+        vaWatt: d.vaWatt,
+        volt: d.volt,
+        displayType: d.displayType,
         cashPrice: d.cashPrice,
         extraCharge: d.extraCharge,
         totalPayable,
@@ -775,6 +783,9 @@ export const reviewInstallmentApplication = async (
     months?: number;
     startDate?: string;
     serialNumber?: string;
+    vaWatt?: string;
+    volt?: string;
+    displayType?: string;
     rejectReason?: string;
     adminNotes?: string;
   },
@@ -868,6 +879,10 @@ export const reviewInstallmentApplication = async (
         productType: app.productType,
         productModel: app.productModel,
         serialNumber: payload.serialNumber,
+        productBrand: app.productBrand,
+        vaWatt: payload.vaWatt,
+        volt: payload.volt,
+        displayType: payload.displayType,
         cashPrice,
         extraCharge,
         totalPayable,

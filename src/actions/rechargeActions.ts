@@ -6,7 +6,7 @@ import { verifyCustomerSession } from "@/actions/customerActions";
 import { verifySession } from "@/lib";
 import { generateRandomId } from "@/utils";
 import * as topup from "@/lib/successtopup";
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 const UNAUTHORIZED = { success: false as const, message: "Unauthorized" };
@@ -47,11 +47,29 @@ export const requestMobileRecharge = async (input: {
 
     const customer = await db.query.customers.findFirst({
       where: eq(customers.customerId, session.customer.customerId),
-      columns: { customerId: true, name: true, phone: true, referralBalance: true },
+      columns: {
+        customerId: true,
+        name: true,
+        phone: true,
+        referralBalance: true,
+        driveBalance: true,
+        driveKycStatus: true,
+      },
     });
     if (!customer) return { success: false, message: "Customer not found" };
 
-    if (Number(customer.referralBalance) < amount) {
+    // Drive / bundle packs are paid from the separate, KYC-gated drive wallet;
+    // ordinary recharge and regular packs from the referral balance.
+    const isDrive = rechargeType === "drive_pack" || rechargeType === "drive_offer";
+
+    if (isDrive) {
+      if (customer.driveKycStatus !== "approved") {
+        return { success: false, message: "ড্রাইভ প্যাক কিনতে আগে ড্রাইভ KYC অনুমোদন প্রয়োজন" };
+      }
+      if (Number(customer.driveBalance) < amount) {
+        return { success: false, message: `অপর্যাপ্ত ড্রাইভ ব্যালেন্স। আপনার ড্রাইভ ব্যালেন্স: ৳${Number(customer.driveBalance).toLocaleString()}` };
+      }
+    } else if (Number(customer.referralBalance) < amount) {
       return { success: false, message: `অপর্যাপ্ত ব্যালেন্স। আপনার ব্যালেন্স: ৳${Number(customer.referralBalance).toLocaleString()}` };
     }
 
@@ -96,10 +114,20 @@ export const requestMobileRecharge = async (input: {
     });
 
     if (isSuccess) {
-      await db
-        .update(customers)
-        .set({ referralBalance: sql`${customers.referralBalance} - ${amount}` })
-        .where(eq(customers.customerId, customer.customerId));
+      // Atomic guarded deduct from the correct wallet (neon-http has no
+      // interactive transactions, so the gte guard prevents a concurrent
+      // overdraft instead of a check-then-write race).
+      if (isDrive) {
+        await db
+          .update(customers)
+          .set({ driveBalance: sql`${customers.driveBalance} - ${amount}` })
+          .where(and(eq(customers.customerId, customer.customerId), gte(customers.driveBalance, amount)));
+      } else {
+        await db
+          .update(customers)
+          .set({ referralBalance: sql`${customers.referralBalance} - ${amount}` })
+          .where(and(eq(customers.customerId, customer.customerId), gte(customers.referralBalance, amount)));
+      }
     }
 
     revalidatePath("/customer/referral");
@@ -108,7 +136,7 @@ export const requestMobileRecharge = async (input: {
     if (isSuccess) {
       const updatedCustomer = await db.query.customers.findFirst({
         where: eq(customers.customerId, customer.customerId),
-        columns: { referralBalance: true },
+        columns: { referralBalance: true, driveBalance: true },
       });
       return {
         success: true,
@@ -120,7 +148,11 @@ export const requestMobileRecharge = async (input: {
           operatorKey: operator,
           amount,
           trxId: trxid,
-          newBalance: Number(updatedCustomer?.referralBalance ?? 0),
+          wallet: isDrive ? ("drive" as const) : ("referral" as const),
+          newBalance: Number(
+            (isDrive ? updatedCustomer?.driveBalance : updatedCustomer?.referralBalance) ?? 0,
+          ),
+          newDriveBalance: Number(updatedCustomer?.driveBalance ?? 0),
           time: new Date().toISOString(),
         },
       };

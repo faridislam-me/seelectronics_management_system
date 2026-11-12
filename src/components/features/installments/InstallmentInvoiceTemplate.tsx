@@ -6,11 +6,14 @@ const tk = (n: number) =>
   `${Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 })} Tk`;
 
 // The letterhead background keeps a baked footer (customer-care note box + seal /
-// signatures) near the bottom (~y=720px on the A4 render), so the content column
-// must finish above it. The schedule flows into side-by-side columns — capped at
-// ROWS_PER_COLUMN rows each — so the table height stays bounded no matter how many
-// months the plan runs, keeping the table (and the guarantor / notes block that
-// follows it) clear of the baked footer instead of running into it.
+// signatures) starting around y=680px on the A4 render, so the whole content
+// column (which begins at y=185px) must finish above it. Two things keep it
+// bounded no matter how long the plan runs:
+//   1. the schedule flows into side-by-side columns, capped at MAX_COLUMNS, so a
+//      36-month plan is ~9 short rows per column instead of 36 stacked rows; and
+//   2. every row is a single compact line (no wrapped "paid on" sub-row), with
+//      tight padding, so even the worst case (36 months + guarantor + notes)
+//      ends above the baked footer.
 const ROWS_PER_COLUMN = 6;
 const MAX_COLUMNS = 4;
 
@@ -45,7 +48,7 @@ export default function InstallmentInvoiceTemplate({
   }) => (
     <div
       className={clsx(
-        "flex justify-between gap-4 py-0.5 border-b border-slate-200 text-sm",
+        "flex justify-between gap-4 py-0 border-b border-slate-200 text-[11px] leading-tight",
         bold && "font-bold",
       )}
     >
@@ -63,14 +66,14 @@ export default function InstallmentInvoiceTemplate({
       }}
     >
       <div className="absolute top-[185px] left-[40px] right-[40px]">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-1.5">
           <div className="text-left">
-            <div className="text-xl font-bold tracking-wide">
+            <div className="text-lg font-bold tracking-wide leading-tight">
               INSTALLMENT INVOICE
             </div>
-            <div className="text-sm text-slate-500">কিস্তি চুক্তিপত্র</div>
+            <div className="text-xs text-slate-500">কিস্তি চুক্তিপত্র</div>
           </div>
-          <div className="text-right text-sm">
+          <div className="text-right text-xs">
             <div>
               <span className="font-semibold">Plan Code #</span> {data.planCode}
             </div>
@@ -82,9 +85,9 @@ export default function InstallmentInvoiceTemplate({
         </div>
 
         {/* Customer + product */}
-        <div className="flex justify-between gap-6 mb-2 text-sm">
-          <div className="space-y-1">
-            <div className="font-semibold text-base mb-1">Customer</div>
+        <div className="flex justify-between gap-6 mb-1.5 text-[11px]">
+          <div className="space-y-0.5">
+            <div className="font-semibold text-sm mb-0.5">Customer</div>
             <div>
               <span className="font-semibold">Name :</span> {data.customerName}
             </div>
@@ -102,8 +105,8 @@ export default function InstallmentInvoiceTemplate({
               {data.customerId}
             </div>
           </div>
-          <div className="text-right space-y-1">
-            <div className="font-semibold text-base mb-1">Product</div>
+          <div className="text-right space-y-0.5">
+            <div className="font-semibold text-sm mb-0.5">Product</div>
             <div>
               <span className="font-semibold">Model :</span> {data.productModel}
             </div>
@@ -126,7 +129,7 @@ export default function InstallmentInvoiceTemplate({
         </div>
 
         {/* Money breakdown */}
-        <div className="grid grid-cols-2 gap-x-10 mb-2">
+        <div className="grid grid-cols-2 gap-x-10 mb-1.5">
           <div>
             <MoneyRow label="Cash Price" value={tk(data.cashPrice)} />
             <MoneyRow label="Extra Charge" value={tk(data.extraCharge)} />
@@ -149,20 +152,20 @@ export default function InstallmentInvoiceTemplate({
         </div>
 
         {/* Schedule */}
-        <div className="text-sm font-bold mb-1">Installment Schedule</div>
-        <div className="flex gap-4">
+        <div className="text-xs font-bold mb-0.5">Installment Schedule</div>
+        <div className="flex gap-2.5">
           {columns.map((col, ci) => (
             <table
               key={ci}
-              className="flex-1 border-collapse text-xs"
+              className="flex-1 border-collapse text-[9px]"
               style={{ tableLayout: "fixed" }}
             >
               <thead>
                 <tr className="bg-[#D7E6F5] border border-black">
-                  <th className="text-left py-0.5 px-1.5 font-bold border-r border-black w-5">#</th>
-                  <th className="text-left py-0.5 px-1.5 font-bold border-r border-black">Due</th>
-                  <th className="text-right py-0.5 px-1.5 font-bold border-r border-black">Amount</th>
-                  <th className="text-center py-0.5 px-1.5 font-bold">St.</th>
+                  <th className="text-left py-0 px-1 font-bold border-r border-black w-4">#</th>
+                  <th className="text-left py-0 px-1 font-bold border-r border-black">Due</th>
+                  <th className="text-right py-0 px-1 font-bold border-r border-black">Amount</th>
+                  <th className="text-center py-0 px-1 font-bold">St.</th>
                 </tr>
               </thead>
               <tbody>
@@ -170,23 +173,21 @@ export default function InstallmentInvoiceTemplate({
                   const paid = row.status === "paid";
                   return (
                     <tr key={row.installmentNo} className="border border-black">
-                      <td className="py-0.5 px-1.5 border-r border-black">
+                      <td className="py-0 px-1 border-r border-black">
                         {row.installmentNo}
                       </td>
-                      <td className="py-0.5 px-1.5 border-r border-black whitespace-nowrap">
-                        {formatDate(row.dueDate)}
-                        {paid && row.paidAt && (
-                          <span className="block text-[9px] text-emerald-700">
-                            ✓ {formatDate(row.paidAt)}
-                          </span>
+                      <td className="py-0 px-1 border-r border-black whitespace-nowrap">
+                        {paid && (
+                          <span className="text-emerald-700 font-bold">✓ </span>
                         )}
+                        {formatDate(row.dueDate)}
                       </td>
-                      <td className="py-0.5 px-1.5 text-right border-r border-black whitespace-nowrap">
+                      <td className="py-0 px-1 text-right border-r border-black whitespace-nowrap">
                         {Number(row.amount).toLocaleString()}
                       </td>
                       <td
                         className={clsx(
-                          "py-0.5 px-1.5 text-center font-bold whitespace-nowrap",
+                          "py-0 px-1 text-center font-bold whitespace-nowrap",
                           paid ? "text-emerald-700" : "text-amber-700",
                         )}
                       >
@@ -201,14 +202,14 @@ export default function InstallmentInvoiceTemplate({
         </div>
 
         {(data.guarantorName || data.guarantorPhone) && (
-          <div className="mt-3 text-xs text-slate-600">
+          <div className="mt-2 text-[10px] text-slate-600">
             <span className="font-semibold">Guarantor (জামিনদার):</span>{" "}
             {data.guarantorName}
             {data.guarantorPhone ? ` · ${data.guarantorPhone}` : ""}
           </div>
         )}
         {data.notes && (
-          <div className="mt-1 text-xs text-slate-500">{data.notes}</div>
+          <div className="mt-0.5 text-[10px] text-slate-500">{data.notes}</div>
         )}
       </div>
     </div>

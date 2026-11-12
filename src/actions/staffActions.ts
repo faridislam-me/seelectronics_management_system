@@ -315,7 +315,8 @@ export const getStaffs = async ({
   page = "1",
   limit = "20",
   role,
-}: SearchParams & { role?: "technician" | "electrician" }) => {
+  photosOnly = false,
+}: SearchParams & { role?: "technician" | "electrician"; photosOnly?: boolean }) => {
   try {
     const session = await verifySession(false);
     if (!session || (session.role !== "admin" && session.role !== "staff")) {
@@ -346,15 +347,17 @@ export const getStaffs = async ({
 
     const finalStaffData = await Promise.all(
       staffsData.map(async (staff) => {
-        const [photoUrl, nidFrontPhotoUrl, nidBackPhotoUrl] = await Promise.all(
-          [
-            staff.photoKey ? getObjectUrl(staff.photoKey) : null,
-            staff.nidFrontPhotoKey
-              ? getObjectUrl(staff.nidFrontPhotoKey)
-              : null,
-            staff.nidBackPhotoKey ? getObjectUrl(staff.nidBackPhotoKey) : null,
-          ],
-        );
+        // Only the profile photo is needed by lightweight callers (e.g. the
+        // staff-assign modal). Signing the two NID URLs and sending them is the
+        // bulk of the payload, so photosOnly skips them — much faster on slow
+        // mobile connections.
+        const photoUrl = staff.photoKey ? await getObjectUrl(staff.photoKey) : null;
+        const [nidFrontPhotoUrl, nidBackPhotoUrl] = photosOnly
+          ? [null, null]
+          : await Promise.all([
+              staff.nidFrontPhotoKey ? getObjectUrl(staff.nidFrontPhotoKey) : null,
+              staff.nidBackPhotoKey ? getObjectUrl(staff.nidBackPhotoKey) : null,
+            ]);
         return {
           ...staff,
           photoUrl,

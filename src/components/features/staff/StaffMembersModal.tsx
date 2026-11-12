@@ -51,7 +51,7 @@ export default function StaffMembersModal({
 
   useEffect(() => {
     (async () => {
-      const res = await getStaffs({ role: role, page: String(pageNumber) });
+      const res = await getStaffs({ role: role, page: String(pageNumber), photosOnly: true });
       setStaffs(res.data || []);
       setIsLoading(false);
     })();

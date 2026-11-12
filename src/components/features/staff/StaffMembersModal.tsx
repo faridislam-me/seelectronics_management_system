@@ -1,21 +1,32 @@
 "use client";
 
 import { getStaffs, getStaffsMetadata } from "@/actions";
+import { getCustomerComplaints } from "@/actions/complaintActions";
 import { Modal, Spinner } from "@/components/ui";
 import { StaffsType } from "@/types";
 import { useEffect, useState } from "react";
-import { XCircle } from "lucide-react";
+import { AlertTriangle, XCircle } from "lucide-react";
 
 export default function StaffMembersModal({
   role,
   headerComponent,
   canceledStaffId,
+  customerId,
+  customerName,
+  customerPhone,
+  customerAddress,
   onSelect,
   onClose,
 }: {
   role?: "technician" | "electrician";
   headerComponent?: React.ReactNode;
   canceledStaffId?: string | null;
+  // When assigning for a known customer, show any prior complaints from them
+  // (accused staff photo/name/id/phone) as a warning at the top of the modal.
+  customerId?: string | null;
+  customerName?: string | null;
+  customerPhone?: string | null;
+  customerAddress?: string | null;
   onSelect: (staffData: StaffsType) => void;
   onClose: () => void;
 }) {
@@ -23,12 +34,19 @@ export default function StaffMembersModal({
   const [staffs, setStaffs] = useState<StaffsType[]>([]);
   const [pageNumber, setPageNumber] = useState(1);
   const [pagination, setPagination] = useState<any>(null);
+  const [complaints, setComplaints] = useState<any[]>([]);
 
   useEffect(() => {
     (async () => {
       const pagination = await getStaffsMetadata({ role: role });
       setPagination(pagination);
     })();
+    if (customerId) {
+      (async () => {
+        const res = await getCustomerComplaints(customerId);
+        if (res.success && res.data) setComplaints(res.data);
+      })();
+    }
   }, []);
 
   useEffect(() => {
@@ -40,6 +58,58 @@ export default function StaffMembersModal({
   }, [pageNumber]);
   return (
     <Modal isVisible title="Select Staff Member" onClose={onClose}>
+      {complaints.length > 0 && (
+        <div className="mb-3 rounded-md border border-red-300 bg-red-50 p-3">
+          <div className="flex items-center gap-1.5 text-red-700 font-bold text-base mb-1.5">
+            <AlertTriangle size={18} />
+            অভিযোগ করা হয়েছিল
+          </div>
+          <div className="text-[15px] text-red-800 mb-2 leading-snug">
+            কাস্টমার: <span className="font-bold">{customerName || "—"}</span>
+            {customerId ? ` · ID: ${customerId}` : ""}
+            {customerPhone ? ` · ${customerPhone}` : ""}
+            {customerAddress ? ` · ${customerAddress}` : ""}
+          </div>
+          <div className="flex flex-col gap-2">
+            {complaints.map((c) => (
+              <div
+                key={c.complaintId}
+                className="flex items-center gap-3 bg-white border border-red-200 rounded-md p-2"
+              >
+                <div className="size-12 rounded-full overflow-hidden __center flex-shrink-0 border border-red-200 bg-gray-100">
+                  {c.staff?.photoUrl ? (
+                    <img
+                      src={c.staff.photoUrl}
+                      alt=""
+                      className="w-full h-full object-cover object-top"
+                    />
+                  ) : null}
+                </div>
+                <div className="text-[15px] leading-tight">
+                  <div>
+                    <span className="font-bold text-red-700">
+                      {c.isInstallation ? "ইনস্টলেশন" : "সার্ভিস"}
+                    </span>{" "}
+                    অভিযোগ
+                  </div>
+                  <div className="font-bold">
+                    {c.staff?.name || "—"}
+                    {c.staff?.staffId ? (
+                      <span className="font-semibold text-gray-600">
+                        {" "}
+                        ({c.staff.staffId})
+                      </span>
+                    ) : null}
+                  </div>
+                  {c.staff?.phone ? (
+                    <div className="text-gray-600">{c.staff.phone}</div>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {isLoading ? (
         <div className="h-72 __center">
           <Spinner />

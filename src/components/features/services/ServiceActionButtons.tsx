@@ -409,6 +409,10 @@ const AppointModel = ({
             ? serviceData.staffId
             : undefined
         }
+        customerId={serviceData.customerId}
+        customerName={serviceData.customerName}
+        customerPhone={serviceData.customerPhone}
+        customerAddress={serviceData.customerAddress}
         headerComponent={
           <button
             onClick={() => {

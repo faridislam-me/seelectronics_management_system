@@ -11,9 +11,10 @@ import InvoiceEditModal from "./InvoiceEditModal";
 import { CustomerData, Product } from "@/types";
 import { formatDate, isWarrantyValid } from "@/utils";
 import clsx from "clsx";
-import { Pencil, Trash2 } from "lucide-react";
+import { AlertTriangle, Pencil, Trash2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { getCustomerComplaints } from "@/actions/complaintActions";
 
 function CustomerViewModal({
   customerId,
@@ -38,6 +39,8 @@ function CustomerViewModal({
   const [isLoadingFeedbacksHistory, setIsLoadingFeedbacksHistory] =
     useState(false);
   const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
+  // Complaints this customer has filed (red "অভিযোগ" row in Customer Info).
+  const [complaints, setComplaints] = useState<any[]>([]);
 
   const [deletingInvoiceId, setDeletingInvoiceId] = useState<string | null>(null);
 
@@ -69,6 +72,16 @@ function CustomerViewModal({
       setIsProductsLoading(false);
     }
   }, [products]);
+
+  // Load complaints filed by this customer for the red অভিযোগ row.
+  useEffect(() => {
+    const id = customerId ?? customer?.customerId;
+    if (!id) return;
+    (async () => {
+      const res = await getCustomerComplaints(id);
+      if (res.success && res.data) setComplaints(res.data);
+    })();
+  }, []);
 
   const serviceHistoryToggleHandler = async (
     e: React.ToggleEvent<HTMLDetailsElement>,
@@ -215,6 +228,30 @@ function CustomerViewModal({
                       </span>
                     )}
                   </span>
+                </div>
+              )}
+              {complaints.length > 0 && (
+                <div className="mt-2 rounded-md border border-red-300 bg-red-50 p-2">
+                  <div className="flex items-center gap-1.5 text-red-600 font-bold text-base mb-1">
+                    <AlertTriangle size={18} />
+                    অভিযোগ ({complaints.length})
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    {complaints.map((c) => (
+                      <div
+                        key={c.complaintId}
+                        className="text-[15px] text-red-700 border-t border-red-200 pt-1.5 first:border-0 first:pt-0"
+                      >
+                        <span className="font-bold">
+                          {c.isInstallation ? "ইনস্টলেশন" : "সার্ভিস"}
+                        </span>{" "}
+                        অভিযোগ —{" "}
+                        <span className="font-semibold">{c.staff?.name || "—"}</span>
+                        {c.staff?.staffId ? ` (ID: ${c.staff.staffId})` : ""}
+                        {c.staff?.phone ? ` · ${c.staff.phone}` : ""}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { verifySession } from "@/lib";
-import { deleteObject } from "@/lib/s3";
+import { deleteObject, getObjectUrl } from "@/lib/s3";
 
 /** Logged-in user (any role) or null. Server actions are callable by anyone, so every one checks this. */
 const currentUser = async () => {
@@ -167,6 +167,60 @@ export async function getComplaintsByCustomer(customerId: string) {
     }));
 
     return { success: true, data: formattedData };
+  } catch (error) {
+    console.error(error);
+    return { success: false, message: "Could not fetch complaints" };
+  }
+}
+
+/**
+ * Admin-only. Complaints FILED BY a customer, enriched with the accused
+ * staff's id/name/phone/role/photo and the related service type. Powers both
+ * the red "অভিযোগ" row on the customer profile and the warning banner shown
+ * at the top of the technician-assign modal, so admin knows which staff had a
+ * complaint from this customer before sending them again.
+ */
+export async function getCustomerComplaints(customerId: string) {
+  try {
+    if ((await currentUser())?.role !== "admin") return UNAUTHORIZED;
+    const rows = await db
+      .select({
+        complaintId: staffComplaints.complaintId,
+        subject: staffComplaints.subject,
+        status: staffComplaints.status,
+        createdAt: staffComplaints.createdAt,
+        serviceType: services.type,
+        staffId: staffs.staffId,
+        staffName: staffs.name,
+        staffPhone: staffs.phone,
+        staffRole: staffs.role,
+        staffPhotoKey: staffs.photoKey,
+      })
+      .from(staffComplaints)
+      .leftJoin(staffs, eq(staffComplaints.staffId, staffs.staffId))
+      .leftJoin(services, eq(staffComplaints.serviceId, services.serviceId))
+      .where(eq(staffComplaints.customerId, customerId))
+      .orderBy(desc(staffComplaints.createdAt));
+
+    const data = await Promise.all(
+      rows.map(async (r) => ({
+        complaintId: r.complaintId,
+        subject: r.subject,
+        status: r.status,
+        createdAt: r.createdAt,
+        // Installation (electrician) vs service/repair (technician). Fall back
+        // to the accused staff's role when the complaint has no linked service.
+        isInstallation: r.serviceType === "install" || r.staffRole === "electrician",
+        staff: {
+          staffId: r.staffId,
+          name: r.staffName,
+          phone: r.staffPhone,
+          role: r.staffRole,
+          photoUrl: r.staffPhotoKey ? await getObjectUrl(r.staffPhotoKey) : null,
+        },
+      })),
+    );
+    return { success: true, data };
   } catch (error) {
     console.error(error);
     return { success: false, message: "Could not fetch complaints" };

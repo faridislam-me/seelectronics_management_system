@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db/drizzle";
-import { services, staffComplaints, staffs } from "@/db/schema";
+import { customerNotifications, services, staffComplaints, staffs } from "@/db/schema";
 import { generateRandomId } from "@/utils";
 import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -320,6 +320,26 @@ export async function updateComplaintStatus(
       import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("complaint_hearing_staff")).catch(() => {});
     } else if (newStatus === "customer_absent") {
       import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("hearing_absent_customer")).catch(() => {});
+      // Durable in-account notice: the customer sees, in their notifications
+      // feed, that the complaint was settled because they were not present.
+      // SMS + voice already go out via notifyComplaintStatusSMS, so this is a
+      // DB record only (no extra SMS). Must never block the status update.
+      try {
+        const c = await db.query.staffComplaints.findFirst({
+          where: eq(staffComplaints.complaintId, complaintId),
+          columns: { customerId: true },
+        });
+        if (c?.customerId) {
+          await db.insert(customerNotifications).values({
+            customerId: c.customerId,
+            type: "complaint_customer_absent",
+            message: `আপনি উপস্থিত না থাকায় আপনার অভিযোগ (${complaintId}) এই পর্যায়ে মীমাংসা করে বন্ধ করা হয়েছে। প্রয়োজনে যোগাযোগ করুন — ০৯৬৪৯৩৫৫৫৫৫।`,
+            link: `/customer/complain/doc/${complaintId}`,
+          });
+        }
+      } catch (noticeErr) {
+        console.error("customer_absent in-app notice failed:", noticeErr);
+      }
     } else if (newStatus === "completed") {
       import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("hearing_settlement_customer")).catch(() => {});
       import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("hearing_order_staff")).catch(() => {});

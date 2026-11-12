@@ -179,6 +179,19 @@ export const customers = pgTable(
       scale: 2,
       mode: "number",
     }).default(0),
+    /**
+     * Separate prepaid wallet used ONLY for drive/bundle packs — distinct from
+     * referralBalance and hidden from the normal balance UI. Loaded manually by
+     * an admin after the customer's drive KYC is approved (SE pays SuccessTopup
+     * commission on drive-pack sales, so SE must hold this balance up front).
+     */
+    driveBalance: numeric({
+      precision: 12,
+      scale: 2,
+      mode: "number",
+    }).default(0).notNull(),
+    /** Gate for drive packs: approved only after admin reviews the drive KYC. */
+    driveKycStatus: applicationStatusEnum().default("pending"),
     isWarrantyStopped: boolean().default(false).notNull(),
     warrantyStoppedAt: timestamp({ withTimezone: true }),
     /** Why the customer is blocked: 'due' (unpaid due) | 'misuse' (warranty void). null = legacy, treated as 'due'. */
@@ -1726,6 +1739,63 @@ export const mobileRechargeRequestsRelations = relations(
   ({ one }) => ({
     customer: one(customers, {
       fields: [mobileRechargeRequests.customerId],
+      references: [customers.customerId],
+    }),
+  }),
+);
+
+// ─── Drive Balance KYC ────────────────────────────────────────────────────
+// Customers must pass a KYC review before they can hold a drive balance and
+// buy drive/bundle packs. The customer submits identity details; an admin
+// reviews and, on approval, manually loads an amount into customers.driveBalance.
+
+export const driveKycStatusEnum = pgEnum("driveKycStatus", [
+  "pending",
+  "approved",
+  "rejected",
+]);
+
+export const driveBalanceKycRequests = pgTable(
+  "drive_balance_kyc_requests",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    requestCode: varchar({ length: 255 }).unique().notNull(),
+    customerId: varchar({ length: 255 })
+      .references(() => customers.customerId, { onDelete: "cascade" })
+      .notNull(),
+    customerName: varchar({ length: 255 }).notNull(),
+    customerPhone: varchar({ length: 255 }).notNull(),
+    /** Applicant identity captured on the KYC form. */
+    fullName: varchar({ length: 255 }).notNull(),
+    nid: varchar({ length: 50 }).notNull(),
+    address: text().notNull(),
+    note: text(),
+    /** Uploaded document keys (R2), e.g. NID front/back. */
+    documents: json().$type<string[]>().default([]),
+    status: driveKycStatusEnum().default("pending").notNull(),
+    /** Amount the admin loaded into driveBalance on approval. */
+    approvedAmount: numeric({ precision: 12, scale: 2, mode: "number" }).default(0).notNull(),
+    adminNotes: text(),
+    rejectReason: text(),
+    processedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp({ withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("drive_kyc_code_idx").on(table.requestCode),
+    index("drive_kyc_customer_idx").on(table.customerId),
+    index("drive_kyc_status_idx").on(table.status),
+  ],
+);
+
+export const driveBalanceKycRequestsRelations = relations(
+  driveBalanceKycRequests,
+  ({ one }) => ({
+    customer: one(customers, {
+      fields: [driveBalanceKycRequests.customerId],
       references: [customers.customerId],
     }),
   }),

@@ -18,6 +18,7 @@ import {
   HomeIcon,
   Image as ImageIcon,
   MessageSquare,
+  ShieldCheck,
   Star,
   Store,
   UserCog,
@@ -146,6 +147,11 @@ const links = [
     href: "/recharge-requests",
     icon: Smartphone,
     sectionTitle: "Mobile Recharge Requests",
+  },
+  {
+    name: "ড্রাইভ KYC",
+    href: "/drive-kyc",
+    icon: ShieldCheck,
   },
   {
     name: "Payments",

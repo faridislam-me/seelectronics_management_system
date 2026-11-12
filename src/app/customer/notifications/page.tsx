@@ -6,13 +6,20 @@ import NotificationFeed, { FeedItem } from "@/components/features/notifications/
 import { CustomerLayout } from "@/components/layout/CustomerLayout";
 import { useEffect, useState } from "react";
 
+// Known notification types get a friendly Bangla title; everything else falls
+// back to a prettified version of the raw type key.
+const TITLE_MAP: Record<string, string> = {
+  complaint_customer_absent: "অভিযোগ নিষ্পত্তি",
+};
 const kindOf = (type: string): FeedItem["kind"] => {
   const t = (type || "").toLowerCase();
+  if (t.includes("complaint")) return "notice";
   if (t.includes("payment") || t.includes("referral") || t.includes("bonus") || t.includes("invoice")) return "payment";
   if (t.includes("approv") || t.includes("complete") || t.includes("service")) return "approval";
   return "system";
 };
-const titleOf = (type: string) => (type ? type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Notification");
+const titleOf = (type: string) =>
+  TITLE_MAP[type] || (type ? type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Notification");
 
 export default function CustomerNotificationsPage() {
   const [items, setItems] = useState<FeedItem[]>([]);

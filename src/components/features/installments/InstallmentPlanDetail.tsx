@@ -3,6 +3,7 @@
 import {
   markInstallmentPaid,
   updateInstallmentPlanStatus,
+  updateInstallmentPlanProduct,
 } from "@/actions/installmentActions";
 import { Modal } from "@/components/ui";
 import { formatDate } from "@/utils";
@@ -14,6 +15,7 @@ import {
   Clock,
   Download,
   Loader2,
+  Pencil,
   QrCode,
   RotateCcw,
   ShieldCheck,
@@ -68,6 +70,48 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
   const [payNum, setPayNum] = useState("");
   const [saving, setSaving] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
+
+  // Product / sticker-spec edit
+  const [showEdit, setShowEdit] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [pForm, setPForm] = useState({
+    productModel: plan.productModel || "",
+    serialNumber: plan.serialNumber || "",
+    productBrand: plan.productBrand || "",
+    vaWatt: plan.vaWatt || "",
+    volt: plan.volt || "",
+    displayType: plan.displayType || "",
+  });
+  const setPF = (k: keyof typeof pForm, v: string) => setPForm((f) => ({ ...f, [k]: v }));
+
+  const openEdit = () => {
+    setPForm({
+      productModel: plan.productModel || "",
+      serialNumber: plan.serialNumber || "",
+      productBrand: plan.productBrand || "",
+      vaWatt: plan.vaWatt || "",
+      volt: plan.volt || "",
+      displayType: plan.displayType || "",
+    });
+    setShowEdit(true);
+  };
+
+  const saveProduct = async () => {
+    if (!pForm.productModel.trim()) {
+      toast.error("মডেল আবশ্যক");
+      return;
+    }
+    setEditSaving(true);
+    const res = await updateInstallmentPlanProduct(plan.planCode, pForm);
+    setEditSaving(false);
+    if (res.success) {
+      toast.success(res.message || "আপডেট হয়েছে");
+      setShowEdit(false);
+      router.refresh();
+    } else {
+      toast.error(res.message || "আপডেট করা যায়নি");
+    }
+  };
 
   const openPay = (row: Schedule) => {
     setPayRow(row);
@@ -184,10 +228,17 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
       {/* Product + guarantor */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-3.5">
-          <p className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white mb-2"><ShieldCheck size={16} className="text-[#0b3d91]" /> পণ্য</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="flex items-center gap-2 text-sm font-black text-gray-900 dark:text-white"><ShieldCheck size={16} className="text-[#0b3d91]" /> পণ্য</p>
+            <button onClick={openEdit} className="flex items-center gap-1 text-xs font-bold text-[#0b3d91] hover:underline"><Pencil size={13} /> এডিট</button>
+          </div>
           <div className="text-sm space-y-1 text-gray-600 dark:text-gray-300">
             <p><span className="text-gray-400">মডেল:</span> <b>{plan.productModel}</b>{plan.productType ? ` (${plan.productType})` : ""}</p>
+            {plan.productBrand && <p><span className="text-gray-400">ব্র্যান্ড:</span> {plan.productBrand}</p>}
             {plan.serialNumber && <p><span className="text-gray-400">সিরিয়াল:</span> {plan.serialNumber}</p>}
+            {plan.vaWatt && <p><span className="text-gray-400">VA/ওয়াট:</span> {plan.vaWatt}</p>}
+            {plan.volt && <p><span className="text-gray-400">ভোল্ট:</span> {plan.volt}</p>}
+            {plan.displayType && <p><span className="text-gray-400">ডিসপ্লে:</span> {plan.displayType}</p>}
             <p><span className="text-gray-400">মেয়াদ:</span> {formatDate(plan.startDate)} → {formatDate(plan.endDate)} ({plan.months} মাস)</p>
           </div>
         </div>
@@ -284,6 +335,46 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
               <button disabled={saving} onClick={confirmPay} className="__btn flex items-center gap-2">
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {saving ? "সেভ হচ্ছে..." : "পরিশোধিত করুন"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {showEdit && (
+        <Modal isVisible title="পণ্যের তথ্য এডিট" onClose={() => setShowEdit(false)}>
+          <div className="space-y-3 max-w-md">
+            <div>
+              <label className="text-xs font-semibold text-gray-500">মডেল *</label>
+              <input value={pForm.productModel} onChange={(e) => setPF("productModel", e.target.value)} className="__input" placeholder="মডেল / পণ্যের নাম" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-500">ব্র্যান্ড</label>
+                <input value={pForm.productBrand} onChange={(e) => setPF("productBrand", e.target.value)} className="__input" placeholder="ঐচ্ছিক" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500">সিরিয়াল নম্বর</label>
+                <input value={pForm.serialNumber} onChange={(e) => setPF("serialNumber", e.target.value)} className="__input" placeholder="ঐচ্ছিক" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500">VA / ওয়াট</label>
+                <input value={pForm.vaWatt} onChange={(e) => setPF("vaWatt", e.target.value)} className="__input" placeholder="ঐচ্ছিক" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500">ভোল্ট</label>
+                <input value={pForm.volt} onChange={(e) => setPF("volt", e.target.value)} className="__input" placeholder="ঐচ্ছিক" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500">ডিসপ্লে</label>
+                <input value={pForm.displayType} onChange={(e) => setPF("displayType", e.target.value)} className="__input" placeholder="ঐচ্ছিক" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-x-3 pt-1">
+              <button type="button" onClick={() => setShowEdit(false)} className="px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">বাতিল</button>
+              <button disabled={editSaving} onClick={saveProduct} className="__btn flex items-center justify-center gap-2">
+                {editSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                {editSaving ? "সেভ হচ্ছে..." : "সেভ করুন"}
               </button>
             </div>
           </div>

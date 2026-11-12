@@ -339,6 +339,53 @@ export const updateInstallmentPlanStatus = async (
   }
 };
 
+/**
+ * Admin: edit a plan's product + sticker spec fields (model, serial, brand,
+ * VA/Watt, Volt, Display). Lets existing plans get the spec data that newer
+ * create/approve flows capture. Empty values clear the optional fields;
+ * productModel (required) is only overwritten when a non-empty value is given.
+ */
+export const updateInstallmentPlanProduct = async (
+  code: string,
+  fields: {
+    productModel?: string;
+    serialNumber?: string;
+    productBrand?: string;
+    vaWatt?: string;
+    volt?: string;
+    displayType?: string;
+  },
+) => {
+  try {
+    if (!(await requireAdmin())) return UNAUTHORIZED;
+    const plan = await db.query.installmentPlans.findFirst({
+      where: eq(installmentPlans.planCode, code),
+      columns: { id: true },
+    });
+    if (!plan) return { success: false, message: "প্ল্যান পাওয়া যায়নি" };
+
+    const clean = (v?: string) => (v && v.trim() !== "" ? v.trim() : null);
+    const set: Record<string, string | null> = {
+      serialNumber: clean(fields.serialNumber),
+      productBrand: clean(fields.productBrand),
+      vaWatt: clean(fields.vaWatt),
+      volt: clean(fields.volt),
+      displayType: clean(fields.displayType),
+    };
+    if (fields.productModel && fields.productModel.trim()) {
+      set.productModel = fields.productModel.trim();
+    }
+
+    await db.update(installmentPlans).set(set).where(eq(installmentPlans.id, plan.id));
+    revalidatePath("/installments");
+    revalidatePath(`/installments/${code}`);
+    return { success: true, message: "পণ্যের তথ্য আপডেট হয়েছে" };
+  } catch (error) {
+    console.error("updateInstallmentPlanProduct error:", error);
+    return { success: false, message: "আপডেট করা যায়নি" };
+  }
+};
+
 // ============================================================
 // Customer-facing (read-only, scoped to the logged-in customer)
 // ============================================================

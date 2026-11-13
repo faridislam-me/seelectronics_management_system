@@ -190,8 +190,11 @@ export default async function ServiceList(
           {service.customerAddress}
         </p>
       </td>
-      <td className="py-3 px-4 whitespace-nowrap">
-        <span className="inline-flex items-center px-2.5 py-1 rounded-md  text-gray-800 text-sm sm:text-sm font-black uppercase tracking-wider">
+      <td className="py-3 px-4">
+        <span
+          title={`${service.productType}-${service.productModel}`}
+          className="block max-w-[240px] text-gray-800 text-sm sm:text-sm font-black uppercase tracking-wider leading-snug line-clamp-2"
+        >
           {service.productType}-{service.productModel}
         </span>
       </td>

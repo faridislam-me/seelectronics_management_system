@@ -1,24 +1,14 @@
 import { getMyInstallmentPlans } from "@/actions/installmentActions";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { CustomerLayout } from "@/components/layout";
+import { productImage } from "@/lib/serviceStatusStyle";
 import clsx from "clsx";
-import { AirVent, ArrowLeft, Battery, BatteryCharging, CheckCircle2, ChevronRight, Microwave, Package, Plug, Refrigerator, Smartphone, Tv, WashingMachine } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronRight, Package } from "lucide-react";
 
-// Per-type fallback icon when a plan has no admin-set product photo.
-const PRODUCT_ICON: Record<string, typeof Package> = {
-  fridge: Refrigerator,
-  ac: AirVent,
-  tv: Tv,
-  oven: Microwave,
-  washing_machine: WashingMachine,
-  mobile: Smartphone,
-  ips: BatteryCharging,
-  ips_package: BatteryCharging,
-  battery: Battery,
-  stabilizer: Plug,
-  blender: Package,
-  others: Package,
-};
+// Per-type real product photo (same assets the service pages use). ips_package
+// shares the IPS photo; anything without a dedicated photo falls back to a
+// generic product photo inside productImage().
+const productPhoto = (type: string) => productImage(type === "ips_package" ? "ips" : type);
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -118,7 +108,8 @@ export default async function MyInstallmentProductsPage({
               const s = PLAN_STATUS[p.status] || PLAN_STATUS.active;
               const progress = p.months > 0 ? Math.round((p.paidCount / p.months) * 100) : 0;
               const done = p.status === "completed";
-              const Icon = PRODUCT_ICON[p.productType] || Package;
+              // Admin-uploaded photo wins; otherwise a real per-type product photo.
+              const imgSrc = p.productImageUrl || productPhoto(p.productType);
               const specLine = [p.productSpec, p.displayType, p.vaWatt, p.volt].filter(Boolean).join(" · ");
               return (
                 <Link
@@ -131,18 +122,9 @@ export default async function MyInstallmentProductsPage({
                 >
                   {/* Top: product image + name/spec + status */}
                   <div className="flex items-start gap-3">
-                    <span
-                      className={clsx(
-                        "size-14 rounded-md overflow-hidden flex items-center justify-center shrink-0 border",
-                        p.productImageUrl ? "bg-white border-[#e4e9f2]" : done ? "bg-[#e9f9ef] border-[#bfe8cd] text-[#178a42]" : "bg-[#e8f1ff] border-[#cfe0fb] text-[#0b3d91]",
-                      )}
-                    >
-                      {p.productImageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.productImageUrl} alt={p.productModel} className="w-full h-full object-cover" />
-                      ) : (
-                        <Icon size={26} />
-                      )}
+                    <span className="size-14 rounded-md overflow-hidden flex items-center justify-center shrink-0 border bg-white border-[#e4e9f2]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={imgSrc} alt={p.productModel} className="w-full h-full object-cover" />
                     </span>
                     <div className="flex flex-col min-w-0 flex-1 leading-tight gap-0.5">
                       <div className="flex items-start justify-between gap-2">

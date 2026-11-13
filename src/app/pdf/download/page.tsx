@@ -49,6 +49,7 @@ export default function DocDownloadPage() {
             'staff-not-guilty': 'SE_ELECTRONICS_RESOLUTION_NOTICE.pdf',
             'installment-invoice': 'SE_ELECTRONICS_INSTALLMENT_INVOICE.pdf',
             'installment-sticker': 'SE_ELECTRONICS_INSTALLMENT_STICKER.pdf',
+            'installment-documents': 'SE_ELECTRONICS_INSTALLMENT_FILE.pdf',
         }
         const fileName = fileNames[response.docType as string] || 'SE_ELECTRONICS.pdf'
 

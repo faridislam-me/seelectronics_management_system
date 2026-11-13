@@ -122,9 +122,10 @@ export default async function MyInstallmentProductsPage({
                 >
                   {/* Top: product image + name/spec + status */}
                   <div className="flex items-start gap-3">
-                    <span className="size-14 rounded-md overflow-hidden flex items-center justify-center shrink-0 border bg-white border-[#e4e9f2]">
+                    <span className="size-16 rounded-md overflow-hidden flex items-center justify-center shrink-0 border bg-[#f6f9ff] border-[#e4e9f2] p-1">
+                      {/* object-contain so the whole product photo shows (client: image must appear full, not zoomed/cropped). */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={imgSrc} alt={p.productModel} className="w-full h-full object-cover" />
+                      <img src={imgSrc} alt={p.productModel} className="w-full h-full object-contain" />
                     </span>
                     <div className="flex flex-col min-w-0 flex-1 leading-tight gap-0.5">
                       <div className="flex items-start justify-between gap-2">

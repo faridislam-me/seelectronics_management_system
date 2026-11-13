@@ -27,9 +27,9 @@ export default function InstallmentStickerTemplate({
     if (!text) return null;
     return (
       <div className="flex items-start leading-tight">
-        <span className="w-[24mm] shrink-0 font-semibold">{label}</span>
-        <span className="shrink-0">ঃ</span>
-        <span className="flex-1 pl-1 font-bold break-words">{text}</span>
+        <span className="w-[26mm] shrink-0 font-bold">{label}</span>
+        <span className="shrink-0 font-bold">ঃ</span>
+        <span className="flex-1 pl-1.5 font-extrabold break-words">{text}</span>
       </div>
     );
   };
@@ -66,8 +66,10 @@ export default function InstallmentStickerTemplate({
         </div>
       </div>
 
-      {/* Spec rows */}
-      <div className="flex-1 flex flex-col justify-center gap-[1px] py-1 text-[10px]">
+      {/* Spec rows — justify-evenly spreads whatever rows exist across the full
+          body height, so a fridge/other unit with only a few specs still fills
+          the label like the dense IPS reference instead of leaving a big blank. */}
+      <div className="flex-1 flex flex-col justify-evenly py-1.5 text-[12px]">
         <Row label="মডেল" value={data.productModel} />
         <Row label="সিরিয়াল নং" value={data.serialNumber} />
         {data.isElectrical && <Row label="ভিএ/ওয়াট" value={data.vaWatt} />}

@@ -11,6 +11,7 @@ import {
   CustomerComplaintTemplateData,
   HearingNoticeTemplateData,
   IdCardTemplateData,
+  InstallmentDocumentsTemplateData,
   InstallmentInvoiceTemplateData,
   InstallmentStickerTemplateData,
   InvoiceTemplateData,
@@ -904,6 +905,108 @@ export default async function generatePDF({
           height: "76mm",
           margin: { top: 0, right: 0, bottom: 0, left: 0 },
         };
+        break;
+      }
+
+      case "installment-documents": {
+        const InstallmentDocumentsTemplate = (
+          await import("@/components/features/installments/InstallmentDocumentsTemplate")
+        ).default;
+        const { db } = await import("@/db/drizzle");
+        const { installmentPlans, installmentApplications } = await import("@/db/schema");
+        const { eq } = await import("drizzle-orm");
+        const { getObjectUrl } = await import("@/lib/s3");
+
+        const plan = await db.query.installmentPlans.findFirst({
+          where: eq(installmentPlans.planCode, finalId),
+        });
+        if (!plan) throw new AppError("কিস্তি প্ল্যানটি পাওয়া যায়নি।");
+
+        // The KYC images + personal details live on the originating application.
+        const app = await db.query.installmentApplications.findFirst({
+          where: eq(installmentApplications.planId, plan.id),
+        });
+
+        const sign = async (key: string | null | undefined) =>
+          key ? await getObjectUrl(key).catch(() => null) : null;
+
+        const [
+          custPhoto,
+          custNidFront,
+          custNidBack,
+          custSignature,
+          custBankCheck,
+          guarPhoto,
+          guarNidFront,
+          guarNidBack,
+          guarSignature,
+        ] = await Promise.all([
+          sign(app?.photoKey),
+          sign(app?.nidFrontPhotoKey),
+          sign(app?.nidBackPhotoKey),
+          sign(app?.signatureKey),
+          sign(app?.bankCheckPhotoKey),
+          sign(app?.guarantorPhotoKey),
+          sign(app?.guarantorNidFrontPhotoKey),
+          sign(app?.guarantorNidBackPhotoKey),
+          sign(app?.guarantorSignatureKey),
+        ]);
+
+        const logoBase64 = await convertToBase64(
+          path.join(process.cwd(), "src", "assets", "images", "logo.jpg"),
+        ).catch(() => "");
+
+        const data: InstallmentDocumentsTemplateData = {
+          logo: logoBase64,
+          planCode: plan.planCode,
+          status: plan.status,
+          createdAt: plan.createdAt ?? null,
+          customerName: plan.customerName,
+          customerId: plan.customerId,
+          customerPhone: plan.customerPhone,
+          customerAddress: plan.customerAddress,
+          fatherName: app?.fatherName ?? null,
+          motherName: app?.motherName ?? null,
+          currentAddress: app?.currentAddress ?? null,
+          permanentAddress: app?.permanentAddress ?? null,
+          isRenting: app?.isRenting ?? false,
+          landlordName: app?.landlordName ?? null,
+          landlordPhone: app?.landlordPhone ?? null,
+          productType: plan.productType
+            ? productMap[plan.productType] ?? plan.productType
+            : null,
+          productModel: plan.productModel,
+          productBrand: plan.productBrand,
+          productSpec: plan.productSpec,
+          serialNumber: plan.serialNumber,
+          cashPrice: plan.cashPrice,
+          extraCharge: plan.extraCharge,
+          totalPayable: plan.totalPayable,
+          downPayment: plan.downPayment,
+          financedAmount: plan.financedAmount,
+          months: plan.months,
+          monthlyAmount: plan.monthlyAmount,
+          startDate: plan.startDate,
+          endDate: plan.endDate,
+          guarantorName: plan.guarantorName ?? app?.guarantorName ?? null,
+          guarantorPhone: plan.guarantorPhone ?? app?.guarantorPhone ?? null,
+          guarantorAddress: app?.guarantorAddress ?? null,
+          customerImages: [
+            { label: "গ্রাহকের ছবি", url: custPhoto },
+            { label: "NID (সামনে)", url: custNidFront },
+            { label: "NID (পিছনে)", url: custNidBack },
+            { label: "ব্যাংক চেক", url: custBankCheck },
+            { label: "স্বাক্ষর", url: custSignature },
+          ],
+          guarantorImages: [
+            { label: "জামিনদারের ছবি", url: guarPhoto },
+            { label: "NID (সামনে)", url: guarNidFront },
+            { label: "NID (পিছনে)", url: guarNidBack },
+            { label: "স্বাক্ষর", url: guarSignature },
+          ],
+        };
+
+        html = renderToStaticMarkup(<InstallmentDocumentsTemplate data={data} />);
         break;
       }
 

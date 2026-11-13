@@ -277,6 +277,54 @@ export interface InstallmentStickerTemplateData {
   qrcode: string;
 }
 
+/** A labelled document image (signed R2 URL) for the installment customer file. */
+export interface DocImage {
+  label: string;
+  url: string | null;
+}
+
+/** Full customer file (profile + KYC images of customer and guarantor) for print/PDF. */
+export interface InstallmentDocumentsTemplateData {
+  logo: string;
+  planCode: string;
+  status: string;
+  createdAt: Date | string | null;
+  // Customer
+  customerName: string;
+  customerId: string;
+  customerPhone: string;
+  customerAddress: string | null;
+  fatherName: string | null;
+  motherName: string | null;
+  currentAddress: string | null;
+  permanentAddress: string | null;
+  isRenting: boolean;
+  landlordName: string | null;
+  landlordPhone: string | null;
+  // Product / terms (condition)
+  productType: string | null;
+  productModel: string;
+  productBrand: string | null;
+  productSpec: string | null;
+  serialNumber: string | null;
+  cashPrice: number | null;
+  extraCharge: number | null;
+  totalPayable: number | null;
+  downPayment: number | null;
+  financedAmount: number | null;
+  months: number | null;
+  monthlyAmount: number | null;
+  startDate: Date | string | null;
+  endDate: Date | string | null;
+  // Guarantor
+  guarantorName: string | null;
+  guarantorPhone: string | null;
+  guarantorAddress: string | null;
+  // Images (signed URLs)
+  customerImages: DocImage[];
+  guarantorImages: DocImage[];
+}
+
 export interface PunishmentTemplateData {
   orderNumber?: string;
   customerName: string;

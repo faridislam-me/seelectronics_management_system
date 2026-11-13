@@ -33,7 +33,8 @@ export type DocType =
   | "seller-certificate"
   | "seller-payment"
   | "installment-invoice"
-  | "installment-sticker";
+  | "installment-sticker"
+  | "installment-documents";
 
 export type CertificateData = {
   staffId?: string;

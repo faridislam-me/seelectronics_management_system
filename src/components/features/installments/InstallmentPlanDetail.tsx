@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   Clock,
   Download,
+  FileText,
   Loader2,
   Pencil,
   QrCode,
@@ -197,6 +198,13 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
             className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-gray-200 bg-white text-gray-600 text-xs font-bold hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300"
           >
             <QrCode size={15} /> স্টিকার
+          </Link>
+          <Link
+            href={`/pdf/download?type=installment-documents&id=${plan.planCode}`}
+            target="_blank"
+            className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-gray-200 bg-white text-gray-600 text-xs font-bold hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300"
+          >
+            <FileText size={15} /> ফাইল (PDF)
           </Link>
           {plan.status === "banned" || plan.status === "cancelled" ? (
             <button disabled={statusLoading} onClick={() => changeStatus("active")} className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100">

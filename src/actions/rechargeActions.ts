@@ -34,12 +34,13 @@ export const requestMobileRecharge = async (input: {
   amount: number;
   rechargeType?: string;
   packageId?: string;
+  driverRef?: string;
 }) => {
   try {
     const session = await verifyCustomerSession();
     if (!session.isAuth || !session.customer) return UNAUTHORIZED;
 
-    const { rechargePhone, operator, amount, rechargeType = "recharge", packageId } = input;
+    const { rechargePhone, operator, amount, rechargeType = "recharge", packageId, driverRef } = input;
 
     if (!rechargePhone?.trim()) return { success: false, message: "রিচার্জ নম্বর আবশ্যক" };
     if (!operator || !OPERATORS[operator]) return { success: false, message: "অপারেটর নির্বাচন করুন" };
@@ -63,6 +64,9 @@ export const requestMobileRecharge = async (input: {
     const isDrive = rechargeType === "drive_pack" || rechargeType === "drive_offer";
 
     if (isDrive) {
+      if (!driverRef?.trim()) {
+        return { success: false, message: "ড্রাইভার আইডি / রেফারেন্স নম্বর আবশ্যক" };
+      }
       if (customer.driveKycStatus !== "approved") {
         return { success: false, message: "ড্রাইভ প্যাক কিনতে আগে ড্রাইভ KYC অনুমোদন প্রয়োজন" };
       }
@@ -106,6 +110,7 @@ export const requestMobileRecharge = async (input: {
       amount,
       rechargeType,
       packageId: packageId || null,
+      driverRef: isDrive ? driverRef!.trim() : null,
       apiTrxId: trxid,
       apiStatus: isSuccess ? "Success" : (apiRes.message || "Failed"),
       status: isSuccess ? "completed" : "rejected",

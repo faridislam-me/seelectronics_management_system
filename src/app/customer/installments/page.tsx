@@ -146,7 +146,7 @@ export default async function CustomerInstallmentsPage() {
             </div>
           )}
           {primaryPlan ? (
-            <Link href={`/customer/installments/${primaryPlan.planCode}`} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.97] active:shadow-none transition-all">
+            <Link href="/customer/installments/products?filter=ongoing" className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.97] active:shadow-none transition-all">
               <span className="size-10 rounded-full bg-[#e9f9ef] text-[#1a9c4b] flex items-center justify-center shrink-0"><CreditCard size={20} /></span>
               <span className="text-[12px] font-extrabold">চলমান কিস্তি</span>
               <span className="text-[15px] font-extrabold text-[#1a9c4b] -mt-1">{activePlans.length}</span>
@@ -159,7 +159,7 @@ export default async function CustomerInstallmentsPage() {
             </div>
           )}
           {primaryPlan ? (
-            <Link href={`/customer/installments/${primaryPlan.planCode}#schedule`} className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.97] active:shadow-none transition-all">
+            <Link href="/customer/installments/products?filter=due" className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex flex-col items-center gap-1.5 text-center shadow-[0_4px_18px_rgba(11,61,145,0.06)] active:scale-[0.97] active:shadow-none transition-all">
               <span className="size-10 rounded-full bg-[#ffe9ec] text-[#c81f38] flex items-center justify-center shrink-0"><AlertTriangle size={20} /></span>
               <span className="text-[12px] font-extrabold">বাকি কিস্তি</span>
               <span className="text-[15px] font-extrabold text-[#c81f38] -mt-1">{overdueCount}</span>

@@ -5,12 +5,11 @@ import { sendSMS } from "@/lib/sms";
 import { sendVoiceCall } from "@/lib/mram";
 
 // MRAM voice-call broadcast campaigns for an upcoming কিস্তি (installment) due.
-// Left at 0 on purpose: voice is wired but DORMANT. The moment the client gives
-// us the real broadcast ids, set these and voice calls start going out — no other
-// code change needed. While a value is 0 the corresponding call is skipped.
-// TODO: set MRAM broadcast IDs when the client provides them
-export const INSTALLMENT_VOICE_3DAY = 0;
-export const INSTALLMENT_VOICE_1DAY = 0;
+// Client-supplied broadcast ids (2026-11-13): 3315 plays "কিস্তি ৩ দিন বাকি",
+// 3316 plays "কিস্তি আগামীকাল"। With these set the daily cron places the recorded
+// voice call alongside the reminder SMS. Set a value back to 0 to mute that call.
+export const INSTALLMENT_VOICE_3DAY = 3315;
+export const INSTALLMENT_VOICE_1DAY = 3316;
 
 /** The upcoming-কিস্তি reminder SMS, Bangla, with amount / number / date / model / plan code. */
 export const installmentDueSms = (p: {

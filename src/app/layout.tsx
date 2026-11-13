@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import { Slide, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.min.css";
 import { ConnectivityAlert } from "@/components";
+import PrayerReminderSync from "@/components/features/shared/PrayerReminderSync";
 import "./globals.css";
 
 const ubuntu = Ubuntu({
@@ -58,6 +59,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <ConnectivityAlert />
+        <PrayerReminderSync />
         {children}
         <ToastContainer
           position="top-center"

@@ -86,14 +86,14 @@ export default async function StaffTrackingPage() {
           </span>
         </div>
 
-        {/* Stats: icon, value and label centered */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* Stats: icon, value and label centered (compact) */}
+        <div className="grid grid-cols-2 gap-1.5">
           {tiles.map((t) => (
-            <Link key={t.label} href={t.href} className={clsx("relative rounded-md border p-2.5 flex flex-col items-center justify-center text-center gap-1", t.box)}>
-              <span className={clsx("size-10 rounded-full flex items-center justify-center", t.icon)}><t.Icon size={20} /></span>
-              <span className="text-[clamp(20px,6vw,24px)] font-extrabold leading-none mt-0.5">{t.value}</span>
-              <span className="text-[11.5px] font-semibold tracking-wide text-[#5b6784]">{t.label}</span>
-              <ChevronRight size={18} className={clsx("absolute right-1.5 top-1/2 -translate-y-1/2", t.chev)} />
+            <Link key={t.label} href={t.href} className={clsx("relative rounded-md border p-1.5 flex flex-col items-center justify-center text-center gap-0.5", t.box)}>
+              <span className={clsx("size-7 rounded-full flex items-center justify-center", t.icon)}><t.Icon size={15} /></span>
+              <span className="text-[clamp(15px,4.6vw,18px)] font-extrabold leading-none mt-0.5">{t.value}</span>
+              <span className="text-[9.5px] font-semibold tracking-wide text-[#5b6784]">{t.label}</span>
+              <ChevronRight size={15} className={clsx("absolute right-1 top-1/2 -translate-y-1/2", t.chev)} />
             </Link>
           ))}
         </div>
@@ -112,27 +112,27 @@ export default async function StaffTrackingPage() {
             const status = service.statusHistory?.[0]?.status || "processing";
             const st = getStatusStyle(status);
             return (
-              <article key={service.id} className="relative rounded-md bg-white border border-[#dfe6f2] p-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] flex flex-col gap-2">
-                <span className={clsx("absolute top-2.5 right-2.5 inline-flex items-center gap-1 h-7 px-2 rounded-md text-[10.5px] font-extrabold", st.cls)}><st.Icon size={13} />{st.label}</span>
+              <article key={service.id} className="relative rounded-md bg-white border border-[#dfe6f2] p-2 shadow-[0_4px_14px_rgba(11,61,145,0.06)] flex flex-col gap-1">
+                <span className={clsx("absolute top-2 right-2 inline-flex items-center gap-1 h-5 px-1.5 rounded-md text-[9px] font-extrabold", st.cls)}><st.Icon size={11} />{st.label}</span>
                 {rows(service).map((r) => (
-                  <div key={r.label} className="flex items-center gap-2.5 min-w-0">
-                    <span className={clsx("size-9 rounded-md flex items-center justify-center shrink-0", r.tint)}><r.Icon size={17} /></span>
+                  <div key={r.label} className="flex items-center gap-2 min-w-0">
+                    <span className={clsx("size-7 rounded-md flex items-center justify-center shrink-0", r.tint)}><r.Icon size={14} /></span>
                     <span className="flex flex-col leading-tight min-w-0">
-                      <span className="text-[11px] font-medium text-[#5b6784]">{r.label}</span>
-                      <span className="text-[13.5px] font-bold truncate">{r.value}</span>
+                      <span className="text-[9.5px] font-medium text-[#5b6784]">{r.label}</span>
+                      <span className="text-[12px] font-bold truncate">{r.value}</span>
                     </span>
                     {r.phone && (
-                      <a href={`tel:+88${service.customerPhone}`} className="ml-1 shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-[#e8f1ff] text-[#1f7cf0] text-[11.5px] font-bold"><Phone size={13} />Call Now</a>
+                      <a href={`tel:+88${service.customerPhone}`} className="ml-1 shrink-0 inline-flex items-center gap-1 h-6 px-2 rounded-md bg-[#e8f1ff] text-[#1f7cf0] text-[10.5px] font-bold"><Phone size={12} />Call Now</a>
                     )}
                   </div>
                 ))}
-                <div className="flex items-center justify-between border-t border-[#eef1f6] pt-2">
-                  <Link href={`/service-track?trackingId=${service.serviceId}`} className="inline-flex items-center gap-1.5 text-[13px] font-extrabold text-[#1f7cf0]">
-                    <MapPin size={16} />TRACKING<ArrowUpRight size={15} />
+                <div className="flex items-center justify-between border-t border-[#eef1f6] pt-1.5">
+                  <Link href={`/service-track?trackingId=${service.serviceId}`} className="inline-flex items-center gap-1.5 text-[12px] font-extrabold text-[#1f7cf0]">
+                    <MapPin size={14} />TRACKING<ArrowUpRight size={13} />
                   </Link>
                   <span className="flex items-center gap-2">
-                    <ArrowRight size={16} className="text-[#9ab4df]" />
-                    <span className="size-8 rounded-md bg-[#f1f5fb] text-[#5b6784] flex items-center justify-center"><Settings size={16} /></span>
+                    <ArrowRight size={14} className="text-[#9ab4df]" />
+                    <span className="size-7 rounded-md bg-[#f1f5fb] text-[#5b6784] flex items-center justify-center"><Settings size={14} /></span>
                   </span>
                 </div>
               </article>

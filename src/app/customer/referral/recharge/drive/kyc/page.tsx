@@ -2,11 +2,13 @@
 
 import { getMyDriveInfo, submitDriveKyc } from "@/actions/driveBalanceActions";
 import clsx from "clsx";
-import { ArrowLeft, CheckCircle2, IdCard, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, IdCard, ImagePlus, Loader2, ShieldCheck, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
+
+type DocSlot = "photo" | "nidFront" | "nidBack";
 
 export default function DriveKycFormPage() {
   const router = useRouter();
@@ -15,8 +17,31 @@ export default function DriveKycFormPage() {
   const [nid, setNid] = useState("");
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
+  const [files, setFiles] = useState<Record<DocSlot, File | null>>({
+    photo: null,
+    nidFront: null,
+    nidBack: null,
+  });
+  const [previews, setPreviews] = useState<Record<DocSlot, string>>({
+    photo: "",
+    nidFront: "",
+    nidBack: "",
+  });
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+
+  const pickFile = (slot: DocSlot, file: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("ছবি ফাইল দিন");
+      return;
+    }
+    setFiles((p) => ({ ...p, [slot]: file }));
+    setPreviews((p) => {
+      if (p[slot]) URL.revokeObjectURL(p[slot]);
+      return { ...p, [slot]: URL.createObjectURL(file) };
+    });
+  };
 
   // If the customer already has a pending/approved KYC, steer them back so they
   // don't submit a duplicate (the server blocks it anyway, but this is kinder).
@@ -43,16 +68,21 @@ export default function DriveKycFormPage() {
     if (!fullName.trim()) return toast.error("নাম দিন");
     if (!nid.trim()) return toast.error("এনআইডি নম্বর দিন");
     if (!address.trim()) return toast.error("ঠিকানা দিন");
+    if (!files.photo) return toast.error("আপনার ছবি দিন");
+    if (!files.nidFront) return toast.error("NID সামনের ছবি দিন");
+    if (!files.nidBack) return toast.error("NID পিছনের ছবি দিন");
 
     setLoading(true);
-    // Document upload is optional; this build submits no documents (empty array).
-    const res = await submitDriveKyc({
-      fullName: fullName.trim(),
-      nid: nid.trim(),
-      address: address.trim(),
-      note: note.trim() || undefined,
-      documents: [],
-    });
+    const fd = new FormData();
+    fd.set("fullName", fullName.trim());
+    fd.set("nid", nid.trim());
+    fd.set("address", address.trim());
+    if (note.trim()) fd.set("note", note.trim());
+    fd.set("photo", files.photo);
+    fd.set("nidFront", files.nidFront);
+    fd.set("nidBack", files.nidBack);
+
+    const res = await submitDriveKyc(fd);
     setLoading(false);
 
     if (res.success) {
@@ -148,6 +178,38 @@ export default function DriveKycFormPage() {
           />
         </div>
 
+        <div className="border-t border-dashed border-[#dfe6f2] pt-2.5">
+          <p className="flex items-center gap-2 text-[13px] font-extrabold text-[#0b3d91] mb-2">
+            <ImagePlus size={16} /> ডকুমেন্ট (ছবি) *
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <DocUpload
+              slot="photo"
+              label="আপনার ছবি"
+              icon={<UserRound size={18} />}
+              preview={previews.photo}
+              onPick={pickFile}
+            />
+            <DocUpload
+              slot="nidFront"
+              label="NID সামনে"
+              icon={<IdCard size={18} />}
+              preview={previews.nidFront}
+              onPick={pickFile}
+            />
+            <DocUpload
+              slot="nidBack"
+              label="NID পিছনে"
+              icon={<IdCard size={18} />}
+              preview={previews.nidBack}
+              onPick={pickFile}
+            />
+          </div>
+          <p className="text-[10.5px] text-[#5b6784] mt-1.5">
+            পরিষ্কার ছবি দিন — তথ্য যাচাইয়ের জন্য প্রয়োজন।
+          </p>
+        </div>
+
         <button
           onClick={handleSubmit}
           disabled={loading}
@@ -164,5 +226,54 @@ export default function DriveKycFormPage() {
         জমা দেওয়ার পর আপনার অনুরোধটি রিভিউ এর জন্য পাঠানো হবে।
       </p>
     </>
+  );
+}
+
+function DocUpload({
+  slot,
+  label,
+  icon,
+  preview,
+  onPick,
+}: {
+  slot: DocSlot;
+  label: string;
+  icon: React.ReactNode;
+  preview: string;
+  onPick: (slot: DocSlot, file: File | null) => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <button
+      type="button"
+      onClick={() => ref.current?.click()}
+      className={clsx(
+        "relative aspect-square rounded-md border overflow-hidden flex flex-col items-center justify-center gap-1 text-center transition",
+        preview ? "border-[#0b3d91]" : "border-dashed border-[#c3d0e8] bg-[#f6f9ff] hover:border-[#0b3d91]",
+      )}
+    >
+      {preview ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={preview} alt={label} className="absolute inset-0 w-full h-full object-cover" />
+      ) : (
+        <>
+          <span className="text-[#0b3d91]">{icon}</span>
+          <span className="text-[10px] font-bold text-[#5b6784] leading-tight px-1">{label}</span>
+        </>
+      )}
+      {preview && (
+        <span className="absolute bottom-0 inset-x-0 bg-black/55 text-white text-[9px] font-bold py-0.5">
+          {label}
+        </span>
+      )}
+      <input
+        ref={ref}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => onPick(slot, e.target.files?.[0] || null)}
+      />
+    </button>
   );
 }

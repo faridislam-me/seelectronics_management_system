@@ -145,6 +145,23 @@ export default function DriveKycClient({ requests }: { requests: any[] }) {
                     <td className="px-3 py-2.5">
                       <p className="font-bold">{r.fullName || r.customerName}</p>
                       <p className="text-xs text-gray-400">{r.customerPhone}</p>
+                      {Array.isArray(r.documentFiles) && r.documentFiles.length > 0 && (
+                        <div className="flex gap-1 mt-1">
+                          {r.documentFiles.map((d: { label: string; url: string }, i: number) => (
+                            <a
+                              key={i}
+                              href={d.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={d.label}
+                              className="size-7 rounded border border-gray-200 overflow-hidden shrink-0"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={d.url} alt={d.label} className="w-full h-full object-cover" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-2.5 font-semibold font-mono text-xs">{r.nid}</td>
                     <td className="px-3 py-2.5 text-gray-600 text-xs max-w-[220px] truncate" title={r.address}>
@@ -220,6 +237,32 @@ export default function DriveKycClient({ requests }: { requests: any[] }) {
                 </p>
               )}
             </div>
+
+            {Array.isArray(target.documentFiles) && target.documentFiles.length > 0 ? (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-1.5">ডকুমেন্ট</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {target.documentFiles.map((d: { label: string; url: string }, i: number) => (
+                    <a
+                      key={i}
+                      href={d.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="relative aspect-square rounded-md overflow-hidden border border-gray-200 group"
+                      title={d.label}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={d.url} alt={d.label} className="w-full h-full object-cover group-hover:opacity-90" />
+                      <span className="absolute bottom-0 inset-x-0 bg-black/55 text-white text-[9px] font-bold py-0.5 text-center">
+                        {d.label}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-[11px] text-gray-400 italic">কোনো ডকুমেন্ট জমা দেওয়া হয়নি</p>
+            )}
 
             {actionType === "approve" ? (
               <div>

@@ -4,9 +4,22 @@ import { db } from "@/db/drizzle";
 import { customers, driveBalanceKycRequests } from "@/db/schema";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { verifySession } from "@/lib";
+import { getObjectUrl, putObject } from "@/lib/s3";
+import { compressImage } from "@/lib/sharp";
 import { generateRandomId } from "@/utils";
 import { and, desc, eq, gte, ilike, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+
+/** Human label for a KYC document key, derived from its filename. */
+const DOC_LABELS: Record<string, string> = {
+  "photo.webp": "ছবি",
+  "nid-front.webp": "NID সামনে",
+  "nid-back.webp": "NID পিছনে",
+};
+const docLabel = (key: string) => {
+  const name = key.split("/").pop() || key;
+  return DOC_LABELS[name] || "ডকুমেন্ট";
+};
 
 const UNAUTHORIZED = { success: false as const, message: "Unauthorized" };
 
@@ -51,23 +64,30 @@ export const getMyDriveInfo = async () => {
   }
 };
 
-/** Customer: submit (or re-submit after rejection) a drive KYC request. */
-export const submitDriveKyc = async (input: {
-  fullName: string;
-  nid: string;
-  address: string;
-  note?: string;
-  documents?: string[];
-}) => {
+/**
+ * Customer: submit (or re-submit after rejection) a drive KYC request, with
+ * identity document photos (profile photo + NID front/back). Receives a
+ * FormData so the image files stream through; each is compressed to webp and
+ * stored in R2, and the keys are saved on the request for admin review.
+ */
+export const submitDriveKyc = async (formData: FormData) => {
   try {
     const session = await verifyCustomerSession();
     if (!session.isAuth || !session.customer) return UNAUTHORIZED;
 
-    const fullName = input.fullName?.trim();
-    const nid = input.nid?.trim();
-    const address = input.address?.trim();
+    const fullName = (formData.get("fullName") as string)?.trim();
+    const nid = (formData.get("nid") as string)?.trim();
+    const address = (formData.get("address") as string)?.trim();
+    const note = (formData.get("note") as string)?.trim();
     if (!fullName || !nid || !address) {
       return { success: false, message: "নাম, এনআইডি ও ঠিকানা আবশ্যক" };
+    }
+
+    const photo = formData.get("photo") as File | null;
+    const nidFront = formData.get("nidFront") as File | null;
+    const nidBack = formData.get("nidBack") as File | null;
+    if (!photo?.size || !nidFront?.size || !nidBack?.size) {
+      return { success: false, message: "ছবি, NID সামনে ও পিছনে আবশ্যক" };
     }
 
     const customer = await db.query.customers.findFirst({
@@ -99,6 +119,22 @@ export const submitDriveKyc = async (input: {
       code = kycCode();
     }
 
+    // Compress + upload the identity documents to R2, then save their keys.
+    const prefix = `drive-kyc/${code}`;
+    const photoKey = `${prefix}/photo.webp`;
+    const nidFrontKey = `${prefix}/nid-front.webp`;
+    const nidBackKey = `${prefix}/nid-back.webp`;
+    const [photoBuf, nidFBuf, nidBBuf] = await Promise.all([
+      compressImage(Buffer.from(await photo.arrayBuffer()), "portrait"),
+      compressImage(Buffer.from(await nidFront.arrayBuffer()), "nid"),
+      compressImage(Buffer.from(await nidBack.arrayBuffer()), "nid"),
+    ]);
+    await Promise.all([
+      putObject({ Key: photoKey, Body: photoBuf, ContentType: "image/webp" }),
+      putObject({ Key: nidFrontKey, Body: nidFBuf, ContentType: "image/webp" }),
+      putObject({ Key: nidBackKey, Body: nidBBuf, ContentType: "image/webp" }),
+    ]);
+
     await db.insert(driveBalanceKycRequests).values({
       requestCode: code,
       customerId: customer.customerId,
@@ -107,8 +143,8 @@ export const submitDriveKyc = async (input: {
       fullName,
       nid,
       address,
-      note: input.note?.trim() || null,
-      documents: input.documents ?? [],
+      note: note || null,
+      documents: [photoKey, nidFrontKey, nidBackKey],
       status: "pending",
     });
 
@@ -167,7 +203,26 @@ export const getDriveKycRequests = async ({
       .where(where)
       .orderBy(desc(driveBalanceKycRequests.createdAt));
 
-    return { success: true, data: rows };
+    // Sign each request's document keys so admins can preview them inline.
+    const data = await Promise.all(
+      rows.map(async (r) => {
+        const keys = Array.isArray(r.documents) ? r.documents : [];
+        const documentFiles = (
+          await Promise.all(
+            keys.map(async (key) => {
+              try {
+                return { label: docLabel(key), url: await getObjectUrl(key) };
+              } catch {
+                return null;
+              }
+            }),
+          )
+        ).filter((d): d is { label: string; url: string } => !!d);
+        return { ...r, documentFiles };
+      }),
+    );
+
+    return { success: true, data };
   } catch (error) {
     console.error("getDriveKycRequests error:", error);
     return { success: false, message: "KYC তালিকা আনা যায়নি" };

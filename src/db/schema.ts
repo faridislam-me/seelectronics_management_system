@@ -1752,6 +1752,8 @@ export const mobileRechargeRequests = pgTable(
     /** recharge | drive_pack | drive_offer | regular_pack */
     rechargeType: varchar({ length: 50 }).default("recharge").notNull(),
     packageId: varchar({ length: 100 }),
+    /** Drive pack/offer only: driver ID or reference number for the drive account */
+    driverRef: varchar({ length: 100 }),
     amount: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
     status: rechargeStatusEnum().default("pending").notNull(),
     apiTrxId: varchar({ length: 100 }),

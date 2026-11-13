@@ -158,7 +158,10 @@ export default function RechargeRequestsClient({ requests }: { requests: any[] }
                       <p className="font-bold">{r.customerName}</p>
                       <p className="text-xs text-gray-400">{r.customerPhone}</p>
                     </td>
-                    <td className="px-3 py-2.5 font-semibold font-mono">{r.rechargePhone}</td>
+                    <td className="px-3 py-2.5 font-semibold font-mono">
+                      {r.rechargePhone}
+                      {r.driverRef && <p className="text-[10px] font-bold text-emerald-700 font-sans">ড্রাইভার: {r.driverRef}</p>}
+                    </td>
                     <td className="px-3 py-2.5 font-semibold">{OPERATORS[r.operator] || r.operator}</td>
                     <td className="px-3 py-2.5 text-xs font-bold">{RECHARGE_TYPE_LABELS[r.rechargeType] || "রিচার্জ"}</td>
                     <td className="px-3 py-2.5 text-right font-bold">{bdt(r.amount)}</td>
@@ -190,6 +193,7 @@ export default function RechargeRequestsClient({ requests }: { requests: any[] }
           <div className="space-y-3 max-w-sm">
             <div className="rounded-md bg-gray-50 border border-gray-200 p-3 text-sm space-y-1">
               <p><span className="text-gray-400">নম্বর:</span> <b className="font-mono">{target.rechargePhone}</b></p>
+              {target.driverRef && <p><span className="text-gray-400">ড্রাইভার আইডি / রেফ:</span> <b className="text-emerald-700">{target.driverRef}</b></p>}
               <p><span className="text-gray-400">অপারেটর:</span> <b>{OPERATORS[target.operator]}</b></p>
               <p><span className="text-gray-400">পরিমাণ:</span> <b className="text-[#0b3d91]">{bdt(target.amount)}</b></p>
               <p><span className="text-gray-400">গ্রাহক:</span> <b>{target.customerName}</b> ({target.customerPhone})</p>

@@ -153,6 +153,7 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
   const [operator, setOperator] = useState("grameenphone");
   const [category, setCategory] = useState("all");
   const [rechargePhone, setRechargePhone] = useState("");
+  const [driverRef, setDriverRef] = useState("");
   const [amount, setAmount] = useState("");
 
   const [packages, setPackages] = useState<Pack[]>([]);
@@ -210,6 +211,7 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
 
   const doRecharge = async (amt: number, pkgId?: string) => {
     if (!rechargePhone.trim()) return toast.error("রিচার্জ নম্বর দিন");
+    if (isDrive && !driverRef.trim()) return toast.error("ড্রাইভার আইডি / রেফারেন্স নম্বর দিন");
     if (!amt || amt < 10) return toast.error("ন্যূনতম ৳১০");
     if (amt > balance) return toast.error("অপর্যাপ্ত ব্যালেন্স");
 
@@ -220,6 +222,7 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
       amount: amt,
       rechargeType,
       packageId: pkgId,
+      driverRef: isDrive ? driverRef.trim() : undefined,
     });
     setSubmitting(false);
 
@@ -227,6 +230,7 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
       setSuccess(res.detail as SuccessResult);
       setSheetPkg(null);
       setAmount("");
+      setDriverRef("");
       if (isDrive) await loadDrive();
       else await referral.refetch();
       router.refresh();
@@ -234,6 +238,7 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
       toast.success(res.message);
       setSheetPkg(null);
       setAmount("");
+      setDriverRef("");
       if (isDrive) await loadDrive();
       else await referral.refetch();
       router.refresh();
@@ -451,6 +456,19 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
               />
             </div>
 
+            {/* Driver ID / reference — required for drive pack & drive offer */}
+            {isDrive && (
+              <div>
+                <label className="text-[11px] font-bold text-[#5b6784] mb-1 block">ড্রাইভার আইডি / রেফারেন্স নম্বর *</label>
+                <input
+                  value={driverRef}
+                  onChange={(e) => setDriverRef(e.target.value)}
+                  placeholder="ড্রাইভার আইডি বা রেফারেন্স নম্বর দিন"
+                  className="w-full h-11 rounded-md border border-[#dfe6f2] px-3 text-[14px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none"
+                />
+              </div>
+            )}
+
             {/* Balance + insufficient hint */}
             <div className="flex items-center justify-between text-[11.5px] font-bold">
               <span className="text-[#5b6784]">{meta.balanceLabel}: <span className="text-[#0f1729]">{bdt(balance)}</span></span>
@@ -459,7 +477,7 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
 
             <button
               onClick={() => doRecharge(sheetPkg.amount, sheetPkg.id)}
-              disabled={submitting || !rechargePhone.trim() || sheetPkg.amount > balance}
+              disabled={submitting || !rechargePhone.trim() || (isDrive && !driverRef.trim()) || sheetPkg.amount > balance}
               className="w-full h-12 rounded-md text-white text-[15px] font-extrabold inline-flex items-center justify-center gap-2 shadow-[0_6px_18px_rgba(11,61,145,0.25)] disabled:opacity-50"
               style={{ backgroundColor: meta.accent }}
             >

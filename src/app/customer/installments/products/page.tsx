@@ -34,12 +34,35 @@ const PLAN_STATUS: Record<string, { label: string; cls: string }> = {
   cancelled: { label: "বাতিল", cls: "bg-gray-100 text-gray-500 border-gray-200" },
 };
 
-export default async function MyInstallmentProductsPage() {
+// Dashboard tiles deep-link here with ?filter=ongoing (চলমান কিস্তি) or
+// ?filter=due (বাকি কিস্তি) so each tile opens its own filtered list.
+const FILTERS: { key: string; label: string; subtitle: string }[] = [
+  { key: "all", label: "সব", subtitle: "সকল কিস্তি পণ্যের তালিকা" },
+  { key: "ongoing", label: "চলমান কিস্তি", subtitle: "চলমান কিস্তি পণ্যের তালিকা" },
+  { key: "due", label: "বাকি কিস্তি", subtitle: "যেসব পণ্যের কিস্তি এখনো বাকি" },
+];
+
+function applyFilter(plans: any[], filter: string) {
+  if (filter === "ongoing") return plans.filter((p) => p.status === "active");
+  if (filter === "due") return plans.filter((p) => p.status === "active" && Number(p.remainingAmount) > 0);
+  return plans;
+}
+
+export default async function MyInstallmentProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filter?: string }>;
+}) {
   const session = await verifyCustomerSession();
   if (!session.isAuth || !session.customer) redirect("/customer/login");
 
+  const sp = await searchParams;
+  const filter = FILTERS.some((f) => f.key === sp.filter) ? sp.filter! : "all";
+  const activeFilter = FILTERS.find((f) => f.key === filter)!;
+
   const res = await getMyInstallmentPlans();
-  const plans = res.success && "data" in res && res.data ? (res.data as any[]) : [];
+  const allPlans = res.success && "data" in res && res.data ? (res.data as any[]) : [];
+  const plans = applyFilter(allPlans, filter);
 
   return (
     <CustomerLayout>
@@ -51,16 +74,43 @@ export default async function MyInstallmentProductsPage() {
           </Link>
           <span className="flex flex-col leading-tight min-w-0 flex-1">
             <span className="text-[16px] font-extrabold truncate">আমার কিস্তিপণ্য</span>
-            <span className="text-[11px] font-semibold text-[#5b6784]">সকল কিস্তি পণ্যের তালিকা</span>
+            <span className="text-[11px] font-semibold text-[#5b6784]">{activeFilter.subtitle}</span>
           </span>
           <span className="shrink-0 text-[12px] font-extrabold text-[#0b3d91] bg-[#e8f1ff] px-2 py-1 rounded-full">{plans.length}</span>
+        </div>
+
+        {/* Filter chips — each tile from the dashboard lands on its own filter */}
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 -mx-2 px-2 [scrollbar-width:none]">
+          {FILTERS.map((f) => {
+            const activeChip = f.key === filter;
+            const count = applyFilter(allPlans, f.key).length;
+            return (
+              <Link
+                key={f.key}
+                href={f.key === "all" ? "/customer/installments/products" : `/customer/installments/products?filter=${f.key}`}
+                className={clsx(
+                  "shrink-0 h-8 px-3 rounded-full border text-[11.5px] font-extrabold transition-colors flex items-center gap-1.5",
+                  activeChip ? "border-[#0b3d91] bg-[#0b3d91] text-white" : "border-[#dfe6f2] bg-white text-[#5b6784]",
+                )}
+              >
+                {f.label}
+                <span className={clsx("text-[10px] font-extrabold rounded-full px-1.5 leading-[16px]", activeChip ? "bg-white/20 text-white" : "bg-[#eef1f6] text-[#5b6784]")}>{count}</span>
+              </Link>
+            );
+          })}
         </div>
 
         {plans.length === 0 ? (
           <div className="rounded-md bg-white border border-dashed border-[#c9d3e6] p-6 text-center flex flex-col items-center gap-2">
             <span className="size-14 rounded-full bg-[#f5f7fb] flex items-center justify-center"><Package className="text-[#c9d3e6]" size={28} /></span>
-            <span className="text-[14px] font-extrabold">কোনো কিস্তিপণ্য নেই</span>
-            <span className="text-[12px] text-[#5b6784]">আপনার জন্য কোনো কিস্তি পণ্য নেই।</span>
+            <span className="text-[14px] font-extrabold">{filter === "all" ? "কোনো কিস্তিপণ্য নেই" : "এই তালিকায় কোনো পণ্য নেই"}</span>
+            <span className="text-[12px] text-[#5b6784]">
+              {filter === "ongoing"
+                ? "এই মুহূর্তে কোনো চলমান কিস্তি নেই।"
+                : filter === "due"
+                  ? "কোনো বাকি কিস্তি নেই — সব পরিশোধিত।"
+                  : "আপনার জন্য কোনো কিস্তি পণ্য নেই।"}
+            </span>
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">

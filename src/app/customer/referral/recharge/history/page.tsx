@@ -100,6 +100,9 @@ export default function RechargeHistoryPage() {
                   <span className="text-[11px] font-semibold text-[#5b6784]">
                     {TYPE_LABELS[r.rechargeType] || "রিচার্জ"} · {formatDate(r.createdAt)} · {r.requestCode}
                   </span>
+                  {r.driverRef && (
+                    <span className="text-[10px] font-bold text-[#0e8a7d]">ড্রাইভার: {r.driverRef}</span>
+                  )}
                   {r.status === "rejected" && r.rejectReason && (
                     <span className="text-[10px] text-red-500 mt-0.5">{r.rejectReason}</span>
                   )}

@@ -274,6 +274,25 @@ export async function updateComplaintStatus(
   try {
     if ((await currentUser())?.role !== "admin") return UNAUTHORIZED;
     const { eq } = await import("drizzle-orm");
+
+    // An "একতরফা" (ex-parte) close for customer absence is only valid AFTER the
+    // customer has been called to the hearing: you cannot settle one-sidedly
+    // before the hearing is called. Require the complaint to currently be in
+    // the "hearing" stage.
+    if (newStatus === "customer_absent") {
+      const existing = await db.query.staffComplaints.findFirst({
+        where: eq(staffComplaints.complaintId, complaintId),
+        columns: { status: true },
+      });
+      if (existing?.status !== "hearing") {
+        return {
+          success: false,
+          message:
+            "শুনানিতে ডাকার পরেই কেবল 'গ্রাহক উপস্থিত ছিলেন না' (একতরফা) করা যাবে। আগে শুনানির জন্য ডাকুন।",
+        };
+      }
+    }
+
     const updateData: any = {
       status: newStatus,
       updatedAt: new Date(),
@@ -333,7 +352,7 @@ export async function updateComplaintStatus(
           await db.insert(customerNotifications).values({
             customerId: c.customerId,
             type: "complaint_customer_absent",
-            message: `আপনি উপস্থিত না থাকায় আপনার অভিযোগ (${complaintId}) এই পর্যায়ে মীমাংসা করে বন্ধ করা হয়েছে। প্রয়োজনে যোগাযোগ করুন — ০৯৬৪৯৩৫৫৫৫৫।`,
+            message: `শুনানিতে আপনি উপস্থিত না থাকায় আপনার অভিযোগ (${complaintId}) একতরফাভাবে নিষ্পত্তি করে নথিভুক্ত করা হয়েছে। নথিপত্র আপনার অ্যাকাউন্ট থেকে ডাউনলোড করতে পারবেন। প্রয়োজনে যোগাযোগ করুন — ০৯৬৪৯৩৫৫৫৫৫।`,
             link: `/customer/complain/doc/${complaintId}`,
           });
         }

@@ -45,6 +45,7 @@ export default function DocDownloadPage() {
             'complaint': 'SE_ELECTRONICS_COMPLAINT.pdf',
             'hearing-notice': 'SE_ELECTRONICS_HEARING_NOTICE.pdf',
             'completion-notice': 'SE_ELECTRONICS_RESOLUTION_LETTER.pdf',
+            'ex-parte-notice': 'SE_ELECTRONICS_EX_PARTE_NOTICE.pdf',
             'complaint_customer': 'SE_ELECTRONICS_CUSTOMER_COMPLAINT_COPY.pdf',
             'staff-not-guilty': 'SE_ELECTRONICS_RESOLUTION_NOTICE.pdf',
             'installment-invoice': 'SE_ELECTRONICS_INSTALLMENT_INVOICE.pdf',

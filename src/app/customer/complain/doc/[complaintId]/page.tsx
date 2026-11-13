@@ -46,6 +46,7 @@ export default async function ComplaintDocPage({ params }: { params: Promise<{ c
           <a href={`/pdf/download?type=complaint_customer&id=${complaint.complaintId}`} target="_blank" className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-[#0b3d91] text-white text-[12px] font-extrabold"><Download size={14} />অভিযোগ নথি</a>
           {isHearing && <a href={`/pdf/download?type=hearing-notice&id=${complaint.complaintId}`} target="_blank" className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-[#e0a11b] text-white text-[12px] font-extrabold"><Download size={14} />শুনানি নোটিশ</a>}
           {isCompleted && <a href={`/pdf/download?type=completion-notice&id=${complaint.complaintId}`} target="_blank" className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-[#1a9c4b] text-white text-[12px] font-extrabold"><Download size={14} />নিষ্পত্তি পত্র</a>}
+          {isAbsent && <a href={`/pdf/download?type=ex-parte-notice&id=${complaint.complaintId}`} target="_blank" className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-[#c0392b] text-white text-[12px] font-extrabold"><Download size={14} />একতরফা নিষ্পত্তি পত্র</a>}
         </div>
 
         {/* Status tracker */}

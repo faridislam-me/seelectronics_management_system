@@ -385,16 +385,20 @@ export default function ComplaintDetailsPage() {
                 </div>
               )}
 
-              {/* Customer-absent outcome — available while verifying (before hearing) */}
-              {(complaint.status === "under_trial" || complaint.status === "processing") && (
-                <button
-                  onClick={() => handleStatusUpdate("customer_absent")}
-                  disabled={isUpdating}
-                  className="w-full py-4 bg-orange-500 hover:bg-orange-600 rounded-xl font-bold transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
-                >
-                  <UserX size={18} className="group-hover:scale-110 transition-transform" />
-                  গ্রাহক উপস্থিত ছিলেন না
-                </button>
+              {/* Customer-absent (ex-parte) outcome — only AFTER the hearing is
+                  called: you cannot close one-sidedly before the hearing. */}
+              {complaint.status === "hearing" && (
+                <div className="space-y-1.5">
+                  <button
+                    onClick={() => handleStatusUpdate("customer_absent")}
+                    disabled={isUpdating}
+                    className="w-full py-4 bg-orange-500 hover:bg-orange-600 rounded-xl font-bold transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
+                  >
+                    <UserX size={18} className="group-hover:scale-110 transition-transform" />
+                    গ্রাহক উপস্থিত ছিলেন না (একতরফা নিষ্পত্তি)
+                  </button>
+                  <p className="text-white/40 text-xs text-center">শুনানিতে গ্রাহক না এলে একতরফাভাবে নিষ্পত্তি ও নথিভুক্ত হবে।</p>
+                </div>
               )}
 
               {/* Completion Section */}

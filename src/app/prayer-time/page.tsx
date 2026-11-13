@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSavedPrayerLocation } from "@/utils/prayerLocation";
 
 type PrayerName = "Fajr" | "Dhuhr" | "Asr" | "Maghrib" | "Isha";
@@ -164,6 +164,21 @@ export default function PrayerTimePage() {
     },
     [coords],
   );
+
+  // The native app only fires notifications for the prayer times we hand it, and
+  // the page previously handed them over ONLY when a reminder was toggled. So the
+  // rolling 7-day schedule was never refreshed — once those days passed, reminders
+  // silently stopped ("আসে না"). Re-push the enabled reminders every time the
+  // prayer page opens (once coords + saved reminders are ready) so the next 7 days
+  // are always freshly scheduled.
+  const didResync = useRef(false);
+  useEffect(() => {
+    if (didResync.current) return;
+    if (!coords.lat) return;
+    if (!Object.values(reminders).some(Boolean)) return;
+    didResync.current = true;
+    syncToApp(reminders);
+  }, [coords, reminders, syncToApp]);
 
   const flash = (m: string) => {
     setToast(m);

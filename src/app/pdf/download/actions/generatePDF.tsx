@@ -626,6 +626,61 @@ export default async function generatePDF({
         html = renderToStaticMarkup(<CompletionNoticeTemplate data={data} />);
         break;
       }
+
+      case "ex-parte-notice": {
+        // Same complaint data as completion-notice, but rendered with the
+        // ex-parte (customer-absent) wording.
+        const ExParteNoticeTemplate = (
+          await import("@/components/features/complaints/ExParteNoticeTemplate")
+        ).default;
+        const { getComplaintById } = await import("@/actions/complaintActions");
+        const response = await getComplaintById(finalId);
+        if (!response.success || !response.data)
+          throw new AppError("অভিযোগটি পাওয়া যায়নি।");
+        const c = response.data!;
+
+        const logoBase64 = await convertToBase64(
+          path.join(process.cwd(), "src", "assets", "images", "logo.jpg"),
+        ).catch(() => undefined);
+        const documentSealBase64 = await convertToBase64(
+          path.join(process.cwd(), "src", "assets", "images", "documentSeal.jpeg"),
+        ).catch(() => undefined);
+        const chairmanSignBase64 = await convertToBase64(
+          path.join(process.cwd(), "src", "assets", "images", "chairmanSeal.jpeg"),
+        ).catch(() => undefined);
+
+        const data: CompletionNoticeTemplateData = {
+          complaintId: c.complaintId,
+          customer: {
+            name: c.customer?.name || "",
+            customerId: c.customer?.customerId || "",
+            phone: c.customer?.phone || "",
+            address: c.customer?.address || "",
+          },
+          staff: {
+            name: c.staff?.name || "",
+            phone: c.staff?.phone || "",
+            role: c.staff?.role || "",
+            staffId: c.staffId,
+          },
+          subject: c.subject,
+          adminNote: c.customerNote || c.adminNote || "",
+          punishmentType: "",
+          punishmentStartDate: "",
+          punishmentEndDate: "",
+          resolvedDateBn: new Date().toLocaleDateString("bn-BD"),
+          receiptNo: c.complaintId.replace(/\D/g, "").slice(0, 5) || "14285",
+          logo: logoBase64,
+          documentSeal: documentSealBase64,
+          chairmanSeal: chairmanSignBase64,
+          officerName: c.hearingOfficerName || "",
+          officerDesignation: c.hearingOfficerDesignation || "",
+        };
+
+        html = renderToStaticMarkup(<ExParteNoticeTemplate data={data} />);
+        break;
+      }
+
       case "staff-not-guilty": {
         const StaffNotGuiltyTemplate = (
           await import("@/components/features/complaints/StaffNotGuiltyTemplate")

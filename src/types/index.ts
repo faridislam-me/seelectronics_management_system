@@ -28,6 +28,7 @@ export type DocType =
   | "complaint_customer"
   | "hearing-notice"
   | "completion-notice"
+  | "ex-parte-notice"
   | "staff-not-guilty"
   | "seller-invoice"
   | "seller-certificate"

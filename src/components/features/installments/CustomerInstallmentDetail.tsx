@@ -80,6 +80,9 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
   const [submitting, setSubmitting] = useState(false);
 
   const paidSchedules = schedule.filter((r: any) => r.status === "paid");
+  // The installment product (brand + model) — shown on each payment-history card
+  // next to the method so the customer sees which product the কিস্তি is for.
+  const productLabel = [plan.productBrand, plan.productModel].filter(Boolean).join(" ");
 
   // Application approval-journey tracking from the originating application
   // (dated steps), shown as the plan's "ট্র্যাকিং" — NOT the payment schedule.
@@ -265,10 +268,13 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
                 const mc = METHOD_COLORS[row.paymentMethod] || "text-gray-600 bg-gray-50";
                 return (
                   <div key={row.id} className="rounded-md border border-[#dfe6f2] p-3">
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-1">
                       <span className="text-[14px] font-extrabold">কিস্তি #{row.installmentNo}</span>
                       <span className="text-[15px] font-extrabold text-[#178a42]">{bdt(row.paidAmount || row.amount)}</span>
                     </div>
+                    {productLabel && (
+                      <p className="text-[12px] font-bold text-[#0b3d91] mb-2 leading-tight">{productLabel}</p>
+                    )}
                     <div className="space-y-1.5 text-[12px]">
                       <div className="flex items-center gap-2">
                         <Clock size={13} className="text-[#5b6784] shrink-0" />

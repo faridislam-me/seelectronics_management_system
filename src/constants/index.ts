@@ -379,7 +379,7 @@ export const staffStats = {
 
 export const paymentDetails = {
     bkash: {
-        number: "01322247774",
+        number: "01310673600",
         name: "SE Electronics"
     },
     nagad: {

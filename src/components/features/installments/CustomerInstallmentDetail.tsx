@@ -8,6 +8,7 @@ import clsx from "clsx";
 import {
   ArrowLeft,
   Banknote,
+  CalendarDays,
   CheckCircle2,
   ChevronRight,
   Clock,
@@ -19,6 +20,7 @@ import {
   Send,
   Wallet,
 } from "lucide-react";
+import { productImage } from "@/lib/serviceStatusStyle";
 import Link from "next/link";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -83,6 +85,8 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
   // The installment product (brand + model) — shown on each payment-history card
   // next to the method so the customer sees which product the কিস্তি is for.
   const productLabel = [plan.productBrand, plan.productModel].filter(Boolean).join(" ");
+  // Hero image: admin-set photo wins, else a real per-type product photo.
+  const heroImg = productImageUrl || productImage(plan.productType === "ips_package" ? "ips" : plan.productType);
 
   // Application approval-journey tracking from the originating application
   // (dated steps), shown as the plan's "ট্র্যাকিং" — NOT the payment schedule.
@@ -123,9 +127,17 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
   };
 
   const Stat = ({ label, value, accent }: { label: string; value: string; accent?: boolean }) => (
-    <div className="rounded-md bg-white border border-[#dfe6f2] p-2.5">
-      <p className="text-[10.5px] font-semibold text-[#5b6784]">{label}</p>
-      <p className={clsx("text-[14px] font-extrabold", accent ? "text-[#0b3d91]" : "text-[#16213a]")}>{value}</p>
+    <div className="rounded-lg bg-white border border-[#e4e9f2] p-2.5 shadow-[0_3px_10px_rgba(11,61,145,0.05)]">
+      <p className="text-[10px] font-semibold text-[#5b6784]">{label}</p>
+      <p className={clsx("text-[13.5px] font-extrabold mt-0.5", accent ? "text-[#0b3d91]" : "text-[#16213a]")}>{value}</p>
+    </div>
+  );
+
+  const HeroStat = ({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent?: boolean }) => (
+    <div className="flex flex-col items-center text-center px-1 gap-0.5">
+      <span className={clsx("inline-flex", accent ? "text-[#0b3d91]" : "text-[#7b8aa3]")}>{icon}</span>
+      <span className="text-[9.5px] font-semibold text-[#5b6784] leading-tight">{label}</span>
+      <span className={clsx("text-[12.5px] font-black leading-tight", accent ? "text-[#0b3d91]" : "text-[#16213a]")}>{value}</span>
     </div>
   );
 
@@ -138,29 +150,48 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
           <span className="text-[16px] font-extrabold truncate">{plan.productModel}</span>
           <span className="text-[11px] font-bold text-[#5b6784] font-mono">{plan.planCode}</span>
         </span>
-        <span className={clsx("shrink-0 text-[10px] font-extrabold uppercase px-2 py-1 rounded-full", s.cls)}>{s.label}</span>
+        <span className={clsx("shrink-0 text-[10px] font-extrabold uppercase px-2 py-1 rounded-full border", s.cls)}>{s.label}</span>
       </div>
 
-      {/* Product photo (admin-set, when available) */}
-      {productImageUrl && (
-        <div className="rounded-md bg-white border border-[#dfe6f2] overflow-hidden shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={productImageUrl} alt={plan.productModel} className="w-full h-44 object-contain bg-[#f5f7fb]" />
+      {/* Hero card — product photo + model/code/status + key figures */}
+      <div className="rounded-xl bg-white border border-[#e4e9f2] p-3 shadow-[0_6px_18px_rgba(11,61,145,0.07)]">
+        <div className="flex items-center gap-3">
+          <span className="size-[80px] rounded-xl overflow-hidden flex items-center justify-center shrink-0 border border-[#e4e9f2] bg-[#f3f8ff] p-1.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={heroImg} alt={plan.productModel} className="w-full h-full object-contain" />
+          </span>
+          <div className="flex flex-col min-w-0 flex-1 leading-tight gap-1">
+            <span className="text-[19px] font-black truncate">{plan.productModel}</span>
+            <span className="text-[12px] font-bold text-[#0b3d91] font-mono">{plan.planCode}</span>
+            <span className={clsx("self-start text-[9.5px] font-extrabold uppercase px-2 py-0.5 rounded-full border", s.cls)}>{s.label}</span>
+          </div>
         </div>
-      )}
+        <div className="grid grid-cols-3 mt-3 pt-3 border-t border-[#eef1f6] divide-x divide-[#eef1f6]">
+          <HeroStat icon={<Wallet size={16} />} label="ডাউন পেমেন্ট" value={bdt(plan.downPayment)} />
+          <HeroStat icon={<CreditCard size={16} />} label="মাসিক কিস্তি" value={bdt(plan.monthlyAmount)} accent />
+          <HeroStat icon={<CalendarDays size={16} />} label="মেয়াদ" value={`${plan.months} মাস`} />
+        </div>
+      </div>
+
+      {/* Key figure cards */}
+      <div className="grid grid-cols-3 gap-2">
+        <Stat label="মোট (চার্জসহ)" value={bdt(plan.totalPayable)} />
+        <Stat label="কিস্তি পরিশোধ" value={`${data.paidCount}/${plan.months}`} accent />
+        <Stat label="বাকি" value={bdt(data.remainingAmount)} />
+      </div>
 
       {/* Action buttons */}
       <div className="grid grid-cols-2 gap-2">
         <Link
           href={`/pdf/download?type=installment-invoice&id=${plan.planCode}`}
           target="_blank"
-          className="flex items-center justify-center gap-1.5 h-10 rounded-md bg-white border border-[#dfe6f2] text-[#0b3d91] text-[13px] font-extrabold"
+          className="flex items-center justify-center gap-1.5 h-10 rounded-lg bg-white border border-[#dfe6f2] text-[#0b3d91] text-[13px] font-extrabold shadow-[0_3px_10px_rgba(11,61,145,0.05)]"
         >
           <Download size={16} /> ইনভয়েস
         </Link>
         <button
           onClick={() => setShowHistory(true)}
-          className="flex items-center justify-center gap-1.5 h-10 rounded-md bg-white border border-[#dfe6f2] text-[#0b3d91] text-[13px] font-extrabold"
+          className="flex items-center justify-center gap-1.5 h-10 rounded-lg bg-white border border-[#dfe6f2] text-[#0b3d91] text-[13px] font-extrabold shadow-[0_3px_10px_rgba(11,61,145,0.05)]"
         >
           <History size={16} /> পেমেন্ট হিস্টোরি
         </button>
@@ -168,27 +199,17 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
 
       {/* Next due / Pay Now */}
       {plan.status === "active" && nextDue && (
-        <div className="rounded-md bg-[linear-gradient(105deg,#0a2f70,#1f7cf0)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(11,61,145,0.25)]">
-          <span className="size-11 rounded-md bg-white/15 border border-white/25 flex items-center justify-center shrink-0"><Clock size={22} /></span>
+        <div className="rounded-xl bg-[linear-gradient(105deg,#0a2f70,#1f7cf0)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(11,61,145,0.25)]">
+          <span className="size-11 rounded-lg bg-white/15 border border-white/25 flex items-center justify-center shrink-0"><Clock size={22} /></span>
           <span className="flex flex-col min-w-0 flex-1 leading-tight">
             <span className="text-[11px] font-semibold text-white/85">পরবর্তী কিস্তি (#{nextDue.installmentNo}) — {formatDate(nextDue.dueDate)}</span>
             <span className="text-[20px] font-extrabold">{bdt(nextDue.amount)}</span>
           </span>
-          <button onClick={() => setShowPay(true)} className="shrink-0 h-9 px-3 rounded-md bg-white text-[#0b3d91] text-[13px] font-extrabold inline-flex items-center gap-1.5">
+          <button onClick={() => setShowPay(true)} className="shrink-0 h-9 px-3 rounded-lg bg-white text-[#0b3d91] text-[13px] font-extrabold inline-flex items-center gap-1.5">
             <Wallet size={16} />Pay Now
           </button>
         </div>
       )}
-
-      {/* Summary */}
-      <div className="grid grid-cols-2 gap-2">
-        <Stat label="মোট (চার্জসহ)" value={bdt(plan.totalPayable)} />
-        <Stat label="ডাউন পেমেন্ট" value={bdt(plan.downPayment)} />
-        <Stat label="মাসিক কিস্তি" value={bdt(plan.monthlyAmount)} accent />
-        <Stat label="মেয়াদ" value={`${plan.months} মাস`} />
-        <Stat label="পরিশোধিত" value={`${data.paidCount}/${plan.months} · ${bdt(data.paidAmount)}`} />
-        <Stat label="বাকি" value={bdt(data.remainingAmount)} />
-      </div>
 
       {/* Tracking — the application approval journey (dated), not payments */}
       <div className="rounded-md bg-white border border-[#dfe6f2] p-3.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
@@ -206,7 +227,12 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
                   <div className={clsx("absolute left-[-22px] top-[2px] size-[18px] rounded-full flex items-center justify-center border-2", done ? "bg-[#1a9c4b] border-[#1a9c4b]" : "bg-white border-[#b0bdd0]")}>
                     {done ? <CheckCircle2 size={11} className="text-white" strokeWidth={3} /> : <span className="size-[6px] rounded-full bg-[#b0bdd0]" />}
                   </div>
-                  <p className={clsx("text-[13.5px] font-extrabold leading-tight", done ? "text-[#0f1729]" : "text-[#7b8aa3]")}>{step.label}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className={clsx("text-[13.5px] font-extrabold leading-tight", done ? "text-[#0f1729]" : "text-[#7b8aa3]")}>{step.label}</p>
+                    <span className={clsx("shrink-0 text-[9.5px] font-extrabold px-2 py-0.5 rounded-full", done ? "bg-[#e9f9ef] text-[#178a42]" : "bg-[#e8f1ff] text-[#1b6fd6]")}>
+                      {done ? "সম্পন্ন" : "মুলতুবি"}
+                    </span>
+                  </div>
                   {stepDates[step.key] && (
                     <p className="text-[11px] font-bold text-[#178a42] mt-0.5">
                       {new Date(stepDates[step.key]).toLocaleString("bn-BD", { dateStyle: "medium" })}

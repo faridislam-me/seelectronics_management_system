@@ -419,7 +419,9 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
       {/* Package confirm sheet (tap a package) */}
       {sheetPkg && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={() => !submitting && setSheetPkg(null)}>
-          <div className="w-full max-w-md bg-white rounded-t-2xl p-4 pb-6 flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
+          {/* max-h + scroll so all fields stay reachable, and pb-28 lifts the
+              submit button clear of the fixed customer bottom nav bar. */}
+          <div className="w-full max-w-md bg-white rounded-t-2xl p-4 pb-28 flex flex-col gap-3 max-h-[88vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <p className="text-[15px] font-extrabold" style={{ color: meta.accent }}>{meta.title} রিচার্জ</p>
               <button type="button" onClick={() => !submitting && setSheetPkg(null)} className="size-8 rounded-full bg-[#f1f4f9] flex items-center justify-center"><X size={16} /></button>

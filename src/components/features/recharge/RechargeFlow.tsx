@@ -14,6 +14,7 @@ import {
   Home,
   Loader2,
   Package,
+  Plus,
   ShieldAlert,
   ShieldCheck,
   Wallet,
@@ -277,10 +278,13 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
           <span className="text-[11px] font-semibold text-white/80">{meta.balanceLabel}</span>
           <span className="text-[22px] font-extrabold">{loadingDrive ? "…" : `৳${balance.toLocaleString("en-IN")}`}</span>
         </span>
-        {meta.requiresKyc && approved && (
-          <span className="shrink-0 text-[10px] font-extrabold text-white bg-white/15 border border-white/25 px-2 py-1 rounded-full inline-flex items-center gap-1">
-            <ShieldCheck size={12} /> অনুমোদিত
-          </span>
+        {isDrive && approved && (
+          <Link
+            href="/customer/referral/recharge/drive/add-money"
+            className="shrink-0 h-8 px-3 rounded-full bg-white text-[#00695c] text-[11px] font-extrabold inline-flex items-center gap-1 shadow-[0_3px_10px_rgba(0,0,0,0.12)]"
+          >
+            <Plus size={14} /> অ্যাড মানি
+          </Link>
         )}
       </div>
 
@@ -551,21 +555,16 @@ function InsufficientBalancePopup({
           <span className="text-[#c81f38]">{bdt(need)}</span>
         </div>
         <div className="w-full flex gap-2 mt-1">
-          {!isDrive && (
-            <Link
-              href="/customer/referral"
-              className="flex-1 h-11 rounded-md bg-[#0b3d91] text-white text-[13px] font-extrabold inline-flex items-center justify-center shadow-[0_6px_18px_rgba(11,61,145,0.3)]"
-            >
-              রেফার করুন
-            </Link>
-          )}
+          <Link
+            href={isDrive ? "/customer/referral/recharge/drive/add-money" : "/customer/referral"}
+            className="flex-1 h-11 rounded-md bg-[#0b3d91] text-white text-[13px] font-extrabold inline-flex items-center justify-center gap-1 shadow-[0_6px_18px_rgba(11,61,145,0.3)]"
+          >
+            {isDrive ? (<><Plus size={15} /> অ্যাড মানি করুন</>) : "রেফার করুন"}
+          </Link>
           <button
             type="button"
             onClick={onClose}
-            className={clsx(
-              "h-11 rounded-md text-[13px] font-extrabold inline-flex items-center justify-center border",
-              isDrive ? "flex-1 bg-[#0b3d91] text-white border-transparent shadow-[0_6px_18px_rgba(11,61,145,0.3)]" : "flex-1 bg-white text-[#45506b] border-[#dfe6f2]",
-            )}
+            className="flex-1 h-11 rounded-md text-[13px] font-extrabold inline-flex items-center justify-center border bg-white text-[#45506b] border-[#dfe6f2]"
           >
             ঠিক আছে
           </button>

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db/drizzle";
-import { customers, driveBalanceKycRequests } from "@/db/schema";
+import { customers, driveAddMoneyRequests, driveBalanceKycRequests } from "@/db/schema";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { verifySession } from "@/lib";
 import { getObjectUrl, putObject } from "@/lib/s3";
@@ -29,6 +29,8 @@ const requireAdmin = async () => {
 };
 
 const kycCode = () => "DKYC" + generateRandomId(5).replace(/^SE/, "");
+const addMoneyCode = () => "ADM" + generateRandomId(5).replace(/^SE/, "");
+const ADD_MONEY_METHODS = ["bkash", "nagad", "rocket"] as const;
 
 /**
  * Customer: own drive wallet state — balance, KYC gate status and the latest
@@ -354,6 +356,216 @@ export const adjustDriveBalance = async (
     return { success: true, message: "ড্রাইভ ব্যালেন্স যোগ হয়েছে", driveBalance: Number(res[0].driveBalance), note };
   } catch (error) {
     console.error("adjustDriveBalance error:", error);
+    return { success: false, message: "আপডেট করা যায়নি" };
+  }
+};
+
+/* ──────────────────────────────── Add Money ────────────────────────────────
+ * Customers top up their (KYC-approved) drive balance by sending money to one
+ * of the company's bKash/Nagad/Rocket numbers and submitting the amount +
+ * transaction details. An admin verifies the payment and, on approval, the
+ * amount is ADDED to driveBalance — same credit path as reviewDriveKyc.
+ */
+
+/** Customer: submit a drive add-money request after sending the money. */
+export const submitAddMoneyRequest = async (formData: FormData) => {
+  try {
+    const session = await verifyCustomerSession();
+    if (!session.isAuth || !session.customer) return UNAUTHORIZED;
+
+    const amount = Number(formData.get("amount"));
+    const method = ((formData.get("method") as string) || "").trim();
+    const senderNumber = ((formData.get("senderNumber") as string) || "").trim();
+    const transactionId = ((formData.get("transactionId") as string) || "").trim();
+    const note = ((formData.get("note") as string) || "").trim();
+
+    if (!amount || amount < 10) return { success: false, message: "সঠিক পরিমাণ দিন (ন্যূনতম ৳১০)" };
+    if (!ADD_MONEY_METHODS.includes(method as any)) return { success: false, message: "পেমেন্ট মাধ্যম নির্বাচন করুন" };
+    if (!senderNumber) return { success: false, message: "যে নম্বর থেকে পাঠিয়েছেন তা দিন" };
+    if (!transactionId) return { success: false, message: "ট্রানজেকশন আইডি দিন" };
+
+    const customer = await db.query.customers.findFirst({
+      where: eq(customers.customerId, session.customer.customerId),
+      columns: { customerId: true, name: true, phone: true, driveKycStatus: true },
+    });
+    if (!customer) return { success: false, message: "Customer not found" };
+    if (customer.driveKycStatus !== "approved") {
+      return { success: false, message: "অ্যাড মানি করতে আগে ড্রাইভ KYC অনুমোদিত হতে হবে" };
+    }
+
+    // One pending request at a time, so admins review them one by one.
+    const open = await db.query.driveAddMoneyRequests.findFirst({
+      where: and(
+        eq(driveAddMoneyRequests.customerId, customer.customerId),
+        eq(driveAddMoneyRequests.status, "pending"),
+      ),
+      columns: { id: true },
+    });
+    if (open) return { success: false, message: "আপনার একটি অ্যাড মানি অনুরোধ যাচাই এর অপেক্ষায় আছে" };
+
+    let code = addMoneyCode();
+    for (let i = 0; i < 5; i++) {
+      const exists = await db.query.driveAddMoneyRequests.findFirst({
+        where: eq(driveAddMoneyRequests.requestCode, code),
+        columns: { id: true },
+      });
+      if (!exists) break;
+      code = addMoneyCode();
+    }
+
+    await db.insert(driveAddMoneyRequests).values({
+      requestCode: code,
+      customerId: customer.customerId,
+      customerName: customer.name,
+      customerPhone: customer.phone,
+      amount,
+      method: method as (typeof ADD_MONEY_METHODS)[number],
+      senderNumber,
+      transactionId,
+      note: note || null,
+      status: "pending",
+    });
+
+    try {
+      const { notifyAdmin } = await import("./notificationActions");
+      await notifyAdmin({
+        type: "system",
+        message: `New add-money ৳${amount.toLocaleString()} (${method}) from ${customer.name} (${customer.phone})`,
+        link: "/drive-add-money",
+      });
+    } catch (e) {
+      console.error("notifyAdmin (add money) failed:", e);
+    }
+
+    revalidatePath("/customer/referral/recharge/drive");
+    return { success: true, message: "অ্যাড মানি অনুরোধ জমা হয়েছে, যাচাই এর অপেক্ষায়", requestCode: code };
+  } catch (error) {
+    console.error("submitAddMoneyRequest error:", error);
+    return { success: false, message: "জমা দেওয়া যায়নি" };
+  }
+};
+
+/** Customer: own add-money request history (latest first). */
+export const getMyAddMoneyRequests = async () => {
+  try {
+    const session = await verifyCustomerSession();
+    if (!session.isAuth || !session.customer) return UNAUTHORIZED;
+
+    const rows = await db
+      .select()
+      .from(driveAddMoneyRequests)
+      .where(eq(driveAddMoneyRequests.customerId, session.customer.customerId))
+      .orderBy(desc(driveAddMoneyRequests.createdAt));
+
+    return { success: true, data: rows };
+  } catch (error) {
+    console.error("getMyAddMoneyRequests error:", error);
+    return { success: false, message: "তথ্য আনা যায়নি" };
+  }
+};
+
+/** Admin: list add-money requests (optional search + status filter). */
+export const getAddMoneyRequests = async ({
+  query = "",
+  status,
+}: {
+  query?: string;
+  status?: string;
+} = {}) => {
+  try {
+    if (!(await requireAdmin())) return UNAUTHORIZED;
+
+    const q = `%${query}%`;
+    const where = and(
+      query
+        ? or(
+            ilike(driveAddMoneyRequests.requestCode, q),
+            ilike(driveAddMoneyRequests.customerName, q),
+            ilike(driveAddMoneyRequests.customerPhone, q),
+            ilike(driveAddMoneyRequests.transactionId, q),
+            ilike(driveAddMoneyRequests.senderNumber, q),
+          )
+        : undefined,
+      status ? eq(driveAddMoneyRequests.status, status as any) : undefined,
+    );
+
+    const rows = await db
+      .select()
+      .from(driveAddMoneyRequests)
+      .where(where)
+      .orderBy(desc(driveAddMoneyRequests.createdAt));
+
+    return { success: true, data: rows };
+  } catch (error) {
+    console.error("getAddMoneyRequests error:", error);
+    return { success: false, message: "তালিকা আনা যায়নি" };
+  }
+};
+
+/**
+ * Admin: approve (credit the amount into driveBalance) or reject an add-money
+ * request. On approval the amount is ADDED to the customer's drive wallet.
+ */
+export const reviewAddMoneyRequest = async (
+  code: string,
+  action: "approve" | "reject",
+  payload?: { adminNotes?: string; rejectReason?: string },
+) => {
+  try {
+    if (!(await requireAdmin())) return UNAUTHORIZED;
+
+    const req = await db.query.driveAddMoneyRequests.findFirst({
+      where: eq(driveAddMoneyRequests.requestCode, code),
+    });
+    if (!req) return { success: false, message: "অনুরোধ পাওয়া যায়নি" };
+    if (req.status !== "pending") return { success: false, message: "ইতোমধ্যে প্রক্রিয়াজাত" };
+
+    if (action === "reject") {
+      await db
+        .update(driveAddMoneyRequests)
+        .set({
+          status: "rejected",
+          rejectReason: payload?.rejectReason,
+          adminNotes: payload?.adminNotes,
+          processedAt: new Date(),
+        })
+        .where(eq(driveAddMoneyRequests.id, req.id));
+
+      revalidatePath("/drive-add-money");
+      revalidatePath("/customer/referral/recharge/drive");
+      return { success: true, message: "অ্যাড মানি প্রত্যাখ্যাত হয়েছে" };
+    }
+
+    const amount = Math.max(0, Number(req.amount));
+
+    await db
+      .update(driveAddMoneyRequests)
+      .set({ status: "approved", adminNotes: payload?.adminNotes, processedAt: new Date() })
+      .where(eq(driveAddMoneyRequests.id, req.id));
+
+    await db
+      .update(customers)
+      .set({ driveBalance: sql`${customers.driveBalance} + ${amount}` })
+      .where(eq(customers.customerId, req.customerId));
+
+    try {
+      const { notifyCustomer } = await import("./notificationActions");
+      await notifyCustomer({
+        customerId: req.customerId,
+        phoneNumber: req.customerPhone,
+        type: "system",
+        message: `আপনার অ্যাড মানি অনুমোদিত হয়েছে। ড্রাইভ ব্যালেন্সে যোগ হয়েছে ৳${amount.toLocaleString()}।`,
+        link: "/customer/referral/recharge/drive",
+      });
+    } catch (e) {
+      console.error("notifyCustomer (add money) failed:", e);
+    }
+
+    revalidatePath("/drive-add-money");
+    revalidatePath("/customer/referral/recharge/drive");
+    return { success: true, message: `অনুমোদিত, ড্রাইভ ব্যালেন্স +৳${amount.toLocaleString()}` };
+  } catch (error) {
+    console.error("reviewAddMoneyRequest error:", error);
     return { success: false, message: "আপডেট করা যায়নি" };
   }
 };

@@ -154,6 +154,11 @@ const links = [
     icon: ShieldCheck,
   },
   {
+    name: "অ্যাড মানি",
+    href: "/drive-add-money",
+    icon: Wallet,
+  },
+  {
     name: "Payments",
     href: "/payments",
     icon: CreditCard,

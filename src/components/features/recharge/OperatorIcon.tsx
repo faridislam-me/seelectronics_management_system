@@ -50,15 +50,18 @@ export default function OperatorIcon({ operatorKey, size = 28, shape = "square",
   const fontSize = Math.round(size * (short.length > 2 ? 0.3 : 0.42));
   const radius = shape === "circle" ? 9999 : Math.max(6, Math.round(size * 0.26));
 
-  // Official logo drop-in (when provided).
+  // Official logo drop-in (when provided). A little inner padding keeps the full
+  // logo inside the rounded chip instead of letting it bleed to the edges and
+  // look clipped at the corners (client: "আইকন কেটে গেছে — ব্যাকগ্রাউন্ড বড়, আইকন ছোট")।
   if (meta?.logo) {
+    const pad = Math.max(2, Math.round(size * 0.14));
     return (
       <span
         className={clsx(
           "inline-flex items-center justify-center bg-white overflow-hidden ring-1 ring-black/5 shadow-[0_1px_2px_rgba(0,0,0,0.12)] shrink-0",
           className,
         )}
-        style={{ width: size, height: size, borderRadius: radius }}
+        style={{ width: size, height: size, borderRadius: radius, padding: pad }}
         aria-label={meta.label}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}

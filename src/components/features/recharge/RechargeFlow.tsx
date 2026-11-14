@@ -163,6 +163,9 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<SuccessResult | null>(null);
   const [copied, setCopied] = useState(false);
+  // When a recharge/pack is attempted with less than the needed balance we show
+  // a clear popup (not just a toast) guiding the customer to refer / add money.
+  const [insufficient, setInsufficient] = useState<number | null>(null);
 
   const isDrive = meta.balanceSource === "drive";
   const approved = !meta.requiresKyc || driveInfo?.kycStatus === "approved";
@@ -213,7 +216,10 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
     if (!rechargePhone.trim()) return toast.error("রিচার্জ নম্বর দিন");
     if (isDrive && !driverRef.trim()) return toast.error("ড্রাইভার আইডি / রেফারেন্স নম্বর দিন");
     if (!amt || amt < 10) return toast.error("ন্যূনতম ৳১০");
-    if (amt > balance) return toast.error("অপর্যাপ্ত ব্যালেন্স");
+    if (amt > balance) {
+      setInsufficient(amt);
+      return;
+    }
 
     setSubmitting(true);
     const res = await requestMobileRecharge({
@@ -477,7 +483,7 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
 
             <button
               onClick={() => doRecharge(sheetPkg.amount, sheetPkg.id)}
-              disabled={submitting || !rechargePhone.trim() || (isDrive && !driverRef.trim()) || sheetPkg.amount > balance}
+              disabled={submitting || !rechargePhone.trim() || (isDrive && !driverRef.trim())}
               className="w-full h-12 rounded-md text-white text-[15px] font-extrabold inline-flex items-center justify-center gap-2 shadow-[0_6px_18px_rgba(11,61,145,0.25)] disabled:opacity-50"
               style={{ backgroundColor: meta.accent }}
             >
@@ -488,9 +494,84 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
         </div>
       )}
 
+      {/* Insufficient-balance popup */}
+      {insufficient !== null && (
+        <InsufficientBalancePopup
+          need={insufficient}
+          balance={balance}
+          isDrive={isDrive}
+          balanceLabel={meta.balanceLabel}
+          onClose={() => setInsufficient(null)}
+        />
+      )}
+
       {/* Success popup */}
       {success && <SuccessScreen result={success} copied={copied} setCopied={setCopied} onHome={() => { setSuccess(null); router.push("/customer/referral/recharge"); }} />}
     </>
+  );
+}
+
+/**
+ * Shown when the customer tries to recharge / buy a pack for more than their
+ * available balance. A clear red notice guiding them to refer more or add money
+ * (client-requested popup, not a silent toast).
+ */
+function InsufficientBalancePopup({
+  need,
+  balance,
+  isDrive,
+  balanceLabel,
+  onClose,
+}: {
+  need: number;
+  balance: number;
+  isDrive: boolean;
+  balanceLabel: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-5" onClick={onClose}>
+      <div className="w-full max-w-sm bg-white rounded-2xl p-5 flex flex-col items-center text-center gap-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <span className="size-16 rounded-full bg-[#fdeaed] flex items-center justify-center">
+          <AlertTriangle size={34} className="text-[#c81f38]" />
+        </span>
+        <p className="text-[18px] font-extrabold text-[#c81f38]">অপর্যাপ্ত ব্যালেন্স</p>
+        <p className="text-[12.5px] font-semibold leading-relaxed text-[#45506b]">
+          দুঃখিত, আপনি যে পরিমাণ রিচার্জ বা প্যাকেজ নিতে চাচ্ছেন বর্তমানে আপনার অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই।
+          {isDrive
+            ? " দয়া করে অ্যাড মানি করে আপনার ড্রাইভ ব্যালেন্সে টাকা যোগ করুন।"
+            : " দয়া করে বেশি বেশি রেফার করুন অথবা অ্যাড মানি করে ব্যালেন্সে টাকা যোগ করুন।"}
+        </p>
+        <div className="w-full rounded-md bg-[#f6f8fc] border border-[#e4e9f2] px-3 py-2 flex items-center justify-between text-[12px] font-bold">
+          <span className="text-[#5b6784]">{balanceLabel}</span>
+          <span className="text-[#0f1729]">{bdt(balance)}</span>
+        </div>
+        <div className="w-full rounded-md bg-[#fdeaed] border border-[#f7c3ca] px-3 py-2 flex items-center justify-between text-[12px] font-bold">
+          <span className="text-[#c81f38]">প্রয়োজন</span>
+          <span className="text-[#c81f38]">{bdt(need)}</span>
+        </div>
+        <div className="w-full flex gap-2 mt-1">
+          {!isDrive && (
+            <Link
+              href="/customer/referral"
+              className="flex-1 h-11 rounded-md bg-[#0b3d91] text-white text-[13px] font-extrabold inline-flex items-center justify-center shadow-[0_6px_18px_rgba(11,61,145,0.3)]"
+            >
+              রেফার করুন
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className={clsx(
+              "h-11 rounded-md text-[13px] font-extrabold inline-flex items-center justify-center border",
+              isDrive ? "flex-1 bg-[#0b3d91] text-white border-transparent shadow-[0_6px_18px_rgba(11,61,145,0.3)]" : "flex-1 bg-white text-[#45506b] border-[#dfe6f2]",
+            )}
+          >
+            ঠিক আছে
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

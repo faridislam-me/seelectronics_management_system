@@ -1840,3 +1840,61 @@ export const driveBalanceKycRequestsRelations = relations(
     }),
   }),
 );
+
+// Customers top up their drive balance by sending money to one of the company's
+// bKash/Nagad/Rocket numbers and submitting the amount + transaction details.
+// An admin verifies the payment and, on approval, credits customers.driveBalance.
+export const addMoneyMethodEnum = pgEnum("addMoneyMethod", [
+  "bkash",
+  "nagad",
+  "rocket",
+]);
+export const addMoneyStatusEnum = pgEnum("addMoneyStatus", [
+  "pending",
+  "approved",
+  "rejected",
+]);
+
+export const driveAddMoneyRequests = pgTable(
+  "drive_add_money_requests",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    requestCode: varchar({ length: 255 }).unique().notNull(),
+    customerId: varchar({ length: 255 })
+      .references(() => customers.customerId, { onDelete: "cascade" })
+      .notNull(),
+    customerName: varchar({ length: 255 }).notNull(),
+    customerPhone: varchar({ length: 255 }).notNull(),
+    /** Amount the customer says they sent (credited to driveBalance on approval). */
+    amount: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
+    method: addMoneyMethodEnum().notNull(),
+    /** The mobile-wallet number the customer sent from. */
+    senderNumber: varchar({ length: 50 }).notNull(),
+    transactionId: varchar({ length: 255 }).notNull(),
+    note: text(),
+    status: addMoneyStatusEnum().default("pending").notNull(),
+    adminNotes: text(),
+    rejectReason: text(),
+    processedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp({ withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("drive_addmoney_code_idx").on(table.requestCode),
+    index("drive_addmoney_customer_idx").on(table.customerId),
+    index("drive_addmoney_status_idx").on(table.status),
+  ],
+);
+
+export const driveAddMoneyRequestsRelations = relations(
+  driveAddMoneyRequests,
+  ({ one }) => ({
+    customer: one(customers, {
+      fields: [driveAddMoneyRequests.customerId],
+      references: [customers.customerId],
+    }),
+  }),
+);

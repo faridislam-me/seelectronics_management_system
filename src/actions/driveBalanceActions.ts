@@ -437,6 +437,16 @@ export const submitAddMoneyRequest = async (formData: FormData) => {
       console.error("notifyAdmin (add money) failed:", e);
     }
 
+    // Short SMS to the admins so they can verify the payment and approve.
+    try {
+      const { notifyAdminSms } = await import("@/lib/adminVoiceNotify");
+      await notifyAdminSms(
+        `SE Electronics: ${customer.name} রিচার্জ প্যাকেজের জন্য ৳${amount.toLocaleString()} অ্যাড মানি করেছে। ড্যাশবোর্ড চেক করে অ্যাপ্রুভ করুন।`,
+      );
+    } catch (e) {
+      console.error("notifyAdminSms (add money) failed:", e);
+    }
+
     revalidatePath("/customer/referral/recharge/drive");
     return { success: true, message: "অ্যাড মানি অনুরোধ জমা হয়েছে, যাচাই এর অপেক্ষায়", requestCode: code };
   } catch (error) {

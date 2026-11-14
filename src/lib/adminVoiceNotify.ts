@@ -1,8 +1,18 @@
 import "server-only";
 
 import { sendVoiceCall } from "@/lib/mram";
+import { sendSMS } from "@/lib/sms";
 
 const ADMIN_PHONES = ["01322247774", "01322247772"];
+
+/** Sends a short SMS to every admin phone. Never throws — best-effort notify. */
+export async function notifyAdminSms(message: string) {
+  try {
+    await Promise.all(ADMIN_PHONES.map((phone) => sendSMS(phone, message)));
+  } catch (e) {
+    console.error("Admin SMS notify failed:", e);
+  }
+}
 
 export const ADMIN_VOICE_IDS = {
   staff_application: 4648,

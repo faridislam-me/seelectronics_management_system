@@ -29,6 +29,9 @@ export default function DriveKycFormPage() {
   });
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+  // After a successful submit we show a notice popup (client-requested) telling
+  // the customer their payment will be verified and the balance credited.
+  const [submitted, setSubmitted] = useState(false);
 
   const pickFile = (slot: DocSlot, file: File | null) => {
     if (!file) return;
@@ -86,8 +89,7 @@ export default function DriveKycFormPage() {
     setLoading(false);
 
     if (res.success) {
-      toast.success(res.message || "KYC জমা হয়েছে");
-      router.push("/customer/referral/recharge/drive");
+      setSubmitted(true);
     } else {
       toast.error(res.message || "জমা দেওয়া যায়নি");
     }
@@ -225,6 +227,29 @@ export default function DriveKycFormPage() {
       <p className="text-[11px] text-center text-[#5b6784] px-4">
         জমা দেওয়ার পর আপনার অনুরোধটি রিভিউ এর জন্য পাঠানো হবে।
       </p>
+
+      {/* Submission notice popup */}
+      {submitted && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-5">
+          <div className="w-full max-w-sm bg-white rounded-2xl p-5 flex flex-col items-center text-center gap-3 shadow-2xl">
+            <span className="size-16 rounded-full bg-[#e9f9ef] flex items-center justify-center">
+              <CheckCircle2 size={36} className="text-[#178a42]" />
+            </span>
+            <p className="text-[17px] font-extrabold text-[#0f1729]">KYC জমা হয়েছে</p>
+            <p className="text-[12.5px] font-semibold leading-relaxed text-[#45506b]">
+              আপনার তথ্য ও পেমেন্ট যাচাই করে অ্যাডমিন আপনার ড্রাইভ ব্যালেন্সে টাকা যোগ করে দেবেন।
+              অনুমোদনের পরই আপনি ড্রাইভ প্যাক কিনতে পারবেন।
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push("/customer/referral/recharge/drive")}
+              className="w-full h-11 rounded-md bg-[#0b3d91] text-white text-[14px] font-extrabold inline-flex items-center justify-center shadow-[0_6px_18px_rgba(11,61,145,0.3)] mt-1"
+            >
+              ঠিক আছে
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

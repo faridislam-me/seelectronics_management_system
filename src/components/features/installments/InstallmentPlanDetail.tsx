@@ -45,6 +45,9 @@ const METHODS = [
   { value: "bank", label: "Bank" },
 ];
 
+const methodLabel = (m: string | null) =>
+  m === "cash" ? "অফিসে নগদ" : METHODS.find((x) => x.value === m)?.label || m || "";
+
 type Schedule = {
   id: string;
   installmentNo: number;
@@ -119,9 +122,11 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
   const openPay = (row: Schedule) => {
     setPayRow(row);
     setPaidAmount(String(row.amount));
-    setMethod("cash");
-    setTxn("");
-    setPayNum("");
+    // For a "claimed" row the customer already submitted method/number/txn —
+    // prefill so the admin only matches against bKash/Nagad and confirms.
+    setMethod(row.paymentMethod || "cash");
+    setTxn(row.transactionId || "");
+    setPayNum(row.paymentNumber || "");
   };
 
   const confirmPay = async () => {
@@ -296,15 +301,26 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
                       </span>
                       {row.status === "paid" && row.paidAt && (
                         <span className="block text-[10px] text-gray-400 mt-0.5">
-                          {formatDate(row.paidAt)}{row.paymentMethod ? ` · ${row.paymentMethod === "cash" ? "অফিসে নগদ" : row.paymentMethod}` : ""}
+                          {formatDate(row.paidAt)}{row.paymentMethod ? ` · ${methodLabel(row.paymentMethod)}` : ""}
                           {row.paymentNumber ? ` · ${row.paymentNumber}` : ""}
                           {row.transactionId ? ` · TxID: ${row.transactionId}` : ""}
+                        </span>
+                      )}
+                      {row.status === "claimed" && (
+                        <span className="block text-[10px] text-blue-600 dark:text-blue-300 font-semibold mt-1 leading-tight">
+                          গ্রাহক জমা দিয়েছে{row.paymentMethod ? ` · ${methodLabel(row.paymentMethod)}` : ""}
+                          {row.paymentNumber ? <><br />নম্বর: {row.paymentNumber}</> : ""}
+                          {row.transactionId ? <><br />TxID: <span className="font-mono">{row.transactionId}</span></> : ""}
                         </span>
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-right">
                       {row.status !== "paid" && plan.status === "active" ? (
-                        <button onClick={() => openPay(row)} className="text-xs font-bold text-white bg-[#0b3d91] hover:bg-[#0a2f70] px-3 py-1.5 rounded-md">পরিশোধ</button>
+                        row.status === "claimed" ? (
+                          <button onClick={() => openPay(row)} className="inline-flex items-center gap-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md whitespace-nowrap"><ShieldCheck size={13} /> যাচাই করুন</button>
+                        ) : (
+                          <button onClick={() => openPay(row)} className="text-xs font-bold text-white bg-[#0b3d91] hover:bg-[#0a2f70] px-3 py-1.5 rounded-md">পরিশোধ</button>
+                        )
                       ) : (
                         <span className="text-xs text-gray-300">—</span>
                       )}
@@ -319,8 +335,17 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
 
       {/* Mark paid modal */}
       {payRow && (
-        <Modal isVisible title={`কিস্তি #${payRow.installmentNo} পরিশোধ`} onClose={() => setPayRow(null)}>
+        <Modal isVisible title={payRow.status === "claimed" ? `কিস্তি #${payRow.installmentNo} পেমেন্ট যাচাই` : `কিস্তি #${payRow.installmentNo} পরিশোধ`} onClose={() => setPayRow(null)}>
           <div className="space-y-3 max-w-sm">
+            {payRow.status === "claimed" && (
+              <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 p-3 text-xs space-y-1">
+                <p className="font-black text-blue-700 dark:text-blue-300 flex items-center gap-1.5"><ShieldCheck size={14} /> গ্রাহকের জমা দেওয়া তথ্য</p>
+                <p className="text-gray-700 dark:text-gray-200"><span className="text-gray-500">মেথড:</span> <b>{methodLabel(payRow.paymentMethod)}</b></p>
+                {payRow.paymentNumber && <p className="text-gray-700 dark:text-gray-200"><span className="text-gray-500">যে নম্বর থেকে পাঠিয়েছে:</span> <b className="font-mono">{payRow.paymentNumber}</b></p>}
+                {payRow.transactionId && <p className="text-gray-700 dark:text-gray-200"><span className="text-gray-500">ট্রানজেকশন আইডি:</span> <b className="font-mono">{payRow.transactionId}</b></p>}
+                <p className="text-[11px] text-blue-600/80 dark:text-blue-300/80 pt-0.5">bKash/Nagad স্টেটমেন্টের সাথে মিলিয়ে নিশ্চিত করুন। প্রয়োজনে নিচের তথ্য সংশোধন করতে পারেন।</p>
+              </div>
+            )}
             <div>
               <label className="text-xs font-semibold text-gray-500">পরিমাণ</label>
               <input type="number" min="0" step="0.01" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} className="__input" />
@@ -345,7 +370,7 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
               <button onClick={() => setPayRow(null)} className="px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">বাতিল</button>
               <button disabled={saving} onClick={confirmPay} className="__btn flex items-center gap-2">
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                {saving ? "সেভ হচ্ছে..." : "পরিশোধিত করুন"}
+                {saving ? "সেভ হচ্ছে..." : payRow.status === "claimed" ? "যাচাই করে পরিশোধিত করুন" : "পরিশোধিত করুন"}
               </button>
             </div>
           </div>

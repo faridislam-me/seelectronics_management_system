@@ -3,12 +3,15 @@
 import { submitInstallmentApplication } from "@/actions/installmentActions";
 import { Modal } from "@/components/ui";
 import { installmentTermOptions } from "@/constants";
+import { productImage } from "@/lib/serviceStatusStyle";
 import { toBanglaNumber } from "@/utils";
+import clsx from "clsx";
 import {
   ArrowLeft,
   Camera,
   Check,
   CheckSquare,
+  ChevronDown,
   CreditCard,
   Eraser,
   FileText,
@@ -219,13 +222,19 @@ function SignaturePad({ label, onSignature }: { label: string; onSignature: (blo
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
   const lastRef = useRef<{ x: number; y: number } | null>(null);
+  // Cached once per stroke so pointermove never triggers a layout read / context
+  // lookup — that per-move work is what made the ink lag the finger on low-end phones.
+  const rectRef = useRef<DOMRect | null>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const [open, setOpen] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  const INK = "#000000";
+
   const getPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current!;
-    const rect = canvas.getBoundingClientRect();
+    const rect = rectRef.current ?? canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
@@ -235,12 +244,15 @@ function SignaturePad({ label, onSignature }: { label: string; onSignature: (blo
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
+    ctxRef.current = ctx;
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.lineWidth = 3;
+    // Bitmap is 600px wide but renders ~340px on a phone, so canvas px are ~1.7×
+    // smaller on screen — a wider stroke + solid black keeps the ink bold and dark.
+    ctx.lineWidth = 6;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.strokeStyle = "#16213a";
+    ctx.strokeStyle = INK;
   };
 
   // Smooth stroking: capture the pointer and draw one short segment (last →
@@ -250,15 +262,19 @@ function SignaturePad({ label, onSignature }: { label: string; onSignature: (blo
   // stroke from dropping when the finger briefly leaves the canvas.
   const startDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
     e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
+    const canvas = canvasRef.current!;
+    canvas.setPointerCapture(e.pointerId);
+    // Cache the box geometry + context once per stroke (see refs above).
+    rectRef.current = canvas.getBoundingClientRect();
+    const ctx = ctxRef.current ?? canvas.getContext("2d")!;
+    ctxRef.current = ctx;
     drawingRef.current = true;
     const pos = getPos(e);
     lastRef.current = pos;
-    const ctx = canvasRef.current!.getContext("2d")!;
     // A dot so a simple tap still leaves a mark.
     ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 1.6, 0, Math.PI * 2);
-    ctx.fillStyle = "#16213a";
+    ctx.arc(pos.x, pos.y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = INK;
     ctx.fill();
     setHasDrawn(true);
   };
@@ -266,7 +282,7 @@ function SignaturePad({ label, onSignature }: { label: string; onSignature: (blo
   const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!drawingRef.current || !lastRef.current) return;
     e.preventDefault();
-    const ctx = canvasRef.current!.getContext("2d")!;
+    const ctx = ctxRef.current!;
     const pos = getPos(e);
     ctx.beginPath();
     ctx.moveTo(lastRef.current.x, lastRef.current.y);
@@ -418,6 +434,79 @@ const selectCls =
 const textareaCls =
   "w-full rounded-md border border-[#dfe6f2] px-3 py-2.5 text-[14px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none resize-none text-[#16213a]";
 const labelCls = "text-[13px] font-bold text-[#3d4f72] mb-1 block";
+
+/**
+ * Big, image-rich product-category picker. Native <select> option rows can't be
+ * reliably enlarged on mobile (they stayed thin/চিকন), so this is a custom
+ * dropdown: each row is a tall, bold entry with the category's product image,
+ * which both makes the options comfortably tappable and shows the picture.
+ */
+function CategorySelect({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value && o.value !== "");
+  const picks = options.filter((o) => o.value !== "");
+  const Thumb = ({ v, size }: { v: string; size: string }) =>
+    v === "others" ? (
+      <span className={clsx(size, "rounded-md bg-[#f3f8ff] border border-[#e4e9f2] flex items-center justify-center shrink-0 text-[#5b6784]")}>
+        <CreditCard size={20} />
+      </span>
+    ) : (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={productImage(v)} alt="" className={clsx(size, "rounded-md object-contain bg-[#f3f8ff] border border-[#e4e9f2] p-1 shrink-0")} />
+    );
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full min-h-[58px] rounded-md border border-[#dfe6f2] px-3 py-2 bg-white flex items-center gap-3 text-left focus:border-[#0b3d91] focus:outline-none"
+      >
+        {selected ? (
+          <>
+            <Thumb v={selected.value} size="size-10" />
+            <span className="flex-1 text-[16px] font-extrabold text-[#16213a]">{selected.label}</span>
+          </>
+        ) : (
+          <span className="flex-1 text-[16px] font-semibold text-[#8794ab]">নির্বাচন করুন *</span>
+        )}
+        <ChevronDown size={20} className={clsx("shrink-0 text-[#5b6784] transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute z-50 mt-1 left-0 right-0 max-h-[340px] overflow-y-auto rounded-xl border border-[#dfe6f2] bg-white shadow-[0_14px_36px_rgba(11,61,145,0.2)] py-1">
+            {picks.map((o) => (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
+                className={clsx(
+                  "w-full flex items-center gap-3 px-3 py-3 text-left transition-colors border-b border-[#f1f5fb] last:border-0",
+                  o.value === value ? "bg-[#eaf2ff]" : "hover:bg-[#f3f8ff]",
+                )}
+              >
+                <Thumb v={o.value} size="size-12" />
+                <span className="flex-1 text-[16.5px] font-bold text-[#16213a]">{o.label}</span>
+                {o.value === value && <Check size={18} className="shrink-0 text-[#0b3d91]" />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function Section({ icon: Icon, title, children }: { icon: typeof CreditCard; title: string; children: React.ReactNode }) {
   return (
@@ -705,11 +794,11 @@ export default function InstallmentApplyForm() {
       <Section icon={CreditCard} title="পণ্য ও কিস্তির তথ্য">
         <div>
           <label className={labelCls}>পণ্যের ধরন <span className="text-red-500">*</span></label>
-          <select value={productType} onChange={(e) => { setProductType(e.target.value); setProductSpec(""); }} className={selectCls}>
-            {PRODUCT_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
-            ))}
-          </select>
+          <CategorySelect
+            value={productType}
+            onChange={(v) => { setProductType(v); setProductSpec(""); }}
+            options={PRODUCT_TYPES}
+          />
         </div>
         {productType === "others" && (
           <div>

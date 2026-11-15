@@ -5,10 +5,9 @@ import { productImage } from "@/lib/serviceStatusStyle";
 import clsx from "clsx";
 import { ArrowLeft, CalendarClock, CheckCircle2, ChevronRight, Handshake, Package } from "lucide-react";
 
-// Per-type real product photo (same assets the service pages use). ips_package
-// shares the IPS photo; anything without a dedicated photo falls back to a
-// generic product photo inside productImage().
-const productPhoto = (type: string) => productImage(type === "ips_package" ? "ips" : type);
+// Per-type real product photo (transparent PNGs). Every category has its own
+// image now; anything unmapped falls back to a generic photo inside productImage().
+const productPhoto = (type: string) => productImage(type);
 import Link from "next/link";
 import { redirect } from "next/navigation";
 

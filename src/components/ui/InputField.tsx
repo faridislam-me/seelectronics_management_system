@@ -1,6 +1,7 @@
 "use client";
 
 import { InputFieldProps } from "@/types";
+import { compressImage } from "@/lib/compressImage";
 import clsx from "clsx";
 import Image from "next/image";
 import { useRef, useState } from "react";
@@ -17,26 +18,38 @@ export default function InputField({
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+    const input = e.target;
+    const files = input.files;
     if (!files || files.length === 0) {
       setPreviewImage(null);
       return;
     }
 
     const file = files[0];
-    const maxSize =
-      Number(process.env.NEXT_PUBLIC_MAX_IMAGE_SIZE_MB!) * 1024 * 1024;
-
-    if (file.size > maxSize) {
-      toast.error(
-        `ফাইল ${process.env.NEXT_PUBLIC_MAX_IMAGE_SIZE_MB} MB-এর বেশি হতে পারবে না!`,
-      );
-      e.target.value = "";
+    // Guard against a pathologically huge file (decoding it could hang the
+    // phone). Normal phone photos are well under this and get compressed below.
+    const hardCap = 40 * 1024 * 1024;
+    if (file.size > hardCap) {
+      toast.error("ছবিটি অনেক বড়, অন্য একটি ছবি নিন।");
+      input.value = "";
       setPreviewImage(null);
       return;
     }
 
-    setPreviewImage(URL.createObjectURL(file));
+    // Compress the picked image so the multipart submit stays small — large
+    // phone photos otherwise overflow the upload limit and surface as a false
+    // "no internet" screen on submit. Falls back to the original on failure.
+    try {
+      const compressed = await compressImage(file);
+      if (compressed !== file) {
+        const dt = new DataTransfer();
+        dt.items.add(compressed);
+        input.files = dt.files;
+      }
+      setPreviewImage(URL.createObjectURL(input.files?.[0] ?? file));
+    } catch {
+      setPreviewImage(URL.createObjectURL(file));
+    }
   };
 
   return (
@@ -115,8 +128,7 @@ export default function InputField({
                       {restProps.placeholder || `Upload ${label}`}
                     </span>
                     <span className="text-sm text-gray-500 font-bold">
-                      JPG, PNG or WebP (Max{" "}
-                      {process.env.NEXT_PUBLIC_MAX_IMAGE_SIZE_MB}MB)
+                      JPG, PNG or WebP — ছবি অটো-অপটিমাইজ হবে
                     </span>
                   </div>
                 )}

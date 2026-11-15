@@ -246,6 +246,43 @@ export interface InstallmentInvoiceTemplateData {
   paidCount: number;
 }
 
+/** One paid installment line on the payment receipt. */
+export interface InstallmentReceiptRow {
+  installmentNo: number;
+  dueDate: Date | string;
+  paidAt: Date | string | null;
+  amount: number;
+  paidAmount: number;
+  paymentMethod: string | null;
+  transactionId: string | null;
+  paymentNumber: string | null;
+}
+
+/**
+ * Standalone payment receipt — the installment invoice is an agreement and no
+ * longer tracks per-installment dues (PR #199), so paid-installment accounting
+ * lives in this separate, downloadable receipt instead.
+ */
+export interface InstallmentReceiptTemplateData {
+  logo: string;
+  planCode: string;
+  customerName: string;
+  customerPhone: string;
+  customerId: string;
+  customerAddress: string | null;
+  productType: string | null;
+  productModel: string;
+  months: number;
+  monthlyAmount: number;
+  financedAmount: number;
+  rows: InstallmentReceiptRow[];
+  paidTotal: number;
+  paidCount: number;
+  remainingTotal: number;
+  remainingCount: number;
+  generatedAt: Date | string;
+}
+
 export interface InstallmentStickerTemplateData {
   planCode: string;
   productModel: string;

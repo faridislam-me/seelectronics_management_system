@@ -13,6 +13,7 @@ import {
   IdCardTemplateData,
   InstallmentDocumentsTemplateData,
   InstallmentInvoiceTemplateData,
+  InstallmentReceiptTemplateData,
   InstallmentStickerTemplateData,
   InvoiceTemplateData,
   PaymentReceiptTemplateData,
@@ -960,6 +961,68 @@ export default async function generatePDF({
           height: "76mm",
           margin: { top: 0, right: 0, bottom: 0, left: 0 },
         };
+        break;
+      }
+
+      case "installment-receipt": {
+        const InstallmentReceiptTemplate = (
+          await import("@/components/features/installments/InstallmentReceiptTemplate")
+        ).default;
+        const { db } = await import("@/db/drizzle");
+        const { installmentPlans, installmentSchedule } = await import("@/db/schema");
+        const { eq } = await import("drizzle-orm");
+
+        const plan = await db.query.installmentPlans.findFirst({
+          where: eq(installmentPlans.planCode, finalId),
+        });
+        if (!plan) throw new AppError("কিস্তি প্ল্যানটি পাওয়া যায়নি।");
+
+        const schedule = await db
+          .select()
+          .from(installmentSchedule)
+          .where(eq(installmentSchedule.planId, plan.id))
+          .orderBy(installmentSchedule.installmentNo);
+
+        const paidRows = schedule.filter((s) => s.status === "paid");
+        const paidTotal =
+          Math.round(paidRows.reduce((sum, s) => sum + (s.paidAmount || s.amount), 0) * 100) / 100;
+
+        const logoBase64 = await convertToBase64(
+          path.join(process.cwd(), "src", "assets", "images", "logo.jpg"),
+        ).catch(() => "");
+
+        const data: InstallmentReceiptTemplateData = {
+          logo: logoBase64,
+          planCode: plan.planCode,
+          customerName: plan.customerName,
+          customerPhone: plan.customerPhone,
+          customerId: plan.customerId,
+          customerAddress: plan.customerAddress,
+          productType: plan.productType
+            ? productMap[plan.productType] ?? plan.productType
+            : null,
+          productModel: plan.productModel,
+          months: plan.months,
+          monthlyAmount: plan.monthlyAmount,
+          financedAmount: plan.financedAmount,
+          rows: paidRows.map((s) => ({
+            installmentNo: s.installmentNo,
+            dueDate: s.dueDate,
+            paidAt: s.paidAt,
+            amount: s.amount,
+            paidAmount: s.paidAmount,
+            paymentMethod: s.paymentMethod,
+            transactionId: s.transactionId,
+            paymentNumber: s.paymentNumber,
+          })),
+          paidTotal,
+          paidCount: paidRows.length,
+          remainingTotal: Math.round((plan.financedAmount - paidTotal) * 100) / 100,
+          remainingCount: plan.months - paidRows.length,
+          generatedAt: new Date(),
+        };
+
+        html = renderToStaticMarkup(<InstallmentReceiptTemplate data={data} />);
         break;
       }
 

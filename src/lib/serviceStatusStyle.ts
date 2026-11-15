@@ -14,10 +14,21 @@ export const SERVICE_STATUS_STYLE: Record<string, { cls: string; label: string }
 export const serviceStatusStyle = (status: string) =>
   SERVICE_STATUS_STYLE[status] ?? { cls: "bg-[#e8f1ff] text-[#1b6fd6] border-[#cfe0fb]", label: "PROCESSING" };
 
+// Per-category product photos (transparent PNGs — product only, no background).
+// Covers every installment product category so the কিস্তিপণ্য list shows the
+// real product image instead of a generic box. `others` keeps the generic photo.
 export const PRODUCT_IMAGES: Record<string, string> = {
-  ips: "/products/ips.jpg",
-  battery: "/products/battery.jpg",
-  stabilizer: "/products/stabilizer.jpg",
+  fridge: "/products/fridge.png",
+  ac: "/products/ac.png",
+  tv: "/products/tv.png",
+  oven: "/products/oven.png",
+  washing_machine: "/products/washing_machine.png",
+  mobile: "/products/mobile.png",
+  ips: "/products/ips.png",
+  battery: "/products/battery.png",
+  ips_package: "/products/ips_package.png",
+  stabilizer: "/products/stabilizer.png",
+  blender: "/products/blender.png",
   others: "/products/others.jpg",
 };
 

@@ -16,13 +16,9 @@ interface PlanGroup {
   total: number;
 }
 
-// The letterhead background keeps a baked footer (customer-care note box + seal /
-// signatures) starting around y=680px on the A4 render, so the content column
-// (which begins at y=185px) must finish above it. The per-installment schedule
-// table used to be the thing that could overflow on long plans; it is now
-// collapsed into a few range rows (contiguous equal-amount installments share a
-// single line), so even a 24-month plan prints as one or two compact lines —
-// this is a "কিস্তি চুক্তিপত্র" (agreement), so no per-month paid/due tracking is shown.
+// Contiguous equal-amount installments collapse into one "কিস্তি X–Y" line so
+// even a 24-month plan prints as one or two compact rows (this is an agreement,
+// so no per-month paid/due tracking).
 function groupSchedule(
   rows: InstallmentScheduleRow[],
   fallback: { months: number; monthlyAmount: number },
@@ -39,7 +35,6 @@ function groupSchedule(
       },
     ];
   }
-
   const ordered = [...rows].sort((a, b) => a.installmentNo - b.installmentNo);
   const groups: PlanGroup[] = [];
   for (const r of ordered) {
@@ -49,13 +44,7 @@ function groupSchedule(
       last.count += 1;
       last.total += r.amount;
     } else {
-      groups.push({
-        from: r.installmentNo,
-        to: r.installmentNo,
-        count: 1,
-        amount: r.amount,
-        total: r.amount,
-      });
+      groups.push({ from: r.installmentNo, to: r.installmentNo, count: 1, amount: r.amount, total: r.amount });
     }
   }
   return groups;
@@ -66,15 +55,21 @@ export default function InstallmentInvoiceTemplate({
 }: {
   data: InstallmentInvoiceTemplateData;
 }) {
-  const groups = groupSchedule(data.schedule, {
-    months: data.months,
-    monthlyAmount: data.monthlyAmount,
-  });
+  const groups = groupSchedule(data.schedule, { months: data.months, monthlyAmount: data.monthlyAmount });
 
-  const MoneyCell = ({ label, value }: { label: string; value: string }) => (
-    <div className="flex justify-between gap-3 py-0.5 border-b border-slate-200 text-[12px] leading-tight">
-      <span className="text-slate-600">{label}</span>
-      <span className="font-bold text-[#0b3d91]">{value}</span>
+  const productName = [data.productBrand, data.productModel].filter(Boolean).join(" ");
+  // Extra electrical specs, shown only when present.
+  const specBits = [
+    data.vaWatt ? `VA/W: ${data.vaWatt}` : "",
+    data.volt ? `Volt: ${data.volt}` : "",
+    data.displayType ? `Display: ${data.displayType}` : "",
+  ].filter(Boolean);
+
+  // Totals block, mirroring the normal invoice's right-aligned summary.
+  const TotalLine = ({ label, value, bold }: { label: string; value: string; bold?: boolean }) => (
+    <div className="flex justify-between gap-8 text-[13px] leading-6">
+      <span className={bold ? "font-bold" : "font-semibold"}>{label} :</span>
+      <span className={bold ? "font-bold text-[#0b3d91]" : ""}>{value}</span>
     </div>
   );
 
@@ -86,121 +81,124 @@ export default function InstallmentInvoiceTemplate({
         fontFamily: `Inter, 'Tiro Bangla', SolaimanLipi, sans-serif`,
       }}
     >
-      <div className="absolute top-[185px] left-[40px] right-[40px]">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-left">
-            <div className="text-lg font-bold tracking-wide leading-tight">
-              INSTALLMENT INVOICE
-            </div>
-            <div className="text-xs text-slate-500">কিস্তি চুক্তিপত্র</div>
-          </div>
-          <div className="text-right text-xs">
-            <div>
-              <span className="font-semibold">Plan Code #</span> {data.planCode}
-            </div>
-            <div>
-              <span className="font-semibold">Status :</span>{" "}
-              {data.status.toUpperCase()}
-            </div>
-          </div>
+      <div className="absolute top-[200px] left-[40px] right-[40px]">
+        {/* Title */}
+        <div className="text-right text-xl font-bold tracking-wide mb-4">
+          INSTALLMENT INVOICE
+          <span className="block text-xs font-semibold text-slate-600">কিস্তি চুক্তিপত্র</span>
         </div>
 
-        {/* Customer + product */}
-        <div className="flex justify-between gap-6 mb-3 text-[11px]">
-          <div className="space-y-0.5">
-            <div className="font-semibold text-sm mb-0.5">Customer</div>
-            <div>
-              <span className="font-semibold">Name :</span> {data.customerName}
-            </div>
-            <div>
-              <span className="font-semibold">Phone :</span> {data.customerPhone}
-            </div>
+        {/* Invoice-to + plan meta (same two-column header as the normal invoice) */}
+        <div className="flex justify-between mb-4 text-sm">
+          <div className="space-y-1">
+            <div className="font-semibold text-lg">Invoice To</div>
+            <div><span className="font-semibold">Name :</span> {data.customerName}</div>
             {data.customerAddress && (
-              <div>
-                <span className="font-semibold">Address :</span>{" "}
-                {data.customerAddress}
-              </div>
+              <div><span className="font-semibold">Address :</span> {data.customerAddress}</div>
             )}
-            <div>
-              <span className="font-semibold">Customer ID :</span>{" "}
-              {data.customerId}
-            </div>
+            <div><span className="font-semibold">Phone :</span> {data.customerPhone}</div>
           </div>
-          <div className="text-right space-y-0.5">
-            <div className="font-semibold text-sm mb-0.5">Product</div>
-            <div>
-              <span className="font-semibold">Model :</span> {data.productModel}
-            </div>
-            {data.productType && (
-              <div>
-                <span className="font-semibold">Type :</span> {data.productType}
-              </div>
-            )}
-            {data.serialNumber && (
-              <div>
-                <span className="font-semibold">Serial :</span>{" "}
-                {data.serialNumber}
-              </div>
-            )}
+          <div className="text-right space-y-1">
+            <div><span className="font-semibold">Plan Code #</span> {data.planCode}</div>
+            <div><span className="font-semibold">Date :</span> {formatDate(data.startDate)}</div>
+            <div><span className="font-semibold">Customer ID :</span> {data.customerId}</div>
+            <div><span className="font-semibold">Status :</span> {data.status.toUpperCase()}</div>
           </div>
         </div>
 
-        {/* Money breakdown (no paid/due tracking — this is an agreement) */}
-        <div className="grid grid-cols-2 gap-x-10 mb-3">
-          <div>
-            <MoneyCell label="প্রোডাক্টের দাম" value={bdt(data.cashPrice)} />
-            <MoneyCell label="এক্সট্রা চার্জ" value={bdt(data.extraCharge)} />
-            <MoneyCell label="মোট" value={bdt(data.totalPayable)} />
-          </div>
-          <div>
-            <MoneyCell label="ডাউন পেমেন্ট" value={bdt(data.downPayment)} />
-            <MoneyCell label="ফাইন্যান্সড" value={bdt(data.financedAmount)} />
-            <MoneyCell
-              label={`প্রতি মাসে কিস্তি (${toBanglaNumber(data.months)} মাস)`}
-              value={bdt(data.monthlyAmount)}
-            />
-          </div>
-        </div>
+        {/* Product details table — reads like a normal product invoice row */}
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="border border-black bg-[#D7E6F5]">
+              <th className="text-left py-2 px-2 font-bold text-[13px] border-r border-black w-5">No</th>
+              <th className="text-left py-2 px-2 font-bold text-[13px] border-r border-black">পণ্যের বিবরণ (Product)</th>
+              <th className="text-left py-2 px-2 font-bold text-[13px] border-r border-black">ক্যাটাগরি</th>
+              <th className="text-left py-2 px-2 font-bold text-[13px] border-r border-black">সাইজ / ক্ষমতা</th>
+              <th className="text-center py-2 px-2 font-bold text-[13px] border-r border-black">মেয়াদ</th>
+              <th className="text-right py-2 px-2 font-bold text-[13px] border-black whitespace-nowrap">মূল্য</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border border-black align-top">
+              <td className="py-2 px-2 text-[13px] border-r border-black">১.</td>
+              <td className="py-2 px-2 text-[13px] border-r border-black">
+                <div className="flex items-start gap-2">
+                  {data.productImage && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={data.productImage}
+                      alt={productName}
+                      className="w-12 h-12 object-contain shrink-0 rounded border border-slate-200 bg-white"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <div className="font-bold break-words">{productName}</div>
+                    {data.serialNumber && <div className="text-[11px]">S/N: {data.serialNumber}</div>}
+                    {specBits.length > 0 && (
+                      <div className="text-[11px] text-slate-600">{specBits.join(" · ")}</div>
+                    )}
+                  </div>
+                </div>
+              </td>
+              <td className="py-2 px-2 text-[13px] border-r border-black">{data.productType || "—"}</td>
+              <td className="py-2 px-2 text-[13px] border-r border-black">{data.productSpec || "—"}</td>
+              <td className="py-2 px-2 text-[13px] text-center border-r border-black whitespace-nowrap">
+                {toBanglaNumber(data.months)} মাস
+              </td>
+              <td className="py-2 px-2 text-[13px] text-right border-black whitespace-nowrap font-semibold">
+                {bdt(data.cashPrice)}
+              </td>
+            </tr>
 
-        {/* Installment plan — range summary, not a per-month table */}
-        <div className="text-sm font-bold mb-1">কিস্তি পরিকল্পনা</div>
-        <div className="space-y-1 text-[12px]">
-          {groups.map((g, i) => (
-            <div
-              key={i}
-              className="flex flex-wrap items-center gap-x-3 gap-y-0.5 border border-slate-300 rounded px-3 py-1.5 bg-[#F4F8FD]"
-            >
-              <span className="font-bold text-[#0b3d91]">
-                কিস্তি {toBanglaNumber(g.from)}
-                {g.to !== g.from ? `–${toBanglaNumber(g.to)}` : ""}
-              </span>
-              <span className="text-slate-400">·</span>
-              <span>
-                প্রতি মাসে{" "}
-                <span className="font-semibold">{bdt(g.amount)}</span>
-              </span>
-              <span className="text-slate-400">·</span>
-              <span>
-                মোট <span className="font-semibold">{bdt(g.total)}</span>
-              </span>
-            </div>
-          ))}
-          <div className="text-slate-600">
-            <span className="font-semibold">মেয়াদ:</span>{" "}
-            {bnDate(data.startDate)} → {bnDate(data.endDate)}
-          </div>
-        </div>
+            {/* Totals row, like the normal invoice's summary cell */}
+            <tr>
+              <td colSpan={6} className="py-2 px-3 border border-black">
+                <div className="flex justify-between items-start gap-10">
+                  {/* Installment plan range summary on the left */}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-bold mb-1">কিস্তি পরিকল্পনা</div>
+                    <div className="space-y-1">
+                      {groups.map((g, i) => (
+                        <div key={i} className="text-[12px]">
+                          <span className="font-bold text-[#0b3d91]">
+                            কিস্তি {toBanglaNumber(g.from)}
+                            {g.to !== g.from ? `–${toBanglaNumber(g.to)}` : ""}
+                          </span>{" "}
+                          · প্রতি মাসে <span className="font-semibold">{bdt(g.amount)}</span>{" "}
+                          · মোট <span className="font-semibold">{bdt(g.total)}</span>
+                        </div>
+                      ))}
+                      <div className="text-[12px] text-slate-600">
+                        <span className="font-semibold">মেয়াদ:</span> {bnDate(data.startDate)} → {bnDate(data.endDate)}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Money totals on the right */}
+                  <div className="shrink-0 min-w-[42%]">
+                    <TotalLine label="প্রোডাক্টের দাম" value={bdt(data.cashPrice)} />
+                    <TotalLine label="এক্সট্রা চার্জ" value={bdt(data.extraCharge)} />
+                    <TotalLine label="মোট (চার্জসহ)" value={bdt(data.totalPayable)} />
+                    <TotalLine label="ডাউন পেমেন্ট" value={bdt(data.downPayment)} />
+                    <TotalLine label="কিস্তিতে ফাইন্যান্স" value={bdt(data.financedAmount)} />
+                    <TotalLine
+                      label={`মাসিক কিস্তি (${toBanglaNumber(data.months)} মাস)`}
+                      value={bdt(data.monthlyAmount)}
+                      bold
+                    />
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
         {(data.guarantorName || data.guarantorPhone) && (
-          <div className="mt-3 text-[10px] text-slate-600">
-            <span className="font-semibold">Guarantor (জামিনদার):</span>{" "}
-            {data.guarantorName}
+          <div className="mt-3 text-[11px] text-slate-700">
+            <span className="font-semibold">জামিনদার (Guarantor):</span> {data.guarantorName}
             {data.guarantorPhone ? ` · ${data.guarantorPhone}` : ""}
           </div>
         )}
-        {data.notes && (
-          <div className="mt-0.5 text-[10px] text-slate-500">{data.notes}</div>
-        )}
+        {data.notes && <div className="mt-0.5 text-[10px] text-slate-500">{data.notes}</div>}
       </div>
     </div>
   );

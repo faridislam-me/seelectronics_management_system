@@ -13,6 +13,7 @@ import {
   IdCardTemplateData,
   InstallmentDocumentsTemplateData,
   InstallmentInvoiceTemplateData,
+  InstallmentNocTemplateData,
   InstallmentReceiptTemplateData,
   InstallmentStickerTemplateData,
   InvoiceTemplateData,
@@ -49,11 +50,46 @@ interface PDFOptions {
   };
 }
 const productMap: Record<string, string> = {
+  fridge: "ফ্রিজ",
+  ac: "এসি / এয়ারকন্ডিশন",
+  tv: "টিভি",
+  oven: "ওভেন",
+  washing_machine: "ওয়াশিং মেশিন",
+  mobile: "মোবাইল",
   ips: "আইপিএস (IPS)",
   battery: "ব্যাটারি (Battery)",
+  ips_package: "আই পি এস প্যাকেজ",
   stabilizer: "ভোল্টেজ স্ট্যাবিলাইজার",
+  blender: "ব্লেন্ডার",
   others: "অন্যান্য",
 };
+
+// Product categories that ship a transparent PNG under public/products/.
+const PRODUCT_IMAGE_TYPES = new Set([
+  "fridge", "ac", "tv", "oven", "washing_machine", "mobile",
+  "ips", "battery", "ips_package", "stabilizer", "blender",
+]);
+
+/**
+ * Resolve a plan's product photo for a PDF: the admin-uploaded R2 image (signed
+ * absolute URL) if present, else the local per-category PNG as a base64 data URI
+ * (puppeteer can't fetch relative /products/* paths from standalone markup).
+ */
+async function resolveProductImage(
+  productImageKey: string | null | undefined,
+  productType: string | null | undefined,
+): Promise<string | null> {
+  if (productImageKey) {
+    try {
+      const { getObjectUrl } = await import("@/lib/s3");
+      const url = await getObjectUrl(productImageKey);
+      if (url) return url;
+    } catch { /* fall through to local asset */ }
+  }
+  const file =
+    productType && PRODUCT_IMAGE_TYPES.has(productType) ? `${productType}.png` : "others.jpg";
+  return convertToBase64(path.join(process.cwd(), "public", "products", file)).catch(() => null);
+}
 
 async function convertToBase64(filePath: string): Promise<string> {
   const fileBuffer = await fs.promises.readFile(filePath);
@@ -854,6 +890,7 @@ export default async function generatePDF({
           "customer-invoice-paid.png",
         );
         const backgroundBase64 = await convertToBase64(templatePath);
+        const productImage = await resolveProductImage(plan.productImageKey, plan.productType);
 
         const data: InstallmentInvoiceTemplateData = {
           bgImage: backgroundBase64,
@@ -866,6 +903,12 @@ export default async function generatePDF({
             ? productMap[plan.productType] ?? plan.productType
             : null,
           productModel: plan.productModel,
+          productBrand: plan.productBrand,
+          productSpec: plan.productSpec,
+          vaWatt: plan.vaWatt,
+          volt: plan.volt,
+          displayType: plan.displayType,
+          productImage,
           serialNumber: plan.serialNumber,
           cashPrice: plan.cashPrice,
           extraCharge: plan.extraCharge,
@@ -895,6 +938,77 @@ export default async function generatePDF({
         };
 
         html = renderToStaticMarkup(<InstallmentInvoiceTemplate data={data} />);
+        break;
+      }
+
+      case "installment-noc": {
+        const InstallmentNocTemplate = (
+          await import("@/components/features/installments/InstallmentNocTemplate")
+        ).default;
+        const { db } = await import("@/db/drizzle");
+        const { installmentPlans, installmentSchedule } = await import("@/db/schema");
+        const { eq } = await import("drizzle-orm");
+
+        const plan = await db.query.installmentPlans.findFirst({
+          where: eq(installmentPlans.planCode, finalId),
+        });
+        if (!plan) throw new AppError("কিস্তি প্ল্যানটি পাওয়া যায়নি।");
+
+        const schedule = await db
+          .select()
+          .from(installmentSchedule)
+          .where(eq(installmentSchedule.planId, plan.id))
+          .orderBy(installmentSchedule.installmentNo);
+
+        const paidRows = schedule.filter((s) => s.status === "paid");
+        const paidTotal =
+          Math.round(paidRows.reduce((sum, s) => sum + (s.paidAmount || s.amount), 0) * 100) / 100;
+        const fullyPaid =
+          schedule.length > 0 && paidRows.length === schedule.length;
+
+        const templatePath = path.join(
+          process.cwd(), "src", "assets", "images", "customer-invoice-paid.png",
+        );
+        const backgroundBase64 = await convertToBase64(templatePath);
+        const productImage = await resolveProductImage(plan.productImageKey, plan.productType);
+
+        const data: InstallmentNocTemplateData = {
+          bgImage: backgroundBase64,
+          planCode: plan.planCode,
+          customerName: plan.customerName,
+          customerPhone: plan.customerPhone,
+          customerId: plan.customerId,
+          customerAddress: plan.customerAddress,
+          productType: plan.productType
+            ? productMap[plan.productType] ?? plan.productType
+            : null,
+          productModel: plan.productModel,
+          productBrand: plan.productBrand,
+          serialNumber: plan.serialNumber,
+          productImage,
+          financedAmount: plan.financedAmount,
+          totalPayable: plan.totalPayable,
+          downPayment: plan.downPayment,
+          months: plan.months,
+          startDate: plan.startDate,
+          endDate: plan.endDate,
+          fullyPaid,
+          rows: paidRows.map((s) => ({
+            installmentNo: s.installmentNo,
+            dueDate: s.dueDate,
+            paidAt: s.paidAt,
+            amount: s.amount,
+            paidAmount: s.paidAmount,
+            paymentMethod: s.paymentMethod,
+            transactionId: s.transactionId,
+            paymentNumber: s.paymentNumber,
+          })),
+          paidTotal,
+          paidCount: paidRows.length,
+          issuedDate: new Date(),
+        };
+
+        html = renderToStaticMarkup(<InstallmentNocTemplate data={data} />);
         break;
       }
 

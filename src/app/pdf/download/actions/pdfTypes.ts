@@ -319,7 +319,11 @@ export interface InstallmentDocumentsTemplateData {
   // Guarantor
   guarantorName: string | null;
   guarantorPhone: string | null;
+  /** Guarantor's current address. */
   guarantorAddress: string | null;
+  guarantorPermanentAddress: string | null;
+  guarantorLandlordName: string | null;
+  guarantorLandlordPhone: string | null;
   // Images (signed URLs)
   customerImages: DocImage[];
   guarantorImages: DocImage[];

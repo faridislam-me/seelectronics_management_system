@@ -1045,7 +1045,11 @@ export default async function generatePDF({
           endDate: plan.endDate,
           guarantorName: plan.guarantorName ?? app?.guarantorName ?? null,
           guarantorPhone: plan.guarantorPhone ?? app?.guarantorPhone ?? null,
-          guarantorAddress: app?.guarantorAddress ?? null,
+          guarantorAddress:
+            app?.guarantorCurrentAddress ?? app?.guarantorAddress ?? null,
+          guarantorPermanentAddress: app?.guarantorPermanentAddress ?? null,
+          guarantorLandlordName: app?.guarantorIsRenting ? (app?.guarantorLandlordName ?? null) : null,
+          guarantorLandlordPhone: app?.guarantorIsRenting ? (app?.guarantorLandlordPhone ?? null) : null,
           customerImages: [
             { label: "গ্রাহকের ছবি", url: custPhoto },
             { label: "NID (সামনে)", url: custNidFront },

@@ -1,31 +1,64 @@
 import { InstallmentInvoiceTemplateData, InstallmentScheduleRow } from "@/app/pdf/download/actions/pdfTypes";
-import { formatDate } from "@/utils";
-import clsx from "clsx";
+import { formatDate, toBanglaNumber } from "@/utils";
 
-const tk = (n: number) =>
-  `${Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 })} Tk`;
+/** Money as Bangla numerals with a ৳ suffix, e.g. 30000 → "৩০,০০০৳". */
+const bdt = (n: number) =>
+  `${toBanglaNumber(Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 }))}৳`;
+
+/** Date in Bangla numerals, keeping the short English month, e.g. "Jan ১, ২০২৬". */
+const bnDate = (d: Date | string | number) => toBanglaNumber(formatDate(d));
+
+interface PlanGroup {
+  from: number;
+  to: number;
+  count: number;
+  amount: number;
+  total: number;
+}
 
 // The letterhead background keeps a baked footer (customer-care note box + seal /
-// signatures) starting around y=680px on the A4 render, so the whole content
-// column (which begins at y=185px) must finish above it. Two things keep it
-// bounded no matter how long the plan runs:
-//   1. the schedule flows into side-by-side columns, capped at MAX_COLUMNS, so a
-//      36-month plan is ~9 short rows per column instead of 36 stacked rows; and
-//   2. every row is a single compact line (no wrapped "paid on" sub-row), with
-//      tight padding, so even the worst case (36 months + guarantor + notes)
-//      ends above the baked footer.
-const ROWS_PER_COLUMN = 6;
-const MAX_COLUMNS = 4;
+// signatures) starting around y=680px on the A4 render, so the content column
+// (which begins at y=185px) must finish above it. The per-installment schedule
+// table used to be the thing that could overflow on long plans; it is now
+// collapsed into a few range rows (contiguous equal-amount installments share a
+// single line), so even a 24-month plan prints as one or two compact lines —
+// this is a "কিস্তি চুক্তিপত্র" (agreement), so no per-month paid/due tracking is shown.
+function groupSchedule(
+  rows: InstallmentScheduleRow[],
+  fallback: { months: number; monthlyAmount: number },
+): PlanGroup[] {
+  if (!rows.length) {
+    if (!fallback.months) return [];
+    return [
+      {
+        from: 1,
+        to: fallback.months,
+        count: fallback.months,
+        amount: fallback.monthlyAmount,
+        total: fallback.monthlyAmount * fallback.months,
+      },
+    ];
+  }
 
-function scheduleColumns(rows: InstallmentScheduleRow[]): InstallmentScheduleRow[][] {
-  const cols = Math.min(
-    MAX_COLUMNS,
-    Math.max(1, Math.ceil(rows.length / ROWS_PER_COLUMN)),
-  );
-  const per = Math.ceil(rows.length / cols);
-  const out: InstallmentScheduleRow[][] = [];
-  for (let i = 0; i < rows.length; i += per) out.push(rows.slice(i, i + per));
-  return out;
+  const ordered = [...rows].sort((a, b) => a.installmentNo - b.installmentNo);
+  const groups: PlanGroup[] = [];
+  for (const r of ordered) {
+    const last = groups[groups.length - 1];
+    if (last && last.amount === r.amount && r.installmentNo === last.to + 1) {
+      last.to = r.installmentNo;
+      last.count += 1;
+      last.total += r.amount;
+    } else {
+      groups.push({
+        from: r.installmentNo,
+        to: r.installmentNo,
+        count: 1,
+        amount: r.amount,
+        total: r.amount,
+      });
+    }
+  }
+  return groups;
 }
 
 export default function InstallmentInvoiceTemplate({
@@ -33,27 +66,15 @@ export default function InstallmentInvoiceTemplate({
 }: {
   data: InstallmentInvoiceTemplateData;
 }) {
-  const columns = scheduleColumns(data.schedule);
+  const groups = groupSchedule(data.schedule, {
+    months: data.months,
+    monthlyAmount: data.monthlyAmount,
+  });
 
-  const MoneyRow = ({
-    label,
-    value,
-    bold,
-    accent,
-  }: {
-    label: string;
-    value: string;
-    bold?: boolean;
-    accent?: boolean;
-  }) => (
-    <div
-      className={clsx(
-        "flex justify-between gap-4 py-0 border-b border-slate-200 text-[11px] leading-tight",
-        bold && "font-bold",
-      )}
-    >
+  const MoneyCell = ({ label, value }: { label: string; value: string }) => (
+    <div className="flex justify-between gap-3 py-0.5 border-b border-slate-200 text-[12px] leading-tight">
       <span className="text-slate-600">{label}</span>
-      <span className={clsx(accent ? "text-[#0b3d91] font-bold" : "")}>{value}</span>
+      <span className="font-bold text-[#0b3d91]">{value}</span>
     </div>
   );
 
@@ -66,7 +87,7 @@ export default function InstallmentInvoiceTemplate({
       }}
     >
       <div className="absolute top-[185px] left-[40px] right-[40px]">
-        <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center justify-between mb-2">
           <div className="text-left">
             <div className="text-lg font-bold tracking-wide leading-tight">
               INSTALLMENT INVOICE
@@ -85,7 +106,7 @@ export default function InstallmentInvoiceTemplate({
         </div>
 
         {/* Customer + product */}
-        <div className="flex justify-between gap-6 mb-1.5 text-[11px]">
+        <div className="flex justify-between gap-6 mb-3 text-[11px]">
           <div className="space-y-0.5">
             <div className="font-semibold text-sm mb-0.5">Customer</div>
             <div>
@@ -121,88 +142,57 @@ export default function InstallmentInvoiceTemplate({
                 {data.serialNumber}
               </div>
             )}
-            <div>
-              <span className="font-semibold">Term :</span>{" "}
-              {formatDate(data.startDate)} → {formatDate(data.endDate)}
-            </div>
           </div>
         </div>
 
-        {/* Money breakdown */}
-        <div className="grid grid-cols-2 gap-x-10 mb-1.5">
+        {/* Money breakdown (no paid/due tracking — this is an agreement) */}
+        <div className="grid grid-cols-2 gap-x-10 mb-3">
           <div>
-            <MoneyRow label="Cash Price" value={tk(data.cashPrice)} />
-            <MoneyRow label="Extra Charge" value={tk(data.extraCharge)} />
-            <MoneyRow label="Total Payable" value={tk(data.totalPayable)} bold />
-            <MoneyRow label="Down Payment" value={tk(data.downPayment)} />
+            <MoneyCell label="প্রোডাক্টের দাম" value={bdt(data.cashPrice)} />
+            <MoneyCell label="এক্সট্রা চার্জ" value={bdt(data.extraCharge)} />
+            <MoneyCell label="মোট" value={bdt(data.totalPayable)} />
           </div>
           <div>
-            <MoneyRow label="Financed Amount" value={tk(data.financedAmount)} bold />
-            <MoneyRow
-              label={`Monthly × ${data.months}`}
-              value={tk(data.monthlyAmount)}
-              accent
+            <MoneyCell label="ডাউন পেমেন্ট" value={bdt(data.downPayment)} />
+            <MoneyCell label="ফাইন্যান্সড" value={bdt(data.financedAmount)} />
+            <MoneyCell
+              label={`প্রতি মাসে কিস্তি (${toBanglaNumber(data.months)} মাস)`}
+              value={bdt(data.monthlyAmount)}
             />
-            <MoneyRow
-              label="Paid"
-              value={`${data.paidCount}/${data.months} · ${tk(data.paidTotal)}`}
-            />
-            <MoneyRow label="Remaining" value={tk(data.remainingTotal)} bold />
           </div>
         </div>
 
-        {/* Schedule */}
-        <div className="text-xs font-bold mb-0.5">Installment Schedule</div>
-        <div className="flex gap-2.5">
-          {columns.map((col, ci) => (
-            <table
-              key={ci}
-              className="flex-1 border-collapse text-[9px]"
-              style={{ tableLayout: "fixed" }}
+        {/* Installment plan — range summary, not a per-month table */}
+        <div className="text-sm font-bold mb-1">কিস্তি পরিকল্পনা</div>
+        <div className="space-y-1 text-[12px]">
+          {groups.map((g, i) => (
+            <div
+              key={i}
+              className="flex flex-wrap items-center gap-x-3 gap-y-0.5 border border-slate-300 rounded px-3 py-1.5 bg-[#F4F8FD]"
             >
-              <thead>
-                <tr className="bg-[#D7E6F5] border border-black">
-                  <th className="text-left py-0 px-1 font-bold border-r border-black w-4">#</th>
-                  <th className="text-left py-0 px-1 font-bold border-r border-black">Due</th>
-                  <th className="text-right py-0 px-1 font-bold border-r border-black">Amount</th>
-                  <th className="text-center py-0 px-1 font-bold">St.</th>
-                </tr>
-              </thead>
-              <tbody>
-                {col.map((row) => {
-                  const paid = row.status === "paid";
-                  return (
-                    <tr key={row.installmentNo} className="border border-black">
-                      <td className="py-0 px-1 border-r border-black">
-                        {row.installmentNo}
-                      </td>
-                      <td className="py-0 px-1 border-r border-black whitespace-nowrap">
-                        {paid && (
-                          <span className="text-emerald-700 font-bold">✓ </span>
-                        )}
-                        {formatDate(row.dueDate)}
-                      </td>
-                      <td className="py-0 px-1 text-right border-r border-black whitespace-nowrap">
-                        {Number(row.amount).toLocaleString()}
-                      </td>
-                      <td
-                        className={clsx(
-                          "py-0 px-1 text-center font-bold whitespace-nowrap",
-                          paid ? "text-emerald-700" : "text-amber-700",
-                        )}
-                      >
-                        {paid ? "Paid" : "Due"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+              <span className="font-bold text-[#0b3d91]">
+                কিস্তি {toBanglaNumber(g.from)}
+                {g.to !== g.from ? `–${toBanglaNumber(g.to)}` : ""}
+              </span>
+              <span className="text-slate-400">·</span>
+              <span>
+                প্রতি মাসে{" "}
+                <span className="font-semibold">{bdt(g.amount)}</span>
+              </span>
+              <span className="text-slate-400">·</span>
+              <span>
+                মোট <span className="font-semibold">{bdt(g.total)}</span>
+              </span>
+            </div>
           ))}
+          <div className="text-slate-600">
+            <span className="font-semibold">মেয়াদ:</span>{" "}
+            {bnDate(data.startDate)} → {bnDate(data.endDate)}
+          </div>
         </div>
 
         {(data.guarantorName || data.guarantorPhone) && (
-          <div className="mt-2 text-[10px] text-slate-600">
+          <div className="mt-3 text-[10px] text-slate-600">
             <span className="font-semibold">Guarantor (জামিনদার):</span>{" "}
             {data.guarantorName}
             {data.guarantorPhone ? ` · ${data.guarantorPhone}` : ""}

@@ -596,7 +596,11 @@ export const submitInstallmentApplication = async (formData: FormData) => {
     const notes = (formData.get("notes") as string) || undefined;
     const guarantorName = (formData.get("guarantorName") as string) || undefined;
     const guarantorPhone = (formData.get("guarantorPhone") as string) || undefined;
-    const guarantorAddress = (formData.get("guarantorAddress") as string) || undefined;
+    const guarantorCurrentAddress = (formData.get("guarantorCurrentAddress") as string) || undefined;
+    const guarantorPermanentAddress = (formData.get("guarantorPermanentAddress") as string) || undefined;
+    const guarantorIsRenting = formData.get("guarantorIsRenting") === "true";
+    const guarantorLandlordName = guarantorIsRenting ? ((formData.get("guarantorLandlordName") as string) || undefined) : undefined;
+    const guarantorLandlordPhone = guarantorIsRenting ? ((formData.get("guarantorLandlordPhone") as string) || undefined) : undefined;
 
     // New personal info fields
     const fatherName = (formData.get("fatherName") as string) || undefined;
@@ -686,7 +690,11 @@ export const submitInstallmentApplication = async (formData: FormData) => {
       bankCheckPhotoKey: bankCheckKey,
       guarantorName,
       guarantorPhone,
-      guarantorAddress,
+      guarantorCurrentAddress,
+      guarantorPermanentAddress,
+      guarantorIsRenting,
+      guarantorLandlordName,
+      guarantorLandlordPhone,
       guarantorPhotoKey: gPhotoKey,
       guarantorSignatureKey: gSignatureKey,
       guarantorNidFrontPhotoKey: gNidFrontKey,
@@ -991,7 +999,8 @@ export const reviewInstallmentApplication = async (
         endDate,
         guarantorName: app.guarantorName,
         guarantorPhone: app.guarantorPhone,
-        guarantorAddress: app.guarantorAddress,
+        guarantorAddress:
+          app.guarantorCurrentAddress ?? app.guarantorPermanentAddress ?? app.guarantorAddress,
       })
       .returning({ id: installmentPlans.id, planCode: installmentPlans.planCode });
 

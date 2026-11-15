@@ -218,19 +218,16 @@ function FileInput({
 function SignaturePad({ label, onSignature }: { label: string; onSignature: (blob: Blob | null) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
+  const lastRef = useRef<{ x: number; y: number } | null>(null);
   const [open, setOpen] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const getPos = (e: React.TouchEvent | React.MouseEvent) => {
+  const getPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    if ("touches" in e) {
-      const t = e.touches[0];
-      return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
-    }
     return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
   };
 
@@ -240,33 +237,47 @@ function SignaturePad({ label, onSignature }: { label: string; onSignature: (blo
     const ctx = canvas.getContext("2d")!;
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-  };
-
-  const startDraw = (e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
-    drawingRef.current = true;
-    const ctx = canvasRef.current!.getContext("2d")!;
-    const pos = getPos(e);
-    ctx.beginPath();
-    ctx.moveTo(pos.x, pos.y);
-  };
-
-  const draw = (e: React.TouchEvent | React.MouseEvent) => {
-    if (!drawingRef.current) return;
-    e.preventDefault();
-    const ctx = canvasRef.current!.getContext("2d")!;
-    const pos = getPos(e);
     ctx.lineWidth = 3;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = "#16213a";
+  };
+
+  // Smooth stroking: capture the pointer and draw one short segment (last →
+  // current) per move, re-stroking only the newest segment instead of the whole
+  // accumulated path. That keeps drawing O(1) per move — so the ink never lags
+  // behind the finger even on a long signature — and pointer capture stops the
+  // stroke from dropping when the finger briefly leaves the canvas.
+  const startDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drawingRef.current = true;
+    const pos = getPos(e);
+    lastRef.current = pos;
+    const ctx = canvasRef.current!.getContext("2d")!;
+    // A dot so a simple tap still leaves a mark.
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 1.6, 0, Math.PI * 2);
+    ctx.fillStyle = "#16213a";
+    ctx.fill();
+    setHasDrawn(true);
+  };
+
+  const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!drawingRef.current || !lastRef.current) return;
+    e.preventDefault();
+    const ctx = canvasRef.current!.getContext("2d")!;
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(lastRef.current.x, lastRef.current.y);
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
-    setHasDrawn(true);
+    lastRef.current = pos;
   };
 
   const stopDraw = () => {
     drawingRef.current = false;
+    lastRef.current = null;
   };
 
   const clearCanvas = () => {
@@ -343,14 +354,12 @@ function SignaturePad({ label, onSignature }: { label: string; onSignature: (blo
                 ref={canvasRef}
                 width={600}
                 height={320}
-                className="w-full h-[260px] touch-none cursor-crosshair"
-                onMouseDown={startDraw}
-                onMouseMove={draw}
-                onMouseUp={stopDraw}
-                onMouseLeave={stopDraw}
-                onTouchStart={startDraw}
-                onTouchMove={draw}
-                onTouchEnd={stopDraw}
+                className="w-full h-[260px] cursor-crosshair"
+                style={{ touchAction: "none" }}
+                onPointerDown={startDraw}
+                onPointerMove={draw}
+                onPointerUp={stopDraw}
+                onPointerCancel={stopDraw}
               />
             </div>
             <div className="flex gap-2">
@@ -445,7 +454,11 @@ export default function InstallmentApplyForm() {
   // Guarantor
   const [guarantorName, setGuarantorName] = useState("");
   const [guarantorPhone, setGuarantorPhone] = useState("");
-  const [guarantorAddress, setGuarantorAddress] = useState("");
+  const [guarantorCurrentAddress, setGuarantorCurrentAddress] = useState("");
+  const [guarantorPermanentAddress, setGuarantorPermanentAddress] = useState("");
+  const [guarantorIsRenting, setGuarantorIsRenting] = useState(false);
+  const [guarantorLandlordName, setGuarantorLandlordName] = useState("");
+  const [guarantorLandlordPhone, setGuarantorLandlordPhone] = useState("");
 
   // Terms — the customer must read & agree on the gate screen before the form shows.
   const [agreed, setAgreed] = useState(false);
@@ -537,7 +550,11 @@ export default function InstallmentApplyForm() {
     // Guarantor
     if (guarantorName.trim()) fd.append("guarantorName", guarantorName.trim());
     if (guarantorPhone.trim()) fd.append("guarantorPhone", guarantorPhone.trim());
-    if (guarantorAddress.trim()) fd.append("guarantorAddress", guarantorAddress.trim());
+    if (guarantorCurrentAddress.trim()) fd.append("guarantorCurrentAddress", guarantorCurrentAddress.trim());
+    if (guarantorPermanentAddress.trim()) fd.append("guarantorPermanentAddress", guarantorPermanentAddress.trim());
+    fd.append("guarantorIsRenting", String(guarantorIsRenting));
+    if (guarantorIsRenting && guarantorLandlordName.trim()) fd.append("guarantorLandlordName", guarantorLandlordName.trim());
+    if (guarantorIsRenting && guarantorLandlordPhone.trim()) fd.append("guarantorLandlordPhone", guarantorLandlordPhone.trim());
     if (cGP) fd.append("guarantorPhoto", cGP);
     if (gSignatureBlob) fd.append("guarantorSignature", new File([gSignatureBlob], "guarantor-signature.png", { type: "image/png" }));
     if (cGNF) fd.append("guarantorNidFront", cGNF);
@@ -752,7 +769,30 @@ export default function InstallmentApplyForm() {
       <Section icon={Home} title="জামিনদারের তথ্য (ঐচ্ছিক)">
         <input value={guarantorName} onChange={(e) => setGuarantorName(e.target.value)} placeholder="জামিনদারের নাম" className={inputCls} />
         <input value={guarantorPhone} onChange={(e) => setGuarantorPhone(e.target.value)} placeholder="জামিনদারের মোবাইল নম্বর" className={inputCls} />
-        <textarea value={guarantorAddress} onChange={(e) => setGuarantorAddress(e.target.value)} placeholder="জামিনদারের ঠিকানা" rows={2} className={textareaCls} />
+        <div>
+          <label className={labelCls}>জামিনদারের বর্তমান ঠিকানা</label>
+          <textarea value={guarantorCurrentAddress} onChange={(e) => setGuarantorCurrentAddress(e.target.value)} placeholder="বর্তমান ঠিকানা" rows={2} className={textareaCls} />
+        </div>
+        <div>
+          <label className={labelCls}>জামিনদারের স্থায়ী ঠিকানা</label>
+          <textarea value={guarantorPermanentAddress} onChange={(e) => setGuarantorPermanentAddress(e.target.value)} placeholder="স্থায়ী ঠিকানা" rows={2} className={textareaCls} />
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" checked={guarantorIsRenting} onChange={(e) => setGuarantorIsRenting(e.target.checked)} className="size-4 rounded accent-[#0b3d91]" />
+          <span className="text-[12px] font-bold text-[#5b6784]">জামিনদার ভাড়াটিয়া</span>
+        </label>
+        {guarantorIsRenting && (
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelCls}>বাড়ির মালিকের নাম</label>
+              <input value={guarantorLandlordName} onChange={(e) => setGuarantorLandlordName(e.target.value)} placeholder="মালিকের নাম" className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>বাড়ির মালিকের ফোন</label>
+              <input value={guarantorLandlordPhone} onChange={(e) => setGuarantorLandlordPhone(e.target.value)} placeholder="01XXXXXXXXX" className={inputCls} />
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-2">
           <FileInput id="gPhoto" label="জামিনদারের ছবি" onChange={setGPhoto} preview={preview(gPhoto)} />
           <div className="grid grid-cols-2 gap-2">

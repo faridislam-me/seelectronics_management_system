@@ -7,6 +7,7 @@ import { formatDate } from "@/utils";
 import clsx from "clsx";
 import {
   ArrowLeft,
+  Award,
   Banknote,
   CalendarDays,
   CheckCircle2,
@@ -72,10 +73,25 @@ const METHOD_COLORS: Record<string, string> = {
 };
 
 export default function CustomerInstallmentDetail({ data }: { data: any }) {
-  const { plan, schedule, nextDue, productImageUrl } = data;
+  const { plan, schedule, nextDue, productImageUrl, documents } = data;
   const s = STATUS[plan.status] || STATUS.active;
   const [showPay, setShowPay] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [zoomImg, setZoomImg] = useState<{ url: string; label: string } | null>(null);
+
+  // Submitted KYC images for THIS installment (customer + guarantor), signed URLs
+  // from the originating application. Only cards with an actual image are shown.
+  const docItems: { url: string | null; label: string }[] = documents
+    ? [
+        { url: documents.customerPhoto, label: "গ্রাহকের ছবি" },
+        { url: documents.customerNidFront, label: "গ্রাহকের NID (সামনে)" },
+        { url: documents.customerNidBack, label: "গ্রাহকের NID (পেছনে)" },
+        { url: documents.guarantorPhoto, label: "জামিনদারের ছবি" },
+        { url: documents.guarantorNidFront, label: "জামিনদারের NID (সামনে)" },
+        { url: documents.guarantorNidBack, label: "জামিনদারের NID (পেছনে)" },
+      ]
+    : [];
+  const shownDocs = docItems.filter((d) => d.url);
   const [selectedMethod, setSelectedMethod] = useState<typeof PAY_METHODS[number] | null>(null);
   const [txId, setTxId] = useState("");
   const [payNum, setPayNum] = useState("");
@@ -173,6 +189,31 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
         </div>
       </div>
 
+      {/* Submitted photos & documents for THIS installment (customer + guarantor) */}
+      {shownDocs.length > 0 && (
+        <div className="rounded-xl bg-white border border-[#cfe0fb] p-3 shadow-[0_6px_18px_rgba(11,61,145,0.07)]">
+          <p className="text-[14px] font-extrabold mb-2.5 flex items-center gap-2 text-[#0b3d91]">
+            <CreditCard size={18} /> ছবি ও ডকুমেন্ট
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {shownDocs.map((d) => (
+              <button
+                key={d.label}
+                type="button"
+                onClick={() => setZoomImg({ url: d.url!, label: d.label })}
+                className="flex flex-col gap-1 text-left"
+              >
+                <span className="relative block w-full aspect-square rounded-lg overflow-hidden border-2 border-[#cfe0fb] bg-[#f3f8ff]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={d.url!} alt={d.label} className="w-full h-full object-cover" />
+                </span>
+                <span className="text-[10.5px] font-bold text-[#3d4f72] leading-tight">{d.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Key figure cards */}
       <div className="grid grid-cols-3 gap-2">
         <Stat label="মোট (চার্জসহ)" value={bdt(plan.totalPayable)} />
@@ -206,6 +247,19 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
           className="flex items-center justify-center gap-1.5 h-10 rounded-lg bg-[#0b3d91] text-white text-[13px] font-extrabold shadow-[0_4px_12px_rgba(11,61,145,0.2)]"
         >
           <Download size={16} /> পেমেন্ট রসিদ ডাউনলোড
+        </Link>
+      )}
+
+      {/* NOC / ছাড়পত্র — only once the installment is fully paid off. Hidden
+          entirely until then. */}
+      {(plan.status === "completed" ||
+        (schedule.length > 0 && paidSchedules.length === schedule.length)) && (
+        <Link
+          href={`/pdf/download?type=installment-noc&id=${plan.planCode}`}
+          target="_blank"
+          className="flex items-center justify-center gap-1.5 h-10 rounded-lg bg-[#178a42] text-white text-[13px] font-extrabold shadow-[0_4px_12px_rgba(23,138,66,0.22)]"
+        >
+          <Award size={16} /> NOC সার্টিফিকেট ডাউনলোড
         </Link>
       )}
 
@@ -468,6 +522,16 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
                 </div>
               </>
             )}
+          </div>
+        </Modal>
+      )}
+
+      {/* Full-size document viewer */}
+      {zoomImg && (
+        <Modal isVisible title={zoomImg.label} width="600" onClose={() => setZoomImg(null)}>
+          <div className="flex items-center justify-center bg-[#0f1729] rounded-lg overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={zoomImg.url} alt={zoomImg.label} className="w-full max-h-[70vh] object-contain" />
           </div>
         </Modal>
       )}

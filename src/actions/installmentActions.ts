@@ -608,6 +608,51 @@ export const getMyInstallmentPlanByCode = async (code: string) => {
       appTracking = rows.map((r) => ({ step: r.step, createdAt: r.createdAt }));
     }
 
+    // Submitted KYC images from the originating application (signed URLs), so the
+    // customer can see this installment's own photos/NID — customer + guarantor —
+    // on the plan page, not just the product photo. Resolved in parallel.
+    const signed = async (key: string | null | undefined) => {
+      if (!key) return null;
+      try {
+        return await getObjectUrl(key);
+      } catch {
+        return null;
+      }
+    };
+    let documents: {
+      customerPhoto: string | null;
+      customerNidFront: string | null;
+      customerNidBack: string | null;
+      guarantorPhoto: string | null;
+      guarantorNidFront: string | null;
+      guarantorNidBack: string | null;
+    } | null = null;
+    if (application) {
+      const [
+        customerPhoto,
+        customerNidFront,
+        customerNidBack,
+        guarantorPhoto,
+        guarantorNidFront,
+        guarantorNidBack,
+      ] = await Promise.all([
+        signed(application.photoKey),
+        signed(application.nidFrontPhotoKey),
+        signed(application.nidBackPhotoKey),
+        signed(application.guarantorPhotoKey),
+        signed(application.guarantorNidFrontPhotoKey),
+        signed(application.guarantorNidBackPhotoKey),
+      ]);
+      documents = {
+        customerPhoto,
+        customerNidFront,
+        customerNidBack,
+        guarantorPhoto,
+        guarantorNidFront,
+        guarantorNidBack,
+      };
+    }
+
     return {
       success: true,
       data: {
@@ -615,6 +660,7 @@ export const getMyInstallmentPlanByCode = async (code: string) => {
         schedule,
         nextDue,
         productImageUrl,
+        documents,
         application: application
           ? { applicationCode: application.applicationCode, trackingStep: application.trackingStep, status: application.status, createdAt: application.createdAt }
           : null,

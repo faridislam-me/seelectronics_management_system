@@ -9,6 +9,7 @@ import {
   installmentSchedule,
 } from "@/db/schema";
 import { verifyCustomerSession } from "@/actions/customerActions";
+import { notifyCustomer } from "@/actions/notificationActions";
 import { verifySession } from "@/lib";
 import { putObject, getObjectUrl } from "@/lib/s3";
 import { compressImage } from "@/lib/sharp";
@@ -38,6 +39,58 @@ const addMonths = (date: Date, n: number) => {
 };
 
 const planCode = () => "KST" + generateRandomId(6).replace(/^SE/, "");
+
+// ─── Installment stage notifications (#9) ───────────────────────────────
+// Every application stage transition creates an in-app notification (shown in
+// the app + notification bar via notifyCustomer); an SMS goes out only at the
+// milestones below so routine ticks don't each cost an SMS.
+const STAGE_SMS = new Set([
+  "submitted",
+  "documents_verified",
+  "approved",
+  "ready_for_delivery",
+  "rejected",
+  "reapply",
+  "cancelled",
+]);
+
+const STAGE_MSG: Record<string, string> = {
+  submitted: "আপনার কিস্তি আবেদন গৃহীত হয়েছে। যাচাই-বাছাই শেষে জানানো হবে।",
+  processing: "আপনার কিস্তি আবেদন প্রক্রিয়াধীন রয়েছে।",
+  nid_verify: "আপনার এনআইডি যাচাই করা হচ্ছে।",
+  address_verify: "আপনার ঠিকানা যাচাই করা হচ্ছে।",
+  guarantor_verify: "জামিনদারের তথ্য যাচাই করা হচ্ছে।",
+  bank_check_verify: "ব্যাংক চেক যাচাই করা হচ্ছে।",
+  documents_verified: "আপনার সকল কাগজপত্র যাচাই সম্পন্ন হয়েছে।",
+  approved: "অভিনন্দন! আপনার কিস্তি আবেদন অনুমোদিত হয়েছে।",
+  ready_for_delivery: "আপনার পণ্য বুঝিয়ে দেওয়ার জন্য প্রস্তুত।",
+  rejected: "দুঃখিত, আপনার কিস্তি আবেদনটি গ্রহণ করা যায়নি।",
+  reapply: "আপনার কিস্তি আবেদনে পুনরায় আবেদনের সুযোগ দেওয়া হয়েছে।",
+  cancelled: "আপনার কিস্তি আবেদনটি বাতিল করা হয়েছে।",
+};
+
+/** Fire-and-forget: notify the customer of an application stage change. */
+const notifyAppStage = async (
+  app: { customerId: string | null; customerPhone: string | null },
+  stage: string,
+  opts?: { link?: string; message?: string },
+) => {
+  try {
+    if (!app.customerId || !app.customerPhone) return;
+    const message = opts?.message || STAGE_MSG[stage] || "আপনার কিস্তি আবেদনের স্ট্যাটাস আপডেট হয়েছে।";
+    await notifyCustomer({
+      customerId: app.customerId,
+      phoneNumber: app.customerPhone,
+      type: `installment_${stage}`,
+      message,
+      shortMessage: `SE Electronics: ${message}`,
+      link: opts?.link,
+      sendSms: STAGE_SMS.has(stage),
+    });
+  } catch (e) {
+    console.error("notifyAppStage failed:", stage, e);
+  }
+};
 
 const CreateSchema = z.object({
   customerId: z.string().min(1, "Customer is required"),
@@ -761,6 +814,13 @@ export const submitInstallmentApplication = async (formData: FormData) => {
     await Promise.all(uploads);
     import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("installment_application")).catch(() => {});
 
+    // #9: confirm to the customer that their application was received (SMS + in-app).
+    await notifyAppStage(
+      { customerId: customer.customerId, customerPhone: customer.phone },
+      "submitted",
+      { link: `/customer/installments/applications/${code}` },
+    );
+
     revalidatePath("/customer/installments");
     return { success: true, applicationCode: code, message: "আবেদন জমা হয়েছে" };
   } catch (error) {
@@ -911,6 +971,7 @@ export const reviewInstallmentApplication = async (
         })
         .where(eq(installmentApplications.id, app.id));
       await track("cancelled");
+      await notifyAppStage(app, "cancelled", { link: `/customer/installments/applications/${code}` });
       revalidatePath("/installments");
       return { success: true, message: "আবেদন বাতিল করা হয়েছে" };
     }
@@ -924,6 +985,7 @@ export const reviewInstallmentApplication = async (
         })
         .where(eq(installmentApplications.id, app.id));
       await track("reapply");
+      await notifyAppStage(app, "reapply", { link: `/customer/installments/applications/${code}` });
       revalidatePath("/installments");
       return { success: true, message: "পুনরায় আবেদনের সুযোগ দেওয়া হয়েছে" };
     }
@@ -938,6 +1000,12 @@ export const reviewInstallmentApplication = async (
         })
         .where(eq(installmentApplications.id, app.id));
       await track("rejected");
+      await notifyAppStage(app, "rejected", {
+        link: `/customer/installments/applications/${code}`,
+        message: payload?.rejectReason
+          ? `দুঃখিত, আপনার কিস্তি আবেদনটি গ্রহণ করা যায়নি। কারণ: ${payload.rejectReason}`
+          : undefined,
+      });
       revalidatePath("/installments");
       return { success: true, message: "আবেদন প্রত্যাখ্যাত হয়েছে" };
     }
@@ -1030,6 +1098,11 @@ export const reviewInstallmentApplication = async (
       })
       .where(eq(installmentApplications.id, app.id));
     await track("approved");
+    // #9: approval milestone — SMS + in-app, linking the customer to their new plan.
+    await notifyAppStage(app, "approved", {
+      link: `/customer/installments/${plan.planCode}`,
+      message: `অভিনন্দন! আপনার কিস্তি আবেদন অনুমোদিত হয়েছে। প্ল্যান কোড: ${plan.planCode}। মাসিক কিস্তি ৳${monthlyAmount.toLocaleString()}।`,
+    });
 
     revalidatePath("/installments");
     return { success: true, planCode: plan.planCode, message: "আবেদন অনুমোদিত ও কিস্তি প্ল্যান তৈরি হয়েছে" };
@@ -1059,13 +1132,16 @@ export const updateApplicationTrackingStep = async (code: string, step: string) 
 
     const app = await db.query.installmentApplications.findFirst({
       where: eq(installmentApplications.applicationCode, code),
-      columns: { id: true, status: true },
+      columns: { id: true, status: true, customerId: true, customerPhone: true },
     });
     if (!app) return { success: false, message: "আবেদন পাওয়া যায়নি" };
 
     const updates: any = { trackingStep: step };
     if (step === "processing" && app.status === "pending") updates.status = "under_review";
-    if (step === "approved") updates.status = "approved";
+    // NOTE: the tracking step intentionally does NOT flip status to "approved".
+    // Approval must go through reviewInstallmentApplication(approve), which also
+    // creates the plan + schedule — otherwise a dropdown "approved" would lock the
+    // review UI with no plan to add installments to (#13).
 
     await db.update(installmentApplications).set(updates).where(eq(installmentApplications.id, app.id));
     // Append a dated history row so the customer sees every stage with its
@@ -1075,6 +1151,8 @@ export const updateApplicationTrackingStep = async (code: string, step: string) 
     } catch (histErr) {
       console.error("tracking history insert failed:", histErr);
     }
+    // #9: in-app notification for every step; SMS only at milestones (STAGE_SMS).
+    await notifyAppStage(app, step, { link: `/customer/installments/applications/${code}` });
     revalidatePath("/installments");
     revalidatePath(`/customer/installments/applications/${code}`);
     return { success: true, message: "ট্র্যাকিং আপডেট হয়েছে" };
@@ -1160,5 +1238,179 @@ export const claimInstallmentPayment = async (input: {
   } catch (error) {
     console.error("claimInstallmentPayment error:", error);
     return { success: false, message: "পেমেন্ট তথ্য জমা দেওয়া যায়নি" };
+  }
+};
+
+// ─── Admin: edit / add / delete installment schedule rows & plans (#10, #13) ───
+
+/**
+ * #13 — Admin adds a new installment schedule row to an existing (incl. approved)
+ * plan. The row is appended after the current last installment: due one month
+ * after the latest due date, amount defaults to the plan's monthlyAmount.
+ */
+export const addInstallmentScheduleRow = async (
+  planCode: string,
+  input?: { amount?: number; dueDate?: string },
+) => {
+  try {
+    if (!(await requireAdmin())) return UNAUTHORIZED;
+
+    const plan = await db.query.installmentPlans.findFirst({
+      where: eq(installmentPlans.planCode, planCode),
+      columns: { id: true, monthlyAmount: true, startDate: true },
+    });
+    if (!plan) return { success: false, message: "প্ল্যান পাওয়া যায়নি" };
+
+    const rows = await db
+      .select({ installmentNo: installmentSchedule.installmentNo, dueDate: installmentSchedule.dueDate })
+      .from(installmentSchedule)
+      .where(eq(installmentSchedule.planId, plan.id))
+      .orderBy(desc(installmentSchedule.installmentNo))
+      .limit(1);
+
+    const lastNo = rows[0]?.installmentNo || 0;
+    const lastDue = rows[0]?.dueDate ? new Date(rows[0].dueDate) : new Date(plan.startDate);
+    const amount = input?.amount && input.amount > 0 ? round2(input.amount) : plan.monthlyAmount;
+    const dueDate = input?.dueDate ? new Date(input.dueDate) : addMonths(lastDue, 1);
+    if (isNaN(dueDate.getTime())) return { success: false, message: "অবৈধ তারিখ" };
+
+    await db.insert(installmentSchedule).values({
+      planId: plan.id,
+      installmentNo: lastNo + 1,
+      dueDate,
+      amount,
+    });
+
+    revalidatePath("/installments");
+    revalidatePath(`/installments/${planCode}`);
+    return { success: true, message: "নতুন কিস্তি যোগ হয়েছে" };
+  } catch (error) {
+    console.error("addInstallmentScheduleRow error:", error);
+    return { success: false, message: "কিস্তি যোগ করা যায়নি" };
+  }
+};
+
+const EditScheduleSchema = z.object({
+  scheduleId: z.string().uuid(),
+  amount: z.coerce.number().positive().optional(),
+  dueDate: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.string().optional()),
+});
+
+/** #10 — Admin edits a schedule row's amount and/or due date. */
+export const updateInstallmentScheduleRow = async (input: z.input<typeof EditScheduleSchema>) => {
+  try {
+    if (!(await requireAdmin())) return UNAUTHORIZED;
+    const parsed = EditScheduleSchema.safeParse(input);
+    if (!parsed.success) return { success: false, message: "Invalid input" };
+    const { scheduleId, amount, dueDate } = parsed.data;
+
+    const row = await db.query.installmentSchedule.findFirst({
+      where: eq(installmentSchedule.id, scheduleId),
+      columns: { id: true, planId: true },
+    });
+    if (!row) return { success: false, message: "কিস্তি পাওয়া যায়নি" };
+
+    const updates: { amount?: number; dueDate?: Date } = {};
+    if (amount != null) updates.amount = round2(amount);
+    if (dueDate) {
+      const d = new Date(dueDate);
+      if (isNaN(d.getTime())) return { success: false, message: "অবৈধ তারিখ" };
+      updates.dueDate = d;
+    }
+    if (Object.keys(updates).length === 0) return { success: false, message: "পরিবর্তন করার কিছু নেই" };
+
+    await db.update(installmentSchedule).set(updates).where(eq(installmentSchedule.id, scheduleId));
+
+    const plan = await db.query.installmentPlans.findFirst({
+      where: eq(installmentPlans.id, row.planId),
+      columns: { planCode: true },
+    });
+    revalidatePath("/installments");
+    if (plan?.planCode) revalidatePath(`/installments/${plan.planCode}`);
+    return { success: true, message: "কিস্তি আপডেট হয়েছে" };
+  } catch (error) {
+    console.error("updateInstallmentScheduleRow error:", error);
+    return { success: false, message: "আপডেট করা যায়নি" };
+  }
+};
+
+/** #10 — Admin deletes a single schedule row (not allowed once it is paid). */
+export const deleteInstallmentScheduleRow = async (scheduleId: string) => {
+  try {
+    if (!(await requireAdmin())) return UNAUTHORIZED;
+
+    const row = await db.query.installmentSchedule.findFirst({
+      where: eq(installmentSchedule.id, scheduleId),
+      columns: { id: true, planId: true, status: true },
+    });
+    if (!row) return { success: false, message: "কিস্তি পাওয়া যায়নি" };
+    if (row.status === "paid") return { success: false, message: "পরিশোধিত কিস্তি মুছে ফেলা যাবে না" };
+
+    await db.delete(installmentSchedule).where(eq(installmentSchedule.id, scheduleId));
+
+    const plan = await db.query.installmentPlans.findFirst({
+      where: eq(installmentPlans.id, row.planId),
+      columns: { planCode: true },
+    });
+    revalidatePath("/installments");
+    if (plan?.planCode) revalidatePath(`/installments/${plan.planCode}`);
+    return { success: true, message: "কিস্তি মুছে ফেলা হয়েছে" };
+  } catch (error) {
+    console.error("deleteInstallmentScheduleRow error:", error);
+    return { success: false, message: "মুছে ফেলা যায়নি" };
+  }
+};
+
+/**
+ * #10 — Admin permanently deletes a plan and its whole schedule (cascade). Any
+ * application pointing at this plan has its planId cleared first so the FK holds.
+ */
+export const deleteInstallmentPlan = async (planCode: string) => {
+  try {
+    if (!(await requireAdmin())) return UNAUTHORIZED;
+
+    const plan = await db.query.installmentPlans.findFirst({
+      where: eq(installmentPlans.planCode, planCode),
+      columns: { id: true },
+    });
+    if (!plan) return { success: false, message: "প্ল্যান পাওয়া যায়নি" };
+
+    // Clear references from any approved application (planId has no cascade).
+    await db
+      .update(installmentApplications)
+      .set({ planId: null })
+      .where(eq(installmentApplications.planId, plan.id));
+
+    // installment_schedule cascades on plan delete.
+    await db.delete(installmentPlans).where(eq(installmentPlans.id, plan.id));
+
+    revalidatePath("/installments");
+    return { success: true, message: "প্ল্যান মুছে ফেলা হয়েছে" };
+  } catch (error) {
+    console.error("deleteInstallmentPlan error:", error);
+    return { success: false, message: "মুছে ফেলা যায়নি" };
+  }
+};
+
+/** #10 — Admin permanently deletes an application (its tracking rows cascade). */
+export const deleteInstallmentApplication = async (code: string) => {
+  try {
+    if (!(await requireAdmin())) return UNAUTHORIZED;
+
+    const app = await db.query.installmentApplications.findFirst({
+      where: eq(installmentApplications.applicationCode, code),
+      columns: { id: true },
+    });
+    if (!app) return { success: false, message: "আবেদন পাওয়া যায়নি" };
+
+    // installment_application_tracking cascades on application delete.
+    await db.delete(installmentApplications).where(eq(installmentApplications.id, app.id));
+
+    revalidatePath("/installments");
+    revalidatePath("/installments/applications");
+    return { success: true, message: "আবেদন মুছে ফেলা হয়েছে" };
+  } catch (error) {
+    console.error("deleteInstallmentApplication error:", error);
+    return { success: false, message: "মুছে ফেলা যায়নি" };
   }
 };

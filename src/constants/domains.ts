@@ -1,9 +1,17 @@
 /**
- * Brand domains for links sent by SMS. In production, a link never points at a
- * *.vercel.app host: it uses <portal>.seelectronicsbd.com unless an env var
+ * Brand domain for links sent by SMS. In production a link never points at a
+ * *.vercel.app host: it uses <portal>.<BRAND_DOMAIN> unless an env var
  * explicitly supplies another custom domain. Local dev keeps its own URLs.
+ *
+ * The domain is read from NEXT_PUBLIC_BRAND_DOMAIN so it can be swapped from the
+ * Vercel dashboard WITHOUT a code change — BD operators periodically ban a
+ * domain from appearing in SMS, and this lets a safe replacement go live by just
+ * updating the env var (and pointing the new domain's <portal> subdomains at the
+ * app). Falls back to the current domain when the env var is unset.
  */
-export const BRAND_DOMAIN = "seelectronicsbd.com";
+export const BRAND_DOMAIN =
+  process.env.NEXT_PUBLIC_BRAND_DOMAIN?.replace(/^https?:\/\//, "").replace(/\/$/, "") ||
+  "seelectronicsbd.com";
 
 export type Portal = "admin" | "staff" | "customer" | "seller" | "supplier";
 

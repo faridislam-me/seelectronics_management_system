@@ -320,7 +320,14 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
               <a href={`tel:${data.guarantorPhone}`} className="inline-flex items-center gap-1.5 font-bold text-blue-600 hover:text-blue-700"><Phone size={13} />{data.guarantorPhone}</a>
             </p>
           )}
-          <Field label="ঠিকানা" value={data.guarantorAddress} />
+          <Field label="বর্তমান ঠিকানা" value={data.guarantorCurrentAddress ?? data.guarantorAddress} />
+          <Field label="স্থায়ী ঠিকানা" value={data.guarantorPermanentAddress} />
+          {data.guarantorIsRenting && (
+            <>
+              <Field label="বাড়ির মালিকের নাম" value={data.guarantorLandlordName} />
+              <Field label="বাড়ির মালিকের ফোন" value={data.guarantorLandlordPhone} />
+            </>
+          )}
         </div>
       )}
 

@@ -1647,6 +1647,12 @@ export const installmentApplications = pgTable(
     guarantorName: varchar({ length: 255 }),
     guarantorPhone: varchar({ length: 255 }),
     guarantorAddress: text(),
+    // Guarantor address detail — both current & permanent; landlord info if renting
+    guarantorCurrentAddress: text(),
+    guarantorPermanentAddress: text(),
+    guarantorIsRenting: boolean().default(false),
+    guarantorLandlordName: varchar({ length: 255 }),
+    guarantorLandlordPhone: varchar({ length: 255 }),
     guarantorPhotoKey: varchar({ length: 512 }),
     guarantorSignatureKey: varchar({ length: 512 }),
     guarantorNidFrontPhotoKey: varchar({ length: 512 }),

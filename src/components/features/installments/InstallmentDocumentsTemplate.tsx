@@ -112,7 +112,14 @@ export default function InstallmentDocumentsTemplate({
       <div className="grid grid-cols-2 gap-x-6">
         <InfoRow label="নাম" value={data.guarantorName} />
         <InfoRow label="মোবাইল" value={data.guarantorPhone} />
-        <InfoRow label="ঠিকানা" value={data.guarantorAddress} />
+        <InfoRow label="বর্তমান ঠিকানা" value={data.guarantorAddress} />
+        <InfoRow label="স্থায়ী ঠিকানা" value={data.guarantorPermanentAddress} />
+        {data.guarantorLandlordName && (
+          <InfoRow label="বাড়ির মালিকের নাম" value={data.guarantorLandlordName} />
+        )}
+        {data.guarantorLandlordPhone && (
+          <InfoRow label="বাড়ির মালিকের ফোন" value={data.guarantorLandlordPhone} />
+        )}
       </div>
 
       {/* Guarantor documents */}

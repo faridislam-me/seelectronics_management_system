@@ -2,15 +2,12 @@ import { InstallmentStickerTemplateData } from "@/app/pdf/download/actions/pdfTy
 
 /**
  * Product sticker for a financed (installment) unit — printed and stuck on the
- * product. Rebuilt to match the client's black-bordered label reference exactly:
- * a company header (logo + Bangla name / tagline / address) over a divider, a
- * column of `label ঃ value` spec rows stacked from the top with a fixed, roomy
- * line spacing (NOT spread to fill), a QR code floating at the bottom-right, and
- * a full-width barcode pinned at the very bottom. The square format mirrors the
- * 3in×3in (76mm) reference. Electrical specs (VA/Watt, Volt, Display) only show
- * for IPS-like units; a fridge/other unit shows just its relevant fields and
- * naturally leaves clean space at the bottom where the QR sits — exactly like
- * the reference sticker for such products.
+ * product. Polished BLUE design: a filled blue header band (logo on a white
+ * disc + Bangla company name / tagline), a blue contact strip, a column of
+ * `label ঃ value` spec rows, a QR floating bottom-right, a full-width barcode,
+ * and a blue footer band ("SE Electronics — Always With You"). Square 76mm
+ * (≈3in) format. Electrical specs (VA/Watt, Volt, Display) only show for
+ * IPS-like units, so a fridge/other unit shows just its relevant fields.
  */
 export default function InstallmentStickerTemplate({
   data,
@@ -31,9 +28,9 @@ export default function InstallmentStickerTemplate({
     if (!text) return null;
     return (
       <div className="flex items-start leading-tight">
-        <span className="w-[26mm] shrink-0 font-bold">{label}</span>
-        <span className="shrink-0 font-bold">ঃ</span>
-        <span className="flex-1 pl-1.5 font-bold break-words">{text}</span>
+        <span className="w-[24mm] shrink-0 font-bold text-[#0b3d91]">{label}</span>
+        <span className="shrink-0 font-bold text-[#0b3d91]">ঃ</span>
+        <span className="flex-1 pl-1 font-extrabold text-black break-words">{text}</span>
       </div>
     );
   };
@@ -44,39 +41,42 @@ export default function InstallmentStickerTemplate({
       style={{
         width: "76mm",
         height: "76mm",
-        padding: "2mm",
         fontFamily: `'Tiro Bangla', SolaimanLipi, Inter, sans-serif`,
-        border: "2.5px solid #000",
+        border: "2px solid #0b3d91",
       }}
     >
-      {/* Header: logo + company identity, with a full-width divider under it. */}
-      <div className="border-b-[2.5px] border-black pb-1">
-        <div className="flex items-center gap-2">
-          {data.logo ? (
+      {/* Blue header band: logo on a white disc + company identity. */}
+      <div className="flex items-center gap-2 px-2 py-1.5" style={{ background: "#0b3d91" }}>
+        {data.logo ? (
+          <span
+            className="shrink-0 rounded-full bg-white flex items-center justify-center"
+            style={{ width: "12mm", height: "12mm" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={data.logo}
               alt="logo"
-              className="shrink-0 object-contain"
-              style={{ width: "12mm", height: "12mm" }}
+              className="object-contain"
+              style={{ width: "10.5mm", height: "10.5mm" }}
             />
-          ) : null}
-          <div className="min-w-0 flex-1 text-center leading-tight">
-            <div className="text-[18px] font-black tracking-wide">
-              এস ই ইলেকট্রনিক্স
-            </div>
-            <div className="text-[11px] font-bold">সেলস্ সার্ভিস সাপোর্ট</div>
-          </div>
-        </div>
-        <div className="mt-0.5 text-center text-[9px] font-semibold leading-tight">
-          এয়ারপোর্ট রোড বাদাম বাগিচা সিলেট। ফোনঃ ০১৩২২২৪৭৭৭১
+          </span>
+        ) : null}
+        <div className="min-w-0 flex-1 text-center leading-tight text-white">
+          <div className="text-[17px] font-black tracking-wide">এস ই ইলেকট্রনিক্স</div>
+          <div className="text-[10px] font-bold opacity-90">সেলস্ সার্ভিস সাপোর্ট</div>
         </div>
       </div>
 
-      {/* Spec rows — stacked from the top with a fixed, roomy line spacing so a
-          few-field unit packs neatly at the top (leaving clean space below for
-          the QR) and a many-field unit extends down, both matching the client
-          reference. */}
-      <div className="flex-1 min-h-0 flex flex-col justify-start gap-[0.7mm] pt-[1.5mm] text-[11px]">
+      {/* Contact strip under the header band. */}
+      <div
+        className="text-center text-[8.5px] font-semibold leading-tight py-[0.6mm] border-b-2"
+        style={{ borderColor: "#0b3d91", color: "#0b3d91" }}
+      >
+        এয়ারপোর্ট রোড বাদাম বাগিচা সিলেট। ফোনঃ ০১৩২২২৪৭৭৭১
+      </div>
+
+      {/* Spec rows — stacked from the top with a fixed, roomy line spacing. */}
+      <div className="flex-1 min-h-0 flex flex-col justify-start gap-[0.7mm] px-2 pt-[1.5mm] text-[11px]">
         <Row label="মডেল" value={data.productModel} />
         <Row label="সিরিয়াল নং" value={data.serialNumber} />
         {data.isElectrical && <Row label="ভিএ/ওয়াট" value={data.vaWatt} />}
@@ -84,36 +84,44 @@ export default function InstallmentStickerTemplate({
         <Row label="টাইপ" value={data.productType} />
         {data.isElectrical && <Row label="ডিসপ্লে" value={data.display} />}
         <Row label="প্রডাক্ট" value={data.productName} />
-        <Row
-          label="প্রাইজ"
-          value={`${Number(data.price).toLocaleString("en-US")} TAKA`}
-        />
+        <Row label="প্রাইজ" value={`${Number(data.price).toLocaleString("en-US")} TAKA`} />
         <Row label="কিস্তির মেয়াদ" value={`${data.months} MONTH`} />
         <Row label="ব্রান্ডের নাম" value={data.brand} />
       </div>
 
-      {/* QR — floats at the bottom-right, just above the barcode, like the
-          reference. In a dense unit it overlaps the right of the last rows (whose
-          values are short and left-aligned); in a sparse unit it sits in the
-          clean space below the rows. */}
+      {/* QR — floats bottom-right, boxed in the blue accent, above the barcode. */}
       {data.qrcode ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={data.qrcode}
           alt="qr"
-          className="absolute bg-white object-contain"
-          style={{ right: "2mm", bottom: "12.5mm", width: "13mm", height: "13mm" }}
+          className="absolute bg-white object-contain rounded"
+          style={{
+            right: "2mm",
+            bottom: "14mm",
+            width: "13mm",
+            height: "13mm",
+            padding: "0.3mm",
+            border: "1px solid #0b3d91",
+          }}
         />
       ) : null}
 
-      {/* Barcode — full width, pinned at the very bottom as the last flex child
-          (no caption, no divider above it), matching the reference. Kept in flow
-          so a dense unit's rows can never overflow on top of it. */}
+      {/* Barcode — full width, just above the footer band. */}
       {data.barcode ? (
         <div
-          className="h-[10mm] w-full shrink-0 [&>svg]:h-full [&>svg]:w-full"
+          className="px-2 h-[9mm] w-full shrink-0 [&>svg]:h-full [&>svg]:w-full"
           dangerouslySetInnerHTML={{ __html: data.barcode }}
         />
       ) : null}
+
+      {/* Blue footer band. */}
+      <div
+        className="text-center text-[8.5px] font-bold text-white py-[0.7mm] shrink-0"
+        style={{ background: "#0b3d91" }}
+      >
+        SE Electronics — Always With You
+      </div>
     </div>
   );
 }

@@ -411,6 +411,10 @@ async function compressFileClient(file: File, maxW = 1200, quality = 0.7): Promi
 
 const inputCls =
   "w-full h-11 rounded-md border border-[#dfe6f2] px-3 text-[14px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none text-[#16213a]";
+// Selects get a taller control + larger text so the options are comfortably
+// tappable on mobile (the native option rows inherit the select's font-size).
+const selectCls =
+  "w-full h-[52px] rounded-md border border-[#dfe6f2] px-3 text-[16px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none text-[#16213a] leading-relaxed [&>option]:py-3 [&>option]:text-[16px] [&>option]:font-semibold";
 const textareaCls =
   "w-full rounded-md border border-[#dfe6f2] px-3 py-2.5 text-[14px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none resize-none text-[#16213a]";
 const labelCls = "text-[13px] font-bold text-[#3d4f72] mb-1 block";
@@ -701,7 +705,7 @@ export default function InstallmentApplyForm() {
       <Section icon={CreditCard} title="পণ্য ও কিস্তির তথ্য">
         <div>
           <label className={labelCls}>পণ্যের ধরন <span className="text-red-500">*</span></label>
-          <select value={productType} onChange={(e) => { setProductType(e.target.value); setProductSpec(""); }} className={inputCls}>
+          <select value={productType} onChange={(e) => { setProductType(e.target.value); setProductSpec(""); }} className={selectCls}>
             {PRODUCT_TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
@@ -722,7 +726,7 @@ export default function InstallmentApplyForm() {
         {specConfig && (
           <div>
             <label className={labelCls}>{specConfig.label}</label>
-            <select value={productSpec} onChange={(e) => setProductSpec(e.target.value)} className={inputCls}>
+            <select value={productSpec} onChange={(e) => setProductSpec(e.target.value)} className={selectCls}>
               {specConfig.options.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
@@ -736,7 +740,7 @@ export default function InstallmentApplyForm() {
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label className={labelCls}>কিস্তির মেয়াদ</label>
-            <select value={desiredMonths} onChange={(e) => setDesiredMonths(e.target.value)} className={inputCls}>
+            <select value={desiredMonths} onChange={(e) => setDesiredMonths(e.target.value)} className={selectCls}>
               <option value="">নির্বাচন করুন</option>
               {installmentTermOptions.map((t) => (
                 <option key={t.months} value={t.months}>

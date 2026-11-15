@@ -1,6 +1,6 @@
 "use client";
 
-import { reviewInstallmentApplication, updateApplicationTrackingStep } from "@/actions/installmentActions";
+import { deleteInstallmentApplication, reviewInstallmentApplication, updateApplicationTrackingStep } from "@/actions/installmentActions";
 import { Modal } from "@/components/ui";
 import { installmentChargePercent, installmentTermOptions } from "@/constants";
 import { formatDate, toBanglaNumber } from "@/utils";
@@ -17,6 +17,7 @@ import {
   Phone,
   RefreshCw,
   ShieldCheck,
+  Trash2,
   User,
 } from "lucide-react";
 import Link from "next/link";
@@ -78,6 +79,9 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
   const sm = STATUS_META[data.status] || STATUS_META.pending;
   const urls = data.urls || {};
   const isPending = data.status === "pending" || data.status === "under_review" || data.status === "reapply";
+  // Tracking stays editable after approval too (so the admin can reach
+  // "ready_for_delivery") — only a rejected/cancelled application locks it (#13).
+  const canTrack = data.status !== "rejected" && data.status !== "cancelled";
 
   // Approve form state
   const [showApprove, setShowApprove] = useState(false);
@@ -206,6 +210,20 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
     }
   };
 
+  const handleDeleteApplication = async () => {
+    if (!confirm("এই আবেদনটি স্থায়ীভাবে মুছে ফেলতে চান? এটি আর ফেরানো যাবে না।")) return;
+    setSaving(true);
+    const res = await deleteInstallmentApplication(data.applicationCode);
+    setSaving(false);
+    if (res.success) {
+      toast.success(res.message);
+      router.push("/installments/applications");
+      router.refresh();
+    } else {
+      toast.error(res.message || "ত্রুটি হয়েছে");
+    }
+  };
+
   const Field = ({ label, value }: { label: string; value: string | null | undefined }) =>
     value ? (
       <p className="text-sm text-[#16213a]">
@@ -227,26 +245,31 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
             <p className="text-xs text-[#3d4f72] font-mono flex items-center gap-1.5">{data.applicationCode} · <a href={`tel:${data.customerPhone}`} className="inline-flex items-center gap-1 font-bold text-blue-600 hover:text-blue-700"><Phone size={12} />{data.customerPhone}</a></p>
           </div>
         </div>
-        {isPending && (
-          <div className="flex gap-2 flex-wrap">
-            <button onClick={() => setShowApprove(true)} className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100">
-              <CheckCircle2 size={15} /> অনুমোদন
-            </button>
-            <button onClick={() => setShowReject(true)} className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-red-200 bg-red-50 text-red-700 text-xs font-bold hover:bg-red-100">
-              <Ban size={15} /> প্রত্যাখ্যান
-            </button>
-            <button onClick={() => handleStatusAction("cancel")} disabled={saving} className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-gray-300 bg-gray-50 text-gray-700 text-xs font-bold hover:bg-gray-100">
-              <Ban size={15} /> বাতিল
-            </button>
-            <button onClick={() => handleStatusAction("reapply")} disabled={saving} className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-orange-200 bg-orange-50 text-orange-700 text-xs font-bold hover:bg-orange-100">
-              <RefreshCw size={15} /> পুনরায় আবেদন
-            </button>
-          </div>
-        )}
+        <div className="flex gap-2 flex-wrap">
+          {isPending && (
+            <>
+              <button onClick={() => setShowApprove(true)} className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100">
+                <CheckCircle2 size={15} /> অনুমোদন
+              </button>
+              <button onClick={() => setShowReject(true)} className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-red-200 bg-red-50 text-red-700 text-xs font-bold hover:bg-red-100">
+                <Ban size={15} /> প্রত্যাখ্যান
+              </button>
+              <button onClick={() => handleStatusAction("cancel")} disabled={saving} className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-gray-300 bg-gray-50 text-gray-700 text-xs font-bold hover:bg-gray-100">
+                <Ban size={15} /> বাতিল
+              </button>
+              <button onClick={() => handleStatusAction("reapply")} disabled={saving} className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-orange-200 bg-orange-50 text-orange-700 text-xs font-bold hover:bg-orange-100">
+                <RefreshCw size={15} /> পুনরায় আবেদন
+              </button>
+            </>
+          )}
+          <button onClick={handleDeleteApplication} disabled={saving} className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-red-200 bg-white text-red-600 text-xs font-bold hover:bg-red-50">
+            <Trash2 size={15} /> মুছুন
+          </button>
+        </div>
       </div>
 
       {/* Tracking step */}
-      {isPending && (
+      {canTrack && (
         <div className="rounded-lg bg-white border border-gray-200 p-3.5 flex items-center gap-3 flex-wrap">
           <p className="text-sm font-black text-[#0a2f70] flex items-center gap-2"><ClipboardList size={16} className="text-[#0b3d91]" /> ট্র্যাকিং স্টেপ:</p>
           <select
@@ -255,9 +278,14 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
             disabled={trackingSaving}
             className="__input w-auto min-w-[200px] text-sm font-bold"
           >
-            {TRACKING_STEPS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+            {/* "approved" is reached only via the অনুমোদন modal (which creates the
+                plan + schedule), so it is shown but not selectable here. */}
+            {TRACKING_STEPS.map((s) => <option key={s.key} value={s.key} disabled={s.key === "approved"}>{s.label}</option>)}
           </select>
           {trackingSaving && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
+          {data.status === "approved" && (
+            <span className="text-[11px] font-semibold text-emerald-600">অনুমোদিত — এখন ডেলিভারি স্টেপ পর্যন্ত এগোনো যাবে</span>
+          )}
         </div>
       )}
 

@@ -197,6 +197,18 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
         </button>
       </div>
 
+      {/* Payment receipt — the invoice is an agreement (no dues), so paid
+          installments are accounted for in this separate downloadable receipt. */}
+      {paidSchedules.length > 0 && (
+        <Link
+          href={`/pdf/download?type=installment-receipt&id=${plan.planCode}`}
+          target="_blank"
+          className="flex items-center justify-center gap-1.5 h-10 rounded-lg bg-[#0b3d91] text-white text-[13px] font-extrabold shadow-[0_4px_12px_rgba(11,61,145,0.2)]"
+        >
+          <Download size={16} /> পেমেন্ট রসিদ ডাউনলোড
+        </Link>
+      )}
+
       {/* Next due / Pay Now */}
       {plan.status === "active" && nextDue && (
         <div className="rounded-xl bg-[linear-gradient(105deg,#0a2f70,#1f7cf0)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(11,61,145,0.25)]">

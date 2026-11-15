@@ -1,11 +1,13 @@
 "use client";
 
+import { deleteInstallmentApplication } from "@/actions/installmentActions";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
-import { ChevronRight, ClipboardList, Search } from "lucide-react";
+import { ChevronRight, ClipboardList, Loader2, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { toast } from "react-toastify";
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
   pending: { label: "অপেক্ষমান", cls: "bg-amber-50 text-amber-700 border-amber-200" },
@@ -50,6 +52,22 @@ export default function InstallmentApplicationsList({ apps }: { apps: any[] }) {
   const pathname = usePathname();
   const sp = useSearchParams();
   const [query, setQuery] = useState(sp.get("query") || "");
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const handleDelete = async (e: React.MouseEvent, code: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm("এই আবেদনটি স্থায়ীভাবে মুছে ফেলতে চান? এটি আর ফেরানো যাবে না।")) return;
+    setDeleting(code);
+    const res = await deleteInstallmentApplication(code);
+    setDeleting(null);
+    if (res.success) {
+      toast.success(res.message);
+      router.refresh();
+    } else {
+      toast.error(res.message || "মুছে ফেলা যায়নি");
+    }
+  };
 
   const push = (key: string, val: string) => {
     const p = new URLSearchParams(sp.toString());
@@ -132,9 +150,19 @@ export default function InstallmentApplicationsList({ apps }: { apps: any[] }) {
                       <span className={clsx("text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border", sm.cls)}>{sm.label}</span>
                     </td>
                     <td className="px-3 py-2.5 text-right">
-                      <Link href={`/installments/applications/${a.applicationCode}`} className="inline-flex items-center gap-1 text-xs font-bold text-[#0b3d91] hover:underline">
-                        দেখুন<ChevronRight size={14} />
-                      </Link>
+                      <div className="inline-flex items-center gap-2 justify-end">
+                        <Link href={`/installments/applications/${a.applicationCode}`} className="inline-flex items-center gap-1 text-xs font-bold text-[#0b3d91] hover:underline">
+                          দেখুন<ChevronRight size={14} />
+                        </Link>
+                        <button
+                          onClick={(e) => handleDelete(e, a.applicationCode)}
+                          disabled={deleting === a.applicationCode}
+                          title="মুছুন"
+                          className="p-1.5 rounded-md text-red-500 hover:bg-red-50 disabled:opacity-50"
+                        >
+                          {deleting === a.applicationCode ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

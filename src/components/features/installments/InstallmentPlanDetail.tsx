@@ -1,9 +1,13 @@
 "use client";
 
 import {
+  addInstallmentScheduleRow,
+  deleteInstallmentPlan,
+  deleteInstallmentScheduleRow,
   markInstallmentPaid,
   updateInstallmentPlanStatus,
   updateInstallmentPlanProduct,
+  updateInstallmentScheduleRow,
 } from "@/actions/installmentActions";
 import { Modal } from "@/components/ui";
 import { formatDate } from "@/utils";
@@ -17,9 +21,11 @@ import {
   FileText,
   Loader2,
   Pencil,
+  Plus,
   QrCode,
   RotateCcw,
   ShieldCheck,
+  Trash2,
   User,
 } from "lucide-react";
 import Link from "next/link";
@@ -74,6 +80,82 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
   const [payNum, setPayNum] = useState("");
   const [saving, setSaving] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
+
+  // Schedule row add / edit / delete (#10, #13)
+  const [rowBusy, setRowBusy] = useState<string | null>(null);
+  const [addingRow, setAddingRow] = useState(false);
+  const [editRow, setEditRow] = useState<Schedule | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editDue, setEditDue] = useState("");
+  const [editRowSaving, setEditRowSaving] = useState(false);
+
+  const toDateInput = (d: string | Date) => {
+    const dt = new Date(d);
+    return isNaN(dt.getTime()) ? "" : dt.toISOString().slice(0, 10);
+  };
+
+  const addRow = async () => {
+    setAddingRow(true);
+    const res = await addInstallmentScheduleRow(plan.planCode);
+    setAddingRow(false);
+    if (res.success) {
+      toast.success(res.message || "যোগ হয়েছে");
+      router.refresh();
+    } else {
+      toast.error(res.message || "যোগ করা যায়নি");
+    }
+  };
+
+  const openEditRow = (row: Schedule) => {
+    setEditRow(row);
+    setEditAmount(String(row.amount));
+    setEditDue(toDateInput(row.dueDate));
+  };
+
+  const saveEditRow = async () => {
+    if (!editRow) return;
+    setEditRowSaving(true);
+    const res = await updateInstallmentScheduleRow({
+      scheduleId: editRow.id,
+      amount: editAmount ? Number(editAmount) : undefined,
+      dueDate: editDue || undefined,
+    });
+    setEditRowSaving(false);
+    if (res.success) {
+      toast.success(res.message || "আপডেট হয়েছে");
+      setEditRow(null);
+      router.refresh();
+    } else {
+      toast.error(res.message || "আপডেট করা যায়নি");
+    }
+  };
+
+  const deleteRow = async (row: Schedule) => {
+    if (!window.confirm(`কিস্তি #${row.installmentNo} মুছে ফেলবেন?`)) return;
+    setRowBusy(row.id);
+    const res = await deleteInstallmentScheduleRow(row.id);
+    setRowBusy(null);
+    if (res.success) {
+      toast.success(res.message || "মুছে ফেলা হয়েছে");
+      router.refresh();
+    } else {
+      toast.error(res.message || "মুছে ফেলা যায়নি");
+    }
+  };
+
+  const removePlan = async () => {
+    if (!window.confirm("এই কিস্তি প্ল্যান ও এর পুরো সময়সূচি স্থায়ীভাবে মুছে ফেলবেন? এটি আর ফেরানো যাবে না।")) return;
+    setStatusLoading(true);
+    const res = await deleteInstallmentPlan(plan.planCode);
+    setStatusLoading(false);
+    if (res.success) {
+      toast.success(res.message || "মুছে ফেলা হয়েছে");
+      router.push("/installments");
+      router.refresh();
+    } else {
+      toast.error(res.message || "মুছে ফেলা যায়নি");
+    }
+  };
 
   // Product / sticker-spec edit
   const [showEdit, setShowEdit] = useState(false);
@@ -225,6 +307,9 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
               </button>
             </>
           )}
+          <button disabled={statusLoading} onClick={removePlan} className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-red-200 bg-white text-red-600 text-xs font-bold hover:bg-red-50">
+            <Trash2 size={15} /> মুছুন
+          </button>
         </div>
       </div>
 
@@ -275,7 +360,18 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
 
       {/* Schedule */}
       <div className="rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <p className="px-4 py-3 text-sm font-black text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700">কিস্তির সময়সূচি</p>
+        <div className="px-4 py-3 flex items-center justify-between gap-2 border-b border-gray-100 dark:border-gray-700">
+          <p className="text-sm font-black text-gray-900 dark:text-white">কিস্তির সময়সূচি</p>
+          {plan.status === "active" && (
+            <button
+              onClick={addRow}
+              disabled={addingRow}
+              className="inline-flex items-center gap-1 text-xs font-bold text-[#0b3d91] border border-[#0b3d91]/25 bg-[#0b3d91]/5 hover:bg-[#0b3d91]/10 px-2.5 py-1.5 rounded-md disabled:opacity-50"
+            >
+              {addingRow ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} নতুন কিস্তি
+            </button>
+          )}
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-900/40 text-gray-500 text-xs">
@@ -316,11 +412,17 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
                     </td>
                     <td className="px-4 py-2.5 text-right">
                       {row.status !== "paid" && plan.status === "active" ? (
-                        row.status === "claimed" ? (
-                          <button onClick={() => openPay(row)} className="inline-flex items-center gap-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md whitespace-nowrap"><ShieldCheck size={13} /> যাচাই করুন</button>
-                        ) : (
-                          <button onClick={() => openPay(row)} className="text-xs font-bold text-white bg-[#0b3d91] hover:bg-[#0a2f70] px-3 py-1.5 rounded-md">পরিশোধ</button>
-                        )
+                        <div className="inline-flex items-center gap-1.5 justify-end">
+                          {row.status === "claimed" ? (
+                            <button onClick={() => openPay(row)} className="inline-flex items-center gap-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md whitespace-nowrap"><ShieldCheck size={13} /> যাচাই করুন</button>
+                          ) : (
+                            <button onClick={() => openPay(row)} className="text-xs font-bold text-white bg-[#0b3d91] hover:bg-[#0a2f70] px-3 py-1.5 rounded-md">পরিশোধ</button>
+                          )}
+                          <button onClick={() => openEditRow(row)} title="এডিট" className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"><Pencil size={13} /></button>
+                          <button onClick={() => deleteRow(row)} disabled={rowBusy === row.id} title="মুছুন" className="p-1.5 rounded-md text-red-500 hover:bg-red-50 disabled:opacity-50">
+                            {rowBusy === row.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                          </button>
+                        </div>
                       ) : (
                         <span className="text-xs text-gray-300">—</span>
                       )}
@@ -371,6 +473,29 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
               <button disabled={saving} onClick={confirmPay} className="__btn flex items-center gap-2">
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {saving ? "সেভ হচ্ছে..." : payRow.status === "claimed" ? "যাচাই করে পরিশোধিত করুন" : "পরিশোধিত করুন"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Edit schedule row modal (#10) */}
+      {editRow && (
+        <Modal isVisible title={`কিস্তি #${editRow.installmentNo} এডিট`} onClose={() => setEditRow(null)}>
+          <div className="space-y-3 max-w-sm">
+            <div>
+              <label className="text-xs font-semibold text-gray-500">পরিমাণ</label>
+              <input type="number" min="0" step="0.01" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} className="__input" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-500">তারিখ</label>
+              <input type="date" value={editDue} onChange={(e) => setEditDue(e.target.value)} className="__input" />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setEditRow(null)} className="px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">বাতিল</button>
+              <button disabled={editRowSaving} onClick={saveEditRow} className="__btn flex items-center gap-2">
+                {editRowSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                {editRowSaving ? "সেভ হচ্ছে..." : "সেভ করুন"}
               </button>
             </div>
           </div>

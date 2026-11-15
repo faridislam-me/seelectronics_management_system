@@ -4,7 +4,7 @@ import { getStaffProfileStats } from "@/actions/staffActions";
 import { PaymentCompactList } from "@/components/features/payments/StaffPaymentCards";
 import { StaffLayout } from "@/components/layout/StaffLayout";
 import { PaymentDataType } from "@/types";
-import { ChevronRight, CreditCard, History, Wallet } from "lucide-react";
+import { ChevronRight, CreditCard, History, Smartphone, Wallet } from "lucide-react";
 import Link from "next/link";
 
 export default async function StaffPaymentHubPage() {
@@ -29,6 +29,16 @@ export default async function StaffPaymentHubPage() {
           </div>
           <p className="relative mt-2 text-[13px] leading-relaxed text-white/90 max-w-[70%]">Track your all payment records in one place. Stay updated with your transactions.</p>
         </section>
+
+        {/* Mobile recharge from the staff's available balance */}
+        <Link href="/staff/payment/recharge" className="rounded-md bg-white border-2 border-[#1f7cf0] p-3 flex items-center gap-3 shadow-[0_6px_18px_rgba(31,124,240,0.12)]">
+          <span className="size-11 rounded-full bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><Smartphone size={22} /></span>
+          <span className="flex flex-col min-w-0 flex-1 leading-tight">
+            <span className="text-[15px] font-extrabold text-[#0b3d91]">মোবাইল রিচার্জ</span>
+            <span className="text-[11.5px] text-[#5b6784]">আপনার ব্যালেন্স থেকে ইনস্ট্যান্ট রিচার্জ</span>
+          </span>
+          <ChevronRight size={18} className="text-[#1f7cf0]" />
+        </Link>
 
         <div className="grid grid-cols-2 gap-2">
           <Link href="/staff/payment/request" className="rounded-md bg-[#1f7cf0] text-white p-2.5 flex items-center gap-2.5 shadow-[0_8px_20px_rgba(31,124,240,0.35)]">

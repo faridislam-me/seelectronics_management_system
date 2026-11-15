@@ -52,6 +52,7 @@ export default function DocDownloadPage() {
             'installment-sticker': 'SE_ELECTRONICS_INSTALLMENT_STICKER.pdf',
             'installment-documents': 'SE_ELECTRONICS_INSTALLMENT_FILE.pdf',
             'installment-receipt': 'SE_ELECTRONICS_INSTALLMENT_RECEIPT.pdf',
+            'installment-noc': 'SE_ELECTRONICS_NOC.pdf',
         }
         const fileName = fileNames[response.docType as string] || 'SE_ELECTRONICS.pdf'
 

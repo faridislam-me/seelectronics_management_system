@@ -34,6 +34,7 @@ export type DocType =
   | "seller-certificate"
   | "seller-payment"
   | "installment-invoice"
+  | "installment-noc"
   | "installment-sticker"
   | "installment-documents"
   | "installment-receipt";

@@ -226,7 +226,15 @@ export interface InstallmentInvoiceTemplateData {
   customerId: string;
   productType: string | null;
   productModel: string;
+  productBrand: string | null;
+  /** Capacity / size, e.g. "১.৫ টন" or "৩২ ইঞ্চি". */
+  productSpec: string | null;
+  vaWatt: string | null;
+  volt: string | null;
+  displayType: string | null;
   serialNumber: string | null;
+  /** Product/category photo as a data URI or absolute URL (puppeteer-loadable). */
+  productImage: string | null;
   cashPrice: number;
   extraCharge: number;
   totalPayable: number;
@@ -281,6 +289,37 @@ export interface InstallmentReceiptTemplateData {
   remainingTotal: number;
   remainingCount: number;
   generatedAt: Date | string;
+}
+
+/**
+ * "No Objection Certificate" issued when a plan is fully paid — certifies the
+ * customer has cleared the entire installment amount and the company has no
+ * further claim. Renders on the SE letterhead with a paid-installment table.
+ */
+export interface InstallmentNocTemplateData {
+  bgImage: string;
+  planCode: string;
+  customerName: string;
+  customerPhone: string;
+  customerId: string;
+  customerAddress: string | null;
+  productType: string | null;
+  productModel: string;
+  productBrand: string | null;
+  serialNumber: string | null;
+  productImage: string | null;
+  financedAmount: number;
+  totalPayable: number;
+  downPayment: number;
+  months: number;
+  startDate: Date;
+  endDate: Date;
+  /** True only when every scheduled installment is paid. */
+  fullyPaid: boolean;
+  rows: InstallmentReceiptRow[];
+  paidTotal: number;
+  paidCount: number;
+  issuedDate: Date | string;
 }
 
 export interface InstallmentStickerTemplateData {

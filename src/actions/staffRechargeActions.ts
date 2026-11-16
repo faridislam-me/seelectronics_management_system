@@ -34,6 +34,9 @@ export const requestStaffMobileRecharge = async (input: {
   rechargePhone: string;
   operator: string;
   amount: number;
+  /** When buying a regular pack, the SuccessTopup package id + its name. */
+  packageId?: string;
+  packName?: string;
 }) => {
   try {
     const session = await verifyStaffSession();
@@ -74,6 +77,7 @@ export const requestStaffMobileRecharge = async (input: {
       operator,
       amount,
       trxid,
+      packageId: input.packageId || undefined,
     });
     const isSuccess = apiRes.result === true;
 
@@ -95,7 +99,7 @@ export const requestStaffMobileRecharge = async (input: {
       paymentMethod: "cash", // placeholder — paymentTypesEnum has no recharge value
       status: "completed",
       transactionId: trxid,
-      description: `[RECHARGE] ${OPERATORS[operator]} ${rechargePhone} · TrxID ${trxid}`,
+      description: `[RECHARGE] ${OPERATORS[operator]} ${input.packName ? `প্যাক: ${input.packName} ` : ""}${rechargePhone} · TrxID ${trxid}`,
       date: new Date(),
     });
 
@@ -120,5 +124,25 @@ export const requestStaffMobileRecharge = async (input: {
   } catch (error) {
     console.error("requestStaffMobileRecharge error:", error);
     return { success: false as const, message: "রিচার্জ প্রক্রিয়া ব্যর্থ হয়েছে" };
+  }
+};
+
+/**
+ * Staff-side fetch of the available regular/bundle packages for an operator
+ * (same SuccessTopup source the customer flow uses, but gated on a staff
+ * session instead of a customer one). Used by the staff "রেগুলার প্যাক" flow.
+ */
+export const getStaffRechargePackages = async (operator: string) => {
+  try {
+    const session = await verifyStaffSession();
+    if (!session.isAuth || !session.userId) {
+      return { success: false as const, message: "Unauthorized" };
+    }
+    const res = await topup.getDrives(operator);
+    if (!res.result) return { success: false as const, message: "প্যাকেজ লোড করা যায়নি" };
+    return { success: true as const, data: res.drives || [] };
+  } catch (error) {
+    console.error("getStaffRechargePackages error:", error);
+    return { success: false as const, message: "প্যাকেজ লোড করা যায়নি" };
   }
 };

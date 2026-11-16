@@ -44,7 +44,7 @@ export const requestMobileRecharge = async (input: {
 
     if (!rechargePhone?.trim()) return { success: false, message: "রিচার্জ নম্বর আবশ্যক" };
     if (!operator || !OPERATORS[operator]) return { success: false, message: "অপারেটর নির্বাচন করুন" };
-    if (!amount || amount < 10) return { success: false, message: "ন্যূনতম রিচার্জ ৳১০" };
+    if (!amount || amount < 20) return { success: false, message: "ন্যূনতম রিচার্জ ৳২০" };
 
     const customer = await db.query.customers.findFirst({
       where: eq(customers.customerId, session.customer.customerId),

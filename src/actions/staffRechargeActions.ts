@@ -50,7 +50,7 @@ export const requestStaffMobileRecharge = async (input: {
 
     if (!rechargePhone) return { success: false as const, message: "রিচার্জ নম্বর আবশ্যক" };
     if (!operator || !OPERATORS[operator]) return { success: false as const, message: "অপারেটর নির্বাচন করুন" };
-    if (!amount || amount < 10) return { success: false as const, message: "ন্যূনতম রিচার্জ ৳১০" };
+    if (!amount || amount < 20) return { success: false as const, message: "ন্যূনতম রিচার্জ ৳২০" };
 
     const staff = await db.query.staffs.findFirst({
       where: eq(staffs.staffId, staffId),

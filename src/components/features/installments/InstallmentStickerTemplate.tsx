@@ -75,8 +75,12 @@ export default function InstallmentStickerTemplate({
         এয়ারপোর্ট রোড বাদাম বাগিচা সিলেট। ফোনঃ ০১৩২২২৪৭৭৭১
       </div>
 
-      {/* Spec rows — stacked from the top with a fixed, roomy line spacing. */}
-      <div className="flex-1 min-h-0 flex flex-col justify-start gap-[0.7mm] px-2 pt-[1.5mm] text-[11px]">
+      {/* Spec rows — distributed EVENLY down the whole available height so the
+          card fills top-to-bottom (no cramped block up top with dead space
+          below). Right padding keeps the values clear of the QR that floats in
+          the bottom-right. justify-evenly adapts: few rows spread out, many rows
+          sit closer. */}
+      <div className="flex-1 min-h-0 flex flex-col justify-evenly pl-2 pr-[14mm] py-[1.5mm] text-[11px]">
         <Row label="মডেল" value={data.productModel} />
         <Row label="সিরিয়াল নং" value={data.serialNumber} />
         {data.isElectrical && <Row label="ভিএ/ওয়াট" value={data.vaWatt} />}

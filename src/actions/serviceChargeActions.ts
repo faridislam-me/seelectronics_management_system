@@ -9,6 +9,8 @@ import { revalidatePath } from "next/cache";
 import { notifyCustomer, notifySeller } from "./notificationActions";
 
 const money = (n: number) => `৳${Math.round(n).toLocaleString("en-US")}`;
+/** Customer-facing word for the job: an install job reads "ইনস্টলেশন", a repair "সার্ভিস". */
+const jobWord = (type?: string | null) => (type === "install" ? "ইনস্টলেশন" : "সার্ভিস");
 
 /** Everything a dashboard needs about one service's charge (null when none). */
 export async function getServiceCharge(serviceId: string) {
@@ -75,6 +77,7 @@ export async function setServiceCharge(serviceId: string, input: { amount: numbe
 
     const due = Math.max(0, amount - paidAmount);
     const why = serviceChargeReasonLabel(input.reason);
+    const word = jobWord(service.type);
     const unit = `${service.productType.toUpperCase()} ${service.productModel}`;
     if (!existing && due > 0) {
       if (service.customerId) {
@@ -82,7 +85,7 @@ export async function setServiceCharge(serviceId: string, input: { amount: numbe
           customerId: service.customerId,
           phoneNumber: service.customerPhone,
           type: "service_charge",
-          message: `SE Electronics: আপনার ${unit} এর সার্ভিস (#${serviceId}) এর জন্য সার্ভিস চার্জ ${money(amount)} (${why})। অনুগ্রহ করে পরিশোধ করুন।`,
+          message: `SE Electronics: আপনার ${unit} এর ${word} (#${serviceId}) এর জন্য ${word} চার্জ ${money(amount)} (${why})। অনুগ্রহ করে পরিশোধ করুন।`,
           link: `/customer/services/${serviceId}`,
         });
       }
@@ -92,7 +95,7 @@ export async function setServiceCharge(serviceId: string, input: { amount: numbe
           sellerId,
           phoneNumber: seller?.phone,
           type: "service_charge",
-          message: `SE Electronics: আপনার কাস্টমার ${service.customerName} এর ${unit} সার্ভিস (#${serviceId}) এ সার্ভিস চার্জ ${money(amount)} ধরা হয়েছে (${why})। বাকি ${money(due)}।`,
+          message: `SE Electronics: আপনার কাস্টমার ${service.customerName} এর ${unit} ${word} (#${serviceId}) এ ${word} চার্জ ${money(amount)} ধরা হয়েছে (${why})। বাকি ${money(due)}।`,
           link: "/seller/services",
         });
       }
@@ -114,7 +117,7 @@ export async function collectServiceCharge(serviceId: string, input: { amount: n
     if (!Number.isFinite(amount) || amount <= 0) return { success: false, message: "Enter an amount greater than 0" };
     const method = (SERVICE_CHARGE_METHODS as readonly string[]).includes(input.method) ? input.method : "cash";
 
-    const charge = await db.query.serviceCharges.findFirst({ where: eq(serviceCharges.serviceId, serviceId), with: { service: { columns: { customerName: true, customerPhone: true, productType: true, productModel: true } } } });
+    const charge = await db.query.serviceCharges.findFirst({ where: eq(serviceCharges.serviceId, serviceId), with: { service: { columns: { customerName: true, customerPhone: true, productType: true, productModel: true, type: true } } } });
     if (!charge) return { success: false, message: "No service charge on this job" };
     if (charge.status === "waived") return { success: false, message: "This charge was waived" };
     const remaining = Math.max(0, charge.amount - charge.paidAmount);
@@ -125,13 +128,14 @@ export async function collectServiceCharge(serviceId: string, input: { amount: n
     await db.update(serviceCharges).set({ paidAmount, status: paid ? "paid" : "due", paymentMethod: method, paidAt: new Date() }).where(eq(serviceCharges.serviceId, serviceId));
 
     const left = Math.max(0, charge.amount - paidAmount);
+    const word = jobWord(charge.service?.type);
     const unit = `${charge.service?.productType?.toUpperCase() ?? ""} ${charge.service?.productModel ?? ""}`.trim();
     if (charge.customerId) {
       await notifyCustomer({
         customerId: charge.customerId,
         phoneNumber: charge.service?.customerPhone ?? "",
         type: "service_charge_paid",
-        message: `SE Electronics: সার্ভিস #${serviceId} এর চার্জ ${money(amount)} গ্রহণ করা হয়েছে (${method.toUpperCase()})। ${paid ? "সম্পূর্ণ পরিশোধিত, ধন্যবাদ।" : `বাকি ${money(left)}।`}`,
+        message: `SE Electronics: ${word} #${serviceId} এর চার্জ ${money(amount)} গ্রহণ করা হয়েছে (${method.toUpperCase()})। ${paid ? "সম্পূর্ণ পরিশোধিত, ধন্যবাদ।" : `বাকি ${money(left)}।`}`,
         link: `/customer/services/${serviceId}`,
       });
     }
@@ -139,7 +143,7 @@ export async function collectServiceCharge(serviceId: string, input: { amount: n
       await notifySeller({
         sellerId: charge.sellerId,
         type: "service_charge_paid",
-        message: `${charge.service?.customerName ?? "কাস্টমার"} এর ${unit} সার্ভিস (#${serviceId}) চার্জ ${money(amount)} জমা হয়েছে। ${paid ? "সম্পূর্ণ পরিশোধিত।" : `বাকি ${money(left)}।`}`,
+        message: `${charge.service?.customerName ?? "কাস্টমার"} এর ${unit} ${word} (#${serviceId}) চার্জ ${money(amount)} জমা হয়েছে। ${paid ? "সম্পূর্ণ পরিশোধিত।" : `বাকি ${money(left)}।`}`,
         link: "/seller/services",
       });
     }

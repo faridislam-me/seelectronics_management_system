@@ -692,6 +692,8 @@ export const submitInstallmentApplication = async (formData: FormData) => {
     const productTypeOther = (formData.get("productTypeOther") as string) || undefined;
     const productBrand = (formData.get("productBrand") as string) || undefined;
     const productSpec = (formData.get("productSpec") as string) || undefined;
+    const batteryBrand = (formData.get("batteryBrand") as string) || undefined;
+    const batteryAmpere = (formData.get("batteryAmpere") as string) || undefined;
     const notes = (formData.get("notes") as string) || undefined;
     const guarantorName = (formData.get("guarantorName") as string) || undefined;
     const guarantorPhone = (formData.get("guarantorPhone") as string) || undefined;
@@ -781,6 +783,8 @@ export const submitInstallmentApplication = async (formData: FormData) => {
       productTypeOther,
       productBrand,
       productSpec,
+      batteryBrand,
+      batteryAmpere,
       productModel: productModel.trim(),
       photoKey,
       nidFrontPhotoKey: nidFrontKey,

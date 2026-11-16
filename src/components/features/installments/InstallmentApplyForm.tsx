@@ -161,6 +161,11 @@ const PRODUCT_SPECS: Record<string, { label: string; options: { value: string; l
   },
 };
 
+// Brand dropdown lists — only these are offered on installment.
+const IPS_BRANDS = ["SE POWER IPS", "Luminous", "Su-Kam", "Microtek", "Smarten"];
+const BATTERY_BRANDS = ["Hamko", "SF Power", "Evon", "Volvo", "Lead Power", "Rimso"];
+const BATTERY_AMPERES = ["60Ah", "80Ah", "100Ah", "120Ah", "130Ah", "150Ah", "200Ah"];
+
 function FileInput({
   id,
   label,
@@ -538,6 +543,8 @@ export default function InstallmentApplyForm() {
   const [productTypeOther, setProductTypeOther] = useState("");
   const [productBrand, setProductBrand] = useState("");
   const [productSpec, setProductSpec] = useState("");
+  const [batteryBrand, setBatteryBrand] = useState("");
+  const [batteryAmpere, setBatteryAmpere] = useState("");
   const [productModel, setProductModel] = useState("");
   const [desiredMonths, setDesiredMonths] = useState("");
   const [desiredDownPayment, setDesiredDownPayment] = useState("");
@@ -616,6 +623,8 @@ export default function InstallmentApplyForm() {
     if (productType === "others" && productTypeOther.trim()) fd.append("productTypeOther", productTypeOther.trim());
     if (productBrand.trim()) fd.append("productBrand", productBrand.trim());
     if (productSpec) fd.append("productSpec", productSpec);
+    if (productType === "ips_package" && batteryBrand.trim()) fd.append("batteryBrand", batteryBrand.trim());
+    if (productType === "ips_package" && batteryAmpere) fd.append("batteryAmpere", batteryAmpere);
     fd.append("productModel", productModel.trim());
     if (desiredMonths) fd.append("desiredMonths", desiredMonths);
     if (desiredDownPayment) fd.append("desiredDownPayment", desiredDownPayment);
@@ -797,7 +806,7 @@ export default function InstallmentApplyForm() {
           <label className={labelCls}>পণ্যের ধরন <span className="text-red-500">*</span></label>
           <CategorySelect
             value={productType}
-            onChange={(v) => { setProductType(v); setProductSpec(""); }}
+            onChange={(v) => { setProductType(v); setProductSpec(""); setProductBrand(""); setBatteryBrand(""); setBatteryAmpere(""); }}
             options={PRODUCT_TYPES}
           />
         </div>
@@ -807,10 +816,42 @@ export default function InstallmentApplyForm() {
             <input value={productTypeOther} onChange={(e) => setProductTypeOther(e.target.value)} placeholder="পণ্যের নাম লিখুন" className={inputCls} />
           </div>
         )}
-        {productType && (
+        {/* Brand: a fixed dropdown for IPS / Battery / IPS-package, free text otherwise */}
+        {productType && productType !== "ips" && productType !== "battery" && productType !== "ips_package" && (
           <div>
             <label className={labelCls}>ব্র্যান্ড</label>
             <input value={productBrand} onChange={(e) => setProductBrand(e.target.value)} placeholder="যেমন: Samsung, Walton, Singer..." className={inputCls} />
+          </div>
+        )}
+        {(productType === "ips" || productType === "ips_package") && (
+          <div>
+            <label className={labelCls}>আইপিএস ব্র্যান্ড</label>
+            <select value={productBrand} onChange={(e) => setProductBrand(e.target.value)} className={selectCls}>
+              <option value="">নির্বাচন করুন</option>
+              {IPS_BRANDS.map((b) => (<option key={b} value={b}>{b}</option>))}
+            </select>
+          </div>
+        )}
+        {(productType === "battery" || productType === "ips_package") && (
+          <div>
+            <label className={labelCls}>ব্যাটারি ব্র্যান্ড</label>
+            <select
+              value={productType === "ips_package" ? batteryBrand : productBrand}
+              onChange={(e) => (productType === "ips_package" ? setBatteryBrand(e.target.value) : setProductBrand(e.target.value))}
+              className={selectCls}
+            >
+              <option value="">নির্বাচন করুন</option>
+              {BATTERY_BRANDS.map((b) => (<option key={b} value={b}>{b}</option>))}
+            </select>
+          </div>
+        )}
+        {productType === "ips_package" && (
+          <div>
+            <label className={labelCls}>ব্যাটারির ক্যাপাসিটি (Ah)</label>
+            <select value={batteryAmpere} onChange={(e) => setBatteryAmpere(e.target.value)} className={selectCls}>
+              <option value="">নির্বাচন করুন</option>
+              {BATTERY_AMPERES.map((a) => (<option key={a} value={a}>{a}</option>))}
+            </select>
           </div>
         )}
         {specConfig && (

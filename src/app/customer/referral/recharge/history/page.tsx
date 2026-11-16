@@ -54,11 +54,14 @@ export default function RechargeHistoryPage() {
 
   return (
     <>
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2.5 pt-1">
         <Link href="/customer/referral/recharge" className="size-9 rounded-md bg-white border border-[#dfe6f2] flex items-center justify-center shrink-0">
           <ArrowLeft size={18} />
         </Link>
-        <span className="text-[16px] font-extrabold">রিচার্জ ইতিহাস</span>
+        <span className="flex flex-col leading-tight flex-1 min-w-0">
+          <span className="text-[16px] font-extrabold">রিচার্জ ইতিহাস</span>
+          <span className="text-[11px] font-semibold text-[#5b6784]">আপনার সব রিচার্জের রেকর্ড</span>
+        </span>
       </div>
 
       {/* Type tabs — each type's history shown separately */}

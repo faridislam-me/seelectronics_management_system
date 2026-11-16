@@ -6,7 +6,7 @@ import { db } from "@/db/drizzle";
 import { payments, staffs } from "@/db/schema";
 import * as topup from "@/lib/successtopup";
 import { generateRandomId } from "@/utils";
-import { eq } from "drizzle-orm";
+import { and, desc, eq, ilike } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 const OPERATORS: Record<string, string> = {
@@ -144,5 +144,73 @@ export const getStaffRechargePackages = async (operator: string) => {
   } catch (error) {
     console.error("getStaffRechargePackages error:", error);
     return { success: false as const, message: "প্যাকেজ লোড করা যায়নি" };
+  }
+};
+
+// Operator display-name → key (for the recharge-history operator icon). The
+// history rows store the display name inside the payment description.
+const OPERATOR_KEY: Record<string, string> = Object.fromEntries(
+  Object.entries(OPERATORS).map(([k, v]) => [v.toLowerCase(), k]),
+);
+
+export type StaffRechargeHistoryRow = {
+  id: string;
+  operator: string;
+  operatorKey: string;
+  phone: string;
+  amount: number;
+  trxId: string;
+  isPack: boolean;
+  packName: string;
+  status: string;
+  date: string;
+};
+
+/**
+ * Recent mobile recharges / packs this staff member made. They are stored as
+ * `payments` rows tagged `[RECHARGE] <Operator> [প্যাক: <name> ]<phone> · TrxID <id>`
+ * (see requestStaffMobileRecharge); this parses them back for the "সাম্প্রতিক
+ * রিচার্জ" list. Robust to small format drift — falls back gracefully.
+ */
+export const getStaffRechargeHistory = async (limit = 20) => {
+  try {
+    const session = await verifyStaffSession();
+    if (!session.isAuth || !session.userId) {
+      return { success: false as const, message: "Unauthorized" };
+    }
+    const staffId = session.userId as string;
+
+    const rows = await db.query.payments.findMany({
+      where: and(eq(payments.staffId, staffId), ilike(payments.description, "[RECHARGE]%")),
+      orderBy: [desc(payments.date)],
+      limit,
+      columns: { paymentId: true, amount: true, status: true, transactionId: true, description: true, date: true },
+    });
+
+    const data: StaffRechargeHistoryRow[] = rows.map((r) => {
+      const body = (r.description || "").replace(/^\[RECHARGE\]\s*/, "");
+      const operator = body.split(/\s+/)[0] || "";
+      const operatorKey = OPERATOR_KEY[operator.toLowerCase()] || "grameenphone";
+      const phone = (body.match(/01\d{9}/) || [""])[0];
+      const packMatch = body.match(/প্যাক:\s*(.+?)\s+01\d{9}/);
+      const trxId = r.transactionId || (body.match(/TrxID\s*(\S+)/)?.[1] ?? "");
+      return {
+        id: r.paymentId,
+        operator,
+        operatorKey,
+        phone,
+        amount: Number(r.amount),
+        trxId,
+        isPack: !!packMatch,
+        packName: packMatch?.[1]?.trim() || "",
+        status: r.status,
+        date: (r.date instanceof Date ? r.date : new Date(r.date)).toISOString(),
+      };
+    });
+
+    return { success: true as const, data };
+  } catch (error) {
+    console.error("getStaffRechargeHistory error:", error);
+    return { success: false as const, message: "রিচার্জ ইতিহাস আনা যায়নি" };
   }
 };

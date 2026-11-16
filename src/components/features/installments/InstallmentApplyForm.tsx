@@ -427,10 +427,11 @@ async function compressFileClient(file: File, maxW = 1200, quality = 0.7): Promi
 
 const inputCls =
   "w-full h-11 rounded-md border border-[#dfe6f2] px-3 text-[14px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none text-[#16213a]";
-// Selects get a taller control + larger text so the options are comfortably
-// tappable on mobile (the native option rows inherit the select's font-size).
+// Selects share the exact same height as the text inputs so every control in
+// the form lines up at one uniform size. (The native option rows still inherit
+// a comfortable font-size for tapping.)
 const selectCls =
-  "w-full h-[52px] rounded-md border border-[#dfe6f2] px-3 text-[16px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none text-[#16213a] leading-relaxed [&>option]:py-3 [&>option]:text-[16px] [&>option]:font-semibold";
+  "w-full h-11 rounded-md border border-[#dfe6f2] px-3 text-[14px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none text-[#16213a] [&>option]:text-[15px] [&>option]:font-semibold";
 const textareaCls =
   "w-full rounded-md border border-[#dfe6f2] px-3 py-2.5 text-[14px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none resize-none text-[#16213a]";
 const labelCls = "text-[13px] font-bold text-[#3d4f72] mb-1 block";
@@ -467,15 +468,15 @@ function CategorySelect({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full min-h-[58px] rounded-md border border-[#dfe6f2] px-3 py-2 bg-white flex items-center gap-3 text-left focus:border-[#0b3d91] focus:outline-none"
+        className="w-full h-11 rounded-md border border-[#dfe6f2] px-3 bg-white flex items-center gap-2.5 text-left focus:border-[#0b3d91] focus:outline-none"
       >
         {selected ? (
           <>
-            <Thumb v={selected.value} size="size-10" />
-            <span className="flex-1 text-[16px] font-extrabold text-[#16213a]">{selected.label}</span>
+            <Thumb v={selected.value} size="size-7" />
+            <span className="flex-1 text-[14px] font-extrabold text-[#16213a]">{selected.label}</span>
           </>
         ) : (
-          <span className="flex-1 text-[16px] font-semibold text-[#8794ab]">নির্বাচন করুন *</span>
+          <span className="flex-1 text-[14px] font-semibold text-[#8794ab]">নির্বাচন করুন *</span>
         )}
         <ChevronDown size={20} className={clsx("shrink-0 text-[#5b6784] transition-transform", open && "rotate-180")} />
       </button>

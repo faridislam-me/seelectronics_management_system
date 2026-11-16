@@ -1907,3 +1907,40 @@ export const driveAddMoneyRequestsRelations = relations(
     }),
   }),
 );
+
+// ---- Scratch-card lottery ----
+// Admin generates a batch of unique card codes (printed on physical scratch
+// cards alongside one shared QR link). A customer scratches a card, opens the
+// QR link (/lottery), and submits name/phone/address + the card code. The code
+// must be a generated, unused one. The admin then runs a random draw that picks
+// N distinct entries as winners (rank 1..N), SMSes them, and keeps the winners.
+export const lotteryCards = pgTable(
+  "lottery_cards",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    code: varchar({ length: 32 }).unique().notNull(),
+    batchLabel: varchar({ length: 120 }).default("").notNull(),
+    used: boolean().default(false).notNull(),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("lottery_cards_used_idx").on(t.used)],
+);
+
+export const lotteryEntries = pgTable(
+  "lottery_entries",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    cardCode: varchar({ length: 32 }).notNull(),
+    name: varchar({ length: 255 }).notNull(),
+    phone: varchar({ length: 20 }).notNull(),
+    address: varchar({ length: 500 }).default("").notNull(),
+    /** Winner rank (1 = first prize …); null = not drawn as a winner. */
+    rank: integer(),
+    drawnAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("lottery_entries_rank_idx").on(t.rank),
+    index("lottery_entries_card_idx").on(t.cardCode),
+  ],
+);

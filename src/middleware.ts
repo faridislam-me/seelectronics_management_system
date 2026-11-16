@@ -16,6 +16,7 @@ const adminProtectedRoutes = [
     '/sellers',
     '/seller-payments',
     '/suppliers',
+    '/lottery-manage',
 ];
 
 const sellerProtectedRoutes = [

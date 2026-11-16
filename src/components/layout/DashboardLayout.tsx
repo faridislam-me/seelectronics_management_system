@@ -14,6 +14,7 @@ import {
   CreditCard,
   Crown,
   FileText,
+  Gift,
   History,
   HomeIcon,
   Image as ImageIcon,
@@ -52,6 +53,12 @@ const links = [
     href: "/battery-reminders",
     icon: Zap,
     sectionTitle: "Maintenance",
+  },
+  {
+    name: "লটারি (Lottery)",
+    href: "/lottery-manage",
+    icon: Gift,
+    sectionTitle: "Lottery",
   },
   {
     name: "Team Members",

@@ -95,7 +95,9 @@ export default function StaffRegularPackFlow({ initialBalance }: { initialBalanc
       if (!active) return;
       if (res.success && Array.isArray(res.data)) {
         const all = res.data.map(mapPack);
-        setPackages(all.filter((p) => !p.type || p.type === "regular"));
+        // Show every pack that isn't a drive-only pack (the API doesn't reliably
+        // tag packs "regular", so matching that exact value hid everything).
+        setPackages(all.filter((p) => (p.type || "").toLowerCase() !== "drive"));
       } else {
         setPackages([]);
       }

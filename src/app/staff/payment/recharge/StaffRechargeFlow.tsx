@@ -38,7 +38,7 @@ export default function StaffRechargeFlow({ initialBalance }: { initialBalance: 
   const doRecharge = async () => {
     const amt = Number(amount);
     if (!rechargePhone.trim()) return toast.error("রিচার্জ নম্বর দিন");
-    if (!amt || amt < 10) return toast.error("ন্যূনতম ৳১০");
+    if (!amt || amt < 20) return toast.error("ন্যূনতম ৳২০");
     if (amt > balance) {
       setInsufficient(amt);
       return;
@@ -123,11 +123,11 @@ export default function StaffRechargeFlow({ initialBalance }: { initialBalance: 
           <label className="text-[11px] font-bold text-[#5b6784] mb-1 block">পরিমাণ (৳) *</label>
           <input
             type="number"
-            min="10"
+            min="20"
             step="1"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="ন্যূনতম ৳১০"
+            placeholder="ন্যূনতম ৳২০"
             className="w-full h-11 rounded-md border border-[#dfe6f2] px-3 text-[14px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none"
           />
           <div className="flex flex-wrap gap-1.5 mt-2">

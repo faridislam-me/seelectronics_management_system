@@ -195,9 +195,17 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
       if (!active) return;
       if (res.success && Array.isArray(res.data)) {
         const all = res.data.map(mapPack);
-        // regular_pack → "regular" items; drive_pack → "drive"; drive_offer → all.
-        const want = rechargeType === "regular_pack" ? "regular" : rechargeType === "drive_pack" ? "drive" : null;
-        setPackages(want ? all.filter((p) => !p.type || p.type === want) : all);
+        // drive_pack → only the drive-tagged packs; regular_pack → everything
+        // that is NOT a drive pack (the API doesn't always tag packs "regular",
+        // so matching that exact value hid every package); drive_offer → all.
+        const isDrivePack = (p: Pack) => (p.type || "").toLowerCase() === "drive";
+        setPackages(
+          rechargeType === "drive_pack"
+            ? all.filter(isDrivePack)
+            : rechargeType === "regular_pack"
+              ? all.filter((p) => !isDrivePack(p))
+              : all,
+        );
       } else {
         setPackages([]);
       }
@@ -216,7 +224,7 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
   const doRecharge = async (amt: number, pkgId?: string) => {
     if (!rechargePhone.trim()) return toast.error("রিচার্জ নম্বর দিন");
     if (isDrive && !driverRef.trim()) return toast.error("ড্রাইভার আইডি / রেফারেন্স নম্বর দিন");
-    if (!amt || amt < 10) return toast.error("ন্যূনতম ৳১০");
+    if (!amt || amt < 20) return toast.error("ন্যূনতম ৳২০");
     if (amt > balance) {
       setInsufficient(amt);
       return;
@@ -337,11 +345,11 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
                 <label className="text-[11px] font-bold text-[#5b6784] mb-1 block">পরিমাণ (৳) *</label>
                 <input
                   type="number"
-                  min="10"
+                  min="20"
                   step="1"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder="ন্যূনতম ৳১০"
+                  placeholder="ন্যূনতম ৳২০"
                   className="w-full h-10 rounded-md border border-[#dfe6f2] px-3 text-[13px] font-semibold bg-white focus:border-[#0b3d91] focus:outline-none"
                 />
               </div>

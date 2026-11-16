@@ -1,6 +1,7 @@
 "use client";
 
 import { requestStaffMobileRecharge } from "@/actions/staffRechargeActions";
+import StaffRechargeHistory from "./StaffRechargeHistory";
 import OperatorIcon, { OPERATOR_META } from "@/components/features/recharge/OperatorIcon";
 import clsx from "clsx";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Copy, Loader2, Wallet } from "lucide-react";
@@ -34,6 +35,7 @@ export default function StaffRechargeFlow({ initialBalance }: { initialBalance: 
   const [success, setSuccess] = useState<SuccessResult | null>(null);
   const [insufficient, setInsufficient] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [rechargeCount, setRechargeCount] = useState(0);
 
   const doRecharge = async () => {
     const amt = Number(amount);
@@ -50,6 +52,7 @@ export default function StaffRechargeFlow({ initialBalance }: { initialBalance: 
       setSuccess(res.detail);
       setBalance(res.detail.newBalance);
       setAmount("");
+      setRechargeCount((c) => c + 1);
       router.refresh();
     } else if (!res.success && "code" in res && res.code === "insufficient") {
       setBalance(res.balance);
@@ -157,6 +160,8 @@ export default function StaffRechargeFlow({ initialBalance }: { initialBalance: 
         রিচার্জ স্বয়ংক্রিয়ভাবে প্রক্রিয়া হবে এবং আপনার ব্যালেন্স থেকে কর্তন করা হবে।
       </p>
 
+      <StaffRechargeHistory refreshKey={rechargeCount} />
+
       {/* Insufficient popup */}
       {insufficient !== null && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-5" onClick={() => setInsufficient(null)}>
@@ -185,7 +190,7 @@ export default function StaffRechargeFlow({ initialBalance }: { initialBalance: 
 
       {/* Success popup */}
       {success && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-[#0b3d91] to-[#1f7cf0]">
+        <div className="fixed inset-0 z-[70] flex flex-col bg-gradient-to-b from-[#0b3d91] to-[#1f7cf0]">
           <div className="flex flex-col items-center pt-10 pb-6 px-4">
             <div className="size-20 rounded-full bg-[#22c55e] flex items-center justify-center shadow-[0_8px_30px_rgba(34,197,94,0.4)]"><CheckCircle2 size={44} className="text-white" /></div>
             <p className="text-[22px] font-extrabold text-white mt-4">আপনার রিচার্জ</p>

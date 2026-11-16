@@ -9,7 +9,7 @@ import {
   installmentSchedule,
 } from "@/db/schema";
 import { verifyCustomerSession } from "@/actions/customerActions";
-import { notifyCustomer } from "@/actions/notificationActions";
+import { notifyCustomer, notifyAdmin } from "@/actions/notificationActions";
 import { verifySession } from "@/lib";
 import { putObject, getObjectUrl } from "@/lib/s3";
 import { compressImage } from "@/lib/sharp";
@@ -255,6 +255,7 @@ export const getInstallmentPlans = async ({
               planId: installmentSchedule.planId,
               paidCount: sql<number>`count(*) filter (where ${installmentSchedule.status} = 'paid')`.mapWith(Number),
               paidAmount: sql<number>`coalesce(sum(${installmentSchedule.paidAmount}) filter (where ${installmentSchedule.status} = 'paid'), 0)`.mapWith(Number),
+              claimedCount: sql<number>`count(*) filter (where ${installmentSchedule.status} = 'claimed')`.mapWith(Number),
             })
             .from(installmentSchedule)
             .where(inArray(installmentSchedule.planId, ids))
@@ -270,6 +271,7 @@ export const getInstallmentPlans = async ({
         ...p,
         paidCount,
         paidAmount,
+        claimedCount: pr?.claimedCount || 0,
         remainingAmount: round2(p.financedAmount - paidAmount),
         remainingCount: p.months - paidCount,
       };
@@ -1245,6 +1247,8 @@ export const getMyApplicationByCode = async (code: string) => {
 };
 
 /** Customer claims they paid an installment (admin verifies later). */
+const METHOD_BN: Record<string, string> = { bkash: "বিকাশ", nagad: "নগদ", rocket: "রকেট" };
+
 export const claimInstallmentPayment = async (input: {
   planCode: string;
   scheduleId: string;
@@ -1281,6 +1285,16 @@ export const claimInstallmentPayment = async (input: {
         paymentNumber: input.paymentNumber.trim(),
       })
       .where(eq(installmentSchedule.id, input.scheduleId));
+
+    // Signal the admin that a payment was submitted and needs verification, so
+    // it doesn't sit unseen — shows in the admin notification bar and links
+    // straight to the plan where the claimed row has the যাচাই করুন action.
+    const methodBn = METHOD_BN[input.paymentMethod] || input.paymentMethod;
+    notifyAdmin({
+      type: "installment_payment_claim",
+      message: `${plan.customerName || "গ্রাহক"} (${plan.planCode}) কিস্তি #${row.installmentNo}-এর ${methodBn} পেমেন্ট জমা দিয়েছে (৳${row.amount}) — যাচাই করুন। নম্বর: ${input.paymentNumber.trim()}, TxID: ${input.transactionId.trim()}`,
+      link: `/installments/${input.planCode}`,
+    }).catch(() => {});
 
     revalidatePath("/installments");
     revalidatePath(`/customer/installments/${input.planCode}`);

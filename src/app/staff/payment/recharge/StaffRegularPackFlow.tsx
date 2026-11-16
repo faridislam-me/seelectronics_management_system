@@ -2,6 +2,7 @@
 
 import { getStaffRechargePackages, requestStaffMobileRecharge } from "@/actions/staffRechargeActions";
 import OperatorIcon, { OPERATOR_META } from "@/components/features/recharge/OperatorIcon";
+import StaffRechargeHistory from "./StaffRechargeHistory";
 import clsx from "clsx";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Copy, Loader2, Package, X } from "lucide-react";
 import Link from "next/link";
@@ -86,6 +87,7 @@ export default function StaffRegularPackFlow({ initialBalance }: { initialBalanc
   const [success, setSuccess] = useState<SuccessResult | null>(null);
   const [insufficient, setInsufficient] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [rechargeCount, setRechargeCount] = useState(0);
 
   // Load packages for the selected operator (regular packs only).
   useEffect(() => {
@@ -131,6 +133,7 @@ export default function StaffRegularPackFlow({ initialBalance }: { initialBalanc
     setSubmitting(false);
     if (res.success && "detail" in res && res.detail) {
       setSuccess({ ...res.detail, packName: pkg.name });
+      setRechargeCount((c) => c + 1);
       setBalance(res.detail.newBalance);
       setSheetPkg(null);
       router.refresh();
@@ -259,6 +262,8 @@ export default function StaffRegularPackFlow({ initialBalance }: { initialBalanc
         প্যাক স্বয়ংক্রিয়ভাবে প্রক্রিয়া হবে এবং আপনার ব্যালেন্স থেকে কর্তন করা হবে।
       </p>
 
+      <StaffRechargeHistory refreshKey={rechargeCount} />
+
       {/* Package confirm sheet */}
       {sheetPkg && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={() => !submitting && setSheetPkg(null)}>
@@ -336,7 +341,7 @@ export default function StaffRegularPackFlow({ initialBalance }: { initialBalanc
 
       {/* Success popup */}
       {success && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-[#9c1458] to-[#e84393]">
+        <div className="fixed inset-0 z-[70] flex flex-col bg-gradient-to-b from-[#9c1458] to-[#e84393]">
           <div className="flex flex-col items-center pt-10 pb-6 px-4">
             <div className="size-20 rounded-full bg-[#22c55e] flex items-center justify-center shadow-[0_8px_30px_rgba(34,197,94,0.4)]"><CheckCircle2 size={44} className="text-white" /></div>
             <p className="text-[22px] font-extrabold text-white mt-4">আপনার প্যাক</p>

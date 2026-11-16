@@ -623,7 +623,7 @@ function KycGate({ info }: { info: { kycStatus: string; kyc: any } | null }) {
 function SuccessScreen({ result, copied, setCopied, onHome }: { result: SuccessResult; copied: boolean; setCopied: (v: boolean) => void; onHome: () => void }) {
   const opBn = OPERATOR_META[result.operatorKey]?.labelBn || result.operator;
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-[#0b3d91] to-[#1f7cf0]">
+    <div className="fixed inset-0 z-[70] flex flex-col bg-gradient-to-b from-[#0b3d91] to-[#1f7cf0]">
       <div className="flex flex-col items-center pt-10 pb-6 px-4">
         <div className="size-20 rounded-full bg-[#22c55e] flex items-center justify-center shadow-[0_8px_30px_rgba(34,197,94,0.4)]"><CheckCircle2 size={44} className="text-white" /></div>
         <p className="text-[22px] font-extrabold text-white mt-4">আপনার রিচার্জ</p>

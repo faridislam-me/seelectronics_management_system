@@ -17,6 +17,7 @@ export type InstallmentPlanRow = {
   financedAmount: number;
   status: string;
   paidCount: number;
+  claimedCount: number;
   remainingAmount: number;
   remainingCount: number;
 };
@@ -134,7 +135,14 @@ export default function InstallmentsClient({ initialPlans }: { initialPlans: Ins
                       <p className="font-black text-gray-900 dark:text-white truncate">{p.customerName}</p>
                       <p className="text-xs text-gray-500 truncate">{p.customerPhone}</p>
                     </div>
-                    <span className={clsx("shrink-0 text-[10px] font-bold uppercase px-2 py-1 rounded-full border", sm.cls)}>{sm.label}</span>
+                    <div className="shrink-0 flex flex-col items-end gap-1">
+                      <span className={clsx("text-[10px] font-bold uppercase px-2 py-1 rounded-full border", sm.cls)}>{sm.label}</span>
+                      {p.claimedCount > 0 && (
+                        <span className="text-[10px] font-extrabold px-2 py-1 rounded-full border border-blue-300 bg-blue-50 text-blue-700 whitespace-nowrap animate-pulse">
+                          {p.claimedCount} পেমেন্ট যাচাই বাকি
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between text-xs">

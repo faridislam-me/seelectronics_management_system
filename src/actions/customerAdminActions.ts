@@ -25,6 +25,18 @@ const normalizeCategory = (category?: string): ProductCategory | undefined =>
     : undefined;
 
 /**
+ * Which product `type` values count for each reminder category. An "ips_package"
+ * is an IPS + battery bundle, so its owner needs BOTH the IPS and the battery
+ * maintenance reminders — otherwise package customers silently fall out of both
+ * lists (they were missed because the filter matched only the exact type).
+ */
+const CATEGORY_PRODUCT_TYPES: Record<ProductCategory, readonly ["ips" | "battery" | "stabilizer" | "ips_package", ...("ips" | "battery" | "stabilizer" | "ips_package")[]]> = {
+  ips: ["ips", "ips_package"],
+  battery: ["battery", "ips_package"],
+  stabilizer: ["stabilizer"],
+};
+
+/**
  * Builds the WHERE condition for the admin customers listing: a text search
  * across the usual columns, optionally narrowed to customers who own at least
  * one product of a given category (ips/battery/stabilizer). A customer with
@@ -59,7 +71,7 @@ const buildCustomersWhere = (query?: string, category?: string) => {
           .selectDistinct({ customerId: invoices.customerId })
           .from(invoices)
           .innerJoin(products, eq(products.invoiceId, invoices.id))
-          .where(eq(products.type, cat)),
+          .where(inArray(products.type, [...CATEGORY_PRODUCT_TYPES[cat]])),
       )
     : undefined;
 

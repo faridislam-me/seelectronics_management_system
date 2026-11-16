@@ -181,10 +181,20 @@ export default function BatteryRemindersClient({
           onClick={toggleAllMatchingCustomers}
           className="px-3 py-2 border border-gray-300 rounded-md font-medium hover:bg-gray-50"
         >
-          {allMatchingSelected ? "Clear all matching" : "Select all matching customers"}
+          {allMatchingSelected
+            ? "সিলেকশন বাতিল করুন"
+            : `সব ${allCustomerIds.length} জন গ্রাহক সিলেক্ট করুন`}
         </button>
-        <span className="text-gray-500">
-          {visibleSelected.length} of {visibleIds.length} visible selected
+        {selectedIds.length > 0 ? (
+          <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-1.5">
+            ✓ {selectedIds.length} জন সিলেক্ট — এদের সবার কাছে পাঠানো হবে
+            {allMatchingSelected && ` (সব পেজ সহ, মোট ${allCustomerIds.length})`}
+          </span>
+        ) : (
+          <span className="text-gray-500">এখনো কেউ সিলেক্ট হয়নি</span>
+        )}
+        <span className="text-gray-400 text-xs">
+          (এই পেজে {visibleSelected.length}/{visibleIds.length})
         </span>
       </div>
 

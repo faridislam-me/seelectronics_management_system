@@ -1926,6 +1926,23 @@ export const lotteryCards = pgTable(
   (t) => [index("lottery_cards_used_idx").on(t.used)],
 );
 
+// A campaign is one lottery round/draw. Cards & the QR link are printed once and
+// reused across campaigns: unused cards carry over automatically, and each new
+// campaign collects its own entries and runs its own independent draw. Exactly
+// one campaign is "active" (accepting entries) at a time; older ones are "ended"
+// and kept as history.
+export const lotteryCampaigns = pgTable(
+  "lottery_campaigns",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    name: varchar({ length: 120 }).default("").notNull(),
+    status: varchar({ length: 20 }).default("active").notNull(), // 'active' | 'ended'
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    endedAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [index("lottery_campaigns_status_idx").on(t.status)],
+);
+
 export const lotteryEntries = pgTable(
   "lottery_entries",
   {
@@ -1934,6 +1951,8 @@ export const lotteryEntries = pgTable(
     name: varchar({ length: 255 }).notNull(),
     phone: varchar({ length: 20 }).notNull(),
     address: varchar({ length: 500 }).default("").notNull(),
+    /** The campaign (round) this entry belongs to. */
+    campaignId: uuid(),
     /** Winner rank (1 = first prize …); null = not drawn as a winner. */
     rank: integer(),
     drawnAt: timestamp({ withTimezone: true }),
@@ -1942,5 +1961,6 @@ export const lotteryEntries = pgTable(
   (t) => [
     index("lottery_entries_rank_idx").on(t.rank),
     index("lottery_entries_card_idx").on(t.cardCode),
+    index("lottery_entries_campaign_idx").on(t.campaignId),
   ],
 );

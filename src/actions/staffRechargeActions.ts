@@ -4,6 +4,7 @@ import { verifyStaffSession } from "@/actions";
 import { getStaffBalance } from "@/actions/paymentRequestActions";
 import { db } from "@/db/drizzle";
 import { payments, staffs } from "@/db/schema";
+import { verifySession } from "@/lib";
 import * as topup from "@/lib/successtopup";
 import { generateRandomId } from "@/utils";
 import { and, desc, eq, ilike } from "drizzle-orm";
@@ -167,6 +168,39 @@ export type StaffRechargeHistoryRow = {
 };
 
 /**
+ * Parse one `[RECHARGE]` payment row back into a StaffRechargeHistoryRow.
+ * Shared by the staff-facing and admin-facing history fetchers. Robust to
+ * small format drift — falls back gracefully.
+ */
+const parseRechargePayment = (r: {
+  paymentId: string;
+  amount: number;
+  status: string;
+  transactionId: string | null;
+  description: string | null;
+  date: Date | string;
+}): StaffRechargeHistoryRow => {
+  const body = (r.description || "").replace(/^\[RECHARGE\]\s*/, "");
+  const operator = body.split(/\s+/)[0] || "";
+  const operatorKey = OPERATOR_KEY[operator.toLowerCase()] || "grameenphone";
+  const phone = (body.match(/01\d{9}/) || [""])[0];
+  const packMatch = body.match(/প্যাক:\s*(.+?)\s+01\d{9}/);
+  const trxId = r.transactionId || (body.match(/TrxID\s*(\S+)/)?.[1] ?? "");
+  return {
+    id: r.paymentId,
+    operator,
+    operatorKey,
+    phone,
+    amount: Number(r.amount),
+    trxId,
+    isPack: !!packMatch,
+    packName: packMatch?.[1]?.trim() || "",
+    status: r.status,
+    date: (r.date instanceof Date ? r.date : new Date(r.date)).toISOString(),
+  };
+};
+
+/**
  * Recent mobile recharges / packs this staff member made. They are stored as
  * `payments` rows tagged `[RECHARGE] <Operator> [প্যাক: <name> ]<phone> · TrxID <id>`
  * (see requestStaffMobileRecharge); this parses them back for the "সাম্প্রতিক
@@ -187,30 +221,37 @@ export const getStaffRechargeHistory = async (limit = 20) => {
       columns: { paymentId: true, amount: true, status: true, transactionId: true, description: true, date: true },
     });
 
-    const data: StaffRechargeHistoryRow[] = rows.map((r) => {
-      const body = (r.description || "").replace(/^\[RECHARGE\]\s*/, "");
-      const operator = body.split(/\s+/)[0] || "";
-      const operatorKey = OPERATOR_KEY[operator.toLowerCase()] || "grameenphone";
-      const phone = (body.match(/01\d{9}/) || [""])[0];
-      const packMatch = body.match(/প্যাক:\s*(.+?)\s+01\d{9}/);
-      const trxId = r.transactionId || (body.match(/TrxID\s*(\S+)/)?.[1] ?? "");
-      return {
-        id: r.paymentId,
-        operator,
-        operatorKey,
-        phone,
-        amount: Number(r.amount),
-        trxId,
-        isPack: !!packMatch,
-        packName: packMatch?.[1]?.trim() || "",
-        status: r.status,
-        date: (r.date instanceof Date ? r.date : new Date(r.date)).toISOString(),
-      };
-    });
+    const data: StaffRechargeHistoryRow[] = rows.map(parseRechargePayment);
 
     return { success: true as const, data };
   } catch (error) {
     console.error("getStaffRechargeHistory error:", error);
+    return { success: false as const, message: "রিচার্জ ইতিহাস আনা যায়নি" };
+  }
+};
+
+/**
+ * Admin: mobile-recharge history for a SPECIFIC staff member. Same `[RECHARGE]`
+ * `payments` rows as getStaffRechargeHistory, but gated on an admin session and
+ * scoped to the given staffId (used on the admin staff payment-history page).
+ */
+export const getStaffRechargeHistoryForAdmin = async (staffId: string, limit = 50) => {
+  try {
+    const admin = await verifySession(false, "admin");
+    if (!admin) return { success: false as const, message: "Unauthorized" };
+    if (!staffId) return { success: false as const, message: "staffId আবশ্যক" };
+
+    const rows = await db.query.payments.findMany({
+      where: and(eq(payments.staffId, staffId), ilike(payments.description, "[RECHARGE]%")),
+      orderBy: [desc(payments.date)],
+      limit,
+      columns: { paymentId: true, amount: true, status: true, transactionId: true, description: true, date: true },
+    });
+
+    const data: StaffRechargeHistoryRow[] = rows.map(parseRechargePayment);
+    return { success: true as const, data };
+  } catch (error) {
+    console.error("getStaffRechargeHistoryForAdmin error:", error);
     return { success: false as const, message: "রিচার্জ ইতিহাস আনা যায়নি" };
   }
 };

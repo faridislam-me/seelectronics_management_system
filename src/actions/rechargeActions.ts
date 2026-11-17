@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db/drizzle";
-import { customers, mobileRechargeRequests } from "@/db/schema";
+import { customers, driveAddMoneyRequests, mobileRechargeRequests } from "@/db/schema";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { verifySession } from "@/lib";
 import { generateRandomId } from "@/utils";
@@ -320,6 +320,97 @@ export const reviewRechargeRequest = async (
   } catch (error) {
     console.error("reviewRechargeRequest error:", error);
     return { success: false, message: "আপডেট করা যায়নি" };
+  }
+};
+
+const DRIVE_METHOD_LABELS: Record<string, string> = {
+  bkash: "বিকাশ",
+  nagad: "নগদ",
+  rocket: "রকেট",
+};
+
+const RECHARGE_TYPE_LABELS: Record<string, string> = {
+  recharge: "রিচার্জ",
+  regular_pack: "রেগুলার প্যাক",
+  drive_pack: "ড্রাইভ প্যাক",
+  drive_offer: "ড্রাইভ অফার",
+};
+
+export type CustomerMoneyHistoryRow = {
+  id: string;
+  /** "recharge" = mobile recharge, "drive" = drive add-money top-up. */
+  kind: "recharge" | "drive";
+  /** রিচার্জ / ড্রাইভ */
+  typeLabel: string;
+  /** Method as stored: "recharge" for recharges, বিকাশ / নগদ / রকেট for drive. */
+  method: string;
+  /** Operator key for the recharge icon (recharge rows only). */
+  operatorKey?: string;
+  /** Recharged number (recharge) or sender wallet number (drive add-money). */
+  number: string;
+  /** Operator display name (recharge rows only). */
+  operator?: string;
+  amount: number;
+  status: string;
+  createdAt: string;
+};
+
+/**
+ * Admin: combined money history for ONE customer — mobile recharges
+ * (mobileRechargeRequests) plus drive add-money top-ups (driveAddMoneyRequests),
+ * newest first. Lets an admin see who recharged when, how much, and how they
+ * cashed out / topped up their drive wallet. Admin-gated and read-only.
+ */
+export const getCustomerMoneyHistory = async (customerId: string) => {
+  try {
+    if (!(await requireAdmin())) return UNAUTHORIZED;
+    if (!customerId) return { success: false as const, message: "customerId আবশ্যক" };
+
+    const [recharges, driveTopups] = await Promise.all([
+      db
+        .select()
+        .from(mobileRechargeRequests)
+        .where(eq(mobileRechargeRequests.customerId, customerId))
+        .orderBy(desc(mobileRechargeRequests.createdAt)),
+      db
+        .select()
+        .from(driveAddMoneyRequests)
+        .where(eq(driveAddMoneyRequests.customerId, customerId))
+        .orderBy(desc(driveAddMoneyRequests.createdAt)),
+    ]);
+
+    const rechargeRows: CustomerMoneyHistoryRow[] = recharges.map((r) => ({
+      id: `rch-${r.id}`,
+      kind: "recharge" as const,
+      typeLabel: RECHARGE_TYPE_LABELS[r.rechargeType] || "রিচার্জ",
+      method: "recharge",
+      operatorKey: r.operator,
+      number: r.rechargePhone,
+      operator: OPERATORS[r.operator] || r.operator,
+      amount: Number(r.amount),
+      status: r.status,
+      createdAt: (r.createdAt instanceof Date ? r.createdAt : new Date(r.createdAt)).toISOString(),
+    }));
+
+    const driveRows: CustomerMoneyHistoryRow[] = driveTopups.map((d) => ({
+      id: `drv-${d.id}`,
+      kind: "drive" as const,
+      typeLabel: "ড্রাইভ",
+      method: DRIVE_METHOD_LABELS[d.method] || d.method,
+      number: d.senderNumber,
+      amount: Number(d.amount),
+      status: d.status,
+      createdAt: (d.createdAt instanceof Date ? d.createdAt : new Date(d.createdAt)).toISOString(),
+    }));
+
+    const data = [...rechargeRows, ...driveRows].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
+    return { success: true as const, data };
+  } catch (error) {
+    console.error("getCustomerMoneyHistory error:", error);
+    return { success: false as const, message: "লেনদেন ইতিহাস আনা যায়নি" };
   }
 };
 

@@ -194,18 +194,14 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
     getDrivePackages(operator).then((res) => {
       if (!active) return;
       if (res.success && Array.isArray(res.data)) {
+        // SuccessTopup returns every bundle offer under /api/drives tagged
+        // type:"drive" — there is no separate "regular" dataset. These minute/GB
+        // bundles are the packs for every mode; the modes differ only in the
+        // balance used to pay (regular → referral balance, drive → drive
+        // balance), not in the pack list. So show all packs for every mode;
+        // filtering out "drive" for regular_pack hid every pack.
         const all = res.data.map(mapPack);
-        // drive_pack → only the drive-tagged packs; regular_pack → everything
-        // that is NOT a drive pack (the API doesn't always tag packs "regular",
-        // so matching that exact value hid every package); drive_offer → all.
-        const isDrivePack = (p: Pack) => (p.type || "").toLowerCase() === "drive";
-        setPackages(
-          rechargeType === "drive_pack"
-            ? all.filter(isDrivePack)
-            : rechargeType === "regular_pack"
-              ? all.filter((p) => !isDrivePack(p))
-              : all,
-        );
+        setPackages(all);
       } else {
         setPackages([]);
       }

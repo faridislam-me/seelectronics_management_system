@@ -97,9 +97,11 @@ export default function StaffRegularPackFlow({ initialBalance }: { initialBalanc
       if (!active) return;
       if (res.success && Array.isArray(res.data)) {
         const all = res.data.map(mapPack);
-        // Show every pack that isn't a drive-only pack (the API doesn't reliably
-        // tag packs "regular", so matching that exact value hid everything).
-        setPackages(all.filter((p) => (p.type || "").toLowerCase() !== "drive"));
+        // SuccessTopup returns every bundle offer under /api/drives tagged
+        // type:"drive" — these minute/GB bundles ARE the regular packs. The
+        // staff just pays from their own balance (not a drive balance), so show
+        // them all; filtering out "drive" hid every pack.
+        setPackages(all);
       } else {
         setPackages([]);
       }

@@ -32,19 +32,21 @@ export default async function StaffPaymentHubPage() {
 
         {/* Recharge options from the staff's available balance */}
         <div className="grid grid-cols-2 gap-2">
-          <Link href="/staff/payment/recharge" className="rounded-md bg-white border-2 border-[#1f7cf0] p-3 flex flex-col gap-1.5 shadow-[0_6px_18px_rgba(31,124,240,0.12)]">
+          <Link href="/staff/payment/recharge" className="rounded-md bg-white border-2 border-[#1f7cf0] p-2.5 flex items-center gap-2.5 shadow-[0_6px_18px_rgba(31,124,240,0.12)]">
             <span className="size-10 rounded-full bg-[#e8f1ff] text-[#1f7cf0] flex items-center justify-center shrink-0"><Smartphone size={20} /></span>
-            <span className="flex flex-col min-w-0 leading-tight">
-              <span className="text-[14px] font-extrabold text-[#0b3d91]">মোবাইল রিচার্জ</span>
+            <span className="flex flex-col min-w-0 flex-1 leading-tight">
+              <span className="text-[13px] font-extrabold text-[#0b3d91]">মোবাইল রিচার্জ</span>
               <span className="text-[10.5px] text-[#5b6784]">ইনস্ট্যান্ট রিচার্জ</span>
             </span>
+            <ChevronRight size={16} className="text-[#1f7cf0] shrink-0" />
           </Link>
-          <Link href="/staff/payment/recharge/regular" className="rounded-md bg-white border-2 border-[#e84393] p-3 flex flex-col gap-1.5 shadow-[0_6px_18px_rgba(156,20,88,0.12)]">
+          <Link href="/staff/payment/recharge/regular" className="rounded-md bg-white border-2 border-[#e84393] p-2.5 flex items-center gap-2.5 shadow-[0_6px_18px_rgba(156,20,88,0.12)]">
             <span className="size-10 rounded-full bg-[#fde7f1] text-[#e84393] flex items-center justify-center shrink-0"><Package size={20} /></span>
-            <span className="flex flex-col min-w-0 leading-tight">
-              <span className="text-[14px] font-extrabold text-[#9c1458]">রেগুলার প্যাক</span>
+            <span className="flex flex-col min-w-0 flex-1 leading-tight">
+              <span className="text-[13px] font-extrabold text-[#9c1458]">রেগুলার প্যাক</span>
               <span className="text-[10.5px] text-[#5b6784]">বান্ডেল / মিনিট / ডাটা</span>
             </span>
+            <ChevronRight size={16} className="text-[#e84393] shrink-0" />
           </Link>
         </div>
 

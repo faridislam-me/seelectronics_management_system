@@ -3,7 +3,6 @@
 import {
   addInstallmentScheduleRow,
   deleteInstallmentPlan,
-  deleteInstallmentScheduleRow,
   markInstallmentPaid,
   updateInstallmentPlanStatus,
   updateInstallmentPlanProduct,
@@ -82,7 +81,6 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
   const [statusLoading, setStatusLoading] = useState(false);
 
   // Schedule row add / edit / delete (#10, #13)
-  const [rowBusy, setRowBusy] = useState<string | null>(null);
   const [addingRow, setAddingRow] = useState(false);
   const [editRow, setEditRow] = useState<Schedule | null>(null);
   const [editAmount, setEditAmount] = useState("");
@@ -127,19 +125,6 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
       router.refresh();
     } else {
       toast.error(res.message || "আপডেট করা যায়নি");
-    }
-  };
-
-  const deleteRow = async (row: Schedule) => {
-    if (!window.confirm(`কিস্তি #${row.installmentNo} মুছে ফেলবেন?`)) return;
-    setRowBusy(row.id);
-    const res = await deleteInstallmentScheduleRow(row.id);
-    setRowBusy(null);
-    if (res.success) {
-      toast.success(res.message || "মুছে ফেলা হয়েছে");
-      router.refresh();
-    } else {
-      toast.error(res.message || "মুছে ফেলা যায়নি");
     }
   };
 
@@ -419,9 +404,6 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
                             <button onClick={() => openPay(row)} className="text-xs font-bold text-white bg-[#0b3d91] hover:bg-[#0a2f70] px-3 py-1.5 rounded-md">পরিশোধ</button>
                           )}
                           <button onClick={() => openEditRow(row)} title="এডিট" className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"><Pencil size={13} /></button>
-                          <button onClick={() => deleteRow(row)} disabled={rowBusy === row.id} title="মুছুন" className="p-1.5 rounded-md text-red-500 hover:bg-red-50 disabled:opacity-50">
-                            {rowBusy === row.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
-                          </button>
                         </div>
                       ) : (
                         <span className="text-xs text-gray-300">—</span>

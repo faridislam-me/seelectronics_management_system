@@ -2,8 +2,9 @@
 
 import { formatDate } from "@/utils";
 import clsx from "clsx";
-import { ArrowLeft, Ban, Check, Circle, ClipboardList, RefreshCw, User } from "lucide-react";
+import { ArrowLeft, Ban, Check, ChevronDown, Circle, ClipboardList, CreditCard, Eye, EyeOff, FileText, Hash, Package, Phone, RefreshCw, User } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 const PRODUCT_LABELS: Record<string, string> = {
   fridge: "ফ্রিজ", ac: "এসি", tv: "টিভি", oven: "ওভেন",
@@ -33,7 +34,20 @@ const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   reapply: { label: "পুনরায় আবেদন", cls: "bg-orange-50 text-orange-700 border border-orange-200" },
 };
 
+const DOCUMENTS: { key: string; label: string }[] = [
+  { key: "photo", label: "আবেদনকারীর ছবি" },
+  { key: "nidFront", label: "এনআইডি (সামনে)" },
+  { key: "nidBack", label: "এনআইডি (পিছনে)" },
+  { key: "signature", label: "স্বাক্ষর" },
+  { key: "bankCheck", label: "ব্যাংক চেক" },
+  { key: "guarantorPhoto", label: "জামিনদারের ছবি" },
+  { key: "guarantorNidFront", label: "জামিনদার এনআইডি (সামনে)" },
+  { key: "guarantorNidBack", label: "জামিনদার এনআইডি (পিছনে)" },
+  { key: "guarantorSignature", label: "জামিনদারের স্বাক্ষর" },
+];
+
 export default function ApplicationTrackingClient({ app }: { app: any }) {
+  const [showDocs, setShowDocs] = useState(false);
   const currentIdx = STEPS.findIndex((s) => s.key === app.trackingStep);
   const st = STATUS_LABEL[app.status] || STATUS_LABEL.pending;
   const isTerminal = app.status === "rejected" || app.status === "cancelled" || app.status === "reapply";
@@ -57,6 +71,59 @@ export default function ApplicationTrackingClient({ app }: { app: any }) {
           <span className="text-[12px] font-bold text-[#3d4f72] font-mono">{app.applicationCode}</span>
         </span>
         <span className={clsx("shrink-0 text-[11px] font-extrabold uppercase px-2.5 py-1 rounded-full", st.cls)}>{st.label}</span>
+      </div>
+
+      {/* Applicant profile header card */}
+      <div className="rounded-2xl bg-[linear-gradient(105deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-4 shadow-[0_10px_28px_rgba(11,61,145,0.28)]">
+        <div className="flex items-center gap-3.5">
+          {app.photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={app.photoUrl} alt={app.customerName} className="size-[70px] rounded-full object-cover border-2 border-white/60 shadow-md shrink-0" />
+          ) : (
+            <span className="size-[70px] rounded-full bg-white/15 border-2 border-white/40 flex items-center justify-center shrink-0">
+              <User size={30} className="text-white/80" />
+            </span>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-[18px] font-extrabold leading-tight truncate">{app.customerName}</p>
+            {app.customerPhone && (
+              <p className="mt-1 flex items-center gap-1.5 text-[13px] font-semibold text-white/90">
+                <Phone size={13} className="shrink-0" /> {app.customerPhone}
+              </p>
+            )}
+            {app.customerId && (
+              <p className="mt-0.5 flex items-center gap-1.5 text-[12px] font-bold text-white/80 font-mono">
+                <CreditCard size={13} className="shrink-0" /> {app.customerId}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-3.5 grid grid-cols-2 gap-2.5">
+          <div className="rounded-xl bg-white/12 border border-white/15 px-3 py-2">
+            <p className="flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wide text-white/70">
+              <Package size={12} /> পণ্য
+            </p>
+            <p className="mt-0.5 text-[13px] font-extrabold leading-tight">
+              {PRODUCT_LABELS[app.productType] || app.productTypeOther || "পণ্য"}
+              {app.productModel ? ` · ${app.productBrand ? `${app.productBrand} ` : ""}${app.productModel}` : ""}
+            </p>
+          </div>
+          <div className="rounded-xl bg-white/12 border border-white/15 px-3 py-2">
+            <p className="flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wide text-white/70">
+              <ClipboardList size={12} /> কিস্তি প্ল্যান
+            </p>
+            <p className="mt-0.5 text-[13px] font-extrabold leading-tight">
+              {app.desiredMonths ? `${app.desiredMonths} মাসের কিস্তি` : "কিস্তি আবেদন"}
+            </p>
+          </div>
+          <div className="col-span-2 rounded-xl bg-white/12 border border-white/15 px-3 py-2">
+            <p className="flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wide text-white/70">
+              <Hash size={12} /> আবেদন কোড
+            </p>
+            <p className="mt-0.5 text-[14px] font-extrabold leading-tight font-mono tracking-wide">{app.applicationCode}</p>
+          </div>
+        </div>
       </div>
 
       {/* Product info */}
@@ -169,6 +236,47 @@ export default function ApplicationTrackingClient({ app }: { app: any }) {
           কিস্তি প্ল্যান দেখুন
         </Link>
       )}
+
+      {/* Documents — hidden by default behind a toggle */}
+      {(() => {
+        const docUrls = (app.docUrls || {}) as Record<string, string | null>;
+        const availableDocs = DOCUMENTS.filter((d) => docUrls[d.key]);
+        if (availableDocs.length === 0) return null;
+        return (
+          <div className="rounded-md bg-white border border-[#dfe6f2] p-3.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
+            <button
+              type="button"
+              onClick={() => setShowDocs((v) => !v)}
+              className="w-full flex items-center gap-2"
+            >
+              <FileText size={18} className="text-[#0b3d91] shrink-0" />
+              <span className="text-[15px] font-extrabold text-[#0f1729] flex-1 text-left">আবেদনের ডকুমেন্ট</span>
+              <span className="flex items-center gap-1.5 text-[12px] font-extrabold text-[#1f5fc9]">
+                {showDocs ? <EyeOff size={15} /> : <Eye size={15} />}
+                {showDocs ? "ডকুমেন্ট লুকান" : "ডকুমেন্ট দেখুন"}
+                <ChevronDown size={15} className={clsx("transition-transform", showDocs && "rotate-180")} />
+              </span>
+            </button>
+            {showDocs && (
+              <div className="mt-3.5 grid grid-cols-2 gap-2.5">
+                {availableDocs.map((d) => (
+                  <a
+                    key={d.key}
+                    href={docUrls[d.key]!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col gap-1.5 rounded-lg border border-[#dfe6f2] bg-[#f8faff] p-2"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={docUrls[d.key]!} alt={d.label} className="w-full h-28 rounded-md object-cover border border-[#e4ebf6] bg-white" />
+                    <span className="text-[12px] font-bold text-[#3d4f72] text-center leading-tight">{d.label}</span>
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <p className="text-[12px] text-center text-[#3d4f72] px-4">
         আবেদন সংক্রান্ত তথ্যের জন্য যোগাযোগ করুন — <a href="tel:09649355555" className="font-bold text-[#1f5fc9]">09649355555</a>

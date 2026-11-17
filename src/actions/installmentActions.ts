@@ -1232,6 +1232,41 @@ export const getMyApplicationByCode = async (code: string) => {
       try { photoUrl = await getObjectUrl(app.photoKey); } catch {}
     }
 
+    // Signed URLs for every uploaded KYC document, so the tracking page can
+    // reveal them behind a toggle. Any key may be missing on older applications.
+    const resolveDoc = async (key: string | null) =>
+      key ? await getObjectUrl(key).catch(() => null) : null;
+    const [
+      nidFront,
+      nidBack,
+      signature,
+      bankCheck,
+      guarantorPhoto,
+      guarantorSignature,
+      guarantorNidFront,
+      guarantorNidBack,
+    ] = await Promise.all([
+      resolveDoc(app.nidFrontPhotoKey),
+      resolveDoc(app.nidBackPhotoKey),
+      resolveDoc(app.signatureKey),
+      resolveDoc(app.bankCheckPhotoKey),
+      resolveDoc(app.guarantorPhotoKey),
+      resolveDoc(app.guarantorSignatureKey),
+      resolveDoc(app.guarantorNidFrontPhotoKey),
+      resolveDoc(app.guarantorNidBackPhotoKey),
+    ]);
+    const docUrls = {
+      photo: photoUrl,
+      nidFront,
+      nidBack,
+      signature,
+      bankCheck,
+      guarantorPhoto,
+      guarantorSignature,
+      guarantorNidFront,
+      guarantorNidBack,
+    };
+
     // Dated step history (oldest first) so the timeline can show when each
     // stage happened. Earlier applications may have no rows yet.
     const tracking = await db.query.installmentApplicationTracking.findMany({
@@ -1239,7 +1274,7 @@ export const getMyApplicationByCode = async (code: string) => {
       orderBy: (t, { asc }) => [asc(t.createdAt)],
     });
 
-    return { success: true, data: { ...app, photoUrl, tracking } };
+    return { success: true, data: { ...app, photoUrl, docUrls, tracking } };
   } catch (error) {
     console.error("getMyApplicationByCode error:", error);
     return { success: false, message: "আবেদন আনা যায়নি" };

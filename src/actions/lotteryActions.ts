@@ -3,9 +3,21 @@
 import { db } from "@/db/drizzle";
 import { lotteryCampaigns, lotteryCards, lotteryEntries } from "@/db/schema";
 import { verifySession } from "@/lib";
+import { compressImage } from "@/lib/sharp";
+import { deleteObject, getObjectUrl, putObject } from "@/lib/s3";
 import { sendSMS } from "@/lib/sms";
 import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+
+/** Best-effort signed-URL resolution for an optional object key. */
+async function signKey(key: string | null | undefined) {
+  if (!key) return null;
+  try {
+    return await getObjectUrl(key);
+  } catch {
+    return null;
+  }
+}
 
 const requireAdmin = async () => {
   const s = await verifySession(false, "admin");
@@ -140,19 +152,16 @@ export async function getLotteryCards() {
  * used atomically so the same card can't be submitted twice. The entry is
  * attached to the currently active campaign.
  */
-export async function submitLotteryEntry(input: {
-  cardCode: string;
-  name: string;
-  phone: string;
-  address: string;
-}) {
+export async function submitLotteryEntry(formData: FormData) {
   try {
-    const cardCode = (input.cardCode || "").trim().toUpperCase();
-    const name = (input.name || "").trim();
-    const phone = (input.phone || "").trim();
-    const address = (input.address || "").trim();
+    const cardCode = String(formData.get("cardCode") || "").trim().toUpperCase();
+    const name = String(formData.get("name") || "").trim();
+    const phone = String(formData.get("phone") || "").trim();
+    const address = String(formData.get("address") || "").trim();
+    const customerId = String(formData.get("customerId") || "").trim() || null;
+    const photo = formData.get("photo") as File | null;
 
-    if (!cardCode) return { success: false as const, message: "কার্ড নম্বর দিন" };
+    if (!cardCode) return { success: false as const, message: "লটারি নাম্বার দিন" };
     if (!name) return { success: false as const, message: "আপনার নাম দিন" };
     if (!/^01\d{9}$/.test(phone))
       return { success: false as const, message: "সঠিক মোবাইল নম্বর দিন (01XXXXXXXXX)" };
@@ -163,9 +172,9 @@ export async function submitLotteryEntry(input: {
       .from(lotteryCards)
       .where(eq(lotteryCards.code, cardCode))
       .limit(1);
-    if (!card) return { success: false as const, message: "এই কার্ড নম্বরটি সঠিক নয়" };
+    if (!card) return { success: false as const, message: "এই লটারি নাম্বারটি সঠিক নয়" };
     if (card.used)
-      return { success: false as const, message: "এই কার্ড নম্বরটি আগে ব্যবহার করা হয়েছে" };
+      return { success: false as const, message: "এই লটারি নাম্বারটি আগে ব্যবহার করা হয়েছে" };
 
     const campaign = await ensureActiveCampaign();
 
@@ -176,11 +185,26 @@ export async function submitLotteryEntry(input: {
       .where(and(eq(lotteryCards.code, cardCode), eq(lotteryCards.used, false)))
       .returning({ id: lotteryCards.id });
     if (!claimed.length)
-      return { success: false as const, message: "এই কার্ড নম্বরটি আগে ব্যবহার করা হয়েছে" };
+      return { success: false as const, message: "এই লটারি নাম্বারটি আগে ব্যবহার করা হয়েছে" };
+
+    // Optional entrant photo → compress & store the object key (same pattern as
+    // installment applicant photos). Non-fatal: a failed upload still records
+    // the entry, so a customer is never blocked by a camera/upload hiccup.
+    let photoKey: string | null = null;
+    if (photo && photo.size > 0) {
+      try {
+        const buf = await compressImage(Buffer.from(await photo.arrayBuffer()), "portrait");
+        const key = `lottery-entries/${campaign.id}/${cardCode}-${Date.now()}.webp`;
+        await putObject({ Key: key, Body: buf, ContentType: "image/webp" });
+        photoKey = key;
+      } catch (e) {
+        console.error("lottery entry photo upload failed:", e);
+      }
+    }
 
     await db
       .insert(lotteryEntries)
-      .values({ cardCode, name, phone, address, campaignId: campaign.id });
+      .values({ cardCode, name, phone, address, customerId, photoKey, campaignId: campaign.id });
     revalidatePath("/lottery");
     return {
       success: true as const,
@@ -189,6 +213,47 @@ export async function submitLotteryEntry(input: {
   } catch (error) {
     console.error("submitLotteryEntry error:", error);
     return { success: false as const, message: "জমা দেওয়া যায়নি, আবার চেষ্টা করুন" };
+  }
+}
+
+/**
+ * PUBLIC (no auth) — display data for the active campaign's branded entry page.
+ * Returns the campaign meta plus resolved signed banner URLs. Never creates a
+ * campaign (read-only), so a public visit never mutates data.
+ */
+export async function getPublicCampaign() {
+  try {
+    const [c] = await db
+      .select()
+      .from(lotteryCampaigns)
+      .where(eq(lotteryCampaigns.status, "active"))
+      .orderBy(desc(lotteryCampaigns.createdAt))
+      .limit(1);
+    if (!c) return { success: true as const, data: null };
+
+    const [topBannerUrl, bannerUrls] = await Promise.all([
+      signKey(c.topBannerKey),
+      Promise.all((c.bannerKeys ?? []).map((k) => signKey(k))),
+    ]);
+
+    return {
+      success: true as const,
+      data: {
+        id: c.id,
+        name: c.name,
+        drawDate: c.drawDate,
+        shopAddress: c.shopAddress,
+        shopMobile: c.shopMobile,
+        prizeFirst: c.prizeFirst,
+        prizeSecond: c.prizeSecond,
+        prizeThird: c.prizeThird,
+        topBannerUrl,
+        banners: bannerUrls.filter((u): u is string => Boolean(u)),
+      },
+    };
+  } catch (error) {
+    console.error("getPublicCampaign error:", error);
+    return { success: false as const, message: "লোড করা যায়নি" };
   }
 }
 
@@ -210,7 +275,10 @@ export async function getLotteryEntries(campaignId?: string) {
     .where(eq(lotteryEntries.campaignId, cid))
     .orderBy(desc(lotteryEntries.createdAt))
     .limit(5000);
-  return { success: true as const, data: rows, campaignId: cid };
+  const data = await Promise.all(
+    rows.map(async (r) => ({ ...r, photoUrl: await signKey(r.photoKey) })),
+  );
+  return { success: true as const, data, campaignId: cid };
 }
 
 /** Admin: winners for a campaign (defaults to the active one), ordered by rank. */
@@ -223,7 +291,10 @@ export async function getLotteryWinners(campaignId?: string) {
     .where(and(eq(lotteryEntries.campaignId, cid), isNotNull(lotteryEntries.rank)))
     .orderBy(lotteryEntries.rank, desc(lotteryEntries.drawnAt))
     .limit(1000);
-  return { success: true as const, data: rows, campaignId: cid };
+  const data = await Promise.all(
+    rows.map(async (r) => ({ ...r, photoUrl: await signKey(r.photoKey) })),
+  );
+  return { success: true as const, data, campaignId: cid };
 }
 
 /**
@@ -283,4 +354,166 @@ export async function drawLotteryWinners(count: number, campaignId?: string) {
     winners,
     message: `${winners.length} জন বিজয়ী নির্বাচিত ও SMS পাঠানো হয়েছে`,
   };
+}
+
+/**
+ * Admin: full media/meta for one campaign for the editor UI — the raw meta
+ * fields plus resolved signed banner URLs (paired with their keys so the admin
+ * can remove individual slider images).
+ */
+export async function getCampaignMedia(campaignId?: string) {
+  if (!(await requireAdmin())) return { success: false as const, message: "Unauthorized" };
+  const cid = await resolveCampaignId(campaignId);
+  const [c] = await db
+    .select()
+    .from(lotteryCampaigns)
+    .where(eq(lotteryCampaigns.id, cid))
+    .limit(1);
+  if (!c) return { success: false as const, message: "ক্যাম্পেইন পাওয়া যায়নি" };
+
+  const [topBannerUrl, banners] = await Promise.all([
+    signKey(c.topBannerKey),
+    Promise.all(
+      (c.bannerKeys ?? []).map(async (k) => ({ key: k, url: await signKey(k) })),
+    ),
+  ]);
+
+  return {
+    success: true as const,
+    data: {
+      id: c.id,
+      name: c.name,
+      drawDate: c.drawDate,
+      shopAddress: c.shopAddress,
+      shopMobile: c.shopMobile,
+      prizeFirst: c.prizeFirst,
+      prizeSecond: c.prizeSecond,
+      prizeThird: c.prizeThird,
+      topBannerUrl,
+      banners,
+    },
+  };
+}
+
+/** Admin: update a campaign's text meta (name, draw date, address, mobile, prizes). */
+export async function updateCampaignMeta(
+  campaignId: string,
+  input: {
+    name?: string;
+    drawDate?: string | null;
+    shopAddress?: string | null;
+    shopMobile?: string | null;
+    prizeFirst?: string | null;
+    prizeSecond?: string | null;
+    prizeThird?: string | null;
+  },
+) {
+  if (!(await requireAdmin())) return { success: false as const, message: "Unauthorized" };
+  if (!campaignId) return { success: false as const, message: "ক্যাম্পেইন নির্বাচন করুন" };
+
+  const set: Record<string, unknown> = {};
+  if (input.name !== undefined) set.name = input.name.trim().slice(0, 120);
+  if (input.drawDate !== undefined)
+    set.drawDate = input.drawDate ? new Date(input.drawDate) : null;
+  if (input.shopAddress !== undefined)
+    set.shopAddress = input.shopAddress?.trim().slice(0, 500) || null;
+  if (input.shopMobile !== undefined)
+    set.shopMobile = input.shopMobile?.trim().slice(0, 20) || null;
+  if (input.prizeFirst !== undefined) set.prizeFirst = input.prizeFirst?.trim() || null;
+  if (input.prizeSecond !== undefined) set.prizeSecond = input.prizeSecond?.trim() || null;
+  if (input.prizeThird !== undefined) set.prizeThird = input.prizeThird?.trim() || null;
+
+  if (Object.keys(set).length === 0) return { success: true as const };
+
+  await db.update(lotteryCampaigns).set(set).where(eq(lotteryCampaigns.id, campaignId));
+  revalidatePath("/lottery");
+  revalidatePath("/lottery-manage");
+  return { success: true as const, message: "সংরক্ষণ হয়েছে" };
+}
+
+/**
+ * Admin: upload a banner image for a campaign (same R2 pattern as other
+ * uploads). `kind` = "top" replaces the single top banner; "slider" appends to
+ * the slider array. Returns the resolved signed URL of the uploaded image.
+ */
+export async function uploadCampaignBanner(formData: FormData) {
+  if (!(await requireAdmin())) return { success: false as const, message: "Unauthorized" };
+  try {
+    const campaignId = String(formData.get("campaignId") || "").trim();
+    const kind = String(formData.get("kind") || "slider");
+    const file = formData.get("file") as File | null;
+    if (!campaignId) return { success: false as const, message: "ক্যাম্পেইন নির্বাচন করুন" };
+    if (!file || file.size === 0) return { success: false as const, message: "ছবি নির্বাচন করুন" };
+
+    const buf = await compressImage(Buffer.from(await file.arrayBuffer()), "product");
+    const key = `lottery-banners/${campaignId}/${kind}-${Date.now()}.webp`;
+    await putObject({ Key: key, Body: buf, ContentType: "image/webp" });
+
+    const [c] = await db
+      .select({ topBannerKey: lotteryCampaigns.topBannerKey, bannerKeys: lotteryCampaigns.bannerKeys })
+      .from(lotteryCampaigns)
+      .where(eq(lotteryCampaigns.id, campaignId))
+      .limit(1);
+    if (!c) return { success: false as const, message: "ক্যাম্পেইন পাওয়া যায়নি" };
+
+    if (kind === "top") {
+      const old = c.topBannerKey;
+      await db
+        .update(lotteryCampaigns)
+        .set({ topBannerKey: key })
+        .where(eq(lotteryCampaigns.id, campaignId));
+      if (old) await deleteObject({ Key: old }).catch(() => {});
+    } else {
+      const next = [...(c.bannerKeys ?? []), key].slice(0, 20);
+      await db
+        .update(lotteryCampaigns)
+        .set({ bannerKeys: next })
+        .where(eq(lotteryCampaigns.id, campaignId));
+    }
+
+    revalidatePath("/lottery");
+    revalidatePath("/lottery-manage");
+    const url = await signKey(key);
+    return { success: true as const, key, url, message: "ব্যানার আপলোড হয়েছে" };
+  } catch (error) {
+    console.error("uploadCampaignBanner error:", error);
+    return { success: false as const, message: "আপলোড করা যায়নি" };
+  }
+}
+
+/** Admin: remove a campaign banner (top banner, or one slider image by key). */
+export async function removeCampaignBanner(
+  campaignId: string,
+  kind: "top" | "slider",
+  key?: string,
+) {
+  if (!(await requireAdmin())) return { success: false as const, message: "Unauthorized" };
+  if (!campaignId) return { success: false as const, message: "ক্যাম্পেইন নির্বাচন করুন" };
+
+  const [c] = await db
+    .select({ topBannerKey: lotteryCampaigns.topBannerKey, bannerKeys: lotteryCampaigns.bannerKeys })
+    .from(lotteryCampaigns)
+    .where(eq(lotteryCampaigns.id, campaignId))
+    .limit(1);
+  if (!c) return { success: false as const, message: "ক্যাম্পেইন পাওয়া যায়নি" };
+
+  if (kind === "top") {
+    if (c.topBannerKey) await deleteObject({ Key: c.topBannerKey }).catch(() => {});
+    await db
+      .update(lotteryCampaigns)
+      .set({ topBannerKey: null })
+      .where(eq(lotteryCampaigns.id, campaignId));
+  } else {
+    if (!key) return { success: false as const, message: "ছবি নির্বাচন করুন" };
+    const next = (c.bannerKeys ?? []).filter((k) => k !== key);
+    await db
+      .update(lotteryCampaigns)
+      .set({ bannerKeys: next })
+      .where(eq(lotteryCampaigns.id, campaignId));
+    await deleteObject({ Key: key }).catch(() => {});
+  }
+
+  revalidatePath("/lottery");
+  revalidatePath("/lottery-manage");
+  return { success: true as const, message: "মুছে ফেলা হয়েছে" };
 }

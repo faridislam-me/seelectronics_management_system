@@ -1,5 +1,6 @@
 import { verifySession } from "@/lib";
 import {
+  getCampaigns,
   getLotteryCards,
   getLotteryEntries,
   getLotteryWinners,
@@ -13,7 +14,8 @@ export default async function LotteryManagePage() {
   const session = await verifySession(false, "admin");
   if (!session) redirect("/login");
 
-  const [cardsRes, entriesRes, winnersRes] = await Promise.all([
+  const [campaignsRes, cardsRes, entriesRes, winnersRes] = await Promise.all([
+    getCampaigns(),
     getLotteryCards(),
     getLotteryEntries(),
     getLotteryWinners(),
@@ -21,6 +23,7 @@ export default async function LotteryManagePage() {
 
   return (
     <LotteryManageClient
+      initialCampaigns={campaignsRes.success ? campaignsRes.data : []}
       initialCards={cardsRes.success ? cardsRes.data : []}
       initialEntries={entriesRes.success ? entriesRes.data : []}
       initialWinners={winnersRes.success ? winnersRes.data : []}

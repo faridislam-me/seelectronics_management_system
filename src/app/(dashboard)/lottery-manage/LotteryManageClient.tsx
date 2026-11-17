@@ -3,14 +3,34 @@
 import {
   drawLotteryWinners,
   generateLotteryCards,
+  getCampaigns,
   getLotteryCards,
   getLotteryEntries,
   getLotteryWinners,
+  startNewCampaign,
 } from "@/actions/lotteryActions";
-import { Copy, Gift, Loader2, Printer, Ticket, Trophy, Users } from "lucide-react";
+import {
+  Copy,
+  Gift,
+  Loader2,
+  Plus,
+  Printer,
+  Ticket,
+  Trophy,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
 
+type Campaign = {
+  id: string;
+  name: string;
+  status: string; // 'active' | 'ended'
+  createdAt: string | Date;
+  endedAt: string | Date | null;
+  entries: number;
+  winners: number;
+};
 type Card = { id: string; code: string; batchLabel: string; used: boolean; createdAt: string | Date };
 type Entry = {
   id: string;
@@ -27,37 +47,84 @@ const fmt = (d: string | Date | null) =>
   d ? new Date(d).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
 
 export default function LotteryManageClient({
+  initialCampaigns,
   initialCards,
   initialEntries,
   initialWinners,
 }: {
+  initialCampaigns: Campaign[];
   initialCards: Card[];
   initialEntries: Entry[];
   initialWinners: Entry[];
 }) {
   const [tab, setTab] = useState<"cards" | "entries" | "draw">("cards");
+  const [campaigns, setCampaigns] = useState<Campaign[]>(initialCampaigns);
+  const [selectedId, setSelectedId] = useState<string>(
+    () => initialCampaigns.find((c) => c.status === "active")?.id || initialCampaigns[0]?.id || "",
+  );
   const [cards, setCards] = useState<Card[]>(initialCards);
   const [entries, setEntries] = useState<Entry[]>(initialEntries);
   const [winners, setWinners] = useState<Entry[]>(initialWinners);
+  const [switching, setSwitching] = useState(false);
 
   const [count, setCount] = useState("");
   const [batch, setBatch] = useState("");
   const [generated, setGenerated] = useState<string[]>([]);
   const [genLoading, setGenLoading] = useState(false);
 
+  const [newName, setNewName] = useState("");
+  const [startingNew, setStartingNew] = useState(false);
+
   const [drawCount, setDrawCount] = useState("");
   const [drawLoading, setDrawLoading] = useState(false);
 
   const usedCount = cards.filter((c) => c.used).length;
+  const selected = campaigns.find((c) => c.id === selectedId);
+  const isViewingActive = selected?.status === "active";
+
+  const campLabel = (c: Campaign) =>
+    `${c.name || "ক্যাম্পেইন"} ${c.status === "active" ? "• চলমান" : "• শেষ"} — এন্ট্রি ${c.entries}, বিজয়ী ${c.winners}`;
 
   const refreshCards = async () => {
     const r = await getLotteryCards();
     if (r.success) setCards(r.data as Card[]);
   };
-  const refreshEntries = async () => {
-    const [e, w] = await Promise.all([getLotteryEntries(), getLotteryWinners()]);
+  const refreshSelected = async () => {
+    const [e, w, c] = await Promise.all([
+      getLotteryEntries(selectedId),
+      getLotteryWinners(selectedId),
+      getCampaigns(),
+    ]);
     if (e.success) setEntries(e.data as Entry[]);
     if (w.success) setWinners(w.data as Entry[]);
+    if (c.success) setCampaigns(c.data as Campaign[]);
+  };
+
+  const switchCampaign = async (id: string) => {
+    setSelectedId(id);
+    setSwitching(true);
+    const [e, w] = await Promise.all([getLotteryEntries(id), getLotteryWinners(id)]);
+    setSwitching(false);
+    if (e.success) setEntries(e.data as Entry[]);
+    if (w.success) setWinners(w.data as Entry[]);
+  };
+
+  const doNewCampaign = async () => {
+    if (
+      !confirm(
+        "বর্তমান ক্যাম্পেইনটি শেষ হবে এবং নতুন একটি ক্যাম্পেইন শুরু হবে। অব্যবহৃত কার্ডগুলো (একই QR) নতুন ক্যাম্পেইনে ব্যবহার করা যাবে এবং এটি আলাদাভাবে ড্র হবে। নিশ্চিত?",
+      )
+    )
+      return;
+    setStartingNew(true);
+    const res = await startNewCampaign(newName);
+    setStartingNew(false);
+    if (!res.success) return toast.error(res.message || "শুরু করা যায়নি");
+    setNewName("");
+    toast.success("নতুন ক্যাম্পেইন শুরু হয়েছে");
+    const c = await getCampaigns();
+    if (c.success) setCampaigns(c.data as Campaign[]);
+    await switchCampaign(res.campaign.id);
   };
 
   const doGenerate = async () => {
@@ -80,12 +147,12 @@ export default function LotteryManageClient({
     if (n < 1) return toast.error("কতজন বিজয়ী করবেন লিখুন");
     if (!confirm(`${n} জন বিজয়ী এলোমেলোভাবে নির্বাচন করা হবে এবং তাদের SMS পাঠানো হবে। নিশ্চিত?`)) return;
     setDrawLoading(true);
-    const res = await drawLotteryWinners(n);
+    const res = await drawLotteryWinners(n, selectedId);
     setDrawLoading(false);
     if (res.success) {
       setDrawCount("");
       toast.success(res.message);
-      refreshEntries();
+      refreshSelected();
     } else toast.error(res.message || "ড্র করা যায়নি");
   };
 
@@ -120,6 +187,48 @@ export default function LotteryManageClient({
           <Stat icon={Trophy} label="বিজয়ী" value={winners.length} />
         </div>
       </div>
+
+      {/* Campaign bar */}
+      <div className="bg-[#eef3fb] border border-[#dfe6f2] rounded-lg p-3 flex flex-col lg:flex-row lg:items-center gap-3">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <span className="text-xs font-bold text-[#3d4f72] whitespace-nowrap">ক্যাম্পেইন:</span>
+          <select
+            value={selectedId}
+            onChange={(e) => switchCampaign(e.target.value)}
+            disabled={switching}
+            className="flex-1 min-w-0 h-10 rounded-md border border-[#cdd8ec] bg-white px-2 text-sm font-semibold text-[#16213a] focus:border-[#0b3d91] focus:outline-none"
+          >
+            {campaigns.map((c) => (
+              <option key={c.id} value={c.id}>
+                {campLabel(c)}
+              </option>
+            ))}
+          </select>
+          {switching && <Loader2 className="size-4 animate-spin text-[#0b3d91]" />}
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="নতুন ক্যাম্পেইনের নাম (ঐচ্ছিক)"
+            className="h-10 rounded-md border border-[#cdd8ec] bg-white px-3 text-sm font-semibold focus:border-[#0b3d91] focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={doNewCampaign}
+            disabled={startingNew}
+            className="h-10 px-4 rounded-md bg-emerald-600 text-white text-sm font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap disabled:opacity-60"
+          >
+            {startingNew ? <Loader2 className="size-4 animate-spin" /> : <Plus size={16} />} নতুন ক্যাম্পেইন
+          </button>
+        </div>
+      </div>
+
+      {!isViewingActive && selected && (
+        <div className="-mt-2 text-[12.5px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+          ⚠️ আপনি একটি <b>শেষ হওয়া</b> ক্যাম্পেইন দেখছেন (শুধু পড়ার জন্য)। নতুন এন্ট্রি ও ড্র চলমান ক্যাম্পেইনে হবে।
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-2">
@@ -173,7 +282,8 @@ export default function LotteryManageClient({
               </div>
               <p className="text-[11px] text-gray-500">
                 তৈরি হওয়া নম্বরগুলো কার্ডে ছাপিয়ে, সাথে এই QR লিংক দিন:{" "}
-                <span className="font-mono font-bold text-[#0b3d91]">/lottery</span>
+                <span className="font-mono font-bold text-[#0b3d91]">/lottery</span>। একই কার্ড/QR সব
+                ক্যাম্পেইনে চলে — অব্যবহৃত কার্ড পরের ক্যাম্পেইনেও কাজ করবে।
               </p>
             </div>
 
@@ -205,6 +315,9 @@ export default function LotteryManageClient({
             <div className="bg-white rounded-md border border-gray-200 p-4 shadow-sm">
               <p className="text-sm font-bold text-gray-700 mb-2">
                 সব কার্ড: {cards.length} (ব্যবহৃত {usedCount}, বাকি {cards.length - usedCount})
+              </p>
+              <p className="text-[11px] text-gray-500 mb-2">
+                বাকি (অব্যবহৃত) কার্ডগুলো পরের নতুন ক্যাম্পেইনেও ব্যবহার করা যাবে।
               </p>
               <div className="flex flex-wrap gap-1.5 max-h-72 overflow-y-auto">
                 {cards.slice(0, 600).map((c) => (
@@ -260,7 +373,7 @@ export default function LotteryManageClient({
                 {entries.length === 0 && (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-gray-500">
-                      এখনো কোনো এন্ট্রি জমা হয়নি।
+                      এই ক্যাম্পেইনে এখনো কোনো এন্ট্রি জমা হয়নি।
                     </td>
                   </tr>
                 )}
@@ -273,29 +386,39 @@ export default function LotteryManageClient({
         {tab === "draw" && (
           <div className="flex flex-col gap-4">
             <div className="bg-white rounded-md border border-gray-200 p-4 flex flex-col gap-3 shadow-sm max-w-xl">
-              <p className="text-sm font-bold text-gray-700">বিজয়ী ড্র করুন</p>
-              <p className="text-[12.5px] text-gray-500">
-                এখনো ড্র হয়নি এমন এন্ট্রি: <b>{entries.length - winners.length}</b> জন। কতজন বিজয়ী
-                করতে চান লিখুন — এলোমেলোভাবে নির্বাচন হবে ও তাদের SMS যাবে।
+              <p className="text-sm font-bold text-gray-700">
+                বিজয়ী ড্র করুন {selected && <span className="text-[#0b3d91]">— {selected.name}</span>}
               </p>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="number"
-                  min={1}
-                  value={drawCount}
-                  onChange={(e) => setDrawCount(e.target.value)}
-                  placeholder="কতজন বিজয়ী (যেমন 3)"
-                  className="flex-1 h-11 rounded-md border border-gray-300 px-3 text-sm font-semibold focus:border-[#0b3d91] focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={doDraw}
-                  disabled={drawLoading}
-                  className="h-11 px-5 rounded-md bg-amber-500 text-white text-sm font-bold inline-flex items-center justify-center gap-2 disabled:opacity-60"
-                >
-                  {drawLoading ? <Loader2 className="size-4 animate-spin" /> : <Trophy size={16} />} ড্র করুন
-                </button>
-              </div>
+              {isViewingActive ? (
+                <>
+                  <p className="text-[12.5px] text-gray-500">
+                    এই ক্যাম্পেইনে এখনো ড্র হয়নি এমন এন্ট্রি: <b>{entries.length - winners.length}</b> জন। কতজন
+                    বিজয়ী করতে চান লিখুন — এলোমেলোভাবে নির্বাচন হবে ও তাদের SMS যাবে।
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      value={drawCount}
+                      onChange={(e) => setDrawCount(e.target.value)}
+                      placeholder="কতজন বিজয়ী (যেমন 3)"
+                      className="flex-1 h-11 rounded-md border border-gray-300 px-3 text-sm font-semibold focus:border-[#0b3d91] focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={doDraw}
+                      disabled={drawLoading}
+                      className="h-11 px-5 rounded-md bg-amber-500 text-white text-sm font-bold inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                    >
+                      {drawLoading ? <Loader2 className="size-4 animate-spin" /> : <Trophy size={16} />} ড্র করুন
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-[12.5px] text-amber-700 font-semibold">
+                  এই ক্যাম্পেইনটি শেষ হয়েছে — নিচে এর বিজয়ী তালিকা দেখা যাচ্ছে। নতুন ড্র করতে চলমান ক্যাম্পেইন সিলেক্ট করুন।
+                </p>
+              )}
             </div>
 
             <div className="bg-white rounded-md border border-gray-200 shadow-sm overflow-x-auto">
@@ -327,7 +450,7 @@ export default function LotteryManageClient({
                   {winners.length === 0 && (
                     <tr>
                       <td colSpan={5} className="py-8 text-center text-gray-500">
-                        এখনো কোনো বিজয়ী ড্র করা হয়নি।
+                        এই ক্যাম্পেইনে এখনো কোনো বিজয়ী ড্র করা হয়নি।
                       </td>
                     </tr>
                   )}

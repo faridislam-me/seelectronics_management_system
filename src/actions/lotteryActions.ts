@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db/drizzle";
-import { lotteryCards, lotteryEntries } from "@/db/schema";
+import { lotteryCampaigns, lotteryCards, lotteryEntries } from "@/db/schema";
 import { verifySession } from "@/lib";
 import { sendSMS } from "@/lib/sms";
 import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
@@ -16,6 +16,85 @@ const requireAdmin = async () => {
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const randCode = (len = 8) =>
   Array.from({ length: len }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join("");
+
+/**
+ * Internal: the currently active campaign (the round now accepting entries and
+ * draws). If none exists yet, one is created on the fly so the lottery always
+ * has a campaign to attach entries to.
+ */
+async function ensureActiveCampaign() {
+  const [active] = await db
+    .select()
+    .from(lotteryCampaigns)
+    .where(eq(lotteryCampaigns.status, "active"))
+    .orderBy(desc(lotteryCampaigns.createdAt))
+    .limit(1);
+  if (active) return active;
+
+  const total = await db.select({ id: lotteryCampaigns.id }).from(lotteryCampaigns);
+  const [created] = await db
+    .insert(lotteryCampaigns)
+    .values({ name: `ক্যাম্পেইন ${total.length + 1}`, status: "active" })
+    .returning();
+  return created;
+}
+
+/** Admin: all campaigns (newest first) with entry/winner counts. */
+export async function getCampaigns() {
+  if (!(await requireAdmin())) return { success: false as const, message: "Unauthorized" };
+
+  // Make sure there is always at least one campaign to show.
+  await ensureActiveCampaign();
+
+  const camps = await db
+    .select()
+    .from(lotteryCampaigns)
+    .orderBy(desc(lotteryCampaigns.createdAt))
+    .limit(500);
+
+  const counts = await db
+    .select({
+      campaignId: lotteryEntries.campaignId,
+      entries: sql<number>`count(*)`,
+      winners: sql<number>`count(*) filter (where ${lotteryEntries.rank} is not null)`,
+    })
+    .from(lotteryEntries)
+    .groupBy(lotteryEntries.campaignId);
+  const map = new Map(counts.map((c) => [c.campaignId, c]));
+
+  const data = camps.map((c) => ({
+    ...c,
+    entries: Number(map.get(c.id)?.entries ?? 0),
+    winners: Number(map.get(c.id)?.winners ?? 0),
+  }));
+  return { success: true as const, data };
+}
+
+/**
+ * Admin: end the current active campaign and start a fresh one. Unused cards
+ * carry over automatically (they stay unused), so the same printed cards/QR can
+ * be used again in this new round — with its own entries and its own draw.
+ */
+export async function startNewCampaign(name = "") {
+  if (!(await requireAdmin())) return { success: false as const, message: "Unauthorized" };
+
+  await db
+    .update(lotteryCampaigns)
+    .set({ status: "ended", endedAt: new Date() })
+    .where(eq(lotteryCampaigns.status, "active"));
+
+  const total = await db.select({ id: lotteryCampaigns.id }).from(lotteryCampaigns);
+  const [created] = await db
+    .insert(lotteryCampaigns)
+    .values({
+      name: name.trim().slice(0, 120) || `ক্যাম্পেইন ${total.length + 1}`,
+      status: "active",
+    })
+    .returning();
+
+  revalidatePath("/lottery");
+  return { success: true as const, campaign: created };
+}
 
 /** Admin: generate a batch of unique scratch-card codes (to print on cards). */
 export async function generateLotteryCards(count: number, batchLabel = "") {
@@ -58,7 +137,8 @@ export async function getLotteryCards() {
 /**
  * PUBLIC (no auth) — a customer submits their scratch-card entry from the QR
  * link form. The card code must be a generated, unused one; the card is marked
- * used atomically so the same card can't be submitted twice.
+ * used atomically so the same card can't be submitted twice. The entry is
+ * attached to the currently active campaign.
  */
 export async function submitLotteryEntry(input: {
   cardCode: string;
@@ -87,6 +167,8 @@ export async function submitLotteryEntry(input: {
     if (card.used)
       return { success: false as const, message: "এই কার্ড নম্বরটি আগে ব্যবহার করা হয়েছে" };
 
+    const campaign = await ensureActiveCampaign();
+
     // Guarded mark-used (prevents a double submit racing on the same card).
     const claimed = await db
       .update(lotteryCards)
@@ -96,7 +178,9 @@ export async function submitLotteryEntry(input: {
     if (!claimed.length)
       return { success: false as const, message: "এই কার্ড নম্বরটি আগে ব্যবহার করা হয়েছে" };
 
-    await db.insert(lotteryEntries).values({ cardCode, name, phone, address });
+    await db
+      .insert(lotteryEntries)
+      .values({ cardCode, name, phone, address, campaignId: campaign.id });
     revalidatePath("/lottery");
     return {
       success: true as const,
@@ -108,51 +192,64 @@ export async function submitLotteryEntry(input: {
   }
 }
 
-/** Admin: all submissions (newest first). */
-export async function getLotteryEntries() {
-  if (!(await requireAdmin())) return { success: false as const, message: "Unauthorized" };
-  const rows = await db
-    .select()
-    .from(lotteryEntries)
-    .orderBy(desc(lotteryEntries.createdAt))
-    .limit(5000);
-  return { success: true as const, data: rows };
+/**
+ * Resolve which campaign to operate on: the one passed in, or the active one.
+ */
+async function resolveCampaignId(campaignId?: string) {
+  if (campaignId) return campaignId;
+  return (await ensureActiveCampaign()).id;
 }
 
-/** Admin: winners so far, ordered by rank. */
-export async function getLotteryWinners() {
+/** Admin: submissions for a campaign (defaults to the active one), newest first. */
+export async function getLotteryEntries(campaignId?: string) {
   if (!(await requireAdmin())) return { success: false as const, message: "Unauthorized" };
+  const cid = await resolveCampaignId(campaignId);
   const rows = await db
     .select()
     .from(lotteryEntries)
-    .where(isNotNull(lotteryEntries.rank))
+    .where(eq(lotteryEntries.campaignId, cid))
+    .orderBy(desc(lotteryEntries.createdAt))
+    .limit(5000);
+  return { success: true as const, data: rows, campaignId: cid };
+}
+
+/** Admin: winners for a campaign (defaults to the active one), ordered by rank. */
+export async function getLotteryWinners(campaignId?: string) {
+  if (!(await requireAdmin())) return { success: false as const, message: "Unauthorized" };
+  const cid = await resolveCampaignId(campaignId);
+  const rows = await db
+    .select()
+    .from(lotteryEntries)
+    .where(and(eq(lotteryEntries.campaignId, cid), isNotNull(lotteryEntries.rank)))
     .orderBy(lotteryEntries.rank, desc(lotteryEntries.drawnAt))
     .limit(1000);
-  return { success: true as const, data: rows };
+  return { success: true as const, data: rows, campaignId: cid };
 }
 
 /**
- * Admin: run a random draw. Picks `count` distinct entries that are not already
- * winners, assigns them the next sequential ranks, and SMSes each winner.
+ * Admin: run a random draw within a campaign (defaults to the active one). Picks
+ * `count` distinct entries from that campaign that are not already winners,
+ * assigns them the next sequential ranks within the campaign, and SMSes each.
  */
-export async function drawLotteryWinners(count: number) {
+export async function drawLotteryWinners(count: number, campaignId?: string) {
   if (!(await requireAdmin())) return { success: false as const, message: "Unauthorized" };
   const n = Math.max(1, Math.min(100, Math.floor(Number(count) || 0)));
+  const cid = await resolveCampaignId(campaignId);
 
   const current = await db
     .select({ id: lotteryEntries.id })
     .from(lotteryEntries)
-    .where(isNotNull(lotteryEntries.rank));
+    .where(and(eq(lotteryEntries.campaignId, cid), isNotNull(lotteryEntries.rank)));
   const startRank = current.length;
 
   const eligible = await db
     .select()
     .from(lotteryEntries)
-    .where(isNull(lotteryEntries.rank))
+    .where(and(eq(lotteryEntries.campaignId, cid), isNull(lotteryEntries.rank)))
     .orderBy(sql`random()`)
     .limit(n);
   if (!eligible.length)
-    return { success: false as const, message: "ড্র করার মতো নতুন কোনো এন্ট্রি নেই" };
+    return { success: false as const, message: "এই ক্যাম্পেইনে ড্র করার মতো নতুন কোনো এন্ট্রি নেই" };
 
   const now = new Date();
   const winners: { id: string; name: string; phone: string; cardCode: string; rank: number }[] = [];

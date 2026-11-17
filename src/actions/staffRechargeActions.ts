@@ -6,6 +6,7 @@ import { db } from "@/db/drizzle";
 import { payments, staffs } from "@/db/schema";
 import { verifySession } from "@/lib";
 import * as topup from "@/lib/successtopup";
+import { getRechargePacksWithCache } from "@/lib/rechargePackCache";
 import { generateRandomId } from "@/utils";
 import { and, desc, eq, ilike } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -139,9 +140,10 @@ export const getStaffRechargePackages = async (operator: string) => {
     if (!session.isAuth || !session.userId) {
       return { success: false as const, message: "Unauthorized" };
     }
-    const res = await topup.getDrives(operator);
-    if (!res.result) return { success: false as const, message: "প্যাকেজ লোড করা যায়নি" };
-    return { success: true as const, data: res.drives || [] };
+    // Cache-backed: serve live packs when the API has them, otherwise the
+    // last-known cached packs so the list never shows empty at night.
+    const data = await getRechargePacksWithCache(operator);
+    return { success: true as const, data };
   } catch (error) {
     console.error("getStaffRechargePackages error:", error);
     return { success: false as const, message: "প্যাকেজ লোড করা যায়নি" };

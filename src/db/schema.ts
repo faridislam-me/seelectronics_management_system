@@ -6,11 +6,13 @@ import {
   index,
   integer,
   json,
+  jsonb,
   numeric,
   pgEnum,
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -1963,4 +1965,22 @@ export const lotteryEntries = pgTable(
     index("lottery_entries_card_idx").on(t.cardCode),
     index("lottery_entries_campaign_idx").on(t.campaignId),
   ],
+);
+
+// Last-known recharge "regular packs" per operator. The SuccessTopup
+// /api/drives endpoint goes EMPTY after midnight, which otherwise shows
+// customers/staff "কোনো প্যাকেজ নেই" at night. When the live API returns packs we
+// upsert them here (keyed by the normalized operator code, e.g. "GP"); when it
+// returns empty or errors we serve these cached packs so they always show. One
+// row per operator. See src/lib/rechargePackCache.ts.
+export const cachedRechargePacks = pgTable(
+  "cached_recharge_packs",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    operator: varchar({ length: 40 }).notNull(),
+    /** The full array of pack objects exactly as the recharge UI expects them. */
+    packs: jsonb().notNull(),
+    updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("cached_recharge_packs_operator_idx").on(t.operator)],
 );

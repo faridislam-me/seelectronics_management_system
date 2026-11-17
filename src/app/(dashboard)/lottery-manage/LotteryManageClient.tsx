@@ -256,20 +256,20 @@ export default function LotteryManageClient({
           <div className="flex flex-col gap-4">
             <div className="bg-white rounded-md border border-gray-200 p-4 flex flex-col gap-3 shadow-sm max-w-xl">
               <p className="text-sm font-bold text-gray-700">নতুন কার্ড তৈরি করুন</p>
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <input
                   type="number"
                   min={1}
                   value={count}
                   onChange={(e) => setCount(e.target.value)}
                   placeholder="কতটি কার্ড (যেমন 100)"
-                  className="flex-1 h-11 rounded-md border border-gray-300 px-3 text-sm font-semibold focus:border-[#0b3d91] focus:outline-none"
+                  className="flex-1 h-12 rounded-md border border-gray-300 px-3.5 text-sm font-semibold leading-normal focus:border-[#0b3d91] focus:outline-none"
                 />
                 <input
                   value={batch}
                   onChange={(e) => setBatch(e.target.value)}
                   placeholder="ব্যাচের নাম (ঐচ্ছিক)"
-                  className="flex-1 h-11 rounded-md border border-gray-300 px-3 text-sm font-semibold focus:border-[#0b3d91] focus:outline-none"
+                  className="flex-1 h-12 rounded-md border border-gray-300 px-3.5 text-sm font-semibold leading-normal focus:border-[#0b3d91] focus:outline-none"
                 />
                 <button
                   type="button"

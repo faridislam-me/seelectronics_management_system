@@ -1,5 +1,6 @@
 import { getPaymentsMetadata, getStaffById } from "@/actions";
 import { DelayedLoading, PaymentList, Toolbar } from "@/components";
+import StaffRechargeHistorySection from "@/components/features/recharge/StaffRechargeHistorySection";
 import { SearchParams } from "@/types";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
@@ -23,12 +24,12 @@ export default async function StaffPaymentHistoryPage({
   const pagination = await getPaymentsMetadata({ ...sp, staffId });
 
   return (
-    <div className="flex-1 overflow-hidden flex flex-col gap-4">
+    <div className="flex-1 overflow-y-auto flex flex-col gap-4 custom-scrollbar">
       <Toolbar
         title={`Payment History: ${staff.name}`}
         pagination={pagination}
       />
-      <div className="overflow-auto flex-1 bg-white rounded-md border border-gray-100 shadow-sm custom-scrollbar">
+      <div className="overflow-auto max-h-[55vh] bg-white rounded-md border border-gray-100 shadow-sm custom-scrollbar">
         <table
           id="services"
           className="w-full text-sm text-left"
@@ -80,6 +81,16 @@ export default async function StaffPaymentHistoryPage({
           </tbody>
         </table>
       </div>
+      <Suspense
+        fallback={
+          <div className="bg-white rounded-md border border-gray-100 shadow-sm py-10 text-center text-gray-400">
+            <DelayedLoading />
+            <span className="block mt-2">রিচার্জ হিস্ট্রি লোড হচ্ছে...</span>
+          </div>
+        }
+      >
+        <StaffRechargeHistorySection staffId={staffId} />
+      </Suspense>
     </div>
   );
 }

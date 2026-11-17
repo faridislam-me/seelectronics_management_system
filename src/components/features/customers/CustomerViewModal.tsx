@@ -15,6 +15,16 @@ import { AlertTriangle, Pencil, Trash2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { getCustomerComplaints } from "@/actions/complaintActions";
+import { getCustomerMoneyHistory } from "@/actions/rechargeActions";
+import OperatorIcon, { OPERATOR_META } from "@/components/features/recharge/OperatorIcon";
+
+const MONEY_STATUS_META: Record<string, { label: string; cls: string }> = {
+  pending: { label: "অপেক্ষমান", cls: "bg-amber-50 text-amber-700 border-amber-200" },
+  processing: { label: "প্রক্রিয়াধীন", cls: "bg-blue-50 text-blue-700 border-blue-200" },
+  completed: { label: "সম্পন্ন", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  approved: { label: "অনুমোদিত", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  rejected: { label: "ব্যর্থ", cls: "bg-red-50 text-red-700 border-red-200" },
+};
 
 function CustomerViewModal({
   customerId,
@@ -41,6 +51,9 @@ function CustomerViewModal({
   const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
   // Complaints this customer has filed (red "অভিযোগ" row in Customer Info).
   const [complaints, setComplaints] = useState<any[]>([]);
+  // Combined recharge + drive add-money history (lazy-loaded on expand).
+  const [moneyHistory, setMoneyHistory] = useState<any[]>([]);
+  const [isLoadingMoney, setIsLoadingMoney] = useState(false);
 
   const [deletingInvoiceId, setDeletingInvoiceId] = useState<string | null>(null);
 
@@ -96,6 +109,23 @@ function CustomerViewModal({
         toast.error(res.message);
       }
       setIsLoadingServiceHistory(false);
+    }
+  };
+
+  const moneyHistoryToggleHandler = async (
+    e: React.ToggleEvent<HTMLDetailsElement>,
+  ) => {
+    const element = e.currentTarget;
+    const id = customerId ?? customer?.customerId ?? customerData?.customerId;
+    if (element.open && moneyHistory.length === 0 && id) {
+      setIsLoadingMoney(true);
+      const res = await getCustomerMoneyHistory(id);
+      if (res.success) {
+        setMoneyHistory(res.data ? [...res.data] : []);
+      } else {
+        toast.error(res.message);
+      }
+      setIsLoadingMoney(false);
     }
   };
 
@@ -414,6 +444,87 @@ function CustomerViewModal({
             </div>
           )}
           <div className="mt-4 flex flex-col gap-4">
+            <details onToggle={moneyHistoryToggleHandler}>
+              <summary className="font-semibold select-none cursor-pointer">
+                রিচার্জ ও ড্রাইভ হিস্ট্রি
+              </summary>
+              {isLoadingMoney ? (
+                <div className="__center text-gray-400 h-32">
+                  <Spinner />
+                </div>
+              ) : moneyHistory.length === 0 ? (
+                <div className="__center text-gray-400 h-32">কোনো হিস্ট্রি নেই</div>
+              ) : (
+                <div className="mt-3 overflow-x-auto max-h-80 custom-scrollbar">
+                  <table className="w-full text-sm text-left">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="py-2 px-3 font-bold text-gray-700 whitespace-nowrap">টাইপ</th>
+                        <th className="py-2 px-3 font-bold text-gray-700 whitespace-nowrap">মাধ্যম</th>
+                        <th className="py-2 px-3 font-bold text-gray-700 whitespace-nowrap">নম্বর / অপারেটর</th>
+                        <th className="py-2 px-3 font-bold text-gray-700 whitespace-nowrap text-right">পরিমাণ</th>
+                        <th className="py-2 px-3 font-bold text-gray-700 whitespace-nowrap">সময়</th>
+                        <th className="py-2 px-3 font-bold text-gray-700 whitespace-nowrap text-center">স্ট্যাটাস</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {moneyHistory.map((m: any) => {
+                        const sm = MONEY_STATUS_META[m.status] || MONEY_STATUS_META.pending;
+                        const opLabel = m.operatorKey
+                          ? OPERATOR_META[m.operatorKey]?.labelBn || m.operator
+                          : null;
+                        return (
+                          <tr key={m.id} className="border-t border-gray-100 hover:bg-gray-50">
+                            <td className="py-2 px-3">
+                              <span
+                                className={clsx(
+                                  "text-[11px] font-bold px-2 py-0.5 rounded-full border",
+                                  m.kind === "recharge"
+                                    ? "bg-sky-50 text-sky-700 border-sky-200"
+                                    : "bg-purple-50 text-purple-700 border-purple-200",
+                                )}
+                              >
+                                {m.typeLabel}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 font-semibold">{m.method}</td>
+                            <td className="py-2 px-3">
+                              <div className="flex items-center gap-2">
+                                {m.operatorKey && (
+                                  <OperatorIcon operatorKey={m.operatorKey} size={22} />
+                                )}
+                                <div>
+                                  <p className="font-mono font-semibold">{m.number || "—"}</p>
+                                  {opLabel && (
+                                    <p className="text-[11px] text-gray-500">{opLabel}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-2 px-3 text-right font-bold">
+                              ৳{Number(m.amount).toLocaleString()}
+                            </td>
+                            <td className="py-2 px-3 text-gray-500 whitespace-nowrap">
+                              {formatDate(m.createdAt)}
+                            </td>
+                            <td className="py-2 px-3 text-center">
+                              <span
+                                className={clsx(
+                                  "text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border",
+                                  sm.cls,
+                                )}
+                              >
+                                {sm.label}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </details>
             <details onToggle={serviceHistoryToggleHandler}>
               <summary className="font-semibold select-none cursor-pointer">
                 Servicing History

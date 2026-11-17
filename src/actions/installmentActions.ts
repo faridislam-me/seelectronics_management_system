@@ -1331,6 +1331,21 @@ export const claimInstallmentPayment = async (input: {
       link: `/installments/${input.planCode}`,
     }).catch(() => {});
 
+    // Also alert the admin by SMS + voice call so a claimed payment never sits
+    // unseen. The SMS carries the plan code (the "কিস্তি আইডি" the admin can
+    // search by — the installment list searches on planCode) plus the customer,
+    // amount and method so the admin can find and verify the installment.
+    // Both are best-effort: wrapped so a failed send never breaks the claim.
+    try {
+      const { notifyAdminSms, notifyAdminVoice } = await import("@/lib/adminVoiceNotify");
+      await notifyAdminSms(
+        `SE Electronics: কিস্তি পেমেন্ট জমা হয়েছে। কিস্তি আইডি ${plan.planCode}, কিস্তি #${row.installmentNo}। গ্রাহক ${plan.customerName || "গ্রাহক"} (${plan.customerPhone || ""}) ${methodBn}-এ ৳${row.amount} দিয়েছে। এই আইডি দিয়ে সার্চ করে যাচাই ও অ্যাপ্রুভ করুন।`,
+      );
+      await notifyAdminVoice("installment_application");
+    } catch (e) {
+      console.error("claimInstallmentPayment admin SMS/voice notify failed:", e);
+    }
+
     revalidatePath("/installments");
     revalidatePath(`/customer/installments/${input.planCode}`);
     return { success: true, message: "পেমেন্ট তথ্য সফলভাবে জমা হয়েছে। যাচাই করে নিশ্চিত করা হবে।" };

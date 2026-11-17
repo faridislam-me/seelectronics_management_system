@@ -6,6 +6,7 @@ import { verifyCustomerSession } from "@/actions/customerActions";
 import { verifySession } from "@/lib";
 import { generateRandomId } from "@/utils";
 import * as topup from "@/lib/successtopup";
+import { getRechargePacksWithCache } from "@/lib/rechargePackCache";
 import { and, desc, eq, gte, ilike, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -194,10 +195,10 @@ export const getDrivePackages = async (operator: string) => {
     const session = await verifyCustomerSession();
     if (!session.isAuth || !session.customer) return UNAUTHORIZED;
 
-    const res = await topup.getDrives(operator);
-    if (!res.result) return { success: false, message: "প্যাকেজ লোড করা যায়নি" };
-
-    return { success: true, data: res.drives || [] };
+    // Cache-backed: serve live packs when the API has them, otherwise the
+    // last-known cached packs so the list never shows empty at night.
+    const data = await getRechargePacksWithCache(operator);
+    return { success: true, data };
   } catch (error) {
     console.error("getDrivePackages error:", error);
     return { success: false, message: "প্যাকেজ লোড করা যায়নি" };

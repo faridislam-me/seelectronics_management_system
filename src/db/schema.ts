@@ -1939,6 +1939,17 @@ export const lotteryCampaigns = pgTable(
     id: uuid().defaultRandom().primaryKey(),
     name: varchar({ length: 120 }).default("").notNull(),
     status: varchar({ length: 20 }).default("active").notNull(), // 'active' | 'ended'
+    /** Branded public-page meta (all admin-configurable per campaign). */
+    drawDate: timestamp({ withTimezone: true }),
+    shopAddress: varchar({ length: 500 }),
+    shopMobile: varchar({ length: 20 }),
+    prizeFirst: text(),
+    prizeSecond: text(),
+    prizeThird: text(),
+    /** Single top banner (R2 object key, resolved with getObjectUrl on read). */
+    topBannerKey: varchar({ length: 255 }),
+    /** Slider banner images (array of R2 object keys). */
+    bannerKeys: json().$type<string[]>().default([]).notNull(),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
     endedAt: timestamp({ withTimezone: true }),
   },
@@ -1953,6 +1964,10 @@ export const lotteryEntries = pgTable(
     name: varchar({ length: 255 }).notNull(),
     phone: varchar({ length: 20 }).notNull(),
     address: varchar({ length: 500 }).default("").notNull(),
+    /** Optional customer ID the entrant typed on the public form. */
+    customerId: varchar({ length: 255 }),
+    /** Entrant photo (R2 object key, resolved with getObjectUrl on read). */
+    photoKey: varchar({ length: 255 }),
     /** The campaign (round) this entry belongs to. */
     campaignId: uuid(),
     /** Winner rank (1 = first prize …); null = not drawn as a winner. */

@@ -3,20 +3,32 @@
 import {
   drawLotteryWinners,
   generateLotteryCards,
+  getCampaignMedia,
   getCampaigns,
   getLotteryCards,
   getLotteryEntries,
   getLotteryWinners,
+  removeCampaignBanner,
   startNewCampaign,
+  updateCampaignMeta,
+  uploadCampaignBanner,
 } from "@/actions/lotteryActions";
 import {
+  CalendarDays,
   Copy,
   Gift,
+  ImageIcon,
   Loader2,
+  MapPin,
+  Phone,
   Plus,
   Printer,
+  Save,
+  Settings,
   Ticket,
+  Trash2,
   Trophy,
+  Upload,
   Users,
 } from "lucide-react";
 import { useState } from "react";
@@ -38,9 +50,23 @@ type Entry = {
   name: string;
   phone: string;
   address: string;
+  customerId: string | null;
+  photoUrl: string | null;
   rank: number | null;
   drawnAt: string | Date | null;
   createdAt: string | Date;
+};
+type CampaignMedia = {
+  id: string;
+  name: string;
+  drawDate: string | Date | null;
+  shopAddress: string | null;
+  shopMobile: string | null;
+  prizeFirst: string | null;
+  prizeSecond: string | null;
+  prizeThird: string | null;
+  topBannerUrl: string | null;
+  banners: { key: string; url: string | null }[];
 };
 
 const fmt = (d: string | Date | null) =>
@@ -57,7 +83,7 @@ export default function LotteryManageClient({
   initialEntries: Entry[];
   initialWinners: Entry[];
 }) {
-  const [tab, setTab] = useState<"cards" | "entries" | "draw">("cards");
+  const [tab, setTab] = useState<"cards" | "entries" | "draw" | "media">("cards");
   const [campaigns, setCampaigns] = useState<Campaign[]>(initialCampaigns);
   const [selectedId, setSelectedId] = useState<string>(
     () => initialCampaigns.find((c) => c.status === "active")?.id || initialCampaigns[0]?.id || "",
@@ -77,6 +103,23 @@ export default function LotteryManageClient({
 
   const [drawCount, setDrawCount] = useState("");
   const [drawLoading, setDrawLoading] = useState(false);
+
+  const [media, setMedia] = useState<CampaignMedia | null>(null);
+  const [mediaLoading, setMediaLoading] = useState(false);
+
+  const loadMedia = async (id: string) => {
+    if (!id) return;
+    setMediaLoading(true);
+    const r = await getCampaignMedia(id);
+    setMediaLoading(false);
+    if (r.success) setMedia(r.data as CampaignMedia);
+    else toast.error(r.message || "লোড করা যায়নি");
+  };
+
+  const openMediaTab = () => {
+    setTab("media");
+    if (!media || media.id !== selectedId) loadMedia(selectedId);
+  };
 
   const usedCount = cards.filter((c) => c.used).length;
   const selected = campaigns.find((c) => c.id === selectedId);
@@ -107,6 +150,8 @@ export default function LotteryManageClient({
     setSwitching(false);
     if (e.success) setEntries(e.data as Entry[]);
     if (w.success) setWinners(w.data as Entry[]);
+    setMedia(null);
+    if (tab === "media") loadMedia(id);
   };
 
   const doNewCampaign = async () => {
@@ -236,11 +281,12 @@ export default function LotteryManageClient({
           ["cards", "কার্ড তৈরি"],
           ["entries", `এন্ট্রি (${entries.length})`],
           ["draw", "ড্র ও বিজয়ী"],
+          ["media", "ক্যাম্পেইন সেটিংস"],
         ] as const).map(([k, label]) => (
           <button
             key={k}
             type="button"
-            onClick={() => setTab(k)}
+            onClick={() => (k === "media" ? openMediaTab() : setTab(k))}
             className={`px-4 py-2 rounded-md text-sm font-bold border transition-colors ${
               tab === k ? "bg-[#0b3d91] text-white border-[#0b3d91]" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
             }`}
@@ -343,9 +389,11 @@ export default function LotteryManageClient({
             <table className="w-full text-sm text-left">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="py-3 px-4 font-bold text-gray-700">ছবি</th>
                   <th className="py-3 px-4 font-bold text-gray-700">নাম</th>
                   <th className="py-3 px-4 font-bold text-gray-700">মোবাইল</th>
-                  <th className="py-3 px-4 font-bold text-gray-700">কার্ড</th>
+                  <th className="py-3 px-4 font-bold text-gray-700">কাস্টমার আইডি</th>
+                  <th className="py-3 px-4 font-bold text-gray-700">লটারি নাম্বার</th>
                   <th className="py-3 px-4 font-bold text-gray-700">ঠিকানা</th>
                   <th className="py-3 px-4 font-bold text-gray-700">সময়</th>
                   <th className="py-3 px-4 font-bold text-gray-700">অবস্থা</th>
@@ -354,8 +402,25 @@ export default function LotteryManageClient({
               <tbody>
                 {entries.map((e) => (
                   <tr key={e.id} className="border-b hover:bg-gray-50">
+                    <td className="py-2.5 px-4">
+                      {e.photoUrl ? (
+                        <a href={e.photoUrl} target="_blank" rel="noreferrer">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={e.photoUrl}
+                            alt={e.name}
+                            className="size-11 rounded-md object-cover border border-gray-200"
+                          />
+                        </a>
+                      ) : (
+                        <span className="size-11 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-300">
+                          <Users size={16} />
+                        </span>
+                      )}
+                    </td>
                     <td className="py-2.5 px-4 font-semibold">{e.name}</td>
                     <td className="py-2.5 px-4 font-mono">{e.phone}</td>
+                    <td className="py-2.5 px-4 font-mono text-gray-600">{e.customerId || "—"}</td>
                     <td className="py-2.5 px-4 font-mono font-bold text-[#0b3d91]">{e.cardCode}</td>
                     <td className="py-2.5 px-4 text-gray-600 max-w-[220px] truncate">{e.address}</td>
                     <td className="py-2.5 px-4 text-gray-500 whitespace-nowrap">{fmt(e.createdAt)}</td>
@@ -372,7 +437,7 @@ export default function LotteryManageClient({
                 ))}
                 {entries.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-500">
+                    <td colSpan={8} className="py-8 text-center text-gray-500">
                       এই ক্যাম্পেইনে এখনো কোনো এন্ট্রি জমা হয়নি।
                     </td>
                   </tr>
@@ -459,8 +524,269 @@ export default function LotteryManageClient({
             </div>
           </div>
         )}
+
+        {/* --- Campaign settings (media / meta) --- */}
+        {tab === "media" && (
+          <CampaignSettings
+            campaignId={selectedId}
+            media={media}
+            loading={mediaLoading}
+            onReload={() => loadMedia(selectedId)}
+          />
+        )}
       </div>
     </div>
+  );
+}
+
+function CampaignSettings({
+  campaignId,
+  media,
+  loading,
+  onReload,
+}: {
+  campaignId: string;
+  media: CampaignMedia | null;
+  loading: boolean;
+  onReload: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [drawDate, setDrawDate] = useState("");
+  const [shopAddress, setShopAddress] = useState("");
+  const [shopMobile, setShopMobile] = useState("");
+  const [prizeFirst, setPrizeFirst] = useState("");
+  const [prizeSecond, setPrizeSecond] = useState("");
+  const [prizeThird, setPrizeThird] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [hydratedFor, setHydratedFor] = useState<string | null>(null);
+  const [uploadingTop, setUploadingTop] = useState(false);
+  const [uploadingSlider, setUploadingSlider] = useState(false);
+
+  // Hydrate local fields once per loaded campaign.
+  if (media && media.id === campaignId && hydratedFor !== media.id) {
+    const toLocal = (d: string | Date | null) => {
+      if (!d) return "";
+      const dt = new Date(d);
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+    };
+    setName(media.name || "");
+    setDrawDate(toLocal(media.drawDate));
+    setShopAddress(media.shopAddress || "");
+    setShopMobile(media.shopMobile || "");
+    setPrizeFirst(media.prizeFirst || "");
+    setPrizeSecond(media.prizeSecond || "");
+    setPrizeThird(media.prizeThird || "");
+    setHydratedFor(media.id);
+  }
+
+  const save = async () => {
+    setSaving(true);
+    const res = await updateCampaignMeta(campaignId, {
+      name,
+      drawDate: drawDate || null,
+      shopAddress,
+      shopMobile,
+      prizeFirst,
+      prizeSecond,
+      prizeThird,
+    });
+    setSaving(false);
+    if (res.success) {
+      toast.success("সংরক্ষণ হয়েছে");
+      onReload();
+    } else toast.error(res.message || "সংরক্ষণ করা যায়নি");
+  };
+
+  const uploadBanner = async (file: File, kind: "top" | "slider") => {
+    const fd = new FormData();
+    fd.append("campaignId", campaignId);
+    fd.append("kind", kind);
+    fd.append("file", file);
+    if (kind === "top") setUploadingTop(true);
+    else setUploadingSlider(true);
+    const res = await uploadCampaignBanner(fd);
+    if (kind === "top") setUploadingTop(false);
+    else setUploadingSlider(false);
+    if (res.success) {
+      toast.success("ব্যানার আপলোড হয়েছে");
+      setHydratedFor(null);
+      onReload();
+    } else toast.error(res.message || "আপলোড করা যায়নি");
+  };
+
+  const removeBanner = async (kind: "top" | "slider", key?: string) => {
+    if (!confirm("এই ব্যানারটি মুছে ফেলবেন?")) return;
+    const res = await removeCampaignBanner(campaignId, kind, key);
+    if (res.success) {
+      toast.success("মুছে ফেলা হয়েছে");
+      setHydratedFor(null);
+      onReload();
+    } else toast.error(res.message || "মুছে ফেলা যায়নি");
+  };
+
+  if (loading && !media) {
+    return (
+      <div className="flex items-center justify-center py-16 text-gray-500 gap-2">
+        <Loader2 className="size-5 animate-spin" /> লোড হচ্ছে...
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4 max-w-3xl">
+      {/* Meta fields */}
+      <div className="bg-white rounded-md border border-gray-200 p-4 flex flex-col gap-3 shadow-sm">
+        <p className="text-sm font-bold text-gray-700 inline-flex items-center gap-2">
+          <Settings size={16} className="text-[#0b3d91]" /> ক্যাম্পেইনের তথ্য
+        </p>
+        <LabeledInput label="ক্যাম্পেইনের নাম" value={name} onChange={setName} placeholder="যেমন ঈদ ধামাকা অফার" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <LabeledInput
+            label="ড্র-র তারিখ"
+            icon={CalendarDays}
+            type="datetime-local"
+            value={drawDate}
+            onChange={setDrawDate}
+          />
+          <LabeledInput label="দোকানের মোবাইল" icon={Phone} value={shopMobile} onChange={setShopMobile} placeholder="01XXXXXXXXX" />
+        </div>
+        <LabeledInput label="দোকানের ঠিকানা" icon={MapPin} value={shopAddress} onChange={setShopAddress} placeholder="দোকানের সম্পূর্ণ ঠিকানা" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <LabeledInput label="১ম পুরুষ্কার" value={prizeFirst} onChange={setPrizeFirst} placeholder="যেমন ফ্রিজ" />
+          <LabeledInput label="২য় পুরুষ্কার" value={prizeSecond} onChange={setPrizeSecond} placeholder="যেমন টিভি" />
+          <LabeledInput label="৩য় পুরুষ্কার" value={prizeThird} onChange={setPrizeThird} placeholder="যেমন আইপিএস" />
+        </div>
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving || !campaignId}
+          className="self-start h-11 px-5 rounded-md bg-[#0b3d91] text-white text-sm font-bold inline-flex items-center gap-2 disabled:opacity-60"
+        >
+          {saving ? <Loader2 className="size-4 animate-spin" /> : <Save size={16} />} সংরক্ষণ করুন
+        </button>
+      </div>
+
+      {/* Top banner */}
+      <div className="bg-white rounded-md border border-gray-200 p-4 flex flex-col gap-3 shadow-sm">
+        <p className="text-sm font-bold text-gray-700 inline-flex items-center gap-2">
+          <ImageIcon size={16} className="text-[#0b3d91]" /> টপ ব্যানার (একটি)
+        </p>
+        {media?.topBannerUrl ? (
+          <div className="relative w-full max-w-md aspect-[16/7] rounded-lg overflow-hidden border border-gray-200">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={media.topBannerUrl} alt="top banner" className="absolute inset-0 w-full h-full object-cover" />
+            <button
+              type="button"
+              onClick={() => removeBanner("top")}
+              className="absolute top-2 right-2 size-8 rounded-full bg-black/55 text-white flex items-center justify-center"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        ) : (
+          <p className="text-[12.5px] text-gray-500">এখনো কোনো টপ ব্যানার নেই।</p>
+        )}
+        <UploadButton
+          loading={uploadingTop}
+          label={media?.topBannerUrl ? "টপ ব্যানার পরিবর্তন করুন" : "টপ ব্যানার আপলোড করুন"}
+          onFile={(f) => uploadBanner(f, "top")}
+        />
+      </div>
+
+      {/* Slider banners */}
+      <div className="bg-white rounded-md border border-gray-200 p-4 flex flex-col gap-3 shadow-sm">
+        <p className="text-sm font-bold text-gray-700 inline-flex items-center gap-2">
+          <ImageIcon size={16} className="text-[#0b3d91]" /> ব্যানার স্লাইডার ({media?.banners.length ?? 0})
+        </p>
+        {media && media.banners.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {media.banners.map((b) => (
+              <div key={b.key} className="relative aspect-[16/9] rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                {b.url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={b.url} alt="slide" className="absolute inset-0 w-full h-full object-cover" />
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeBanner("slider", b.key)}
+                  className="absolute top-1.5 right-1.5 size-7 rounded-full bg-black/55 text-white flex items-center justify-center"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[12.5px] text-gray-500">এখনো কোনো স্লাইডার ব্যানার নেই।</p>
+        )}
+        <UploadButton
+          loading={uploadingSlider}
+          label="স্লাইডারে ছবি যোগ করুন"
+          onFile={(f) => uploadBanner(f, "slider")}
+        />
+      </div>
+    </div>
+  );
+}
+
+function UploadButton({
+  loading,
+  label,
+  onFile,
+}: {
+  loading: boolean;
+  label: string;
+  onFile: (f: File) => void;
+}) {
+  return (
+    <label className="self-start h-10 px-4 rounded-md bg-[#eef3fb] border border-[#cdd8ec] text-[#0b3d91] text-sm font-bold inline-flex items-center gap-2 cursor-pointer hover:bg-[#e3ecfa]">
+      {loading ? <Loader2 className="size-4 animate-spin" /> : <Upload size={15} />}
+      {loading ? "আপলোড হচ্ছে..." : label}
+      <input
+        type="file"
+        accept="image/*"
+        className="hidden"
+        disabled={loading}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) onFile(f);
+          e.target.value = "";
+        }}
+      />
+    </label>
+  );
+}
+
+function LabeledInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+  icon?: typeof MapPin;
+}) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-[12px] font-bold text-[#3d4f72] inline-flex items-center gap-1">
+        {Icon && <Icon size={13} className="text-[#0b3d91]" />}
+        {label}
+      </span>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full h-11 rounded-md border border-gray-300 px-3 text-sm font-semibold bg-white focus:border-[#0b3d91] focus:outline-none"
+      />
+    </label>
   );
 }
 

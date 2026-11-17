@@ -57,6 +57,17 @@ export default function InstallmentInvoiceTemplate({
 }) {
   const groups = groupSchedule(data.schedule, { months: data.months, monthlyAmount: data.monthlyAmount });
 
+  // Clear plain summary instead of the confusing "কিস্তি ১–১১ / কিস্তি ১২" ranges:
+  // total count + the regular monthly amount, and only if the final installment
+  // differs (rounding remainder) we note it separately.
+  const totalInstallments = data.schedule.length || data.months;
+  const mainMonthly = groups[0]?.amount ?? data.monthlyAmount;
+  const lastRow = [...data.schedule].sort((a, b) => a.installmentNo - b.installmentNo).at(-1);
+  const differingLast =
+    lastRow && lastRow.amount !== mainMonthly
+      ? { no: lastRow.installmentNo, amount: lastRow.amount }
+      : null;
+
   const productName = [data.productBrand, data.productModel].filter(Boolean).join(" ");
   // Extra electrical specs, shown only when present.
   const specBits = [
@@ -158,16 +169,20 @@ export default function InstallmentInvoiceTemplate({
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] font-bold mb-1">কিস্তি পরিকল্পনা</div>
                     <div className="space-y-1">
-                      {groups.map((g, i) => (
-                        <div key={i} className="text-[12px]">
-                          <span className="font-bold text-[#0b3d91]">
-                            কিস্তি {toBanglaNumber(g.from)}
-                            {g.to !== g.from ? `–${toBanglaNumber(g.to)}` : ""}
-                          </span>{" "}
-                          · প্রতি মাসে <span className="font-semibold">{bdt(g.amount)}</span>{" "}
-                          · মোট <span className="font-semibold">{bdt(g.total)}</span>
+                      <div className="text-[12px]">
+                        মোট{" "}
+                        <span className="font-bold text-[#0b3d91]">
+                          {toBanglaNumber(totalInstallments)}টি
+                        </span>{" "}
+                        মাসিক কিস্তি · প্রতি মাসে{" "}
+                        <span className="font-semibold">{bdt(mainMonthly)}</span>
+                      </div>
+                      {differingLast && (
+                        <div className="text-[12px] text-slate-600">
+                          (শেষ কিস্তি #{toBanglaNumber(differingLast.no)}:{" "}
+                          <span className="font-semibold">{bdt(differingLast.amount)}</span>)
                         </div>
-                      ))}
+                      )}
                       <div className="text-[12px] text-slate-600">
                         <span className="font-semibold">মেয়াদ:</span> {bnDate(data.startDate)} → {bnDate(data.endDate)}
                       </div>

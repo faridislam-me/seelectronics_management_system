@@ -31,7 +31,8 @@ import {
   Upload,
   Users,
 } from "lucide-react";
-import { useState } from "react";
+import QRCode from "qrcode";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 type Campaign = {
@@ -72,17 +73,27 @@ type CampaignMedia = {
 const fmt = (d: string | Date | null) =>
   d ? new Date(d).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
 
+// Max number of QR tiles rendered inline on screen; larger batches still print
+// every card via the QR print button (which generates QR for all codes).
+const MAX_INLINE_QR = 120;
+
 export default function LotteryManageClient({
   initialCampaigns,
   initialCards,
   initialEntries,
   initialWinners,
+  baseUrl,
 }: {
   initialCampaigns: Campaign[];
   initialCards: Card[];
   initialEntries: Entry[];
   initialWinners: Entry[];
+  baseUrl: string;
 }) {
+  // Public submission URL a customer lands on when scanning a card's QR. The
+  // /lottery page reads the `code` query param and prefills the lottery number.
+  const root = (baseUrl || "").replace(/\/+$/, "");
+  const lotteryUrl = (code: string) => `${root}/lottery?code=${encodeURIComponent(code)}`;
   const [tab, setTab] = useState<"cards" | "entries" | "draw" | "media">("cards");
   const [campaigns, setCampaigns] = useState<Campaign[]>(initialCampaigns);
   const [selectedId, setSelectedId] = useState<string>(
@@ -208,16 +219,49 @@ export default function LotteryManageClient({
     );
   };
 
-  const printCodes = (codes: string[]) => {
+  // Print a clean grid of cards, each showing the lottery code and a scannable
+  // QR that opens the public /lottery page with that code prefilled.
+  const printCards = async (codes: string[]) => {
+    if (codes.length === 0) return;
     const w = window.open("", "_blank");
-    if (!w) return;
+    if (!w) return toast.error("প্রিন্ট উইন্ডো খোলা যায়নি");
+    const loadingId = toast.loading(`QR তৈরি হচ্ছে (${codes.length})...`);
+    let tiles: { code: string; qr: string }[];
+    try {
+      tiles = await Promise.all(
+        codes.map(async (code) => ({
+          code,
+          qr: await QRCode.toDataURL(lotteryUrl(code), { margin: 1, width: 240 }),
+        })),
+      );
+    } catch {
+      toast.update(loadingId, { render: "QR তৈরি করা যায়নি", type: "error", isLoading: false, autoClose: 3000 });
+      w.close();
+      return;
+    }
+    toast.dismiss(loadingId);
+    const body = tiles
+      .map(
+        ({ code, qr }) =>
+          `<div class="c"><img src="${qr}" alt="QR ${code}"/><div class="code">${code}</div><div class="hint">স্ক্যান করে জমা দিন</div></div>`,
+      )
+      .join("");
     w.document.write(
-      `<html><head><title>Lottery Cards</title><style>body{font-family:sans-serif;padding:16px}.g{display:flex;flex-wrap:wrap;gap:8px}.c{border:1px dashed #0b3d91;border-radius:8px;padding:10px 14px;font-weight:800;font-size:16px;letter-spacing:2px}</style></head><body><h3>SE Electronics — Lottery Cards (${codes.length})</h3><div class="g">${codes
-        .map((c) => `<div class="c">${c}</div>`)
-        .join("")}</div></body></html>`,
+      `<html><head><title>Lottery QR Cards</title><meta charset="utf-8"/><style>
+        *{box-sizing:border-box}
+        body{font-family:ui-sans-serif,system-ui,sans-serif;margin:0;padding:14px;color:#16213a}
+        h3{margin:0 0 12px;font-size:16px}
+        .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+        .c{border:1.5px dashed #0b3d91;border-radius:10px;padding:10px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;break-inside:avoid;page-break-inside:avoid}
+        .c img{width:118px;height:118px;display:block}
+        .code{font-weight:800;font-size:14px;letter-spacing:2px;font-family:ui-monospace,monospace}
+        .hint{font-size:9px;color:#5b6784;font-weight:600}
+        @media print{body{padding:6px}.g{gap:8px}}
+      </style></head><body><h3>SE Electronics — Lottery QR Cards (${tiles.length})</h3><div class="g">${body}</div>
+      <script>window.onload=function(){setTimeout(function(){window.print()},150)}</script></body></html>`,
     );
     w.document.close();
-    w.print();
+    w.focus();
   };
 
   return (
@@ -343,27 +387,48 @@ export default function LotteryManageClient({
                     <button onClick={() => copyCodes(generated)} className="text-xs font-bold text-[#0b3d91] inline-flex items-center gap-1 px-2 py-1 rounded border border-[#0b3d91]/30 hover:bg-[#eef3fb]">
                       <Copy size={13} /> কপি
                     </button>
-                    <button onClick={() => printCodes(generated)} className="text-xs font-bold text-[#0b3d91] inline-flex items-center gap-1 px-2 py-1 rounded border border-[#0b3d91]/30 hover:bg-[#eef3fb]">
-                      <Printer size={13} /> প্রিন্ট
+                    <button onClick={() => printCards(generated)} className="text-xs font-bold text-[#0b3d91] inline-flex items-center gap-1 px-2 py-1 rounded border border-[#0b3d91]/30 hover:bg-[#eef3fb]">
+                      <Printer size={13} /> QR প্রিন্ট
                     </button>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
-                  {generated.map((c) => (
-                    <span key={c} className="px-2 py-1 rounded bg-[#eef3fb] border border-[#dfe6f2] text-[13px] font-extrabold tracking-wider font-mono">
-                      {c}
-                    </span>
+                <p className="text-[11px] text-gray-500">
+                  প্রতিটি কার্ডের সাথে নিচের QR কোডটি ছাপুন — গ্রাহক স্ক্যান করলেই{" "}
+                  <span className="font-mono font-bold text-[#0b3d91]">/lottery</span> পেজে ঐ নাম্বারটি
+                  বসানো অবস্থায় খুলবে ও অনলাইনে জমা দিতে পারবে।
+                </p>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-2 max-h-80 overflow-y-auto">
+                  {generated.slice(0, MAX_INLINE_QR).map((c) => (
+                    <QrCard key={c} code={c} url={lotteryUrl(c)} />
                   ))}
                 </div>
+                {generated.length > MAX_INLINE_QR && (
+                  <p className="text-[11px] text-amber-700 font-semibold">
+                    প্রথম {MAX_INLINE_QR}টি QR দেখানো হচ্ছে। সব {generated.length}টি কার্ডের QR পেতে
+                    “QR প্রিন্ট” চাপুন।
+                  </p>
+                )}
               </div>
             )}
 
             <div className="bg-white rounded-md border border-gray-200 p-4 shadow-sm">
-              <p className="text-sm font-bold text-gray-700 mb-2">
-                সব কার্ড: {cards.length} (ব্যবহৃত {usedCount}, বাকি {cards.length - usedCount})
-              </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                <p className="text-sm font-bold text-gray-700">
+                  সব কার্ড: {cards.length} (ব্যবহৃত {usedCount}, বাকি {cards.length - usedCount})
+                </p>
+                {cards.length > 0 && (
+                  <button
+                    onClick={() => printCards(cards.filter((c) => !c.used).map((c) => c.code))}
+                    disabled={cards.length - usedCount === 0}
+                    className="self-start text-xs font-bold text-[#0b3d91] inline-flex items-center gap-1 px-2.5 py-1.5 rounded border border-[#0b3d91]/30 hover:bg-[#eef3fb] disabled:opacity-50"
+                  >
+                    <Printer size={13} /> অব্যবহৃত কার্ড QR প্রিন্ট ({cards.length - usedCount})
+                  </button>
+                )}
+              </div>
               <p className="text-[11px] text-gray-500 mb-2">
-                বাকি (অব্যবহৃত) কার্ডগুলো পরের নতুন ক্যাম্পেইনেও ব্যবহার করা যাবে।
+                বাকি (অব্যবহৃত) কার্ডগুলো পরের নতুন ক্যাম্পেইনেও ব্যবহার করা যাবে। “QR প্রিন্ট” করলে
+                প্রতিটি কার্ডের কোড ও স্ক্যানযোগ্য QR একসাথে ছাপা হবে।
               </p>
               <div className="flex flex-wrap gap-1.5 max-h-72 overflow-y-auto">
                 {cards.slice(0, 600).map((c) => (
@@ -787,6 +852,35 @@ function LabeledInput({
         className="w-full h-11 rounded-md border border-gray-300 px-3 text-sm font-semibold bg-white focus:border-[#0b3d91] focus:outline-none"
       />
     </label>
+  );
+}
+
+/** On-screen tile: a scannable QR for the public /lottery link plus the code. */
+function QrCard({ code, url }: { code: string; url: string }) {
+  const [src, setSrc] = useState<string>("");
+  useEffect(() => {
+    let active = true;
+    QRCode.toDataURL(url, { margin: 1, width: 180 })
+      .then((d) => active && setSrc(d))
+      .catch(() => active && setSrc(""));
+    return () => {
+      active = false;
+    };
+  }, [url]);
+  return (
+    <div className="flex flex-col items-center gap-1 rounded-md border border-[#dfe6f2] bg-white p-1.5">
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt={`QR ${code}`} className="size-[88px]" />
+      ) : (
+        <span className="size-[88px] flex items-center justify-center text-gray-300">
+          <Loader2 className="size-4 animate-spin" />
+        </span>
+      )}
+      <span className="text-[11px] font-extrabold tracking-wider font-mono text-[#0b3d91] break-all text-center leading-tight">
+        {code}
+      </span>
+    </div>
   );
 }
 

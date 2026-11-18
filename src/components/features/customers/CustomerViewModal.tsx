@@ -19,11 +19,21 @@ import { getCustomerMoneyHistory } from "@/actions/rechargeActions";
 import OperatorIcon, { OPERATOR_META } from "@/components/features/recharge/OperatorIcon";
 
 const MONEY_STATUS_META: Record<string, { label: string; cls: string }> = {
+  requested: { label: "অনুরোধকৃত", cls: "bg-amber-50 text-amber-700 border-amber-200" },
   pending: { label: "অপেক্ষমান", cls: "bg-amber-50 text-amber-700 border-amber-200" },
   processing: { label: "প্রক্রিয়াধীন", cls: "bg-blue-50 text-blue-700 border-blue-200" },
   completed: { label: "সম্পন্ন", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
   approved: { label: "অনুমোদিত", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  credited: { label: "জমা হয়েছে", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
   rejected: { label: "ব্যর্থ", cls: "bg-red-50 text-red-700 border-red-200" },
+};
+
+// Badge colour per money-history row kind (type column).
+const MONEY_KIND_CLS: Record<string, string> = {
+  recharge: "bg-sky-50 text-sky-700 border-sky-200",
+  drive: "bg-purple-50 text-purple-700 border-purple-200",
+  referral_earning: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  referral_payout: "bg-orange-50 text-orange-700 border-orange-200",
 };
 
 function CustomerViewModal({
@@ -51,7 +61,7 @@ function CustomerViewModal({
   const [editInvoiceId, setEditInvoiceId] = useState<string | null>(null);
   // Complaints this customer has filed (red "অভিযোগ" row in Customer Info).
   const [complaints, setComplaints] = useState<any[]>([]);
-  // Combined recharge + drive add-money history (lazy-loaded on expand).
+  // Combined referral + recharge + drive money history (lazy-loaded on expand).
   const [moneyHistory, setMoneyHistory] = useState<any[]>([]);
   const [isLoadingMoney, setIsLoadingMoney] = useState(false);
 
@@ -446,7 +456,7 @@ function CustomerViewModal({
           <div className="mt-4 flex flex-col gap-4">
             <details onToggle={moneyHistoryToggleHandler}>
               <summary className="font-semibold select-none cursor-pointer">
-                রিচার্জ ও ড্রাইভ হিস্ট্রি
+                রেফারেল, রিচার্জ ও ড্রাইভ পেমেন্ট হিস্ট্রি
               </summary>
               {isLoadingMoney ? (
                 <div className="__center text-gray-400 h-32">
@@ -479,9 +489,7 @@ function CustomerViewModal({
                               <span
                                 className={clsx(
                                   "text-[11px] font-bold px-2 py-0.5 rounded-full border",
-                                  m.kind === "recharge"
-                                    ? "bg-sky-50 text-sky-700 border-sky-200"
-                                    : "bg-purple-50 text-purple-700 border-purple-200",
+                                  MONEY_KIND_CLS[m.kind] || MONEY_KIND_CLS.recharge,
                                 )}
                               >
                                 {m.typeLabel}

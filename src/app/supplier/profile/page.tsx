@@ -162,7 +162,13 @@ export default async function SupplierProfilePage() {
           </section>
 
           <section id="ledger" className="scroll-mt-16 flex flex-col gap-2">
-            <span className="text-[16px] font-extrabold px-0.5">লেনদেনের হিসাব</span>
+            <span className="flex flex-wrap items-center justify-between gap-2 px-0.5">
+              <span className="text-[16px] font-extrabold">লেনদেনের হিসাব</span>
+              <span className="flex flex-wrap gap-2">
+                <Link href={`/supplier-statement/${supplier.supplierId}`} target="_blank" className="h-9 px-3 rounded-md bg-[#145da0] text-white text-[12.5px] font-bold inline-flex items-center gap-1.5"><ListChecks size={15} />স্টেটমেন্ট</Link>
+                <Link href={`/supplier-receipts-all/${supplier.supplierId}`} target="_blank" className="h-9 px-3 rounded-md bg-[#6b3fa0] text-white text-[12.5px] font-bold inline-flex items-center gap-1.5"><FileText size={15} />সকল রসিদ</Link>
+              </span>
+            </span>
             <DataTable>
               <thead>
                 <tr><Th>তারিখ</Th><Th>ধরন</Th><Th>বিবরণ</Th><Th right>টাকা</Th><Th right>বাকি</Th></tr>

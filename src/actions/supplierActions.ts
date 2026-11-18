@@ -563,3 +563,88 @@ export const getSupplierReceipt = async (transactionId: string) => {
     return { success: false as const, message: "Could not load receipt" };
   }
 };
+
+/** Admin or the owning supplier only (keyed by supplierId, which is guessable — so NOT public). */
+const requireSupplierViewer = async (supplierId: string) => {
+  const session = await decrypt((await cookies()).get("session")?.value);
+  const role = session?.role as string | undefined;
+  if (role === "admin") return "admin" as const;
+  if (role === "supplier" && session?.userId === supplierId) return "supplier" as const;
+  return null;
+};
+
+/**
+ * Full account statement for one supplier: the complete A-to-Z ledger with a
+ * running balance plus the overall totals. The "স্টেটমেন্ট" document.
+ */
+export const getSupplierStatement = async (supplierId: string) => {
+  try {
+    const viewer = await requireSupplierViewer(supplierId);
+    if (!viewer) return { success: false as const, message: "Unauthorized" };
+    const res = await loadSupplierLedger(supplierId);
+    if (!res.success) return res;
+    const { username: _u, ...supplier } = res.data.supplier;
+    return {
+      success: true as const,
+      data: {
+        supplier,
+        ledger: res.data.ledger.map((e) => ({
+          transactionId: e.transactionId,
+          type: e.type,
+          amount: e.amount,
+          description: e.description,
+          productType: e.productType,
+          date: e.date,
+          balance: e.balance,
+        })),
+        overall: res.data.totals,
+        viewer,
+      },
+    };
+  } catch (error) {
+    console.error("getSupplierStatement failed:", error);
+    return { success: false as const, message: "Could not load statement" };
+  }
+};
+
+/**
+ * Every transaction of a supplier as its own individual receipt (each with the
+ * account totals up to and including that entry) so they can be printed as
+ * separate, one-per-page receipts. The "সকল রসিদ" document.
+ */
+export const getSupplierAllReceipts = async (supplierId: string) => {
+  try {
+    const viewer = await requireSupplierViewer(supplierId);
+    if (!viewer) return { success: false as const, message: "Unauthorized" };
+    const res = await loadSupplierLedger(supplierId);
+    if (!res.success) return res;
+    const { username: _u, ...supplier } = res.data.supplier;
+
+    // ledger is oldest-first; accumulate running purchased/paid per entry.
+    let purchased = 0;
+    let paid = 0;
+    const receipts = res.data.ledger.map((e) => {
+      if (e.type === "purchase") purchased += e.amount;
+      else paid += e.amount;
+      return {
+        transaction: {
+          transactionId: e.transactionId,
+          type: e.type,
+          amount: e.amount,
+          description: e.description,
+          productType: e.productType,
+          photoUrl: e.photoUrl,
+          date: e.date,
+        },
+        totals: { purchased, paid, due: purchased - paid },
+      };
+    });
+    return {
+      success: true as const,
+      data: { supplier, receipts, overall: res.data.totals, viewer },
+    };
+  } catch (error) {
+    console.error("getSupplierAllReceipts failed:", error);
+    return { success: false as const, message: "Could not load receipts" };
+  }
+};

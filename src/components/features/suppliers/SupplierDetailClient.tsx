@@ -13,7 +13,7 @@ import { SUPPLIER_PRODUCT_LABEL, SUPPLIER_PRODUCT_TYPES, supplierProductLabel } 
 import { compressImage } from "./compressImage";
 import { Modal } from "@/components/ui";
 import clsx from "clsx";
-import { ArrowLeft, Camera, FileText, MessageSquare, Pencil, PhoneCall, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, FileText, Files, MessageSquare, Pencil, PhoneCall, ScrollText, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -108,6 +108,8 @@ export default function SupplierDetailClient({ supplier, ledger, totals }: { sup
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link href={`/supplier-statement/${supplier.supplierId}`} target="_blank" className="h-9 px-3 rounded-md bg-[#145da0] text-white text-[13px] font-bold inline-flex items-center gap-1.5" title="সম্পূর্ণ হিসাব (স্টেটমেন্ট) ডাউনলোড"><ScrollText size={16} />স্টেটমেন্ট</Link>
+          <Link href={`/supplier-receipts-all/${supplier.supplierId}`} target="_blank" className="h-9 px-3 rounded-md bg-[#6b3fa0] text-white text-[13px] font-bold inline-flex items-center gap-1.5" title="প্রতিটি লেনদেনের আলাদা রসিদ একসাথে ডাউনলোড"><Files size={16} />সকল রসিদ</Link>
           <button onClick={() => openSms()} className="h-9 px-3 rounded-md bg-[#0b3d91] text-white text-[13px] font-bold inline-flex items-center gap-1.5"><MessageSquare size={16} />Send SMS</button>
           <button onClick={openVoice} className="h-9 px-3 rounded-md bg-[#1a9c4b] text-white text-[13px] font-bold inline-flex items-center gap-1.5"><PhoneCall size={16} />Voice Call</button>
           <button onClick={() => setEdit(true)} className="h-9 px-3 rounded-md border border-[#d9e2f0] bg-white text-[13px] font-bold inline-flex items-center gap-1.5"><Pencil size={15} />Edit</button>

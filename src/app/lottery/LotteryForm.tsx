@@ -126,7 +126,7 @@ export default function LotteryForm({
       value: campaign?.prizeSecond,
       img: campaign?.prizeSecondImageUrl,
       tone: "from-slate-300 to-slate-500",
-      card: "bg-gradient-to-br from-slate-50 to-slate-200 border-slate-300",
+      card: "bg-gradient-to-br from-zinc-100 via-slate-200 to-slate-300 border-slate-300",
     },
     {
       label: "৩য় পুরুষ্কার",

@@ -269,7 +269,7 @@ export default function PaymentActionButtons({
       </button>
       <a
         target="_blank"
-        href={`pdf/download?type=payment&id=${paymentData.invoiceNumber}`}
+        href={`/pdf/download?type=payment&id=${paymentData.invoiceNumber}`}
         title="Download Invoice"
       >
         <svg

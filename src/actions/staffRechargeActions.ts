@@ -1,7 +1,7 @@
 "use server";
 
 import { verifyStaffSession } from "@/actions";
-import { getStaffBalance } from "@/actions/paymentRequestActions";
+import { getStaffAvailableBalance } from "@/actions/staffActions";
 import { db } from "@/db/drizzle";
 import { payments, staffs } from "@/db/schema";
 import { verifySession } from "@/lib";
@@ -24,9 +24,10 @@ const OPERATORS: Record<string, string> = {
  * Staff (technician / electrician) mobile recharge, paid from the staff's
  * available earnings balance.
  *
- * Staff balance is COMPUTED from the `payments` table
- * (SUM(credited) − SUM(requested/pending/processing/approved/completed)) — there
- * is no decrementable wallet column — so the debit is recorded as a `payments`
+ * Staff balance is the SAME available balance shown across the staff app
+ * (getStaffAvailableBalance / getStaffProfileStats.availableBalance:
+ * SUM(credited) − SUM(requested/pending/approved/completed)) — there is no
+ * decrementable wallet column — so the debit is recorded as a `payments`
  * row with status "completed" (which counts against the balance), tagged in the
  * description with a `[RECHARGE]` prefix. See the ⚠️ note reported to the parent:
  * paymentMethod is a placeholder ("cash") because paymentTypesEnum has no
@@ -60,7 +61,7 @@ export const requestStaffMobileRecharge = async (input: {
     });
     if (!staff) return { success: false as const, message: "Staff not found" };
 
-    const balanceRes = await getStaffBalance(staffId);
+    const balanceRes = await getStaffAvailableBalance(staffId);
     const balance = balanceRes.success ? balanceRes.balance : 0;
     if (balance < amount) {
       return {
@@ -109,7 +110,7 @@ export const requestStaffMobileRecharge = async (input: {
     revalidatePath("/staff/payment/recharge");
     revalidatePath("/staff/payment/payment-history");
 
-    const after = await getStaffBalance(staffId);
+    const after = await getStaffAvailableBalance(staffId);
     return {
       success: true as const,
       message: "রিচার্জ সম্পন্ন হয়েছে ✓",

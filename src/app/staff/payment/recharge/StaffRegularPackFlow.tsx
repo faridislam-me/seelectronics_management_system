@@ -268,8 +268,11 @@ export default function StaffRegularPackFlow({ initialBalance }: { initialBalanc
 
       {/* Package confirm sheet */}
       {sheetPkg && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={() => !submitting && setSheetPkg(null)}>
-          <div className="w-full max-w-md bg-white rounded-t-2xl p-4 pb-8 flex flex-col gap-3 max-h-[88vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40" onClick={() => !submitting && setSheetPkg(null)}>
+          {/* z above the fixed bottom nav (z-50) + generous bottom padding so the
+             "প্যাক কিনুন" button is never cut off / hidden behind it; content
+             scrolls when it overflows. */}
+          <div className="w-full max-w-md bg-white rounded-t-2xl p-4 pb-[calc(env(safe-area-inset-bottom)+88px)] flex flex-col gap-3 max-h-[88vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <p className="text-[15px] font-extrabold" style={{ color: ACCENT }}>রেগুলার প্যাক</p>
               <button type="button" onClick={() => !submitting && setSheetPkg(null)} className="size-8 rounded-full bg-[#f1f4f9] flex items-center justify-center"><X size={16} /></button>

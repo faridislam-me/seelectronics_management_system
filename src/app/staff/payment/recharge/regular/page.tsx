@@ -1,5 +1,5 @@
 import { verifyStaffSession } from "@/actions";
-import { getStaffBalance } from "@/actions/paymentRequestActions";
+import { getStaffAvailableBalance } from "@/actions/staffActions";
 import StaffRegularPackFlow from "../StaffRegularPackFlow";
 import { StaffLayout } from "@/components/layout/StaffLayout";
 
@@ -9,7 +9,9 @@ export default async function StaffRegularPackPage() {
   const session = await verifyStaffSession();
   if (!session.isAuth) return null;
 
-  const balanceRes = await getStaffBalance(session.userId as string);
+  // Staff pay for regular packs from their OWN main available balance (the same
+  // value shown across the staff app), not a separate add-money / drive balance.
+  const balanceRes = await getStaffAvailableBalance(session.userId as string);
   const balance = balanceRes.success ? balanceRes.balance : 0;
 
   return (

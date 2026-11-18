@@ -176,6 +176,9 @@ export interface CompletionNoticeTemplateData {
   logo?: string;
   documentSeal?: string;
   chairmanSeal?: string;
+  /** Investigating officer's signature image (e.g. Atikur Rahman), used as the
+   *  second signatory on the ex-parte notice. */
+  officerSign?: string;
   officerName?: string;
   officerDesignation?: string;
 }

@@ -85,17 +85,29 @@ export default function LotteryForm({
     if (!photo) return toast.error("আপনার একটি ছবি যুক্ত করুন");
 
     setSubmitting(true);
-    const fd = new FormData();
-    fd.append("cardCode", cardCode.trim());
-    fd.append("name", name.trim());
-    fd.append("phone", phone.trim());
-    fd.append("customerId", customerId.trim());
-    fd.append("address", address.trim());
-    if (photo) fd.append("photo", photo);
-    const res = await submitLotteryEntry(fd);
-    setSubmitting(false);
-    if (res.success) setDone(true);
-    else toast.error(res.message || "জমা দেওয়া যায়নি");
+    try {
+      // Phone cameras produce 3-8MB images; a Vercel Server Action request is
+      // capped at 4.5MB, so an uncompressed photo makes the request fail (413)
+      // and the entry never lands. Downscale client-side first so it always fits.
+      const slimPhoto = photo ? await compressFileClient(photo, 1000, 0.72) : null;
+      const fd = new FormData();
+      fd.append("cardCode", cardCode.trim());
+      fd.append("name", name.trim());
+      fd.append("phone", phone.trim());
+      fd.append("customerId", customerId.trim());
+      fd.append("address", address.trim());
+      if (slimPhoto) fd.append("photo", slimPhoto);
+      const res = await submitLotteryEntry(fd);
+      if (res.success) setDone(true);
+      else toast.error(res.message || "জমা দেওয়া যায়নি");
+    } catch (e) {
+      // A thrown/rejected action (e.g. oversized request) must never leave the
+      // button stuck on "জমা হচ্ছে..." — surface an error and let them retry.
+      console.error("lottery submit failed:", e);
+      toast.error("জমা দেওয়া যায়নি, আবার চেষ্টা করুন");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const prizes = [
@@ -418,4 +430,31 @@ function Field({
       {children}
     </label>
   );
+}
+
+// Downscale an image on the client (canvas) so the upload stays well under
+// Vercel's 4.5MB Server Action body limit. Falls back to the original file on
+// any failure so a submit is never blocked by a compression hiccup.
+async function compressFileClient(file: File, maxW = 1000, quality = 0.72): Promise<File> {
+  if (file.size < 200_000) return file;
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxW / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const c = document.createElement("canvas");
+      c.width = w;
+      c.height = h;
+      c.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      c.toBlob(
+        (blob) => resolve(blob ? new File([blob], file.name, { type: "image/jpeg" }) : file),
+        "image/jpeg",
+        quality,
+      );
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => resolve(file);
+    img.src = URL.createObjectURL(file);
+  });
 }

@@ -273,6 +273,9 @@ export interface InstallmentReceiptRow {
  */
 export interface InstallmentReceiptTemplateData {
   logo: string;
+  documentSeal?: string;
+  chairmanSeal?: string;
+  chairmanSign?: string;
   planCode: string;
   customerName: string;
   customerPhone: string;

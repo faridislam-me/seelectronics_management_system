@@ -131,6 +131,53 @@ export default function InstallmentReceiptTemplate({
         )}
       </table>
 
+      {/* Seals & signature */}
+      {data.documentSeal || data.chairmanSeal || data.chairmanSign ? (
+        <div className="mt-8 flex items-end justify-between">
+          {/* Left: official round seal */}
+          <div className="flex w-[45%] flex-col items-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {data.documentSeal ? (
+              <img
+                src={data.documentSeal}
+                alt="অফিসিয়াল সিল"
+                className="h-[80px] w-[80px] object-contain"
+              />
+            ) : (
+              <div className="h-[80px]" />
+            )}
+            <div className="mt-1 border-t border-gray-300 pt-1 text-[11px] font-semibold text-gray-500">
+              অফিসিয়াল সিল
+            </div>
+          </div>
+
+          {/* Right: chairman seal + signature */}
+          <div className="flex w-[45%] flex-col items-center">
+            <div className="flex h-[80px] items-end justify-center gap-1">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {data.chairmanSign ? (
+                <img
+                  src={data.chairmanSign}
+                  alt="চেয়ারম্যান স্বাক্ষর"
+                  className="h-[55px] w-[90px] object-contain"
+                />
+              ) : null}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {data.chairmanSeal ? (
+                <img
+                  src={data.chairmanSeal}
+                  alt="চেয়ারম্যান সিল"
+                  className="h-[80px] w-[80px] object-contain"
+                />
+              ) : null}
+            </div>
+            <div className="mt-1 border-t border-gray-300 pt-1 text-[11px] font-semibold text-[#0b3d91]">
+              চেয়ারম্যান — স্বাক্ষর ও সিল
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="mt-6 pt-3 border-t border-gray-200 flex justify-between text-[10px] font-semibold text-gray-400">
         <span>SE Electronics — কিস্তি পেমেন্ট রসিদ</span>
         <span>তৈরি: {formatDate(data.generatedAt as any)}</span>

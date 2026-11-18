@@ -1105,8 +1105,23 @@ export default async function generatePDF({
           path.join(process.cwd(), "src", "assets", "images", "logo.jpg"),
         ).catch(() => "");
 
+        const documentSealBase64 = await convertToBase64(
+          path.join(process.cwd(), "src", "assets", "images", "documentSeal.jpeg"),
+        ).catch(() => "");
+
+        const chairmanSealBase64 = await convertToBase64(
+          path.join(process.cwd(), "src", "assets", "images", "chairmanSeal.jpeg"),
+        ).catch(() => "");
+
+        const chairmanSignBase64 = await convertToBase64(
+          path.join(process.cwd(), "src", "assets", "images", "chairmanSign.png"),
+        ).catch(() => "");
+
         const data: InstallmentReceiptTemplateData = {
           logo: logoBase64,
+          documentSeal: documentSealBase64,
+          chairmanSeal: chairmanSealBase64,
+          chairmanSign: chairmanSignBase64,
           planCode: plan.planCode,
           customerName: plan.customerName,
           customerPhone: plan.customerPhone,

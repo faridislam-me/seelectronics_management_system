@@ -36,6 +36,30 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   cancelled: { label: "বাতিল", cls: "bg-gray-100 text-gray-500" },
 };
 
+// Human-readable product category labels for the stored productType codes.
+const PRODUCT_TYPE_LABELS: Record<string, string> = {
+  fridge: "ফ্রিজ",
+  ac: "এসি",
+  tv: "টিভি",
+  oven: "ওভেন",
+  washing_machine: "ওয়াশিং মেশিন",
+  mobile: "মোবাইল",
+  ips: "আই পি এস",
+  battery: "ব্যাটারি",
+  ips_package: "আই পি এস প্যাকেজ",
+  stabilizer: "স্ট্যাবিলাইজার",
+  blender: "ব্লেন্ডার",
+  others: "অন্যান্য",
+};
+
+// Main product title = "{Brand} {category}" (e.g. "Walton ফ্রিজ"). Falls back to
+// the category alone, then the model, so it is never empty.
+function productTitle(p: any): string {
+  const type = p.productType ? PRODUCT_TYPE_LABELS[p.productType] || p.productType : "";
+  const brand = (p.productBrand || "").trim();
+  return [brand, type].filter(Boolean).join(" ").trim() || p.productModel || "প্রোডাক্ট";
+}
+
 const PAY_METHODS = [
   { key: "bkash" as const, label: "bKash", color: "text-[#d1137b]", bg: "bg-[#e2136e]", logo: "/payment-methods/bkash.jpg", number: paymentDetails.bkash.number },
   { key: "nagad" as const, label: "Nagad", color: "text-[#ec1c24]", bg: "bg-[#ec1c24]", logo: "/payment-methods/nagad.jpg", number: paymentDetails.nagad.number },
@@ -163,7 +187,8 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
       <div className="flex items-center gap-2.5">
         <Link href="/customer/installments" className="size-9 rounded-md bg-white border border-[#dfe6f2] flex items-center justify-center shrink-0"><ArrowLeft size={18} /></Link>
         <span className="flex flex-col leading-tight min-w-0 flex-1">
-          <span className="text-[16px] font-extrabold truncate">{plan.productModel}</span>
+          <span className="text-[16px] font-extrabold truncate">{productTitle(plan)}</span>
+          <span className="text-[11.5px] font-bold text-[#16213a] truncate">মডেল: {plan.productModel}</span>
           <span className="text-[11px] font-bold text-[#5b6784] font-mono">{plan.planCode}</span>
         </span>
         <span className={clsx("shrink-0 text-[10px] font-extrabold uppercase px-2 py-1 rounded-full border", s.cls)}>{s.label}</span>
@@ -177,7 +202,8 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
             <img src={heroImg} alt={plan.productModel} className="w-full h-full object-contain" />
           </span>
           <div className="flex flex-col min-w-0 flex-1 leading-tight gap-1">
-            <span className="text-[19px] font-black truncate">{plan.productModel}</span>
+            <span className="text-[19px] font-black truncate">{productTitle(plan)}</span>
+            <span className="text-[12.5px] font-extrabold text-[#16213a] truncate">মডেল: {plan.productModel}</span>
             <span className="text-[12px] font-bold text-[#0b3d91] font-mono">{plan.planCode}</span>
             <span className={clsx("self-start text-[9.5px] font-extrabold uppercase px-2 py-0.5 rounded-full border", s.cls)}>{s.label}</span>
           </div>

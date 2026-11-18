@@ -44,9 +44,18 @@ export const recharge = async (input: {
 export const checkStatus = async (trxid: string) =>
   post("/api/status", { trxid });
 
-export const getDrives = async (operator?: string) =>
-  post("/api/drives", {
+export const getDrives = async (
+  operator?: string,
+  type?: "regular" | "drive",
+) => {
+  const body: Record<string, unknown> = {
     operator: operator ? (OPERATOR_MAP[operator] || operator) : "ALL",
-  });
+  };
+  // SuccessTopup's /api/drives accepts an optional `type` (regular | drive) to
+  // list the standard operator bundles vs. the special drive offers. Omitting
+  // it returns the drive offers (the API default).
+  if (type) body.type = type;
+  return post("/api/drives", body);
+};
 
 export const getBalance = async () => post("/api/balance", {});

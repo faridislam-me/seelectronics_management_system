@@ -329,7 +329,11 @@ export interface InstallmentNocTemplateData {
   logo?: string;
   seal?: string;
   officerSign?: string;
+  /** Manager signature block (name + title + signature) for the left slot. */
+  managerSign?: string;
   chairmanSign?: string;
+  /** Chairman name seal (printed name + "চেয়ারম্যান") paired with the signature. */
+  chairmanSeal?: string;
   qrcode?: string;
 }
 

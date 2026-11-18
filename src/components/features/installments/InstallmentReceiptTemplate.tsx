@@ -131,35 +131,19 @@ export default function InstallmentReceiptTemplate({
         )}
       </table>
 
-      {/* Seals & signature */}
-      {data.documentSeal || data.chairmanSeal || data.chairmanSign ? (
-        <div className="mt-8 flex items-end justify-between">
-          {/* Left: official round seal */}
-          <div className="flex w-[45%] flex-col items-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            {data.documentSeal ? (
-              <img
-                src={data.documentSeal}
-                alt="অফিসিয়াল সিল"
-                className="h-[80px] w-[80px] object-contain"
-              />
-            ) : (
-              <div className="h-[80px]" />
-            )}
-            <div className="mt-1 border-t border-gray-300 pt-1 text-[11px] font-semibold text-gray-500">
-              অফিসিয়াল সিল
-            </div>
-          </div>
-
-          {/* Right: chairman seal + signature */}
-          <div className="flex w-[45%] flex-col items-center">
-            <div className="flex h-[80px] items-end justify-center gap-1">
+      {/* Chairman signature + seal — a single stamp-over-signature unit on the
+          right (signature above the printed চেয়ারম্যান name seal), sized large
+          for an official look. No অভিযোগ/complaint seal, no duplicate signature. */}
+      {data.chairmanSeal || data.chairmanSign ? (
+        <div className="mt-10 flex justify-end pr-4">
+          <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {data.chairmanSign ? (
                 <img
                   src={data.chairmanSign}
                   alt="চেয়ারম্যান স্বাক্ষর"
-                  className="h-[55px] w-[90px] object-contain"
+                  className="h-[72px] w-[200px] object-contain"
                 />
               ) : null}
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -167,11 +151,11 @@ export default function InstallmentReceiptTemplate({
                 <img
                   src={data.chairmanSeal}
                   alt="চেয়ারম্যান সিল"
-                  className="h-[80px] w-[80px] object-contain"
+                  className="-mt-3 h-[70px] w-[230px] object-contain"
                 />
               ) : null}
             </div>
-            <div className="mt-1 border-t border-gray-300 pt-1 text-[11px] font-semibold text-[#0b3d91]">
+            <div className="mt-1 border-t border-gray-400 pt-1 text-[12px] font-bold text-[#0b3d91]">
               চেয়ারম্যান — স্বাক্ষর ও সিল
             </div>
           </div>

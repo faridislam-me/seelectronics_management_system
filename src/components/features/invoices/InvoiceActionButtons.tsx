@@ -126,7 +126,7 @@ export default function InvoiceActionButtons({
       </InvoicePreviewButton>
       <a
         target="_blank"
-        href={`pdf/download?type=invoice&id=${invoiceData.invoiceNumber}`}
+        href={`/pdf/download?type=invoice&id=${invoiceData.invoiceNumber}`}
         title="Download Invoice"
       >
         <svg

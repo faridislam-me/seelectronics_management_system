@@ -928,12 +928,10 @@ export default function InstallmentApplyForm() {
             </div>
           </div>
         )}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <FileInput id="gPhoto" label="জামিনদারের ছবি" onChange={setGPhoto} preview={preview(gPhoto)} />
-          <div className="grid grid-cols-2 gap-2">
-            <FileInput id="gNidFront" label="জামিনদার NID সামনে" onChange={setGNidFront} preview={preview(gNidFront)} />
-            <FileInput id="gNidBack" label="জামিনদার NID পিছনে" onChange={setGNidBack} preview={preview(gNidBack)} />
-          </div>
+          <FileInput id="gNidFront" label="জামিনদার NID সামনে" onChange={setGNidFront} preview={preview(gNidFront)} />
+          <FileInput id="gNidBack" label="জামিনদার NID পিছনে" onChange={setGNidBack} preview={preview(gNidBack)} />
         </div>
         <SignaturePad label="জামিনদারের স্বাক্ষর" onSignature={setGSignatureBlob} />
       </Section>

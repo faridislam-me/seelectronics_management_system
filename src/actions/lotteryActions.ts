@@ -231,10 +231,14 @@ export async function getPublicCampaign() {
       .limit(1);
     if (!c) return { success: true as const, data: null };
 
-    const [topBannerUrl, bannerUrls] = await Promise.all([
-      signKey(c.topBannerKey),
-      Promise.all((c.bannerKeys ?? []).map((k) => signKey(k))),
-    ]);
+    const [topBannerUrl, bannerUrls, prizeFirstImageUrl, prizeSecondImageUrl, prizeThirdImageUrl] =
+      await Promise.all([
+        signKey(c.topBannerKey),
+        Promise.all((c.bannerKeys ?? []).map((k) => signKey(k))),
+        signKey(c.prizeFirstImageKey),
+        signKey(c.prizeSecondImageKey),
+        signKey(c.prizeThirdImageKey),
+      ]);
 
     return {
       success: true as const,
@@ -247,6 +251,9 @@ export async function getPublicCampaign() {
         prizeFirst: c.prizeFirst,
         prizeSecond: c.prizeSecond,
         prizeThird: c.prizeThird,
+        prizeFirstImageUrl,
+        prizeSecondImageUrl,
+        prizeThirdImageUrl,
         topBannerUrl,
         banners: bannerUrls.filter((u): u is string => Boolean(u)),
       },
@@ -371,12 +378,16 @@ export async function getCampaignMedia(campaignId?: string) {
     .limit(1);
   if (!c) return { success: false as const, message: "ক্যাম্পেইন পাওয়া যায়নি" };
 
-  const [topBannerUrl, banners] = await Promise.all([
-    signKey(c.topBannerKey),
-    Promise.all(
-      (c.bannerKeys ?? []).map(async (k) => ({ key: k, url: await signKey(k) })),
-    ),
-  ]);
+  const [topBannerUrl, banners, prizeFirstImageUrl, prizeSecondImageUrl, prizeThirdImageUrl] =
+    await Promise.all([
+      signKey(c.topBannerKey),
+      Promise.all(
+        (c.bannerKeys ?? []).map(async (k) => ({ key: k, url: await signKey(k) })),
+      ),
+      signKey(c.prizeFirstImageKey),
+      signKey(c.prizeSecondImageKey),
+      signKey(c.prizeThirdImageKey),
+    ]);
 
   return {
     success: true as const,
@@ -389,6 +400,9 @@ export async function getCampaignMedia(campaignId?: string) {
       prizeFirst: c.prizeFirst,
       prizeSecond: c.prizeSecond,
       prizeThird: c.prizeThird,
+      prizeFirstImageUrl,
+      prizeSecondImageUrl,
+      prizeThirdImageUrl,
       topBannerUrl,
       banners,
     },
@@ -450,17 +464,38 @@ export async function uploadCampaignBanner(formData: FormData) {
     await putObject({ Key: key, Body: buf, ContentType: "image/webp" });
 
     const [c] = await db
-      .select({ topBannerKey: lotteryCampaigns.topBannerKey, bannerKeys: lotteryCampaigns.bannerKeys })
+      .select({
+        topBannerKey: lotteryCampaigns.topBannerKey,
+        bannerKeys: lotteryCampaigns.bannerKeys,
+        prizeFirstImageKey: lotteryCampaigns.prizeFirstImageKey,
+        prizeSecondImageKey: lotteryCampaigns.prizeSecondImageKey,
+        prizeThirdImageKey: lotteryCampaigns.prizeThirdImageKey,
+      })
       .from(lotteryCampaigns)
       .where(eq(lotteryCampaigns.id, campaignId))
       .limit(1);
     if (!c) return { success: false as const, message: "ক্যাম্পেইন পাওয়া যায়নি" };
+
+    // Each prize image is a single replaceable slot, like the top banner.
+    const PRIZE_COLUMNS = {
+      prize1: "prizeFirstImageKey",
+      prize2: "prizeSecondImageKey",
+      prize3: "prizeThirdImageKey",
+    } as const;
 
     if (kind === "top") {
       const old = c.topBannerKey;
       await db
         .update(lotteryCampaigns)
         .set({ topBannerKey: key })
+        .where(eq(lotteryCampaigns.id, campaignId));
+      if (old) await deleteObject({ Key: old }).catch(() => {});
+    } else if (kind in PRIZE_COLUMNS) {
+      const col = PRIZE_COLUMNS[kind as keyof typeof PRIZE_COLUMNS];
+      const old = c[col];
+      await db
+        .update(lotteryCampaigns)
+        .set({ [col]: key })
         .where(eq(lotteryCampaigns.id, campaignId));
       if (old) await deleteObject({ Key: old }).catch(() => {});
     } else {
@@ -484,24 +519,43 @@ export async function uploadCampaignBanner(formData: FormData) {
 /** Admin: remove a campaign banner (top banner, or one slider image by key). */
 export async function removeCampaignBanner(
   campaignId: string,
-  kind: "top" | "slider",
+  kind: "top" | "slider" | "prize1" | "prize2" | "prize3",
   key?: string,
 ) {
   if (!(await requireAdmin())) return { success: false as const, message: "Unauthorized" };
   if (!campaignId) return { success: false as const, message: "ক্যাম্পেইন নির্বাচন করুন" };
 
   const [c] = await db
-    .select({ topBannerKey: lotteryCampaigns.topBannerKey, bannerKeys: lotteryCampaigns.bannerKeys })
+    .select({
+      topBannerKey: lotteryCampaigns.topBannerKey,
+      bannerKeys: lotteryCampaigns.bannerKeys,
+      prizeFirstImageKey: lotteryCampaigns.prizeFirstImageKey,
+      prizeSecondImageKey: lotteryCampaigns.prizeSecondImageKey,
+      prizeThirdImageKey: lotteryCampaigns.prizeThirdImageKey,
+    })
     .from(lotteryCampaigns)
     .where(eq(lotteryCampaigns.id, campaignId))
     .limit(1);
   if (!c) return { success: false as const, message: "ক্যাম্পেইন পাওয়া যায়নি" };
+
+  const PRIZE_COLUMNS = {
+    prize1: "prizeFirstImageKey",
+    prize2: "prizeSecondImageKey",
+    prize3: "prizeThirdImageKey",
+  } as const;
 
   if (kind === "top") {
     if (c.topBannerKey) await deleteObject({ Key: c.topBannerKey }).catch(() => {});
     await db
       .update(lotteryCampaigns)
       .set({ topBannerKey: null })
+      .where(eq(lotteryCampaigns.id, campaignId));
+  } else if (kind in PRIZE_COLUMNS) {
+    const col = PRIZE_COLUMNS[kind as keyof typeof PRIZE_COLUMNS];
+    if (c[col]) await deleteObject({ Key: c[col] as string }).catch(() => {});
+    await db
+      .update(lotteryCampaigns)
+      .set({ [col]: null })
       .where(eq(lotteryCampaigns.id, campaignId));
   } else {
     if (!key) return { success: false as const, message: "ছবি নির্বাচন করুন" };

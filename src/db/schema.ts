@@ -1946,6 +1946,10 @@ export const lotteryCampaigns = pgTable(
     prizeFirst: text(),
     prizeSecond: text(),
     prizeThird: text(),
+    /** Optional per-prize product images (R2 object keys, resolved on read). */
+    prizeFirstImageKey: varchar({ length: 255 }),
+    prizeSecondImageKey: varchar({ length: 255 }),
+    prizeThirdImageKey: varchar({ length: 255 }),
     /** Single top banner (R2 object key, resolved with getObjectUrl on read). */
     topBannerKey: varchar({ length: 255 }),
     /** Slider banner images (array of R2 object keys). */

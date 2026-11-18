@@ -27,7 +27,7 @@ export default async function SupplierReceiptPage({ params }: { params: Promise<
     barcodeSvg = "";
   }
 
-  const { supplier, transaction, totals, ledger, overall, viewer } = res.data;
+  const { supplier, transaction, totals, viewer } = res.data;
   return (
     <SupplierReceiptClient
       supplier={supplier}
@@ -35,8 +35,6 @@ export default async function SupplierReceiptPage({ params }: { params: Promise<
       totals={totals}
       qrDataUrl={qrDataUrl}
       barcodeSvg={barcodeSvg}
-      ledger={ledger.map((e) => ({ transactionId: e.transactionId, type: e.type, amount: e.amount, description: e.description, productType: e.productType, date: new Date(e.date).toISOString(), balance: e.balance }))}
-      overall={overall}
       backHref={viewer === "admin" ? `/suppliers/${supplier.supplierId}` : viewer === "supplier" ? "/supplier/profile" : null}
     />
   );

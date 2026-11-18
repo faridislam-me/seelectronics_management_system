@@ -66,6 +66,9 @@ type CampaignMedia = {
   prizeFirst: string | null;
   prizeSecond: string | null;
   prizeThird: string | null;
+  prizeFirstImageUrl: string | null;
+  prizeSecondImageUrl: string | null;
+  prizeThirdImageUrl: string | null;
   topBannerUrl: string | null;
   banners: { key: string; url: string | null }[];
 };
@@ -626,6 +629,7 @@ function CampaignSettings({
   const [hydratedFor, setHydratedFor] = useState<string | null>(null);
   const [uploadingTop, setUploadingTop] = useState(false);
   const [uploadingSlider, setUploadingSlider] = useState(false);
+  const [uploadingPrize, setUploadingPrize] = useState<string | null>(null);
 
   // Hydrate local fields once per loaded campaign.
   if (media && media.id === campaignId && hydratedFor !== media.id) {
@@ -663,25 +667,30 @@ function CampaignSettings({
     } else toast.error(res.message || "সংরক্ষণ করা যায়নি");
   };
 
-  const uploadBanner = async (file: File, kind: "top" | "slider") => {
+  type BannerKind = "top" | "slider" | "prize1" | "prize2" | "prize3";
+  const isPrize = (k: BannerKind) => k === "prize1" || k === "prize2" || k === "prize3";
+
+  const uploadBanner = async (file: File, kind: BannerKind) => {
     const fd = new FormData();
     fd.append("campaignId", campaignId);
     fd.append("kind", kind);
     fd.append("file", file);
     if (kind === "top") setUploadingTop(true);
+    else if (isPrize(kind)) setUploadingPrize(kind);
     else setUploadingSlider(true);
     const res = await uploadCampaignBanner(fd);
     if (kind === "top") setUploadingTop(false);
+    else if (isPrize(kind)) setUploadingPrize(null);
     else setUploadingSlider(false);
     if (res.success) {
-      toast.success("ব্যানার আপলোড হয়েছে");
+      toast.success(isPrize(kind) ? "পুরস্কারের ছবি আপলোড হয়েছে" : "ব্যানার আপলোড হয়েছে");
       setHydratedFor(null);
       onReload();
     } else toast.error(res.message || "আপলোড করা যায়নি");
   };
 
-  const removeBanner = async (kind: "top" | "slider", key?: string) => {
-    if (!confirm("এই ব্যানারটি মুছে ফেলবেন?")) return;
+  const removeBanner = async (kind: BannerKind, key?: string) => {
+    if (!confirm(isPrize(kind) ? "এই ছবিটি মুছে ফেলবেন?" : "এই ব্যানারটি মুছে ফেলবেন?")) return;
     const res = await removeCampaignBanner(campaignId, kind, key);
     if (res.success) {
       toast.success("মুছে ফেলা হয়েছে");
@@ -730,6 +739,51 @@ function CampaignSettings({
         >
           {saving ? <Loader2 className="size-4 animate-spin" /> : <Save size={16} />} সংরক্ষণ করুন
         </button>
+      </div>
+
+      {/* Prize images (one per prize, shown on the public page prize cards) */}
+      <div className="bg-white rounded-md border border-gray-200 p-4 flex flex-col gap-3 shadow-sm">
+        <p className="text-sm font-bold text-gray-700 inline-flex items-center gap-2">
+          <ImageIcon size={16} className="text-[#0b3d91]" /> পুরস্কারের ছবি (ঐচ্ছিক)
+        </p>
+        <p className="text-[12px] text-gray-500 -mt-1">
+          প্রতিটি পুরস্কারের একটি করে ছবি দিন — পাবলিক লটারি পেজে পুরস্কারের পাশে দেখাবে।
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {(
+            [
+              { kind: "prize1", label: "১ম পুরস্কারের ছবি", url: media?.prizeFirstImageUrl },
+              { kind: "prize2", label: "২য় পুরস্কারের ছবি", url: media?.prizeSecondImageUrl },
+              { kind: "prize3", label: "৩য় পুরস্কারের ছবি", url: media?.prizeThirdImageUrl },
+            ] as const
+          ).map((p) => (
+            <div key={p.kind} className="flex flex-col gap-2">
+              <p className="text-[12.5px] font-bold text-gray-600">{p.label}</p>
+              {p.url ? (
+                <div className="relative aspect-square w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.url} alt={p.label} className="absolute inset-0 w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeBanner(p.kind)}
+                    className="absolute top-1.5 right-1.5 size-7 rounded-full bg-black/55 text-white flex items-center justify-center"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div className="aspect-square w-full rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400">
+                  <ImageIcon size={22} />
+                </div>
+              )}
+              <UploadButton
+                loading={uploadingPrize === p.kind}
+                label={p.url ? "পরিবর্তন করুন" : "ছবি আপলোড করুন"}
+                onFile={(f) => uploadBanner(f, p.kind)}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Top banner */}

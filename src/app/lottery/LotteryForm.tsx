@@ -26,6 +26,9 @@ type PublicCampaign = {
   prizeFirst: string | null;
   prizeSecond: string | null;
   prizeThird: string | null;
+  prizeFirstImageUrl: string | null;
+  prizeSecondImageUrl: string | null;
+  prizeThirdImageUrl: string | null;
   topBannerUrl: string | null;
   banners: string[];
 } | null;
@@ -111,30 +114,49 @@ export default function LotteryForm({
   };
 
   const prizes = [
-    { label: "১ম পুরুষ্কার", value: campaign?.prizeFirst, tone: "from-amber-400 to-amber-600" },
-    { label: "২য় পুরুষ্কার", value: campaign?.prizeSecond, tone: "from-slate-300 to-slate-500" },
-    { label: "৩য় পুরুষ্কার", value: campaign?.prizeThird, tone: "from-orange-400 to-orange-600" },
+    {
+      label: "১ম পুরুষ্কার",
+      value: campaign?.prizeFirst,
+      img: campaign?.prizeFirstImageUrl,
+      tone: "from-amber-400 to-amber-600",
+      card: "bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200",
+    },
+    {
+      label: "২য় পুরুষ্কার",
+      value: campaign?.prizeSecond,
+      img: campaign?.prizeSecondImageUrl,
+      tone: "from-slate-300 to-slate-500",
+      card: "bg-gradient-to-br from-slate-50 to-slate-200 border-slate-300",
+    },
+    {
+      label: "৩য় পুরুষ্কার",
+      value: campaign?.prizeThird,
+      img: campaign?.prizeThirdImageUrl,
+      tone: "from-orange-400 to-orange-600",
+      card: "bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200",
+    },
   ].filter((p) => p.value);
 
   const drawDate = fmtDate(campaign?.drawDate ?? null);
 
   return (
-    <div className="min-h-screen bg-[#eef3fb] flex flex-col items-center px-3 py-6 text-[#16213a]">
-      <div className="w-full max-w-md flex flex-col gap-4">
-        {/* Top banner */}
+    <div className="min-h-screen bg-[#eef3fb] flex flex-col items-center px-3 py-3 text-[#16213a]">
+      <style>{LOTTERY_FX_CSS}</style>
+      <div className="w-full max-w-md flex flex-col gap-2.5">
+        {/* Top banner — full image, never cropped */}
         {campaign?.topBannerUrl && (
-          <div className="relative w-full aspect-[16/7] rounded-2xl overflow-hidden shadow-[0_10px_30px_rgba(10,47,112,0.25)] border border-[#dfe6f2] bg-white">
+          <div className="w-full rounded-xl overflow-hidden shadow-[0_6px_18px_rgba(10,47,112,0.2)] border border-[#dfe6f2] bg-white">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={campaign.topBannerUrl}
               alt="banner"
-              className="absolute inset-0 w-full h-full object-cover"
+              className="block w-full h-auto"
             />
           </div>
         )}
 
         {/* Brand header */}
-        <div className="rounded-2xl bg-[linear-gradient(105deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-5 text-center shadow-[0_10px_30px_rgba(10,47,112,0.35)]">
+        <div className="rounded-xl bg-[linear-gradient(105deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-4 text-center shadow-[0_6px_18px_rgba(10,47,112,0.3)]">
           <div className="mx-auto size-14 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center mb-2">
             <Gift size={30} />
           </div>
@@ -153,7 +175,7 @@ export default function LotteryForm({
 
         {/* Campaign info */}
         {(drawDate || campaign?.shopAddress || campaign?.shopMobile) && (
-          <div className="rounded-2xl bg-white border border-[#dfe6f2] p-4 flex flex-col gap-2.5 shadow-sm">
+          <div className="rounded-xl bg-white border border-[#dfe6f2] p-3.5 flex flex-col gap-2 shadow-sm">
             {drawDate && (
               <InfoRow icon={CalendarDays} label="ড্র-র তারিখ" value={drawDate} />
             )}
@@ -168,27 +190,39 @@ export default function LotteryForm({
 
         {/* Prizes */}
         {prizes.length > 0 && (
-          <div className="rounded-2xl bg-white border border-[#dfe6f2] p-4 flex flex-col gap-3 shadow-sm">
-            <p className="text-[13px] font-extrabold text-[#0b3d91] inline-flex items-center gap-1.5">
-              <Trophy size={16} className="text-amber-500" /> পুরষ্কার সমূহ
-            </p>
+          <div className="rounded-xl bg-white border border-[#dfe6f2] p-3.5 flex flex-col gap-2.5 shadow-sm">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[13px] font-extrabold text-[#0b3d91] inline-flex items-center gap-1.5">
+                <Trophy size={16} className="text-amber-500" /> পুরষ্কার সমূহ
+              </p>
+              {/* Glowing highlight badge (blinks on/off) */}
+              <span className="lot-glow text-[11px] font-extrabold text-white px-2.5 py-1 rounded-full bg-gradient-to-r from-[#e11d48] to-[#f59e0b]">
+                🎁 পুরস্কার বিতরণ
+              </span>
+            </div>
             <div className="flex flex-col gap-2">
               {prizes.map((p) => (
                 <div
                   key={p.label}
-                  className="flex items-center gap-3 rounded-xl border border-[#eef2f9] bg-[#f8fafd] px-3 py-2.5"
+                  className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 ${p.card}`}
                 >
                   <span
                     className={`shrink-0 inline-flex items-center justify-center size-9 rounded-full bg-gradient-to-br ${p.tone} text-white`}
                   >
                     <Trophy size={16} />
                   </span>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-[11px] font-bold text-[#5b6784]">{p.label}</p>
                     <p className="text-[14px] font-extrabold text-[#16213a] leading-snug break-words">
                       {p.value}
                     </p>
                   </div>
+                  {p.img && (
+                    <span className="shrink-0 size-14 rounded-lg overflow-hidden border border-white/70 bg-white shadow-sm">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p.img} alt={p.label} className="w-full h-full object-cover" />
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
@@ -196,7 +230,7 @@ export default function LotteryForm({
         )}
 
         {/* Entry form */}
-        <div className="rounded-2xl bg-white border border-[#dfe6f2] p-4 flex flex-col gap-3 shadow-sm">
+        <div className="rounded-xl bg-white border border-[#dfe6f2] p-3.5 flex flex-col gap-2.5 shadow-sm">
           <Field label="লটারি নাম্বার" required icon>
             <input
               value={cardCode}
@@ -290,18 +324,45 @@ export default function LotteryForm({
         </p>
       </div>
 
-      {/* Success popup */}
+      {/* Success popup — celebratory, with confetti + stars burst */}
       {done && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 flex flex-col items-center text-center gap-3 shadow-2xl">
-            <span className="size-16 rounded-full bg-[#e8fbef] flex items-center justify-center">
-              <CheckCircle2 size={40} className="text-[#22c55e]" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 overflow-hidden">
+          {/* Confetti + stars rain over the whole screen */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            {CONFETTI.map((c, i) => (
+              <span
+                key={i}
+                className="lot-confetti"
+                style={{
+                  left: `${c.left}%`,
+                  background: c.star ? "transparent" : c.color,
+                  width: c.star ? "auto" : `${c.size}px`,
+                  height: c.star ? "auto" : `${c.size * 1.6}px`,
+                  animationDelay: `${c.delay}s`,
+                  animationDuration: `${c.dur}s`,
+                  color: c.color,
+                  fontSize: c.star ? `${c.size + 6}px` : undefined,
+                }}
+              >
+                {c.star ? "★" : ""}
+              </span>
+            ))}
+          </div>
+
+          <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 flex flex-col items-center text-center gap-3 shadow-2xl">
+            <span className="lot-pop size-20 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
+              <Trophy size={44} className="text-white" />
             </span>
-            <p className="text-[19px] font-extrabold text-[#0b3d91]">এন্ট্রি জমা হয়েছে!</p>
-            <p className="text-[13px] font-semibold text-[#5b6784] leading-relaxed">
-              ধন্যবাদ {name.trim()}। আপনার লটারি এন্ট্রি সফলভাবে জমা হয়েছে। ড্র শেষে বিজয়ীদের
-              মোবাইলে SMS-এ জানানো হবে।
+            <p className="lot-glow text-[26px] font-black text-[#e11d48]">অভিনন্দন! 🎉</p>
+            <p className="text-[15px] font-extrabold text-[#0b3d91]">
+              আপনার এন্ট্রি সফলভাবে জমা হয়েছে!
             </p>
+            <p className="text-[13px] font-semibold text-[#5b6784] leading-relaxed">
+              ধন্যবাদ {name.trim()}। ড্র শেষে বিজয়ীদের মোবাইলে SMS-এ জানানো হবে।
+            </p>
+            <div className="mt-1 inline-flex items-center gap-1.5 text-[12px] font-bold text-[#22c55e]">
+              <CheckCircle2 size={16} /> জমা সম্পন্ন হয়েছে
+            </div>
             <button
               type="button"
               onClick={reset}
@@ -316,6 +377,52 @@ export default function LotteryForm({
   );
 }
 
+// Confetti + star pieces for the success celebration (generated once).
+const CONFETTI = Array.from({ length: 48 }, (_, i) => {
+  const colors = ["#f59e0b", "#e11d48", "#2563eb", "#22c55e", "#a855f7", "#f97316"];
+  return {
+    left: Math.round(Math.random() * 100),
+    color: colors[i % colors.length],
+    size: 6 + Math.round(Math.random() * 6),
+    delay: Math.round(Math.random() * 1500) / 1000,
+    dur: 2.4 + Math.round(Math.random() * 1600) / 1000,
+    star: i % 4 === 0,
+  };
+});
+
+const LOTTERY_FX_CSS = `
+@keyframes lotGlow {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 0 rgba(245,158,11,0)); }
+  50% { opacity: .55; filter: drop-shadow(0 0 10px rgba(245,158,11,.9)); }
+}
+.lot-glow { animation: lotGlow 1.1s ease-in-out infinite; }
+@keyframes lotPop {
+  0% { transform: scale(.4); opacity: 0; }
+  60% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.lot-pop { animation: lotPop .5s cubic-bezier(.2,1.3,.4,1) both; }
+@keyframes lotConfettiFall {
+  0% { transform: translateY(-12vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(112vh) rotate(720deg); opacity: 1; }
+}
+.lot-confetti {
+  position: absolute;
+  top: -5vh;
+  display: inline-block;
+  line-height: 1;
+  border-radius: 2px;
+  animation-name: lotConfettiFall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lot-glow, .lot-pop, .lot-confetti { animation: none; }
+  .lot-confetti { display: none; }
+}
+`;
+
 function BannerSlider({ images }: { images: string[] }) {
   const [i, setI] = useState(0);
   const n = images.length;
@@ -329,14 +436,14 @@ function BannerSlider({ images }: { images: string[] }) {
   const go = (d: number) => setI((p) => (p + d + n) % n);
 
   return (
-    <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden border border-[#dfe6f2] bg-white shadow-sm">
+    <div className="relative w-full aspect-[16/7] rounded-xl overflow-hidden border border-[#dfe6f2] bg-white shadow-sm">
       {images.map((src, idx) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           key={src}
           src={src}
           alt={`slide ${idx + 1}`}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+          className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-500 ${
             idx === i ? "opacity-100" : "opacity-0"
           }`}
         />

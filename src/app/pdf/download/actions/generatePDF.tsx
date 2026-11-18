@@ -685,6 +685,10 @@ export default async function generatePDF({
         const chairmanSignBase64 = await convertToBase64(
           path.join(process.cwd(), "src", "assets", "images", "chairmanSeal.jpeg"),
         ).catch(() => undefined);
+        // Second signatory on the ex-parte notice: investigating officer Atikur.
+        const officerSignBase64 = await convertToBase64(
+          path.join(process.cwd(), "src", "assets", "images", "atikurSign.jpeg"),
+        ).catch(() => undefined);
 
         const data: CompletionNoticeTemplateData = {
           complaintId: c.complaintId,
@@ -710,6 +714,7 @@ export default async function generatePDF({
           logo: logoBase64,
           documentSeal: documentSealBase64,
           chairmanSeal: chairmanSignBase64,
+          officerSign: officerSignBase64,
           officerName: c.hearingOfficerName || "",
           officerDesignation: c.hearingOfficerDesignation || "",
         };

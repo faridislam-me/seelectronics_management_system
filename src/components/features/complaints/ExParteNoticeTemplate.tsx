@@ -112,28 +112,44 @@ export default function ExParteNoticeTemplate({ data }: ExParteNoticeTemplatePro
         </p>
       </div>
 
-      {/* Signature Block */}
-      <div className="flex justify-between items-end mt-auto pt-2">
-        <div className="text-left w-64">
-          {data.documentSeal && (
-            <img src={data.documentSeal} alt="Seal" className="w-[30mm] mb-2" />
-          )}
-          <p className="font-bold">যোগাযোগের নম্বরঃ ০১৩২২২৪৭৭৭৪</p>
-        </div>
-
+      {/* Signature Block — two signatories: the investigating officer (left) and
+          the resolution officer / chairman (right), with the round office seal.
+          Each signature image already carries its signatory's printed name and
+          designation, so only a short role caption sits under the line. */}
+      <div className="flex justify-between items-end mt-auto pt-8">
+        {/* LEFT — investigating officer (Atikur Rahman) */}
         <div className="text-center w-64">
-          <div className="h-14 flex items-center justify-center mb-2">
-            {data.chairmanSeal && (
-              <img src={data.chairmanSeal} alt="Signature" width={160} height={80} />
+          <div className="h-[22mm] flex items-end justify-center">
+            {data.officerSign && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={data.officerSign} alt="তদন্ত কর্মকর্তা" className="max-h-[22mm] object-contain" />
             )}
           </div>
-          <p className="text-sm">ধন্যবাদান্তে,</p>
-          <p className="font-bold underline underline-offset-4 uppercase tracking-tighter text-[13px]">
-            কাস্টমার রিলেশন বিভাগ
-          </p>
-          <p className="font-bold">এস ই ইলেকট্রনিক্স</p>
+          <div className="border-t border-black/70 mt-1 pt-1 text-[12px] font-bold">
+            তদন্ত কর্মকর্তা
+          </div>
+        </div>
+
+        {/* RIGHT — resolution officer / chairman, with the round office seal behind */}
+        <div className="relative text-center w-64">
+          {data.documentSeal && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={data.documentSeal} alt="সিল" className="absolute left-1 bottom-8 w-[24mm] opacity-90" />
+          )}
+          <div className="h-[22mm] flex items-end justify-center">
+            {data.chairmanSeal && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={data.chairmanSeal} alt="নিষ্পত্তি কর্মকর্তা" className="max-h-[22mm] object-contain" />
+            )}
+          </div>
+          <div className="border-t border-black/70 mt-1 pt-1 text-[12px] font-bold">
+            নিষ্পত্তি কর্মকর্তা
+          </div>
         </div>
       </div>
+
+      {/* Contact */}
+      <p className="font-bold text-[12px] mt-3">যোগাযোগের নম্বরঃ ০১৩২২২৪৭৭৭৪</p>
 
       {/* Footer */}
       <div className="text-[9px] mt-2 text-center text-gray-500 uppercase tracking-widest border-t pt-1.5">

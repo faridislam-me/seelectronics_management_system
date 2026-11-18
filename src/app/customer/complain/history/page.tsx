@@ -81,12 +81,21 @@ export default async function ComplaintHistoryPage() {
 
                 <div className={clsx("rounded-md px-2.5 py-2 flex items-center gap-2 text-[12px] font-bold", t.strip)}><t.icon size={15} className="shrink-0" />{t.msg}</div>
 
-                <div className={clsx("grid gap-2", c.status === "completed" ? "grid-cols-2" : "grid-cols-1")}>
-                  <Link href={`/customer/complain/doc/${c.complaintId}`} className="h-10 rounded-md border border-[#bcd4fb] bg-white text-[#0b3d91] text-[13px] font-extrabold inline-flex items-center justify-center gap-1.5"><FileText size={16} />View Doc<ChevronRight size={15} /></Link>
-                  {c.status === "completed" && (
-                    <Link href={`/pdf/download?type=complaint_customer&id=${c.complaintId}`} target="_blank" className="h-10 rounded-md bg-[#0b3d91] text-white text-[13px] font-extrabold inline-flex items-center justify-center gap-1.5 shadow-[0_6px_14px_rgba(11,61,145,0.3)]"><Download size={16} />Download PDF<ChevronRight size={15} /></Link>
-                  )}
-                </div>
+                {(() => {
+                  // A completed complaint gets the customer resolution copy; a
+                  // complaint closed ex-parte (customer_absent) gets the one-sided
+                  // ex-parte notice. Both expose a Download PDF next to View Doc.
+                  const hasDoc = c.status === "completed" || c.status === "customer_absent";
+                  const docType = c.status === "customer_absent" ? "ex-parte-notice" : "complaint_customer";
+                  return (
+                    <div className={clsx("grid gap-2", hasDoc ? "grid-cols-2" : "grid-cols-1")}>
+                      <Link href={`/customer/complain/doc/${c.complaintId}`} className="h-10 rounded-md border border-[#bcd4fb] bg-white text-[#0b3d91] text-[13px] font-extrabold inline-flex items-center justify-center gap-1.5"><FileText size={16} />View Doc<ChevronRight size={15} /></Link>
+                      {hasDoc && (
+                        <Link href={`/pdf/download?type=${docType}&id=${c.complaintId}`} target="_blank" className="h-10 rounded-md bg-[#0b3d91] text-white text-[13px] font-extrabold inline-flex items-center justify-center gap-1.5 shadow-[0_6px_14px_rgba(11,61,145,0.3)]"><Download size={16} />Download PDF<ChevronRight size={15} /></Link>
+                      )}
+                    </div>
+                  );
+                })()}
               </article>
             );
           })

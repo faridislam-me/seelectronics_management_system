@@ -221,7 +221,17 @@ export interface InstallmentScheduleRow {
 }
 
 export interface InstallmentInvoiceTemplateData {
-  bgImage: string;
+  /** Legacy full-page background image (no longer required by the letterhead). */
+  bgImage?: string;
+  /** Branded letterhead assets (all optional, base64 data URIs / SVG). */
+  logo?: string;
+  seal?: string;
+  managerSign?: string;
+  chairmanSign?: string;
+  headerQr?: string;
+  appQr?: string;
+  barcodeSvg?: string;
+  serial?: string;
   planCode: string;
   customerName: string;
   customerPhone: string;

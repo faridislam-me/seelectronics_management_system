@@ -84,7 +84,7 @@ export default async function ComplaintHistoryPage() {
                 <div className={clsx("grid gap-2", c.status === "completed" ? "grid-cols-2" : "grid-cols-1")}>
                   <Link href={`/customer/complain/doc/${c.complaintId}`} className="h-10 rounded-md border border-[#bcd4fb] bg-white text-[#0b3d91] text-[13px] font-extrabold inline-flex items-center justify-center gap-1.5"><FileText size={16} />View Doc<ChevronRight size={15} /></Link>
                   {c.status === "completed" && (
-                    <Link href={`/pdf/download?type=${c.punishmentType === "not_guilty" ? "staff-not-guilty" : "completion-notice"}&id=${c.complaintId}`} target="_blank" className="h-10 rounded-md bg-[#0b3d91] text-white text-[13px] font-extrabold inline-flex items-center justify-center gap-1.5 shadow-[0_6px_14px_rgba(11,61,145,0.3)]"><Download size={16} />Download PDF<ChevronRight size={15} /></Link>
+                    <Link href={`/pdf/download?type=complaint_customer&id=${c.complaintId}`} target="_blank" className="h-10 rounded-md bg-[#0b3d91] text-white text-[13px] font-extrabold inline-flex items-center justify-center gap-1.5 shadow-[0_6px_14px_rgba(11,61,145,0.3)]"><Download size={16} />Download PDF<ChevronRight size={15} /></Link>
                   )}
                 </div>
               </article>

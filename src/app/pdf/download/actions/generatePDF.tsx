@@ -972,8 +972,26 @@ export default async function generatePDF({
         const backgroundBase64 = await convertToBase64(templatePath);
         const productImage = await resolveProductImage(plan.productImageKey, plan.productType);
 
+        // Official NOC certificate assets (logo, round seal, two signatures, QR).
+        const nocImgDir = (f: string) =>
+          path.join(process.cwd(), "src", "assets", "images", f);
+        const nocLogo = await convertToBase64(nocImgDir("elecLogo.png")).catch(
+          () => convertToBase64(nocImgDir("logo.jpg")).catch(() => undefined),
+        );
+        const nocSeal = await convertToBase64(nocImgDir("documentSeal.jpeg")).catch(() => undefined);
+        const nocOfficerSign = await convertToBase64(nocImgDir("elecSign.png")).catch(() => undefined);
+        const nocChairmanSign = await convertToBase64(nocImgDir("chairmanSign.png")).catch(() => undefined);
+        const { qrcode: nocQr } = await import("@/lib/id-gen");
+        const nocQrData = await nocQr(plan.planCode).catch(() => undefined);
+
         const data: InstallmentNocTemplateData = {
           bgImage: backgroundBase64,
+          monthlyAmount: plan.monthlyAmount,
+          logo: nocLogo,
+          seal: nocSeal,
+          officerSign: nocOfficerSign,
+          chairmanSign: nocChairmanSign,
+          qrcode: nocQrData,
           planCode: plan.planCode,
           customerName: plan.customerName,
           customerPhone: plan.customerPhone,

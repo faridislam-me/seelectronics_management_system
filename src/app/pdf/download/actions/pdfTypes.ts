@@ -323,6 +323,14 @@ export interface InstallmentNocTemplateData {
   paidTotal: number;
   paidCount: number;
   issuedDate: Date | string;
+  /** Monthly installment amount, shown as "কিস্তির পরিমাণ". */
+  monthlyAmount: number;
+  /** Letterhead/certificate assets (base64), each optional and guarded on render. */
+  logo?: string;
+  seal?: string;
+  officerSign?: string;
+  chairmanSign?: string;
+  qrcode?: string;
 }
 
 export interface InstallmentStickerTemplateData {

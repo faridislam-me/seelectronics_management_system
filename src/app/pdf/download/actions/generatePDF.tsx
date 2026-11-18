@@ -887,18 +887,39 @@ export default async function generatePDF({
         const paidTotal =
           Math.round(paidRows.reduce((sum, s) => sum + s.paidAmount, 0) * 100) / 100;
 
-        const templatePath = path.join(
-          process.cwd(),
-          "src",
-          "assets",
-          "images",
-          "customer-invoice-paid.png",
-        );
-        const backgroundBase64 = await convertToBase64(templatePath);
         const productImage = await resolveProductImage(plan.productImageKey, plan.productType);
 
+        // Branded letterhead assets: transparent logo emblem, round office seal,
+        // manager + chairman signatures, header/customer-app QR codes, and a
+        // Code128 serial barcode — mirrors the official SE Electronics pad.
+        const invImgDir = (f: string) =>
+          path.join(process.cwd(), "src", "assets", "images", f);
+        const invLogo = await convertToBase64(invImgDir("logoTransparent.png"))
+          .catch(() => convertToBase64(invImgDir("logo.jpg")).catch(() => undefined));
+        const invSeal = await convertToBase64(invImgDir("documentSeal.jpeg")).catch(() => undefined);
+        const invManagerSign = await convertToBase64(invImgDir("atikurSign.jpeg")).catch(() => undefined);
+        const invChairmanSign = await convertToBase64(invImgDir("chairmanSign.png")).catch(() => undefined);
+        const { qrcode: invQr } = await import("@/lib/id-gen");
+        const { code128Svg: invBarcode } = await import("@/lib/code128");
+        const invHeaderQr = await invQr("https://seipsbd.com").catch(() => undefined);
+        const invAppQr = await invQr(plan.planCode).catch(() => undefined);
+        const invSerial = `SE${plan.planCode}`.toUpperCase().replace(/[^A-Z0-9]/g, "");
+        let invBarcodeSvg: string | undefined;
+        try {
+          invBarcodeSvg = invBarcode(invSerial, { height: 34, module: 1.2 });
+        } catch {
+          invBarcodeSvg = undefined;
+        }
+
         const data: InstallmentInvoiceTemplateData = {
-          bgImage: backgroundBase64,
+          logo: invLogo,
+          seal: invSeal,
+          managerSign: invManagerSign,
+          chairmanSign: invChairmanSign,
+          headerQr: invHeaderQr,
+          appQr: invAppQr,
+          barcodeSvg: invBarcodeSvg,
+          serial: invSerial,
           planCode: plan.planCode,
           customerName: plan.customerName,
           customerPhone: plan.customerPhone,

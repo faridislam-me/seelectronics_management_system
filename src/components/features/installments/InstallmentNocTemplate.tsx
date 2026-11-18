@@ -82,7 +82,7 @@ export default function InstallmentNocTemplate({
   return (
     <div
       className="relative w-[210mm] h-[297mm] mx-auto bg-white overflow-hidden"
-      style={{ fontFamily: `'Tiro Bangla', SolaimanLipi, Inter, sans-serif`, color: "#13213a" }}
+      style={{ fontFamily: `'SolaimanLipi', 'Tiro Bangla', sans-serif`, color: "#13213a" }}
     >
       {/* ── Decorative corner waves (navy + gold) ── */}
       <svg className="absolute top-0 left-0" width="100%" height="150" viewBox="0 0 800 150" preserveAspectRatio="none" style={{ zIndex: 0 }}>
@@ -122,13 +122,9 @@ export default function InstallmentNocTemplate({
           </div>
         </div>
 
-        {/* Title band */}
-        <div className="flex items-center justify-center gap-4 mt-5">
-          {data.seal ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={data.seal} alt="seal" className="w-[72px] h-[72px] object-contain shrink-0" />
-          ) : null}
-          <div className="flex-1 max-w-[520px]">
+        {/* Title band — centered NOC banner (no seal beside it). */}
+        <div className="flex justify-center mt-5">
+          <div className="w-full max-w-[520px]">
             <div
               className="rounded-[14px] px-6 py-2 text-center shadow-md"
               style={{ background: `linear-gradient(90deg, ${NAVY_DARK}, ${NAVY})`, border: `2px solid ${GOLD}` }}
@@ -182,40 +178,44 @@ export default function InstallmentNocTemplate({
           <Condition n={4}>বিস্তারিত জানতে আমাদের অফিস/সার্ভিস সেন্টারের সাথে যোগাযোগ করুন।</Condition>
         </div>
 
-        {/* Signatures */}
+        {/* Signatures — LEFT: Manager (signature + name seal), MIDDLE: bigger
+            QR, RIGHT: Chairman (signature + চেয়ারম্যান name seal). No complaint
+            seal. */}
         <div className="grid grid-cols-3 items-end gap-2 mt-7">
-          {/* Officer */}
+          {/* Manager (left) */}
           <div className="text-center">
-            {data.officerSign ? (
+            {data.managerSign ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={data.officerSign} alt="sign" className="h-[42px] mx-auto object-contain" />
-            ) : <div className="h-[42px]" />}
-            <div className="border-t-2 mx-auto w-[82%] pt-1" style={{ borderColor: NAVY }}>
-              <div className="text-[11.5px] font-extrabold text-slate-800">অধিকর্তার স্বাক্ষর</div>
+              <img src={data.managerSign} alt="manager sign" className="h-[58px] mx-auto object-contain" />
+            ) : <div className="h-[58px]" />}
+            <div className="border-t-2 mx-auto w-[86%] pt-1" style={{ borderColor: NAVY }}>
+              <div className="text-[11.5px] font-extrabold text-slate-800">প্রতিষ্ঠানের ম্যানেজার</div>
               <div className="text-[11px] font-bold" style={{ color: NAVY }}>SE Electronics</div>
               <div className="text-[10px] text-slate-500">Sylhet</div>
             </div>
           </div>
-          {/* QR + seal */}
-          <div className="flex flex-col items-center justify-end gap-1 relative">
-            {data.seal ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={data.seal} alt="seal" className="absolute -top-1 right-1 w-[58px] h-[58px] object-contain opacity-90" />
-            ) : null}
+          {/* QR (middle, enlarged) */}
+          <div className="flex flex-col items-center justify-end gap-1">
             {data.qrcode ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={data.qrcode} alt="qr" className="w-[66px] h-[66px] object-contain" />
-            ) : <div className="h-[66px]" />}
-            <div className="text-[9.5px] font-bold" style={{ color: NAVY }}>Scan for Service</div>
+              <img src={data.qrcode} alt="qr" className="w-[92px] h-[92px] object-contain" />
+            ) : <div className="h-[92px]" />}
+            <div className="text-[10px] font-bold" style={{ color: NAVY }}>Scan for Service</div>
           </div>
-          {/* Chairman */}
+          {/* Chairman (right) */}
           <div className="text-center">
-            {data.chairmanSign ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={data.chairmanSign} alt="sign" className="h-[42px] mx-auto object-contain" />
-            ) : <div className="h-[42px]" />}
-            <div className="border-t-2 mx-auto w-[82%] pt-1" style={{ borderColor: NAVY }}>
-              <div className="text-[11.5px] font-extrabold text-slate-800">প্রতিষ্ঠানের প্রধান</div>
+            <div className="flex flex-col items-center">
+              {data.chairmanSign ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={data.chairmanSign} alt="chairman sign" className="h-[50px] w-[150px] mx-auto object-contain" />
+              ) : <div className="h-[50px]" />}
+              {data.chairmanSeal ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={data.chairmanSeal} alt="chairman seal" className="-mt-2 h-[42px] w-[170px] mx-auto object-contain" />
+              ) : null}
+            </div>
+            <div className="border-t-2 mx-auto w-[86%] pt-1" style={{ borderColor: NAVY }}>
+              <div className="text-[11.5px] font-extrabold text-slate-800">চেয়ারম্যান</div>
               <div className="text-[11px] font-bold" style={{ color: NAVY }}>SE Electronics</div>
               <div className="text-[10px] text-slate-500">Sylhet</div>
             </div>

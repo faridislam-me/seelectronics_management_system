@@ -975,12 +975,15 @@ export default async function generatePDF({
         // Official NOC certificate assets (logo, round seal, two signatures, QR).
         const nocImgDir = (f: string) =>
           path.join(process.cwd(), "src", "assets", "images", f);
-        const nocLogo = await convertToBase64(nocImgDir("elecLogo.png")).catch(
-          () => convertToBase64(nocImgDir("logo.jpg")).catch(() => undefined),
+        // Top-left shows the real SE brand logo (gold bulb emblem), not a seal.
+        const nocLogo = await convertToBase64(nocImgDir("logo.jpg")).catch(
+          () => convertToBase64(nocImgDir("elecLogo.png")).catch(() => undefined),
         );
-        const nocSeal = await convertToBase64(nocImgDir("documentSeal.jpeg")).catch(() => undefined);
-        const nocOfficerSign = await convertToBase64(nocImgDir("elecSign.png")).catch(() => undefined);
+        // Manager (left) = Atikur signature+name block; Chairman (right) =
+        // signature + chairman name seal. No complaint seal anywhere.
+        const nocManagerSign = await convertToBase64(nocImgDir("atikurSign.jpeg")).catch(() => undefined);
         const nocChairmanSign = await convertToBase64(nocImgDir("chairmanSign.png")).catch(() => undefined);
+        const nocChairmanSeal = await convertToBase64(nocImgDir("chairmanNameSeal.png")).catch(() => undefined);
         const { qrcode: nocQr } = await import("@/lib/id-gen");
         const nocQrData = await nocQr(plan.planCode).catch(() => undefined);
 
@@ -988,9 +991,9 @@ export default async function generatePDF({
           bgImage: backgroundBase64,
           monthlyAmount: plan.monthlyAmount,
           logo: nocLogo,
-          seal: nocSeal,
-          officerSign: nocOfficerSign,
+          managerSign: nocManagerSign,
           chairmanSign: nocChairmanSign,
+          chairmanSeal: nocChairmanSeal,
           qrcode: nocQrData,
           planCode: plan.planCode,
           customerName: plan.customerName,
@@ -1127,8 +1130,9 @@ export default async function generatePDF({
           path.join(process.cwd(), "src", "assets", "images", "documentSeal.jpeg"),
         ).catch(() => "");
 
+        // Chairman name seal ONLY (no "অভিযোগ নিস্পত্তি"/complaint wording).
         const chairmanSealBase64 = await convertToBase64(
-          path.join(process.cwd(), "src", "assets", "images", "chairmanSeal.jpeg"),
+          path.join(process.cwd(), "src", "assets", "images", "chairmanNameSeal.png"),
         ).catch(() => "");
 
         const chairmanSignBase64 = await convertToBase64(

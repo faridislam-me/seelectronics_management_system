@@ -21,8 +21,13 @@ import { eq } from "drizzle-orm";
 
 // Normalize to the same operator code getDrives uses on the wire (e.g.
 // "grameenphone" → "GP"), so staff + customer callers share one cache row.
-const cacheKeyFor = (operator?: string) =>
-  operator ? OPERATOR_MAP[operator] || operator : "ALL";
+// The key is prefixed with the pack `type` (e.g. "regular:GP" / "drive:GP") so
+// the regular-pack cache and the drive-pack cache stay separate — otherwise the
+// old drive-cache rows would be served back as "regular" packs.
+const cacheKeyFor = (operator?: string, type?: "regular" | "drive") => {
+  const op = operator ? OPERATOR_MAP[operator] || operator : "ALL";
+  return type ? `${type}:${op}` : op;
+};
 
 const readCachedPacks = async (key: string): Promise<any[]> => {
   const row = await db.query.cachedRechargePacks.findFirst({
@@ -34,11 +39,12 @@ const readCachedPacks = async (key: string): Promise<any[]> => {
 
 export const getRechargePacksWithCache = async (
   operator?: string,
+  type?: "regular" | "drive",
 ): Promise<any[]> => {
-  const key = cacheKeyFor(operator);
+  const key = cacheKeyFor(operator, type);
 
   try {
-    const res = await getDrives(operator);
+    const res = await getDrives(operator, type);
     const packs = Array.isArray(res?.drives) ? (res.drives as any[]) : [];
 
     if (res?.result && packs.length > 0) {

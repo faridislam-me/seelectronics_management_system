@@ -189,15 +189,25 @@ export const getMyRechargeRequests = async () => {
   }
 };
 
-/** Fetch available drive/bundle packages from SuccessTopup */
-export const getDrivePackages = async (operator: string) => {
+/**
+ * Fetch available bundle packages from SuccessTopup for the recharge pack UIs.
+ *
+ * `type` selects the dataset: "regular" = standard operator bundles (the
+ * রেগুলার প্যাক screen, paid from referral balance), "drive" = the special
+ * drive offers (ড্রাইভ প্যাক / ড্রাইভ অফার screens, paid from the drive wallet).
+ * Defaults to "regular" so an un-typed caller gets the regular packs.
+ */
+export const getDrivePackages = async (
+  operator: string,
+  type: "regular" | "drive" = "regular",
+) => {
   try {
     const session = await verifyCustomerSession();
     if (!session.isAuth || !session.customer) return UNAUTHORIZED;
 
     // Cache-backed: serve live packs when the API has them, otherwise the
     // last-known cached packs so the list never shows empty at night.
-    const data = await getRechargePacksWithCache(operator);
+    const data = await getRechargePacksWithCache(operator, type);
     return { success: true, data };
   } catch (error) {
     console.error("getDrivePackages error:", error);

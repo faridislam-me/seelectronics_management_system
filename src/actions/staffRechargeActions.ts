@@ -141,8 +141,10 @@ export const getStaffRechargePackages = async (operator: string) => {
       return { success: false as const, message: "Unauthorized" };
     }
     // Cache-backed: serve live packs when the API has them, otherwise the
-    // last-known cached packs so the list never shows empty at night.
-    const data = await getRechargePacksWithCache(operator);
+    // last-known cached packs so the list never shows empty at night. The staff
+    // "রেগুলার প্যাক" flow always lists the REGULAR operator bundles, so request
+    // type:"regular" (omitting it would return the special drive offers).
+    const data = await getRechargePacksWithCache(operator, "regular");
     return { success: true as const, data };
   } catch (error) {
     console.error("getStaffRechargePackages error:", error);

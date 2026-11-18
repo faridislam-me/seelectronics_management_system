@@ -191,15 +191,14 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
     }
     let active = true;
     setLoadingPkgs(true);
-    getDrivePackages(operator).then((res) => {
+    // The regular-pack screen lists SuccessTopup's REGULAR operator bundles; the
+    // drive screens list the special DRIVE offers. /api/drives returns a
+    // different dataset per `type`, so request the one matching this mode (the
+    // balance source distinguishes them: referral → regular, drive → drive).
+    const packType = isDrive ? "drive" : "regular";
+    getDrivePackages(operator, packType).then((res) => {
       if (!active) return;
       if (res.success && Array.isArray(res.data)) {
-        // SuccessTopup returns every bundle offer under /api/drives tagged
-        // type:"drive" — there is no separate "regular" dataset. These minute/GB
-        // bundles are the packs for every mode; the modes differ only in the
-        // balance used to pay (regular → referral balance, drive → drive
-        // balance), not in the pack list. So show all packs for every mode;
-        // filtering out "drive" for regular_pack hid every pack.
         const all = res.data.map(mapPack);
         setPackages(all);
       } else {

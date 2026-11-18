@@ -976,9 +976,12 @@ export default async function generatePDF({
         const nocImgDir = (f: string) =>
           path.join(process.cwd(), "src", "assets", "images", f);
         // Top-left shows the real SE brand logo (gold bulb emblem), not a seal.
-        const nocLogo = await convertToBase64(nocImgDir("logo.jpg")).catch(
-          () => convertToBase64(nocImgDir("elecLogo.png")).catch(() => undefined),
-        );
+        // Use the background-removed (transparent) variant so no ugly white box
+        // sits behind the round emblem on the certificate; fall back to the
+        // original JPG, then the round emblem, if it is somehow missing.
+        const nocLogo = await convertToBase64(nocImgDir("logoTransparent.png"))
+          .catch(() => convertToBase64(nocImgDir("logo.jpg")))
+          .catch(() => convertToBase64(nocImgDir("elecLogo.png")).catch(() => undefined));
         // Manager (left) = Atikur signature+name block; Chairman (right) =
         // signature + chairman name seal. No complaint seal anywhere.
         const nocManagerSign = await convertToBase64(nocImgDir("atikurSign.jpeg")).catch(() => undefined);

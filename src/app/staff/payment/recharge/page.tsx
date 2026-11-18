@@ -1,5 +1,5 @@
 import { verifyStaffSession } from "@/actions";
-import { getStaffBalance } from "@/actions/paymentRequestActions";
+import { getStaffAvailableBalance } from "@/actions/staffActions";
 import StaffRechargeFlow from "./StaffRechargeFlow";
 import { StaffLayout } from "@/components/layout/StaffLayout";
 
@@ -9,7 +9,9 @@ export default async function StaffRechargePage() {
   const session = await verifyStaffSession();
   if (!session.isAuth) return null;
 
-  const balanceRes = await getStaffBalance(session.userId as string);
+  // Recharges are paid from the staff's main available balance (same source as
+  // the rest of the staff app), matching the recharge action's own check.
+  const balanceRes = await getStaffAvailableBalance(session.userId as string);
   const balance = balanceRes.success ? balanceRes.balance : 0;
 
   return (

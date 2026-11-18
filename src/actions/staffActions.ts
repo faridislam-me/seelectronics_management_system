@@ -1126,9 +1126,41 @@ export async function setStaffCredentials(
   }
 }
 
+/**
+ * Staff's spendable balance — the SAME value shown across the staff app as
+ * `availableBalance` (see getStaffProfileStats): total credited earnings minus
+ * everything already requested / paid out. This is the balance staff spend from
+ * when buying mobile recharges / regular packs; there is no separate wallet or
+ * drive balance. getStaffProfileStats delegates to this so the number is
+ * computed in exactly one place.
+ */
+export async function getStaffAvailableBalance(staffId: string) {
+  try {
+    const [sums] = await db
+      .select({
+        added: sql<number>`COALESCE(SUM(${payments.amount}) FILTER (WHERE status = 'credited'), 0)`,
+        requested: sql<number>`COALESCE(SUM(${payments.amount}) FILTER (WHERE status IN ('requested', 'pending', 'approved', 'completed')), 0)`,
+      })
+      .from(payments)
+      .where(eq(payments.staffId, staffId));
+    const totalEarnings = Number(sums?.added ?? 0);
+    const pendingPayments = Number(sums?.requested ?? 0);
+    return {
+      success: true as const,
+      totalEarnings,
+      pendingPayments,
+      // Never negative: payouts recorded without a matching earnings credit must not show as debt.
+      balance: Math.max(0, totalEarnings - pendingPayments),
+    };
+  } catch (error) {
+    console.error("getStaffAvailableBalance error:", error);
+    return { success: false as const, totalEarnings: 0, pendingPayments: 0, balance: 0 };
+  }
+}
+
 export async function getStaffProfileStats(staffId: string) {
   try {
-    const [staffStats, ratingResult, staffPayments, paymentSums] =
+    const [staffStats, ratingResult, staffPayments, balanceInfo] =
       await Promise.all([
         db.query.staffs.findFirst({
           where: eq(staffs.staffId, staffId),
@@ -1152,22 +1184,15 @@ export async function getStaffProfileStats(staffId: string) {
           orderBy: (payments, { desc }) => [desc(payments.date)],
           limit: 10,
         }),
-        db
-          .select({
-            added: sql<number>`COALESCE(SUM(${payments.amount}) FILTER (WHERE status = 'credited'), 0)`,
-            requested: sql<number>`COALESCE(SUM(${payments.amount}) FILTER (WHERE status IN ('requested', 'pending', 'approved', 'completed')), 0)`,
-          })
-          .from(payments)
-          .where(eq(payments.staffId, staffId)),
+        getStaffAvailableBalance(staffId),
       ]);
 
     if (!staffStats) {
       return { success: false, message: "Staff not found" };
     }
 
-    const sums = paymentSums[0];
-    const totalEarnings = Number(sums.added);
-    const pendingPayments = Number(sums.requested);
+    const totalEarnings = balanceInfo.totalEarnings;
+    const pendingPayments = balanceInfo.pendingPayments;
 
     return {
       success: true,
@@ -1181,8 +1206,7 @@ export async function getStaffProfileStats(staffId: string) {
         recentPayments: staffPayments,
         totalEarnings,
         pendingPayments,
-        // Never negative: payouts recorded without a matching earnings credit must not show as debt.
-        availableBalance: Math.max(0, totalEarnings - pendingPayments),
+        availableBalance: balanceInfo.balance,
       },
     };
   } catch (error) {

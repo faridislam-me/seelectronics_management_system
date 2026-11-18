@@ -1,7 +1,13 @@
 "use server";
 
 import { db } from "@/db/drizzle";
-import { customers, driveAddMoneyRequests, mobileRechargeRequests } from "@/db/schema";
+import {
+  customers,
+  driveAddMoneyRequests,
+  mobileRechargeRequests,
+  referralBonuses,
+  referralPaymentRequests,
+} from "@/db/schema";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { verifySession } from "@/lib";
 import { generateRandomId } from "@/utils";
@@ -349,15 +355,23 @@ const RECHARGE_TYPE_LABELS: Record<string, string> = {
 
 export type CustomerMoneyHistoryRow = {
   id: string;
-  /** "recharge" = mobile recharge, "drive" = drive add-money top-up. */
-  kind: "recharge" | "drive";
-  /** রিচার্জ / ড্রাইভ */
+  /**
+   * "recharge" = mobile recharge, "drive" = drive add-money top-up,
+   * "referral_earning" = referral bonus earned from a referred customer's
+   * purchase, "referral_payout" = referral balance cash-out request (bKash/Nagad).
+   */
+  kind: "recharge" | "drive" | "referral_earning" | "referral_payout";
+  /** রিচার্জ / ড্রাইভ / রেফারেল আয় / রেফারেল পেমেন্ট */
   typeLabel: string;
-  /** Method as stored: "recharge" for recharges, বিকাশ / নগদ / রকেট for drive. */
+  /** Method as stored: "recharge" for recharges, বিকাশ / নগদ / রকেট for drive & payouts. */
   method: string;
   /** Operator key for the recharge icon (recharge rows only). */
   operatorKey?: string;
-  /** Recharged number (recharge) or sender wallet number (drive add-money). */
+  /**
+   * Recharged number (recharge), sender wallet number (drive add-money),
+   * payout wallet number (referral_payout), or the referred customer's name
+   * (referral_earning — the source of the bonus).
+   */
   number: string;
   /** Operator display name (recharge rows only). */
   operator?: string;
@@ -368,16 +382,20 @@ export type CustomerMoneyHistoryRow = {
 
 /**
  * Admin: combined money history for ONE customer — mobile recharges
- * (mobileRechargeRequests) plus drive add-money top-ups (driveAddMoneyRequests),
- * newest first. Lets an admin see who recharged when, how much, and how they
- * cashed out / topped up their drive wallet. Admin-gated and read-only.
+ * (mobileRechargeRequests), drive add-money top-ups (driveAddMoneyRequests),
+ * referral earnings (referralBonuses — bonus earned when a customer the user
+ * referred makes a purchase) and referral payout/cash-out requests
+ * (referralPaymentRequests — withdrawing the referral balance via bKash/Nagad),
+ * newest first. Lets an admin see, exactly like the customer sees on their own
+ * phone, who recharged when, how much referral money they earned and from whom,
+ * and how they cashed it out. Admin-gated and read-only.
  */
 export const getCustomerMoneyHistory = async (customerId: string) => {
   try {
     if (!(await requireAdmin())) return UNAUTHORIZED;
     if (!customerId) return { success: false as const, message: "customerId আবশ্যক" };
 
-    const [recharges, driveTopups] = await Promise.all([
+    const [recharges, driveTopups, referralEarnings, referralPayouts] = await Promise.all([
       db
         .select()
         .from(mobileRechargeRequests)
@@ -388,6 +406,16 @@ export const getCustomerMoneyHistory = async (customerId: string) => {
         .from(driveAddMoneyRequests)
         .where(eq(driveAddMoneyRequests.customerId, customerId))
         .orderBy(desc(driveAddMoneyRequests.createdAt)),
+      db
+        .select()
+        .from(referralBonuses)
+        .where(eq(referralBonuses.referrerCustomerId, customerId))
+        .orderBy(desc(referralBonuses.createdAt)),
+      db
+        .select()
+        .from(referralPaymentRequests)
+        .where(eq(referralPaymentRequests.customerId, customerId))
+        .orderBy(desc(referralPaymentRequests.createdAt)),
     ]);
 
     const rechargeRows: CustomerMoneyHistoryRow[] = recharges.map((r) => ({
@@ -414,9 +442,37 @@ export const getCustomerMoneyHistory = async (customerId: string) => {
       createdAt: (d.createdAt instanceof Date ? d.createdAt : new Date(d.createdAt)).toISOString(),
     }));
 
-    const data = [...rechargeRows, ...driveRows].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
+    // Referral earnings: bonus credited to this customer for a referred
+    // customer's purchase. Always a realised credit, so shown as "completed".
+    const referralEarningRows: CustomerMoneyHistoryRow[] = referralEarnings.map((b) => ({
+      id: `rfe-${b.id}`,
+      kind: "referral_earning" as const,
+      typeLabel: "রেফারেল আয়",
+      method: "রেফারেল বোনাস",
+      number: b.referredCustomerName,
+      amount: Number(b.bonusEarned),
+      status: "completed",
+      createdAt: (b.createdAt instanceof Date ? b.createdAt : new Date(b.createdAt)).toISOString(),
+    }));
+
+    // Referral payouts: cash-out requests of the referral balance (bKash/Nagad).
+    const referralPayoutRows: CustomerMoneyHistoryRow[] = referralPayouts.map((p) => ({
+      id: `rfp-${p.id}`,
+      kind: "referral_payout" as const,
+      typeLabel: "রেফারেল পেমেন্ট",
+      method: DRIVE_METHOD_LABELS[p.paymentMethod] || p.paymentMethod,
+      number: p.walletNumber,
+      amount: Number(p.amount),
+      status: p.status,
+      createdAt: (p.createdAt instanceof Date ? p.createdAt : new Date(p.createdAt)).toISOString(),
+    }));
+
+    const data = [
+      ...rechargeRows,
+      ...driveRows,
+      ...referralEarningRows,
+      ...referralPayoutRows,
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return { success: true as const, data };
   } catch (error) {

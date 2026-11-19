@@ -3,6 +3,7 @@
 import { getMyDriveInfo } from "@/actions/driveBalanceActions";
 import { getDrivePackages, requestMobileRecharge } from "@/actions/rechargeActions";
 import OperatorIcon, { OPERATOR_META } from "@/components/features/recharge/OperatorIcon";
+import ApiUnavailablePopup from "@/components/features/recharge/ApiUnavailablePopup";
 import clsx from "clsx";
 import {
   AlertTriangle,
@@ -107,7 +108,12 @@ type Pack = {
 const mapPack = (d: any, i: number): Pack => {
   const amount = Number(d.amount ?? d.price ?? d.taka ?? d.tk ?? 0);
   return {
-    id: String(d.package_id ?? d.packageId ?? d.id ?? d.code ?? `${amount}-${i}`),
+    // SuccessTopup's /api/drives returns the pack id in the `driveId` field
+    // (e.g. "R-1138620"); this id must be sent back as `package_id` on purchase
+    // or the provider rejects it with "Package not found". Read `driveId` FIRST —
+    // relying on package_id/id/code made every pack fall back to the synthetic
+    // `${amount}-${i}` id, which the recharge API never recognises.
+    id: String(d.driveId ?? d.drive_id ?? d.package_id ?? d.packageId ?? d.id ?? d.code ?? `${amount}-${i}`),
     name: String(d.title ?? d.name ?? d.pack ?? (amount ? `৳${amount}` : "প্যাকেজ")),
     amount,
     validity: String(d.validity ?? d.duration ?? d.days ?? d.expiry ?? ""),
@@ -167,6 +173,9 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
   // When a recharge/pack is attempted with less than the needed balance we show
   // a clear popup (not just a toast) guiding the customer to refer / add money.
   const [insufficient, setInsufficient] = useState<number | null>(null);
+  // Shown when our SuccessTopup API balance is empty (server returns
+  // code:"API_BALANCE_EMPTY") — service temporarily unavailable, contact admin.
+  const [apiDown, setApiDown] = useState<string | null>(null);
 
   const isDrive = meta.balanceSource === "drive";
   const approved = !meta.requiresKyc || driveInfo?.kycStatus === "approved";
@@ -252,6 +261,10 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
       if (isDrive) await loadDrive();
       else await referral.refetch();
       router.refresh();
+    } else if ("code" in res && res.code === "API_BALANCE_EMPTY") {
+      // Our reseller API balance is empty — show the popup, not a toast.
+      setSheetPkg(null);
+      setApiDown(res.message ?? null);
     } else {
       toast.error(res.message || "রিচার্জ করা যায়নি");
     }
@@ -513,6 +526,9 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
           onClose={() => setInsufficient(null)}
         />
       )}
+
+      {/* API balance empty popup */}
+      {apiDown !== null && <ApiUnavailablePopup message={apiDown} onClose={() => setApiDown(null)} />}
 
       {/* Success popup */}
       {success && <SuccessScreen result={success} copied={copied} setCopied={setCopied} onHome={() => { setSuccess(null); router.push("/customer/referral/recharge"); }} />}

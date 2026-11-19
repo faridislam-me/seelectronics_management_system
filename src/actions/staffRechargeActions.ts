@@ -72,6 +72,26 @@ export const requestStaffMobileRecharge = async (input: {
       };
     }
 
+    // Pre-check OUR SuccessTopup reseller balance BEFORE attempting the recharge.
+    // Staff recharges/packs are always fulfilled from the main reseller pool. If
+    // it is empty/insufficient, return a structured API_BALANCE_EMPTY result (the
+    // staff UI shows a popup) and SMS the admin to refill (throttled). A null
+    // result = couldn't determine → don't block; the post-attempt match backs it up.
+    const preBal = await topup.checkResellerBalance(amount, "main");
+    if (preBal && !preBal.ok) {
+      try {
+        const { notifyAdminApiBalanceEmpty } = await import("@/lib/adminVoiceNotify");
+        await notifyAdminApiBalanceEmpty("main");
+      } catch (e) {
+        console.error("notifyAdminApiBalanceEmpty (staff pre-check) failed:", e);
+      }
+      return {
+        success: false as const,
+        code: topup.API_BALANCE_EMPTY,
+        message: topup.API_BALANCE_EMPTY_MESSAGE,
+      };
+    }
+
     const trxid = `SE${Date.now()}${generateRandomId(4)}`;
 
     // Call the SuccessTopup provider (same gateway as the customer flow).
@@ -83,6 +103,22 @@ export const requestStaffMobileRecharge = async (input: {
       packageId: input.packageId || undefined,
     });
     const isSuccess = apiRes.result === true;
+
+    // Provider rejected because OUR reseller balance is insufficient (backstop for
+    // the pre-check): popup + throttled admin SMS, same structured code.
+    if (!isSuccess && topup.isResellerBalanceError(apiRes)) {
+      try {
+        const { notifyAdminApiBalanceEmpty } = await import("@/lib/adminVoiceNotify");
+        await notifyAdminApiBalanceEmpty("main");
+      } catch (e) {
+        console.error("notifyAdminApiBalanceEmpty (staff post-error) failed:", e);
+      }
+      return {
+        success: false as const,
+        code: topup.API_BALANCE_EMPTY,
+        message: topup.API_BALANCE_EMPTY_MESSAGE,
+      };
+    }
 
     if (!isSuccess) {
       return {

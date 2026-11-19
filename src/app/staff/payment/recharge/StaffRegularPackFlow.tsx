@@ -2,6 +2,7 @@
 
 import { getStaffRechargePackages, requestStaffMobileRecharge } from "@/actions/staffRechargeActions";
 import OperatorIcon, { OPERATOR_META } from "@/components/features/recharge/OperatorIcon";
+import ApiUnavailablePopup from "@/components/features/recharge/ApiUnavailablePopup";
 import StaffRechargeHistory from "./StaffRechargeHistory";
 import clsx from "clsx";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Copy, Loader2, Package, X } from "lucide-react";
@@ -35,7 +36,12 @@ type Pack = {
 const mapPack = (d: any, i: number): Pack => {
   const amount = Number(d.amount ?? d.price ?? d.taka ?? d.tk ?? 0);
   return {
-    id: String(d.package_id ?? d.packageId ?? d.id ?? d.code ?? `${amount}-${i}`),
+    // SuccessTopup's /api/drives returns the pack id in the `driveId` field
+    // (e.g. "R-1138620"); this id must be sent back as `package_id` on purchase
+    // or the provider rejects it with "Package not found". Read `driveId` FIRST —
+    // relying on package_id/id/code made every pack fall back to the synthetic
+    // `${amount}-${i}` id, which the recharge API never recognises.
+    id: String(d.driveId ?? d.drive_id ?? d.package_id ?? d.packageId ?? d.id ?? d.code ?? `${amount}-${i}`),
     name: String(d.title ?? d.name ?? d.pack ?? (amount ? `৳${amount}` : "প্যাকেজ")),
     amount,
     validity: String(d.validity ?? d.duration ?? d.days ?? d.expiry ?? ""),
@@ -86,6 +92,8 @@ export default function StaffRegularPackFlow({ initialBalance }: { initialBalanc
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<SuccessResult | null>(null);
   const [insufficient, setInsufficient] = useState<number | null>(null);
+  // Shown when our SuccessTopup API balance is empty (code:"API_BALANCE_EMPTY").
+  const [apiDown, setApiDown] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [rechargeCount, setRechargeCount] = useState(0);
 
@@ -139,6 +147,9 @@ export default function StaffRegularPackFlow({ initialBalance }: { initialBalanc
       setBalance(res.detail.newBalance);
       setSheetPkg(null);
       router.refresh();
+    } else if (!res.success && "code" in res && res.code === "API_BALANCE_EMPTY") {
+      setSheetPkg(null);
+      setApiDown(res.message ?? null);
     } else if (!res.success && "code" in res && res.code === "insufficient") {
       setBalance(res.balance);
       setInsufficient(pkg.amount);
@@ -343,6 +354,9 @@ export default function StaffRegularPackFlow({ initialBalance }: { initialBalanc
           </div>
         </div>
       )}
+
+      {/* API balance empty popup */}
+      {apiDown !== null && <ApiUnavailablePopup message={apiDown} onClose={() => setApiDown(null)} />}
 
       {/* Success popup */}
       {success && (

@@ -84,6 +84,30 @@ export const requestMobileRecharge = async (input: {
       return { success: false, message: `অপর্যাপ্ত ব্যালেন্স। আপনার ব্যালেন্স: ৳${Number(customer.referralBalance).toLocaleString()}` };
     }
 
+    // Which reseller pool funds this: drive packs/offers from the provider drive
+    // balance, everything else from the main balance.
+    const pool: topup.ResellerPool = isDrive ? "drive" : "main";
+
+    // Pre-check OUR SuccessTopup reseller balance BEFORE attempting the recharge.
+    // If it is empty/insufficient we cannot fulfil the purchase, so return a
+    // structured API_BALANCE_EMPTY result (the UI shows a popup) and SMS the
+    // admin to refill the API balance (throttled). A null result = couldn't
+    // determine → don't block; the post-attempt error match is the backstop.
+    const preBal = await topup.checkResellerBalance(amount, pool);
+    if (preBal && !preBal.ok) {
+      try {
+        const { notifyAdminApiBalanceEmpty } = await import("@/lib/adminVoiceNotify");
+        await notifyAdminApiBalanceEmpty(pool);
+      } catch (e) {
+        console.error("notifyAdminApiBalanceEmpty (customer pre-check) failed:", e);
+      }
+      return {
+        success: false as const,
+        code: topup.API_BALANCE_EMPTY,
+        message: topup.API_BALANCE_EMPTY_MESSAGE,
+      };
+    }
+
     let code = reqCode();
     for (let i = 0; i < 5; i++) {
       const exists = await db.query.mobileRechargeRequests.findFirst({
@@ -106,6 +130,23 @@ export const requestMobileRecharge = async (input: {
     });
 
     const isSuccess = apiRes.result === true;
+
+    // Provider rejected the recharge because OUR reseller balance is insufficient
+    // (backstop for the pre-check above). Treat it like an empty-balance outage:
+    // don't record a customer-facing rejection, popup + throttled admin SMS.
+    if (!isSuccess && topup.isResellerBalanceError(apiRes)) {
+      try {
+        const { notifyAdminApiBalanceEmpty } = await import("@/lib/adminVoiceNotify");
+        await notifyAdminApiBalanceEmpty(pool);
+      } catch (e) {
+        console.error("notifyAdminApiBalanceEmpty (customer post-error) failed:", e);
+      }
+      return {
+        success: false as const,
+        code: topup.API_BALANCE_EMPTY,
+        message: topup.API_BALANCE_EMPTY_MESSAGE,
+      };
+    }
 
     await db.insert(mobileRechargeRequests).values({
       requestCode: code,

@@ -3,6 +3,7 @@
 import { requestStaffMobileRecharge } from "@/actions/staffRechargeActions";
 import StaffRechargeHistory from "./StaffRechargeHistory";
 import OperatorIcon, { OPERATOR_META } from "@/components/features/recharge/OperatorIcon";
+import ApiUnavailablePopup from "@/components/features/recharge/ApiUnavailablePopup";
 import clsx from "clsx";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Copy, Loader2, Wallet } from "lucide-react";
 import Link from "next/link";
@@ -34,6 +35,8 @@ export default function StaffRechargeFlow({ initialBalance }: { initialBalance: 
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<SuccessResult | null>(null);
   const [insufficient, setInsufficient] = useState<number | null>(null);
+  // Shown when our SuccessTopup API balance is empty (code:"API_BALANCE_EMPTY").
+  const [apiDown, setApiDown] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [rechargeCount, setRechargeCount] = useState(0);
 
@@ -54,6 +57,8 @@ export default function StaffRechargeFlow({ initialBalance }: { initialBalance: 
       setAmount("");
       setRechargeCount((c) => c + 1);
       router.refresh();
+    } else if (!res.success && "code" in res && res.code === "API_BALANCE_EMPTY") {
+      setApiDown(res.message ?? null);
     } else if (!res.success && "code" in res && res.code === "insufficient") {
       setBalance(res.balance);
       setInsufficient(amt);
@@ -187,6 +192,9 @@ export default function StaffRechargeFlow({ initialBalance }: { initialBalance: 
           </div>
         </div>
       )}
+
+      {/* API balance empty popup */}
+      {apiDown !== null && <ApiUnavailablePopup message={apiDown} onClose={() => setApiDown(null)} />}
 
       {/* Success popup */}
       {success && (

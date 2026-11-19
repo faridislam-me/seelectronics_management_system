@@ -29,11 +29,10 @@ const FILE_NAMES: Record<string, string> = {
 
 export default function DocDownloadPage() {
     const searchParams = useSearchParams()
-    const [blob, setBlob] = useState<Blob | null>(null)
     const [fileName, setFileName] = useState('SE_ELECTRONICS.pdf')
-    const [previewUrl, setPreviewUrl] = useState<string>()
+    const [blob, setBlob] = useState<Blob | null>(null)
     const [error, setError] = useState<string>()
-    const [saved, setSaved] = useState(false)
+    const [done, setDone] = useState(false)
     const started = useRef(false)
 
     const token = searchParams.get('token')
@@ -51,9 +50,30 @@ export default function DocDownloadPage() {
         typeof window !== 'undefined' &&
         Boolean((window as unknown as { SEFile?: unknown }).SEFile)
 
-    // Generate the PDF once — but do NOT download it. We only render a preview;
-    // the actual save happens when the user taps the Download button.
-    async function generate() {
+    // Hand the generated PDF to the app channel (mobile) or trigger a browser
+    // download (web). Used both for the automatic save and the manual button.
+    async function save(theBlob: Blob, name: string) {
+        const appChannel = (window as unknown as { SEFile?: { postMessage: (m: string) => void } }).SEFile
+        if (appChannel) {
+            const dataUrl: string = await new Promise((resolve, reject) => {
+                const reader = new FileReader()
+                reader.onload = () => resolve(String(reader.result))
+                reader.onerror = () => reject(reader.error)
+                reader.readAsDataURL(theBlob)
+            })
+            appChannel.postMessage(JSON.stringify({ name, mime: 'application/pdf', data: dataUrl.split(',')[1] }))
+        } else {
+            const url = URL.createObjectURL(theBlob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = name
+            a.click()
+            URL.revokeObjectURL(url)
+        }
+    }
+
+    // Generate the PDF and immediately download it (no preview page).
+    async function generateAndDownload() {
         const response = await generatePDF({
             docType: docType ?? 'invoice',
             id: id ?? '',
@@ -63,47 +83,19 @@ export default function DocDownloadPage() {
             setError(response.message)
             return
         }
-        setFileName(FILE_NAMES[response.docType as string] || 'SE_ELECTRONICS.pdf')
-        setBlob(new Blob([response.pdfBuffer as any], { type: 'application/pdf' }))
+        const name = FILE_NAMES[response.docType as string] || 'SE_ELECTRONICS.pdf'
+        const pdfBlob = new Blob([response.pdfBuffer as any], { type: 'application/pdf' })
+        setFileName(name)
+        setBlob(pdfBlob)
+        await save(pdfBlob, name)
+        setDone(true)
     }
 
     useEffect(() => {
         if (started.current) return
         started.current = true
-        generate()
+        generateAndDownload()
     }, [])
-
-    // Hold one object URL for the inline preview; revoke it on unmount.
-    useEffect(() => {
-        if (!blob) return
-        const url = URL.createObjectURL(blob)
-        setPreviewUrl(url)
-        return () => URL.revokeObjectURL(url)
-    }, [blob])
-
-    // Save only when the user asks for it.
-    async function save() {
-        if (!blob) return
-        const appChannel = (window as unknown as { SEFile?: { postMessage: (m: string) => void } }).SEFile
-        if (appChannel) {
-            const dataUrl: string = await new Promise((resolve, reject) => {
-                const reader = new FileReader()
-                reader.onload = () => resolve(String(reader.result))
-                reader.onerror = () => reject(reader.error)
-                reader.readAsDataURL(blob)
-            })
-            appChannel.postMessage(JSON.stringify({ name: fileName, mime: 'application/pdf', data: dataUrl.split(',')[1] }))
-        } else {
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = fileName
-            a.click()
-            URL.revokeObjectURL(url)
-        }
-        setSaved(true)
-        setTimeout(() => setSaved(false), 2500)
-    }
 
     if (error) {
         return (
@@ -119,7 +111,7 @@ export default function DocDownloadPage() {
     }
 
     // Still generating.
-    if (!blob || !previewUrl) {
+    if (!done) {
         return (
             <div className="min-h-screen flex items-center justify-center p-4">
                 <div className="text-center">
@@ -131,31 +123,23 @@ export default function DocDownloadPage() {
         )
     }
 
-    // Preview first, download on demand.
+    // Downloaded — confirm and offer a re-download.
     return (
-        <div className="fixed inset-0 flex flex-col bg-[#eef3fb]">
-            <div className="flex items-center gap-3 px-3 py-2.5 bg-white border-b border-[#dfe6f2] shadow-sm">
-                <span className="min-w-0 flex-1 text-[13px] font-bold text-[#16213a] truncate">{fileName}</span>
+        <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="flex flex-col items-center text-center">
+                <div className="size-36 text-green-600 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                    <Check size={56} />
+                </div>
+                <h1 className="text-2xl font-semibold text-gray-800 mb-1">ডাউনলোড সম্পন্ন</h1>
+                <p className="text-gray-600 mb-6 break-all">{fileName}</p>
                 <button
-                    onClick={save}
-                    className="shrink-0 inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-[#0b3d91] text-white text-[14px] font-extrabold shadow-[0_4px_12px_rgba(11,61,145,0.2)] active:scale-[0.98]"
+                    onClick={() => blob && save(blob, fileName)}
+                    className="inline-flex items-center gap-2 h-11 px-6 rounded-lg bg-[#0b3d91] text-white text-[15px] font-extrabold shadow-[0_4px_12px_rgba(11,61,145,0.2)] active:scale-[0.98]"
                 >
-                    {saved ? <Check size={18} /> : <Download size={18} />}
-                    {saved ? 'হয়েছে' : hasAppChannel ? 'ডাউনলোড / খুলুন' : 'ডাউনলোড'}
+                    <Download size={18} />
+                    {hasAppChannel ? 'আবার ডাউনলোড / খুলুন' : 'আবার ডাউনলোড করুন'}
                 </button>
             </div>
-            <iframe
-                src={previewUrl}
-                title={fileName}
-                className="flex-1 w-full border-0 bg-white"
-            />
-            {/* In-app WebViews often can't render a PDF inline; make the fallback
-                explicit so the user knows to tap Download to open it. */}
-            {hasAppChannel && (
-                <div className="px-3 py-2 text-center text-[12px] text-[#5b6784] bg-white border-t border-[#dfe6f2]">
-                    প্রিভিউ না দেখালে উপরের “ডাউনলোড / খুলুন” চাপুন।
-                </div>
-            )}
         </div>
     )
 }

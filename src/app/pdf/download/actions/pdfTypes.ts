@@ -221,6 +221,11 @@ export interface InstallmentScheduleRow {
 }
 
 export interface InstallmentInvoiceTemplateData {
+  /** Official SE Electronics installment pad/letterhead as a full-page
+   *  background image (header, round seal, watermark, notes, signatures,
+   *  customer-app QR and footer are all baked into this image). The template
+   *  only overlays the dynamic invoice data onto the empty middle region. */
+  padBg?: string;
   /** Legacy full-page background image (no longer required by the letterhead). */
   bgImage?: string;
   /** Branded letterhead assets (all optional, base64 data URIs / SVG). */

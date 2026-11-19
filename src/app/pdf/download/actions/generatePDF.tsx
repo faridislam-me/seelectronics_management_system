@@ -889,37 +889,17 @@ export default async function generatePDF({
 
         const productImage = await resolveProductImage(plan.productImageKey, plan.productType);
 
-        // Branded letterhead assets: transparent logo emblem, round office seal,
-        // manager + chairman signatures, header/customer-app QR codes, and a
-        // Code128 serial barcode — mirrors the official SE Electronics pad.
-        const invImgDir = (f: string) =>
-          path.join(process.cwd(), "src", "assets", "images", f);
-        const invLogo = await convertToBase64(invImgDir("logoTransparent.png"))
-          .catch(() => convertToBase64(invImgDir("logo.jpg")).catch(() => undefined));
-        const invSeal = await convertToBase64(invImgDir("documentSeal.jpeg")).catch(() => undefined);
-        const invManagerSign = await convertToBase64(invImgDir("atikurSign.jpeg")).catch(() => undefined);
-        const invChairmanSign = await convertToBase64(invImgDir("chairmanSign.png")).catch(() => undefined);
-        const { qrcode: invQr } = await import("@/lib/id-gen");
-        const { code128Svg: invBarcode } = await import("@/lib/code128");
-        const invHeaderQr = await invQr("https://seipsbd.com").catch(() => undefined);
-        const invAppQr = await invQr(plan.planCode).catch(() => undefined);
-        const invSerial = `SE${plan.planCode}`.toUpperCase().replace(/[^A-Z0-9]/g, "");
-        let invBarcodeSvg: string | undefined;
-        try {
-          invBarcodeSvg = invBarcode(invSerial, { height: 34, module: 1.2 });
-        } catch {
-          invBarcodeSvg = undefined;
-        }
+        // The official SE Electronics কিস্তি pad/letterhead supplied by the
+        // client — header, round seal, watermark, নোট section, both signatures,
+        // the customer-app QR + barcode and the footer bar are ALL baked into
+        // this one image. The template just overlays the dynamic invoice data
+        // onto the empty middle region, so no other letterhead assets are loaded.
+        const invPadBg = await convertToBase64(
+          path.join(process.cwd(), "src", "assets", "images", "installment-invoice-pad.jpeg"),
+        ).catch(() => undefined);
 
         const data: InstallmentInvoiceTemplateData = {
-          logo: invLogo,
-          seal: invSeal,
-          managerSign: invManagerSign,
-          chairmanSign: invChairmanSign,
-          headerQr: invHeaderQr,
-          appQr: invAppQr,
-          barcodeSvg: invBarcodeSvg,
-          serial: invSerial,
+          padBg: invPadBg,
           planCode: plan.planCode,
           customerName: plan.customerName,
           customerPhone: plan.customerPhone,

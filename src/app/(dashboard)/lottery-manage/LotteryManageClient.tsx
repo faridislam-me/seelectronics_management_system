@@ -760,9 +760,22 @@ function CampaignSettings({
             <div key={p.kind} className="flex flex-col gap-2">
               <p className="text-[12.5px] font-bold text-gray-600">{p.label}</p>
               {p.url ? (
-                <div className="relative aspect-square w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                <div
+                  className="relative aspect-square w-full rounded-lg overflow-hidden border border-gray-200"
+                  // Checkerboard = transparency indicator (like Photoshop/Figma): a
+                  // truly transparent PNG shows the checker through it; an image with a
+                  // baked-in white background shows a solid white box, making it obvious
+                  // which one was uploaded. Matches the public page (no white box there).
+                  style={{
+                    backgroundColor: "#ffffff",
+                    backgroundImage:
+                      "linear-gradient(45deg,#e5e7eb 25%,transparent 25%),linear-gradient(-45deg,#e5e7eb 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e5e7eb 75%),linear-gradient(-45deg,transparent 75%,#e5e7eb 75%)",
+                    backgroundSize: "14px 14px",
+                    backgroundPosition: "0 0,0 7px,7px -7px,-7px 0",
+                  }}
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.url} alt={p.label} className="absolute inset-0 w-full h-full object-cover" />
+                  <img src={p.url} alt={p.label} className="absolute inset-0 w-full h-full object-contain p-1" />
                   <button
                     type="button"
                     onClick={() => removeBanner(p.kind)}

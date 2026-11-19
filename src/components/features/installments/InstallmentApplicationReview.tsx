@@ -32,6 +32,8 @@ const PRODUCT_LABELS: Record<string, string> = {
   stabilizer: "স্ট্যাবিলাইজার", blender: "ব্লেন্ডার", others: "অন্যান্য",
 };
 
+const bdt = (n: number | null | undefined) => `৳${Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+
 const STATUS_META: Record<string, { label: string; cls: string }> = {
   pending: { label: "অপেক্ষমান", cls: "bg-amber-50 text-amber-700 border-amber-200" },
   under_review: { label: "পর্যালোচনায়", cls: "bg-blue-50 text-blue-700 border-blue-200" },
@@ -87,7 +89,14 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
   const [showApprove, setShowApprove] = useState(false);
   const [cashPrice, setCashPrice] = useState("");
   const [extraCharge, setExtraCharge] = useState("0");
-  const [downPayment, setDownPayment] = useState("0");
+  // Auto-populate the down payment from the customer's application
+  // (desiredDownPayment) so the admin does not re-enter it by hand; falls back
+  // to "0" when the customer left it blank. Remains editable.
+  const [downPayment, setDownPayment] = useState(() =>
+    data.desiredDownPayment != null && data.desiredDownPayment !== ""
+      ? String(data.desiredDownPayment)
+      : "0",
+  );
   // Prefill from the customer's requested term when it matches an allowed option.
   const [months, setMonths] = useState(() => {
     const req = Number(data.desiredMonths);
@@ -284,8 +293,58 @@ export default function InstallmentApplicationReview({ data }: { data: any }) {
           </select>
           {trackingSaving && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
           {data.status === "approved" && (
-            <span className="text-[11px] font-semibold text-emerald-600">অনুমোদিত — এখন ডেলিভারি স্টেপ পর্যন্ত এগোনো যাবে</span>
+            <span className="text-[11px] font-semibold text-emerald-600">অনুমোদিত — ট্র্যাকিং সম্পন্ন (পণ্য হস্তান্তরের জন্য প্রস্তুত)</span>
           )}
+        </div>
+      )}
+
+      {/* Approved plan — kisti/amount summary. Appears only after approval, when
+          a plan exists; shows the stored figures and links to the full plan. */}
+      {data.plan && (
+        <div className="rounded-lg bg-emerald-50/60 border border-emerald-200 p-3.5">
+          <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+            <p className="flex items-center gap-2 text-sm font-black text-[#0a2f70]">
+              <CreditCard size={16} className="text-emerald-600" /> কিস্তি তথ্য
+              <span className="font-mono text-xs font-bold text-[#3d4f72]">{data.plan.planCode}</span>
+            </p>
+            <Link href={`/installments/${data.plan.planCode}`} className="text-xs font-bold text-[#0b3d91] hover:underline">
+              প্ল্যান দেখুন →
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="rounded-md bg-white border border-emerald-100 p-2.5">
+              <p className="text-[10px] font-semibold text-gray-500">মাসিক কিস্তি</p>
+              <p className="text-sm font-black text-[#0b3d91] mt-0.5">{bdt(data.plan.monthlyAmount)} <span className="text-[11px] font-bold text-gray-500">× {data.plan.months} মাস</span></p>
+            </div>
+            <div className="rounded-md bg-white border border-emerald-100 p-2.5">
+              <p className="text-[10px] font-semibold text-gray-500">মোট (চার্জসহ)</p>
+              <p className="text-sm font-black text-[#16213a] mt-0.5">{bdt(data.plan.totalPayable)}</p>
+            </div>
+            <div className="rounded-md bg-white border border-emerald-100 p-2.5">
+              <p className="text-[10px] font-semibold text-gray-500">ডাউন পেমেন্ট</p>
+              <p className="text-sm font-black text-[#16213a] mt-0.5">{bdt(data.plan.downPayment)}</p>
+            </div>
+            <div className="rounded-md bg-white border border-emerald-100 p-2.5">
+              <p className="text-[10px] font-semibold text-gray-500">কিস্তিতে ফাইন্যান্স</p>
+              <p className="text-sm font-black text-[#16213a] mt-0.5">{bdt(data.plan.financedAmount)}</p>
+            </div>
+            <div className="rounded-md bg-white border border-emerald-100 p-2.5">
+              <p className="text-[10px] font-semibold text-gray-500">ক্যাশ দাম</p>
+              <p className="text-sm font-black text-[#16213a] mt-0.5">{bdt(data.plan.cashPrice)}</p>
+            </div>
+            <div className="rounded-md bg-white border border-emerald-100 p-2.5">
+              <p className="text-[10px] font-semibold text-gray-500">অতিরিক্ত চার্জ</p>
+              <p className="text-sm font-black text-[#16213a] mt-0.5">{bdt(data.plan.extraCharge)}</p>
+            </div>
+            <div className="rounded-md bg-white border border-emerald-100 p-2.5">
+              <p className="text-[10px] font-semibold text-gray-500">কিস্তি সংখ্যা</p>
+              <p className="text-sm font-black text-[#16213a] mt-0.5">{data.scheduleCount || data.plan.months} টি</p>
+            </div>
+            <div className="rounded-md bg-white border border-emerald-100 p-2.5">
+              <p className="text-[10px] font-semibold text-gray-500">মেয়াদ</p>
+              <p className="text-sm font-black text-[#16213a] mt-0.5">{formatDate(data.plan.startDate)} → {formatDate(data.plan.endDate)}</p>
+            </div>
+          </div>
         </div>
       )}
 

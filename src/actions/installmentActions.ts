@@ -1024,7 +1024,27 @@ export const getInstallmentApplicationByCode = async (code: string) => {
     if (app.guarantorNidFrontPhotoKey) urls.guarantorNidFront = await getObjectUrl(app.guarantorNidFrontPhotoKey);
     if (app.guarantorNidBackPhotoKey) urls.guarantorNidBack = await getObjectUrl(app.guarantorNidBackPhotoKey);
 
-    return { success: true, data: { ...app, urls } };
+    // Once approved, an installment plan exists (app.planId). Surface its money
+    // figures + schedule count so the admin sees the kisti/amount details for
+    // this application right on the review page (not only after redirecting to
+    // the plan). Only existing plan values are returned — nothing is computed.
+    let plan: typeof installmentPlans.$inferSelect | null = null;
+    let scheduleCount = 0;
+    if (app.planId) {
+      plan =
+        (await db.query.installmentPlans.findFirst({
+          where: eq(installmentPlans.id, app.planId),
+        })) ?? null;
+      if (plan) {
+        const sched = await db
+          .select({ id: installmentSchedule.id })
+          .from(installmentSchedule)
+          .where(eq(installmentSchedule.planId, plan.id));
+        scheduleCount = sched.length;
+      }
+    }
+
+    return { success: true, data: { ...app, urls, plan, scheduleCount } };
   } catch (error) {
     console.error("getInstallmentApplicationByCode error:", error);
     return { success: false, message: "আবেদন আনা যায়নি" };
@@ -1195,16 +1215,25 @@ export const reviewInstallmentApplication = async (
     }
     await db.insert(installmentSchedule).values(rows);
 
-    // Mark application approved
+    // Mark application approved. Approval is the FINAL admin decision, so the
+    // whole customer tracking timeline fills at once: trackingStep jumps to the
+    // last stage ("ready_for_delivery") instead of staying on an earlier step.
+    // This keeps the green "অনুমোদন" action and the blue tracking-step dropdown
+    // consistent — after approval both the dropdown and the customer timeline
+    // read fully complete (সম্পন্ন).
     await db
       .update(installmentApplications)
       .set({
         status: "approved",
+        trackingStep: "ready_for_delivery",
         planId: plan.id,
         adminNotes: payload.adminNotes || undefined,
       })
       .where(eq(installmentApplications.id, app.id));
+    // Record dated history rows for both final stages so the customer timeline
+    // shows a date against "কিস্তির জন্য অনুমোদিত" and "পণ্য হস্তান্তরের জন্য প্রস্তুত".
     await track("approved");
+    await track("ready_for_delivery");
     // #9: approval milestone — SMS + in-app, linking the customer to their new plan.
     await notifyAppStage(app, "approved", {
       link: `/customer/installments/${plan.planCode}`,

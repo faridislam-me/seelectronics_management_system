@@ -201,6 +201,26 @@ export const createInstallmentPlan = async (input: CreateInstallmentInput) => {
     }
     await db.insert(installmentSchedule).values(rows);
 
+    // Notify the customer that goods were taken on installment (SMS + in-app).
+    // Fire-and-forget: a notification failure must never break plan creation.
+    try {
+      if (customer.phone) {
+        const product = d.productBrand ? `${d.productBrand} ${d.productModel}` : d.productModel;
+        const message = `অভিনন্দন! আপনি SE Electronics থেকে ${product} কিস্তিতে নিয়েছেন। প্ল্যান কোডঃ ${plan.planCode}। মাসিক কিস্তিঃ ${monthlyAmount.toLocaleString()}৳ (${d.months} মাস)। সময়মতো কিস্তি পরিশোধ করুন।`;
+        await notifyCustomer({
+          customerId: customer.customerId,
+          phoneNumber: customer.phone,
+          type: "installment_created",
+          message,
+          shortMessage: `SE Electronics: ${message}`,
+          link: `/customer/installments/${plan.planCode}`,
+          sendSms: true,
+        });
+      }
+    } catch (e) {
+      console.error("createInstallmentPlan notify failed:", e);
+    }
+
     revalidatePath("/installments");
     return { success: true, planCode: plan.planCode, message: "কিস্তি প্ল্যান তৈরি হয়েছে" };
   } catch (error) {
@@ -354,16 +374,51 @@ export const markInstallmentPaid = async (input: z.input<typeof MarkPaidSchema>)
       })
       .where(eq(installmentSchedule.id, scheduleId));
 
-    // Complete the plan once every installment is paid.
+    // Remaining unpaid installments (count + amount) — drives the plan-completion
+    // flip below and the "বাকি" figures in the customer notification.
     const remaining = await db
-      .select({ c: sql<number>`count(*)`.mapWith(Number) })
+      .select({
+        c: sql<number>`count(*)`.mapWith(Number),
+        amt: sql<number>`coalesce(sum(${installmentSchedule.amount}), 0)`.mapWith(Number),
+      })
       .from(installmentSchedule)
       .where(and(eq(installmentSchedule.planId, row.planId), sql`${installmentSchedule.status} <> 'paid'`));
-    if ((remaining[0]?.c || 0) === 0) {
+    const remainingCount = remaining[0]?.c || 0;
+    const remainingAmount = round2(remaining[0]?.amt || 0);
+    const completed = remainingCount === 0;
+
+    // Complete the plan once every installment is paid.
+    if (completed) {
       await db
         .update(installmentPlans)
         .set({ status: "completed" })
         .where(and(eq(installmentPlans.id, row.planId), eq(installmentPlans.status, "active")));
+    }
+
+    // Notify the customer that their payment was recorded (SMS + in-app).
+    // Fire-and-forget: a notification failure must never break marking paid.
+    try {
+      const plan = await db.query.installmentPlans.findFirst({
+        where: eq(installmentPlans.id, row.planId),
+        columns: { customerId: true, customerPhone: true, planCode: true },
+      });
+      if (plan?.customerId && plan.customerPhone) {
+        const paid = paidAmount ?? row.amount;
+        const message = completed
+          ? "অভিনন্দন! আপনার কিস্তি সম্পূর্ণ পরিশোধ হয়েছে। ধন্যবাদ — SE Electronics।"
+          : `আপনার কিস্তি ${paid.toLocaleString()}৳ জমা হয়েছে (প্ল্যানঃ ${plan.planCode})। বাকি ${remainingAmount.toLocaleString()}৳ / ${remainingCount}টি কিস্তি।`;
+        await notifyCustomer({
+          customerId: plan.customerId,
+          phoneNumber: plan.customerPhone,
+          type: "installment_payment",
+          message,
+          shortMessage: `SE Electronics: ${message}`,
+          link: `/customer/installments/${plan.planCode}`,
+          sendSms: true,
+        });
+      }
+    } catch (e) {
+      console.error("markInstallmentPaid notify failed:", e);
     }
 
     revalidatePath("/installments");

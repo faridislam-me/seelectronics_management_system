@@ -6,7 +6,9 @@ import { verifySession } from "@/lib";
 import { compressImage } from "@/lib/sharp";
 import { deleteObject, getObjectUrl, putObject } from "@/lib/s3";
 import { sendSMS } from "@/lib/sms";
+import { getBaseUrl } from "@/utils";
 import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
 
 /** Best-effort signed-URL resolution for an optional object key. */
@@ -17,6 +19,24 @@ async function signKey(key: string | null | undefined) {
   } catch {
     return null;
   }
+}
+
+/**
+ * In-place Fisher-Yates shuffle using crypto.randomInt for an unbiased, truly
+ * random order (Math.random fallback if the CSPRNG is unavailable). Used by the
+ * draw so winners are never tied to DB/submission order.
+ */
+function shuffleInPlace<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    let j: number;
+    try {
+      j = randomInt(0, i + 1);
+    } catch {
+      j = Math.floor(Math.random() * (i + 1));
+    }
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
 const requireAdmin = async () => {
@@ -265,6 +285,75 @@ export async function getPublicCampaign() {
 }
 
 /**
+ * PUBLIC (no auth) — winners for a campaign (default = the active campaign), for
+ * the celebratory public winners page. Read-only; resolves each entrant photo to
+ * a usable URL the same way getPublicCampaign resolves image keys (signKey).
+ */
+export async function getPublicWinners(campaignId?: string) {
+  try {
+    let cid = campaignId;
+    let campaignName = "";
+    let shopMobile: string | null = null;
+
+    if (!cid) {
+      const [c] = await db
+        .select({
+          id: lotteryCampaigns.id,
+          name: lotteryCampaigns.name,
+          shopMobile: lotteryCampaigns.shopMobile,
+        })
+        .from(lotteryCampaigns)
+        .where(eq(lotteryCampaigns.status, "active"))
+        .orderBy(desc(lotteryCampaigns.createdAt))
+        .limit(1);
+      if (!c) return { success: true as const, data: null };
+      cid = c.id;
+      campaignName = c.name;
+      shopMobile = c.shopMobile;
+    } else {
+      const [c] = await db
+        .select({ name: lotteryCampaigns.name, shopMobile: lotteryCampaigns.shopMobile })
+        .from(lotteryCampaigns)
+        .where(eq(lotteryCampaigns.id, cid))
+        .limit(1);
+      if (!c) return { success: true as const, data: null };
+      campaignName = c.name;
+      shopMobile = c.shopMobile;
+    }
+
+    const rows = await db
+      .select()
+      .from(lotteryEntries)
+      .where(and(eq(lotteryEntries.campaignId, cid), isNotNull(lotteryEntries.rank)))
+      .orderBy(lotteryEntries.rank, desc(lotteryEntries.drawnAt))
+      .limit(1000);
+
+    const winners = await Promise.all(
+      rows.map(async (r) => ({
+        id: r.id,
+        rank: r.rank as number,
+        name: r.name,
+        address: r.address,
+        photoUrl: await signKey(r.photoKey),
+      })),
+    );
+
+    return {
+      success: true as const,
+      data: {
+        campaignId: cid,
+        campaignName,
+        shopMobile: shopMobile || "09649355555",
+        winners,
+      },
+    };
+  } catch (error) {
+    console.error("getPublicWinners error:", error);
+    return { success: false as const, message: "লোড করা যায়নি" };
+  }
+}
+
+/**
  * Resolve which campaign to operate on: the one passed in, or the active one.
  */
 async function resolveCampaignId(campaignId?: string) {
@@ -320,14 +409,16 @@ export async function drawLotteryWinners(count: number, campaignId?: string) {
     .where(and(eq(lotteryEntries.campaignId, cid), isNotNull(lotteryEntries.rank)));
   const startRank = current.length;
 
-  const eligible = await db
+  // Truly-random draw: fetch ALL un-ranked entries for this campaign, shuffle
+  // them in JS with a crypto Fisher-Yates (never trust DB/insert ordering), then
+  // take the first `n`. This guarantees a fresh random set on every draw.
+  const pool = await db
     .select()
     .from(lotteryEntries)
-    .where(and(eq(lotteryEntries.campaignId, cid), isNull(lotteryEntries.rank)))
-    .orderBy(sql`random()`)
-    .limit(n);
-  if (!eligible.length)
+    .where(and(eq(lotteryEntries.campaignId, cid), isNull(lotteryEntries.rank)));
+  if (!pool.length)
     return { success: false as const, message: "এই ক্যাম্পেইনে ড্র করার মতো নতুন কোনো এন্ট্রি নেই" };
+  const eligible = shuffleInPlace([...pool]).slice(0, n);
 
   const now = new Date();
   const winners: { id: string; name: string; phone: string; cardCode: string; rank: number }[] = [];
@@ -346,11 +437,21 @@ export async function drawLotteryWinners(count: number, campaignId?: string) {
     });
   }
 
+  // Contact phone for the SMS: the campaign's own shop mobile if set, else the
+  // business default. The link points at the public celebratory winners page.
+  const [camp] = await db
+    .select({ shopMobile: lotteryCampaigns.shopMobile })
+    .from(lotteryCampaigns)
+    .where(eq(lotteryCampaigns.id, cid))
+    .limit(1);
+  const contactPhone = camp?.shopMobile?.trim() || "09649355555";
+  const winnersUrl = `${getBaseUrl()}/lottery/winners`;
+
   await Promise.all(
     winners.map((w) =>
       sendSMS(
         w.phone,
-        `অভিনন্দন ${w.name}! SE Electronics লটারিতে আপনি ${w.rank} নম্বর বিজয়ী হয়েছেন। পুরস্কার সংগ্রহের জন্য যোগাযোগ করুন। (কার্ডঃ ${w.cardCode})`,
+        `অভিনন্দন ${w.name}! SE Electronics লটারিতে আপনি ${w.rank} নম্বর বিজয়ী হয়েছেন 🎉 বিজয়ীদের তালিকা দেখুন: ${winnersUrl} | যোগাযোগ: ${contactPhone} (SE Electronics)`,
       ).catch(() => {}),
     ),
   );

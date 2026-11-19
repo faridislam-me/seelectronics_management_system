@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  deleteLotteryEntry,
   drawLotteryWinners,
   generateLotteryCards,
   getCampaignMedia,
@@ -213,6 +214,23 @@ export default function LotteryManageClient({
       toast.success(res.message);
       refreshSelected();
     } else toast.error(res.message || "ড্র করা যায়নি");
+  };
+
+  const [deletingId, setDeletingId] = useState<string>("");
+  const doDeleteEntry = async (e: Entry) => {
+    if (
+      !confirm(
+        `"${e.name}" (নাম্বার ${e.cardCode}) এন্ট্রিটি মুছে ফেলবেন? নাম্বারটি আবার অব্যবহৃত হয়ে যাবে।`,
+      )
+    )
+      return;
+    setDeletingId(e.id);
+    const res = await deleteLotteryEntry(e.id);
+    setDeletingId("");
+    if (res.success) {
+      toast.success(res.message);
+      await Promise.all([refreshSelected(), refreshCards()]);
+    } else toast.error(res.message || "মুছে ফেলা যায়নি");
   };
 
   const copyCodes = (codes: string[]) => {
@@ -465,6 +483,7 @@ export default function LotteryManageClient({
                   <th className="py-3 px-4 font-bold text-gray-700">ঠিকানা</th>
                   <th className="py-3 px-4 font-bold text-gray-700">সময়</th>
                   <th className="py-3 px-4 font-bold text-gray-700">অবস্থা</th>
+                  <th className="py-3 px-4 font-bold text-gray-700">অ্যাকশন</th>
                 </tr>
               </thead>
               <tbody>
@@ -501,11 +520,27 @@ export default function LotteryManageClient({
                         <span className="text-xs text-gray-400">—</span>
                       )}
                     </td>
+                    <td className="py-2.5 px-4">
+                      <button
+                        type="button"
+                        onClick={() => doDeleteEntry(e)}
+                        disabled={deletingId === e.id}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-red-200 text-red-600 text-xs font-bold hover:bg-red-50 disabled:opacity-50"
+                        title="এন্ট্রি মুছে নাম্বারটি আবার অব্যবহৃত করুন"
+                      >
+                        {deletingId === e.id ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 size={13} />
+                        )}{" "}
+                        মুছুন
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {entries.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-gray-500">
+                    <td colSpan={9} className="py-8 text-center text-gray-500">
                       এই ক্যাম্পেইনে এখনো কোনো এন্ট্রি জমা হয়নি।
                     </td>
                   </tr>

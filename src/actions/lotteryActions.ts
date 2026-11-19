@@ -377,6 +377,45 @@ export async function getLotteryEntries(campaignId?: string) {
   return { success: true as const, data, campaignId: cid };
 }
 
+/**
+ * Admin: delete a single entry (e.g. a test submission before the real draw).
+ * Removes the entry, frees its card back to "unused" so the lottery number
+ * returns to the pool and the used/remaining counts correct themselves, and
+ * best-effort deletes the entrant photo. Works on winner entries too (deleting
+ * one also removes that winner).
+ */
+export async function deleteLotteryEntry(entryId: string) {
+  if (!(await requireAdmin())) return { success: false as const, message: "Unauthorized" };
+  try {
+    const id = String(entryId || "").trim();
+    if (!id) return { success: false as const, message: "এন্ট্রি পাওয়া যায়নি" };
+    const [entry] = await db
+      .select({ cardCode: lotteryEntries.cardCode, photoKey: lotteryEntries.photoKey })
+      .from(lotteryEntries)
+      .where(eq(lotteryEntries.id, id))
+      .limit(1);
+    if (!entry) return { success: false as const, message: "এন্ট্রি পাওয়া যায়নি" };
+
+    await db.delete(lotteryEntries).where(eq(lotteryEntries.id, id));
+    // Free the used card so its number returns to the unused pool and the
+    // used/remaining counts correct themselves.
+    if (entry.cardCode) {
+      await db
+        .update(lotteryCards)
+        .set({ used: false })
+        .where(eq(lotteryCards.code, entry.cardCode));
+    }
+    // Best-effort: remove the entrant photo object (never block on storage).
+    if (entry.photoKey) await deleteObject({ Key: entry.photoKey }).catch(() => {});
+
+    revalidatePath("/lottery-manage");
+    return { success: true as const, message: "এন্ট্রি মুছে ফেলা হয়েছে — নাম্বারটি আবার অব্যবহৃত" };
+  } catch (error) {
+    console.error("deleteLotteryEntry error:", error);
+    return { success: false as const, message: "মুছে ফেলা যায়নি" };
+  }
+}
+
 /** Admin: winners for a campaign (defaults to the active one), ordered by rank. */
 export async function getLotteryWinners(campaignId?: string) {
   if (!(await requireAdmin())) return { success: false as const, message: "Unauthorized" };

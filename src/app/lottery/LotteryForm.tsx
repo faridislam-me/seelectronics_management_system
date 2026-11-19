@@ -218,9 +218,12 @@ export default function LotteryForm({
                     </p>
                   </div>
                   {p.img && (
-                    <span className="shrink-0 size-14 rounded-lg overflow-hidden border border-white/70 bg-white shadow-sm">
+                    // Transparent container so a transparent-PNG product image
+                    // floats on the colored prize card (no white box behind it);
+                    // object-contain shows the whole product without cropping.
+                    <span className="shrink-0 size-20 overflow-hidden">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={p.img} alt={p.label} className="w-full h-full object-cover" />
+                      <img src={p.img} alt={p.label} className="w-full h-full object-contain" />
                     </span>
                   )}
                 </div>

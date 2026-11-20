@@ -53,6 +53,17 @@ export const ADMIN_VOICE_IDS = {
   service_completed: 4654,
   installment_application: 4655,
   referral_withdraw: 4656,
+  // Customer submitted an installment payment from the app (needs admin verify).
+  installment_payment_claim: 4721,
+} as const;
+
+/**
+ * Customer-side voice broadcast IDs (played TO a customer via sendVoiceCall).
+ * - installment_payment_approved (4720): admin approved/marked a submitted
+ *   installment payment as paid.
+ */
+export const CUSTOMER_VOICE_IDS = {
+  installment_payment_approved: 4720,
 } as const;
 
 export type AdminVoiceEvent = keyof typeof ADMIN_VOICE_IDS;

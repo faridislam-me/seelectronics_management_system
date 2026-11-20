@@ -416,6 +416,19 @@ export const markInstallmentPaid = async (input: z.input<typeof MarkPaidSchema>)
           link: `/customer/installments/${plan.planCode}`,
           sendSms: true,
         });
+        // Voice call to the customer confirming the admin approved the payment
+        // (broadcast 4720), on top of the SMS + in-app notify above.
+        try {
+          const { sendVoiceCall } = await import("@/lib/mram");
+          const { CUSTOMER_VOICE_IDS } = await import("@/lib/adminVoiceNotify");
+          await sendVoiceCall(
+            [plan.customerPhone],
+            CUSTOMER_VOICE_IDS.installment_payment_approved,
+            `Installment payment approved ${plan.planCode}`,
+          );
+        } catch (e) {
+          console.error("markInstallmentPaid customer voice failed:", e);
+        }
       }
     } catch (e) {
       console.error("markInstallmentPaid notify failed:", e);
@@ -1425,7 +1438,7 @@ export const claimInstallmentPayment = async (input: {
       await notifyAdminSms(
         `SE Electronics: কিস্তি পেমেন্ট জমা হয়েছে। কিস্তি আইডি ${plan.planCode}, কিস্তি #${row.installmentNo}। গ্রাহক ${plan.customerName || "গ্রাহক"} (${plan.customerPhone || ""}) ${methodBn}-এ ৳${row.amount} দিয়েছে। এই আইডি দিয়ে সার্চ করে যাচাই ও অ্যাপ্রুভ করুন।`,
       );
-      await notifyAdminVoice("installment_application");
+      await notifyAdminVoice("installment_payment_claim");
     } catch (e) {
       console.error("claimInstallmentPayment admin SMS/voice notify failed:", e);
     }

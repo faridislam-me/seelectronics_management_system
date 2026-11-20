@@ -2,12 +2,12 @@ import { InstallmentStickerTemplateData } from "@/app/pdf/download/actions/pdfTy
 
 /**
  * Product sticker for a financed (installment) unit — printed and stuck on the
- * product. Polished BLUE design: a filled blue header band (logo on a white
- * disc + Bangla company name / tagline), a blue contact strip, a column of
- * `label ঃ value` spec rows, a QR floating bottom-right, a full-width barcode,
- * and a blue footer band ("SE Electronics — Always With You"). Square 76mm
- * (≈3in) format. Electrical specs (VA/Watt, Volt, Display) only show for
- * IPS-like units, so a fridge/other unit shows just its relevant fields.
+ * product. Clean BLACK & WHITE label matching the physical SE Electronics
+ * sticker: a thick black double-ruled box, the logo + large company name /
+ * tagline / contact header separated by a rule, a column of large
+ * `label ঃ value` spec rows, a QR floating bottom-right and a full-width
+ * barcode at the foot. Square 76mm (≈3in) format. Electrical specs (VA/Watt,
+ * Volt, Display) only show for IPS-like units.
  */
 export default function InstallmentStickerTemplate({
   data,
@@ -28,9 +28,9 @@ export default function InstallmentStickerTemplate({
     if (!text) return null;
     return (
       <div className="flex items-start leading-tight">
-        <span className="w-[24mm] shrink-0 font-bold text-[#0b3d91]">{label}</span>
-        <span className="shrink-0 font-bold text-[#0b3d91]">ঃ</span>
-        <span className="flex-1 pl-1 font-extrabold text-black break-words">{text}</span>
+        <span className="w-[26mm] shrink-0 font-bold">{label}</span>
+        <span className="shrink-0 font-bold">ঃ</span>
+        <span className="flex-1 pl-1.5 font-extrabold break-words">{text}</span>
       </div>
     );
   };
@@ -42,45 +42,36 @@ export default function InstallmentStickerTemplate({
         width: "76mm",
         height: "76mm",
         fontFamily: `'Tiro Bangla', SolaimanLipi, Inter, sans-serif`,
-        border: "2px solid #0b3d91",
+        border: "3px solid #000",
+        // Thin inner line → the double-ruled box look of the printed sticker.
+        outline: "1px solid #000",
+        outlineOffset: "-1.8mm",
       }}
     >
-      {/* Blue header band: logo on a white disc + company identity. */}
-      <div className="flex items-center gap-2 px-2 py-1.5" style={{ background: "#0b3d91" }}>
+      {/* Header: logo + company identity (all black), ruled off below. */}
+      <div className="flex items-center gap-2 px-2.5 pt-2 pb-1 border-b-[2.5px] border-black">
         {data.logo ? (
-          <span
-            className="shrink-0 rounded-full bg-white flex items-center justify-center"
-            style={{ width: "12mm", height: "12mm" }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={data.logo}
-              alt="logo"
-              className="object-contain"
-              style={{ width: "10.5mm", height: "10.5mm" }}
-            />
-          </span>
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={data.logo}
+            alt="logo"
+            className="shrink-0 object-contain"
+            style={{ width: "14mm", height: "14mm" }}
+          />
         ) : null}
-        <div className="min-w-0 flex-1 text-center leading-tight text-white">
-          <div className="text-[17px] font-black tracking-wide">এস ই ইলেকট্রনিক্স</div>
-          <div className="text-[10px] font-bold opacity-90">সেলস্ সার্ভিস সাপোর্ট</div>
+        <div className="min-w-0 flex-1 text-center leading-tight">
+          <div className="text-[22px] font-black tracking-wide">এস ই ইলেকট্রনিক্স</div>
+          <div className="text-[11px] font-bold">সেলস্‌ সার্ভিস সাপোর্ট</div>
+          <div className="text-[9px] font-semibold">
+            এয়ারপোর্ট রোড বাদাম বাগিচা সিলেট। ফোনঃ ০১৩২২২৪৭৭৭১
+          </div>
         </div>
       </div>
 
-      {/* Contact strip under the header band. */}
-      <div
-        className="text-center text-[8.5px] font-semibold leading-tight py-[0.6mm] border-b-2"
-        style={{ borderColor: "#0b3d91", color: "#0b3d91" }}
-      >
-        এয়ারপোর্ট রোড বাদাম বাগিচা সিলেট। ফোনঃ ০১৩২২২৪৭৭৭১
-      </div>
-
-      {/* Spec rows — distributed EVENLY down the whole available height so the
-          card fills top-to-bottom (no cramped block up top with dead space
-          below). Right padding keeps the values clear of the QR that floats in
-          the bottom-right. justify-evenly adapts: few rows spread out, many rows
-          sit closer. */}
-      <div className="flex-1 min-h-0 flex flex-col justify-evenly pl-2 pr-[14mm] py-[1.5mm] text-[11px]">
+      {/* Spec rows — large, evenly distributed down the available height. Values
+          use (almost) the full width so long ones stay on one line; the QR is
+          kept small and low so it only sits beside the last short-value rows. */}
+      <div className="flex-1 min-h-0 flex flex-col justify-evenly pl-2.5 pr-2 py-[1mm] text-[13px]">
         <Row label="মডেল" value={data.productModel} />
         <Row label="সিরিয়াল নং" value={data.serialNumber} />
         {data.isElectrical && <Row label="ভিএ/ওয়াট" value={data.vaWatt} />}
@@ -93,39 +84,31 @@ export default function InstallmentStickerTemplate({
         <Row label="ব্রান্ডের নাম" value={data.brand} />
       </div>
 
-      {/* QR — floats bottom-right, boxed in the blue accent, above the barcode. */}
+      {/* QR — floats bottom-right, boxed, above the barcode. */}
       {data.qrcode ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={data.qrcode}
           alt="qr"
-          className="absolute bg-white object-contain rounded"
+          className="absolute bg-white object-contain"
           style={{
             right: "2mm",
-            bottom: "14mm",
-            width: "13mm",
-            height: "13mm",
+            bottom: "13mm",
+            width: "14mm",
+            height: "14mm",
             padding: "0.3mm",
-            border: "1px solid #0b3d91",
+            border: "1px solid #000",
           }}
         />
       ) : null}
 
-      {/* Barcode — full width, just above the footer band. */}
+      {/* Barcode — full width at the foot, inside the box. */}
       {data.barcode ? (
         <div
-          className="px-2 h-[9mm] w-full shrink-0 [&>svg]:h-full [&>svg]:w-full"
+          className="px-2.5 pb-2 h-[11mm] w-full shrink-0 [&>svg]:h-full [&>svg]:w-full"
           dangerouslySetInnerHTML={{ __html: data.barcode }}
         />
       ) : null}
-
-      {/* Blue footer band. */}
-      <div
-        className="text-center text-[8.5px] font-bold text-white py-[0.7mm] shrink-0"
-        style={{ background: "#0b3d91" }}
-      >
-        SE Electronics — Always With You
-      </div>
     </div>
   );
 }

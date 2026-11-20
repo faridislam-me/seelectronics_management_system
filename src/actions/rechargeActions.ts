@@ -13,6 +13,7 @@ import { verifySession } from "@/lib";
 import { generateRandomId } from "@/utils";
 import * as topup from "@/lib/successtopup";
 import { getRechargePacksWithCache } from "@/lib/rechargePackCache";
+import { operatorMatchesNumber, OPERATOR_MISMATCH_MESSAGE } from "@/lib/operatorDetect";
 import { and, desc, eq, gte, ilike, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -52,6 +53,13 @@ export const requestMobileRecharge = async (input: {
     if (!rechargePhone?.trim()) return { success: false, message: "রিচার্জ নম্বর আবশ্যক" };
     if (!operator || !OPERATORS[operator]) return { success: false, message: "অপারেটর নির্বাচন করুন" };
     if (!amount || amount < 20) return { success: false, message: "ন্যূনতম রিচার্জ ৳২০" };
+
+    // Guard against an operator/number mismatch (e.g. GP tab selected but a 019
+    // Banglalink number) — wrong recharges were going through and deducting money.
+    // Prefix-based (not 100% due to MNP) but blocks the obvious wrong-operator case.
+    if (!operatorMatchesNumber(operator, rechargePhone.trim()).ok) {
+      return { success: false as const, code: "OPERATOR_MISMATCH" as const, message: OPERATOR_MISMATCH_MESSAGE };
+    }
 
     const customer = await db.query.customers.findFirst({
       where: eq(customers.customerId, session.customer.customerId),

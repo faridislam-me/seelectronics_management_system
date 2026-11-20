@@ -4,6 +4,8 @@ import { requestStaffMobileRecharge } from "@/actions/staffRechargeActions";
 import StaffRechargeHistory from "./StaffRechargeHistory";
 import OperatorIcon, { OPERATOR_META } from "@/components/features/recharge/OperatorIcon";
 import ApiUnavailablePopup from "@/components/features/recharge/ApiUnavailablePopup";
+import OperatorMismatchPopup from "@/components/features/recharge/OperatorMismatchPopup";
+import { operatorMatchesNumber } from "@/lib/operatorDetect";
 import clsx from "clsx";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Copy, Loader2, Wallet } from "lucide-react";
 import Link from "next/link";
@@ -37,6 +39,8 @@ export default function StaffRechargeFlow({ initialBalance }: { initialBalance: 
   const [insufficient, setInsufficient] = useState<number | null>(null);
   // Shown when our SuccessTopup API balance is empty (code:"API_BALANCE_EMPTY").
   const [apiDown, setApiDown] = useState<string | null>(null);
+  // Shown when the number's operator doesn't match the selected operator tab.
+  const [opMismatch, setOpMismatch] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [rechargeCount, setRechargeCount] = useState(0);
 
@@ -44,6 +48,11 @@ export default function StaffRechargeFlow({ initialBalance }: { initialBalance: 
     const amt = Number(amount);
     if (!rechargePhone.trim()) return toast.error("রিচার্জ নম্বর দিন");
     if (!amt || amt < 20) return toast.error("ন্যূনতম ৳২০");
+    // Block an operator/number mismatch before any money moves. Server re-validates.
+    if (!operatorMatchesNumber(operator, rechargePhone.trim()).ok) {
+      setOpMismatch("");
+      return;
+    }
     if (amt > balance) {
       setInsufficient(amt);
       return;
@@ -57,6 +66,8 @@ export default function StaffRechargeFlow({ initialBalance }: { initialBalance: 
       setAmount("");
       setRechargeCount((c) => c + 1);
       router.refresh();
+    } else if (!res.success && "code" in res && res.code === "OPERATOR_MISMATCH") {
+      setOpMismatch(res.message ?? "");
     } else if (!res.success && "code" in res && res.code === "API_BALANCE_EMPTY") {
       setApiDown(res.message ?? null);
     } else if (!res.success && "code" in res && res.code === "insufficient") {
@@ -192,6 +203,9 @@ export default function StaffRechargeFlow({ initialBalance }: { initialBalance: 
           </div>
         </div>
       )}
+
+      {/* Operator / number mismatch popup */}
+      {opMismatch !== null && <OperatorMismatchPopup message={opMismatch || undefined} onClose={() => setOpMismatch(null)} />}
 
       {/* API balance empty popup */}
       {apiDown !== null && <ApiUnavailablePopup message={apiDown} onClose={() => setApiDown(null)} />}

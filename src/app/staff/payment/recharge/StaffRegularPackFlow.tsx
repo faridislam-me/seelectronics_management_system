@@ -3,6 +3,8 @@
 import { getStaffRechargePackages, requestStaffMobileRecharge } from "@/actions/staffRechargeActions";
 import OperatorIcon, { OPERATOR_META } from "@/components/features/recharge/OperatorIcon";
 import ApiUnavailablePopup from "@/components/features/recharge/ApiUnavailablePopup";
+import OperatorMismatchPopup from "@/components/features/recharge/OperatorMismatchPopup";
+import { operatorMatchesNumber } from "@/lib/operatorDetect";
 import StaffRechargeHistory from "./StaffRechargeHistory";
 import clsx from "clsx";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Copy, Loader2, Package, X } from "lucide-react";
@@ -94,6 +96,8 @@ export default function StaffRegularPackFlow({ initialBalance }: { initialBalanc
   const [insufficient, setInsufficient] = useState<number | null>(null);
   // Shown when our SuccessTopup API balance is empty (code:"API_BALANCE_EMPTY").
   const [apiDown, setApiDown] = useState<string | null>(null);
+  // Shown when the number's operator doesn't match the selected operator tab.
+  const [opMismatch, setOpMismatch] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [rechargeCount, setRechargeCount] = useState(0);
 
@@ -128,6 +132,12 @@ export default function StaffRegularPackFlow({ initialBalance }: { initialBalanc
   const buyPack = async (pkg: Pack) => {
     if (!rechargePhone.trim()) return toast.error("রিচার্জ নম্বর দিন");
     if (!pkg.amount || pkg.amount < 10) return toast.error("অবৈধ প্যাকেজ");
+    // Block an operator/number mismatch before any money moves. Server re-validates.
+    if (!operatorMatchesNumber(operator, rechargePhone.trim()).ok) {
+      setSheetPkg(null);
+      setOpMismatch("");
+      return;
+    }
     if (pkg.amount > balance) {
       setInsufficient(pkg.amount);
       return;
@@ -147,6 +157,9 @@ export default function StaffRegularPackFlow({ initialBalance }: { initialBalanc
       setBalance(res.detail.newBalance);
       setSheetPkg(null);
       router.refresh();
+    } else if (!res.success && "code" in res && res.code === "OPERATOR_MISMATCH") {
+      setSheetPkg(null);
+      setOpMismatch(res.message ?? "");
     } else if (!res.success && "code" in res && res.code === "API_BALANCE_EMPTY") {
       setSheetPkg(null);
       setApiDown(res.message ?? null);
@@ -354,6 +367,9 @@ export default function StaffRegularPackFlow({ initialBalance }: { initialBalanc
           </div>
         </div>
       )}
+
+      {/* Operator / number mismatch popup */}
+      {opMismatch !== null && <OperatorMismatchPopup message={opMismatch || undefined} onClose={() => setOpMismatch(null)} />}
 
       {/* API balance empty popup */}
       {apiDown !== null && <ApiUnavailablePopup message={apiDown} onClose={() => setApiDown(null)} />}

@@ -7,6 +7,7 @@ import { compressImage } from "@/lib/sharp";
 import { deleteObject, getObjectUrl, putObject } from "@/lib/s3";
 import { sendSMS } from "@/lib/sms";
 import { getBaseUrl } from "@/utils";
+import { brandUrl } from "@/constants/domains";
 import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
@@ -484,7 +485,10 @@ export async function drawLotteryWinners(count: number, campaignId?: string) {
     .where(eq(lotteryCampaigns.id, cid))
     .limit(1);
   const contactPhone = camp?.shopMobile?.trim() || "09649355555";
-  const winnersUrl = `${getBaseUrl()}/lottery/winners`;
+  // Winners SMS goes to customers, so the link must use the CUSTOMER portal
+  // domain (customer.<brand>), not the admin domain getBaseUrl() returns.
+  const winnersBase = brandUrl("customer", process.env.CUSTOMER_APP_URL) ?? getBaseUrl();
+  const winnersUrl = `${winnersBase.replace(/\/$/, "")}/lottery/winners`;
 
   await Promise.all(
     winners.map((w) =>

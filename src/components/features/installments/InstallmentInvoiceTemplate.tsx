@@ -102,18 +102,16 @@ export default function InstallmentInvoiceTemplate({
         <img src={data.padBg} alt="" className="absolute inset-0 w-full h-full" style={{ objectFit: "fill" }} />
       ) : null}
 
-      {/* ───── Title (centered, clears the round seal at top-left) ───── */}
-      <div className="absolute left-0 right-0 text-center" style={{ top: "12.6%" }}>
-        <span
-          className="inline-block px-4 py-[4px] rounded-md text-[15px] font-black text-white tracking-wide"
-          style={{ background: NAVY }}
-        >
+      {/* ───── Title: plain text (no fill box), like the customer invoice ───── */}
+      <div className="absolute left-0 right-0 text-center" style={{ top: "13.2%" }}>
+        <span className="text-[17px] font-black tracking-wide" style={{ color: NAVY }}>
           কিস্তি ইনভয়েস · INSTALLMENT INVOICE
         </span>
       </div>
 
-      {/* ───── Dynamic invoice body, overlaid on the empty middle region ───── */}
-      <div className="absolute" style={{ top: "18.5%", left: "5.4%", right: "5.4%" }}>
+      {/* ───── Dynamic invoice body — pushed a bit lower so the customer/product
+          block clears the round seal baked into the pad at top-left. ───── */}
+      <div className="absolute" style={{ top: "21%", left: "5.4%", right: "5.4%" }}>
         {/* Customer + plan meta */}
         <div className="flex justify-between text-[12.5px] gap-6">
           <div className="space-y-[2px]">
@@ -135,7 +133,7 @@ export default function InstallmentInvoiceTemplate({
         {/* Product table */}
         <table className="w-full border-collapse mt-3">
           <thead>
-            <tr className="border border-black" style={{ background: "#D7E6F5" }}>
+            <tr className="border border-black" style={{ background: "#e8dae9" }}>
               <th className="text-left py-[6px] px-2 font-bold text-[12.5px] border-r border-black w-5">নং</th>
               <th className="text-left py-[6px] px-2 font-bold text-[12.5px] border-r border-black">পণ্যের বিবরণ (Product)</th>
               <th className="text-left py-[6px] px-2 font-bold text-[12.5px] border-r border-black">ক্যাটাগরি</th>
@@ -182,26 +180,26 @@ export default function InstallmentInvoiceTemplate({
                 <div className="flex justify-between items-start gap-10">
                   <div className="flex-1 min-w-0">
                     <div className="text-[12.5px] font-bold mb-1" style={{ color: NAVY }}>কিস্তি পরিকল্পনা</div>
-                    <div className="space-y-1">
-                      <div className="text-[12px]">
-                        মোট{" "}
-                        <span className="font-bold" style={{ color: NAVY }}>{toBanglaNumber(totalInstallments)}টি</span>{" "}
+                    {/* All lines one size + one deep color (no green/red/grey mix). */}
+                    <div className="space-y-1 text-[12px]" style={{ color: "#15223b" }}>
+                      <div>
+                        মোট <span className="font-bold">{toBanglaNumber(totalInstallments)}টি</span>{" "}
                         মাসিক কিস্তি · প্রতি মাসে <span className="font-semibold">{bdt(mainMonthly)}</span>
                       </div>
                       {differingLast && (
-                        <div className="text-[12px] text-slate-600">
+                        <div>
                           (শেষ কিস্তি #{toBanglaNumber(differingLast.no)}:{" "}
                           <span className="font-semibold">{bdt(differingLast.amount)}</span>)
                         </div>
                       )}
-                      <div className="text-[12px] text-slate-600">
+                      <div>
                         <span className="font-semibold">মেয়াদ:</span> {bnDate(data.startDate)} → {bnDate(data.endDate)}
                       </div>
-                      <div className="text-[12px] text-slate-600">
+                      <div>
                         <span className="font-semibold">পরিশোধিত:</span>{" "}
-                        <span className="font-bold" style={{ color: "#178a42" }}>{bdt(data.paidTotal)}</span>{" "}
+                        <span className="font-bold">{bdt(data.paidTotal)}</span>{" "}
                         ({toBanglaNumber(data.paidCount)}টি) · <span className="font-semibold">বাকি:</span>{" "}
-                        <span className="font-bold" style={{ color: "#c81f38" }}>{bdt(data.remainingTotal)}</span>
+                        <span className="font-bold">{bdt(data.remainingTotal)}</span>
                       </div>
                     </div>
                   </div>

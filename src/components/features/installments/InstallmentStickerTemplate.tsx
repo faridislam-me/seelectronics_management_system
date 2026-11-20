@@ -29,7 +29,9 @@ export default function InstallmentStickerTemplate({
     return (
       <div className="flex items-start leading-tight">
         <span className="w-[26mm] shrink-0 font-bold">{label}</span>
-        <span className="shrink-0 font-bold">ঃ</span>
+        {/* Plain ASCII colon — the Bangla visarga "ঃ" rendered standalone shows a
+            dotted-circle placeholder in some fonts; ":" is two clean dots. */}
+        <span className="shrink-0 font-bold">:</span>
         <span className="flex-1 pl-1.5 font-extrabold break-words">{text}</span>
       </div>
     );

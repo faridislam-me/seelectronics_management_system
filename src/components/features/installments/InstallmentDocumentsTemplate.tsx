@@ -15,7 +15,9 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 
 function ImageCell({ img }: { img: DocImage }) {
   return (
-    <div className="flex flex-col">
+    // break-inside: avoid keeps an image and its caption together, never split
+    // across the page boundary.
+    <div className="flex flex-col" style={{ breakInside: "avoid" }}>
       <div className="h-[150px] w-full rounded-md border border-gray-300 bg-gray-50 overflow-hidden flex items-center justify-center">
         {img.url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -107,27 +109,32 @@ export default function InstallmentDocumentsTemplate({
         ))}
       </div>
 
-      {/* Guarantor info */}
-      <SectionTitle>জামিনদারের তথ্য (Guarantor Information)</SectionTitle>
-      <div className="grid grid-cols-2 gap-x-6">
-        <InfoRow label="নাম" value={data.guarantorName} />
-        <InfoRow label="মোবাইল" value={data.guarantorPhone} />
-        <InfoRow label="বর্তমান ঠিকানা" value={data.guarantorAddress} />
-        <InfoRow label="স্থায়ী ঠিকানা" value={data.guarantorPermanentAddress} />
-        {data.guarantorLandlordName && (
-          <InfoRow label="বাড়ির মালিকের নাম" value={data.guarantorLandlordName} />
-        )}
-        {data.guarantorLandlordPhone && (
-          <InfoRow label="বাড়ির মালিকের ফোন" value={data.guarantorLandlordPhone} />
-        )}
-      </div>
+      {/* ───── Guarantor — forced onto its own page (page 2), so the customer
+          (info + documents) always fits on page 1 and the guarantor block is
+          never split across the page boundary. ───── */}
+      <div className="pt-8" style={{ breakBefore: "page", pageBreakBefore: "always" }}>
+        {/* Guarantor info */}
+        <SectionTitle>জামিনদারের তথ্য (Guarantor Information)</SectionTitle>
+        <div className="grid grid-cols-2 gap-x-6">
+          <InfoRow label="নাম" value={data.guarantorName} />
+          <InfoRow label="মোবাইল" value={data.guarantorPhone} />
+          <InfoRow label="বর্তমান ঠিকানা" value={data.guarantorAddress} />
+          <InfoRow label="স্থায়ী ঠিকানা" value={data.guarantorPermanentAddress} />
+          {data.guarantorLandlordName && (
+            <InfoRow label="বাড়ির মালিকের নাম" value={data.guarantorLandlordName} />
+          )}
+          {data.guarantorLandlordPhone && (
+            <InfoRow label="বাড়ির মালিকের ফোন" value={data.guarantorLandlordPhone} />
+          )}
+        </div>
 
-      {/* Guarantor documents */}
-      <SectionTitle>জামিনদারের ছবি ও কাগজপত্র (Guarantor Documents)</SectionTitle>
-      <div className="grid grid-cols-3 gap-3">
-        {data.guarantorImages.map((img, i) => (
-          <ImageCell key={`g-${i}`} img={img} />
-        ))}
+        {/* Guarantor documents */}
+        <SectionTitle>জামিনদারের ছবি ও কাগজপত্র (Guarantor Documents)</SectionTitle>
+        <div className="grid grid-cols-3 gap-3">
+          {data.guarantorImages.map((img, i) => (
+            <ImageCell key={`g-${i}`} img={img} />
+          ))}
+        </div>
       </div>
 
       <div className="mt-6 pt-3 border-t border-gray-200 flex justify-between text-[10px] font-semibold text-gray-400">

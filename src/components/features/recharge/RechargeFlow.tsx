@@ -4,6 +4,8 @@ import { getMyDriveInfo } from "@/actions/driveBalanceActions";
 import { getDrivePackages, requestMobileRecharge } from "@/actions/rechargeActions";
 import OperatorIcon, { OPERATOR_META } from "@/components/features/recharge/OperatorIcon";
 import ApiUnavailablePopup from "@/components/features/recharge/ApiUnavailablePopup";
+import OperatorMismatchPopup from "@/components/features/recharge/OperatorMismatchPopup";
+import { operatorMatchesNumber } from "@/lib/operatorDetect";
 import clsx from "clsx";
 import {
   AlertTriangle,
@@ -176,6 +178,8 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
   // Shown when our SuccessTopup API balance is empty (server returns
   // code:"API_BALANCE_EMPTY") — service temporarily unavailable, contact admin.
   const [apiDown, setApiDown] = useState<string | null>(null);
+  // Shown when the number's operator doesn't match the selected operator tab.
+  const [opMismatch, setOpMismatch] = useState<string | null>(null);
 
   const isDrive = meta.balanceSource === "drive";
   const approved = !meta.requiresKyc || driveInfo?.kycStatus === "approved";
@@ -229,6 +233,13 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
     if (!rechargePhone.trim()) return toast.error("রিচার্জ নম্বর দিন");
     if (isDrive && !driverRef.trim()) return toast.error("ড্রাইভার আইডি / রেফারেন্স নম্বর দিন");
     if (!amt || amt < 20) return toast.error("ন্যূনতম ৳২০");
+    // Block an operator/number mismatch before any money moves (e.g. GP tab
+    // selected but a 019 Banglalink number). Server re-validates as a backstop.
+    if (!operatorMatchesNumber(operator, rechargePhone.trim()).ok) {
+      setSheetPkg(null);
+      setOpMismatch(""); // "" → show popup with the default mismatch message
+      return;
+    }
     if (amt > balance) {
       setInsufficient(amt);
       return;
@@ -261,6 +272,9 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
       if (isDrive) await loadDrive();
       else await referral.refetch();
       router.refresh();
+    } else if ("code" in res && res.code === "OPERATOR_MISMATCH") {
+      setSheetPkg(null);
+      setOpMismatch(res.message ?? "");
     } else if ("code" in res && res.code === "API_BALANCE_EMPTY") {
       // Our reseller API balance is empty — show the popup, not a toast.
       setSheetPkg(null);
@@ -526,6 +540,9 @@ export default function RechargeFlow({ rechargeType }: { rechargeType: RechargeT
           onClose={() => setInsufficient(null)}
         />
       )}
+
+      {/* Operator / number mismatch popup */}
+      {opMismatch !== null && <OperatorMismatchPopup message={opMismatch || undefined} onClose={() => setOpMismatch(null)} />}
 
       {/* API balance empty popup */}
       {apiDown !== null && <ApiUnavailablePopup message={apiDown} onClose={() => setApiDown(null)} />}

@@ -15,22 +15,30 @@ export const getCustomerReferralData = async () => {
     if (!session) return { success: false, message: "Unauthorized" };
 
     const customerId = session.userId as string;
-    const customer = await db.query.customers.findFirst({
-      where: eq(customers.customerId, customerId),
-      columns: {
-        referralBalance: true,
-        vipCardNumber: true,
-        name: true,
-        phone: true,
-      },
-    });
+
+    // These three reads are independent, so run them as one batch instead of
+    // three sequential neon-http round-trips.
+    const [customer, rawBonuses, requests] = await Promise.all([
+      db.query.customers.findFirst({
+        where: eq(customers.customerId, customerId),
+        columns: {
+          referralBalance: true,
+          vipCardNumber: true,
+          name: true,
+          phone: true,
+        },
+      }),
+      db.query.referralBonuses.findMany({
+        where: eq(referralBonuses.referrerCustomerId, customerId),
+        orderBy: [desc(referralBonuses.createdAt)],
+      }),
+      db.query.referralPaymentRequests.findMany({
+        where: eq(referralPaymentRequests.customerId, customerId),
+        orderBy: [desc(referralPaymentRequests.createdAt)],
+      }),
+    ]);
 
     if (!customer) return { success: false, message: "Customer not found" };
-
-    const rawBonuses = await db.query.referralBonuses.findMany({
-      where: eq(referralBonuses.referrerCustomerId, customerId),
-      orderBy: [desc(referralBonuses.createdAt)],
-    });
 
     // Attach what each referred customer bought (from their invoice) so the
     // referrer can see name, products and amount.
@@ -50,11 +58,6 @@ export const getCustomerReferralData = async () => {
         invoiceNumber: c?.invoice?.invoiceNumber ?? c?.invoiceNumber ?? null,
         products: (c?.invoice?.products ?? []).map((p) => ({ type: p.type, model: p.model, quantity: p.quantity })),
       };
-    });
-
-    const requests = await db.query.referralPaymentRequests.findMany({
-      where: eq(referralPaymentRequests.customerId, customerId),
-      orderBy: [desc(referralPaymentRequests.createdAt)],
     });
 
     return {

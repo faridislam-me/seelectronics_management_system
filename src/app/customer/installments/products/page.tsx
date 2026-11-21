@@ -1,5 +1,6 @@
 import { getMyInstallmentPlans } from "@/actions/installmentActions";
 import { verifyCustomerSession } from "@/actions/customerActions";
+import InstallmentLockedNotice from "@/components/features/installments/InstallmentLockedNotice";
 import { CustomerLayout } from "@/components/layout";
 import { productImage } from "@/lib/serviceStatusStyle";
 import clsx from "clsx";
@@ -50,6 +51,13 @@ export default async function MyInstallmentProductsPage({
   const activeFilter = FILTERS.find((f) => f.key === filter)!;
 
   const res = await getMyInstallmentPlans();
+  if (res.success && "locked" in res && res.locked) {
+    return (
+      <CustomerLayout>
+        <InstallmentLockedNotice backHref="/customer/installments" />
+      </CustomerLayout>
+    );
+  }
   const allPlans = res.success && "data" in res && res.data ? (res.data as any[]) : [];
   const plans = applyFilter(allPlans, filter);
 

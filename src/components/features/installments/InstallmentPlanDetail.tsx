@@ -219,7 +219,7 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
   const changeStatus = async (status: "active" | "banned" | "cancelled") => {
     const confirmMsg =
       status === "banned"
-        ? "এই কিস্তি অ্যাকাউন্ট ব্যান করবেন?"
+        ? "এই কিস্তি অ্যাকাউন্ট ব্যান করবেন? গ্রাহকের কিস্তি প্রোফাইল লক হয়ে যাবে।"
         : status === "cancelled"
           ? "এই প্ল্যান বাতিল করবেন?"
           : "আবার চালু করবেন?";

@@ -1,6 +1,7 @@
 import { getMyInstallmentDashboard } from "@/actions/installmentActions";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { CustomerLayout } from "@/components/layout";
+import InstallmentLockedNotice from "@/components/features/installments/InstallmentLockedNotice";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
 import {
@@ -49,7 +50,7 @@ export default async function CustomerInstallmentsPage() {
     );
   }
 
-  const { customer, photoUrl, plans, applications, overdueCount, totalPaid, totalRemaining } = res.data;
+  const { customer, photoUrl, plans, applications, overdueCount, totalPaid, totalRemaining, locked } = res.data;
   const activePlans = plans.filter((p: any) => p.status === "active");
   const primaryPlan = activePlans[0] as any | undefined;
   const pendingApps = (applications as any[]).filter((a: any) => a.status !== "approved");
@@ -82,6 +83,10 @@ export default async function CustomerInstallmentsPage() {
           </div>
         </div>
 
+        {/* Banned by admin — the installment profile is locked; nothing else is shown */}
+        {locked && <div className="-mx-2 -my-2"><InstallmentLockedNotice /></div>}
+
+        {!locked && (<>
         {/* Active plan summary */}
         {primaryPlan && (
           <Link
@@ -230,6 +235,7 @@ export default async function CustomerInstallmentsPage() {
         <p className="text-[11px] text-center text-[#5b6784] px-4">
           কিস্তি সংক্রান্ত তথ্যের জন্য যোগাযোগ করুন — <a href="tel:09649355555" className="font-bold text-[#1f5fc9]">09649355555</a>
         </p>
+        </>)}
       </div>
     </CustomerLayout>
   );

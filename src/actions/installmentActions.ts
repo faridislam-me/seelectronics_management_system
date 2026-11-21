@@ -11,6 +11,7 @@ import {
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { notifyCustomer, notifyAdmin } from "@/actions/notificationActions";
 import { verifySession } from "@/lib";
+import { INSTALLMENT_LOCKED_MESSAGE, isInstallmentPlanLocked } from "@/lib/installmentLock";
 import { putObject, getObjectUrl } from "@/lib/s3";
 import { compressImage } from "@/lib/sharp";
 import { generateRandomId } from "@/utils";
@@ -19,6 +20,18 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 const UNAUTHORIZED = { success: false as const, message: "Unauthorized" };
+
+/**
+ * True when an admin has banned any of the customer's installment plans — the
+ * customer's whole installment profile is then locked (see lib/installmentLock).
+ */
+const isInstallmentProfileLocked = async (customerId: string) => {
+  const banned = await db.query.installmentPlans.findFirst({
+    where: and(eq(installmentPlans.customerId, customerId), eq(installmentPlans.status, "banned")),
+    columns: { id: true },
+  });
+  return !!banned;
+};
 
 const requireAdmin = async () => {
   const s = await verifySession(false, "admin");
@@ -456,7 +469,16 @@ export const updateInstallmentPlanStatus = async (
 
     await db.update(installmentPlans).set({ status }).where(eq(installmentPlans.id, plan.id));
     revalidatePath("/installments");
-    return { success: true, message: "স্ট্যাটাস আপডেট হয়েছে" };
+    revalidatePath(`/installments/${code}`);
+    // Banning/re-activating locks/unlocks the customer's installment pages.
+    revalidatePath("/customer/installments", "layout");
+    return {
+      success: true,
+      message:
+        status === "banned"
+          ? "ব্যান করা হয়েছে — গ্রাহকের কিস্তি প্রোফাইল লক হয়েছে"
+          : "স্ট্যাটাস আপডেট হয়েছে",
+    };
   } catch (error) {
     console.error("updateInstallmentPlanStatus error:", error);
     return { success: false, message: "আপডেট করা যায়নি" };
@@ -531,6 +553,18 @@ const planProgress = (
   };
 };
 
+/** Customer: is my installment profile locked (banned by admin)? */
+export const getMyInstallmentLockStatus = async () => {
+  const session = await verifyCustomerSession();
+  if (!session.isAuth || !session.customer) return { locked: false };
+  try {
+    return { locked: await isInstallmentProfileLocked(session.customer.customerId) };
+  } catch (error) {
+    console.error("getMyInstallmentLockStatus error:", error);
+    return { locked: false };
+  }
+};
+
 export const getMyInstallmentPlans = async () => {
   try {
     const session = await verifyCustomerSession();
@@ -541,6 +575,11 @@ export const getMyInstallmentPlans = async () => {
       .from(installmentPlans)
       .where(eq(installmentPlans.customerId, session.customer.customerId))
       .orderBy(desc(installmentPlans.createdAt));
+
+    // Banned by admin → locked profile: hand back no plan data at all.
+    if (plans.some((p) => isInstallmentPlanLocked(p.status))) {
+      return { success: true, locked: true, data: [] };
+    }
 
     const ids = plans.map((p) => p.id);
     const rows =
@@ -570,7 +609,7 @@ export const getMyInstallmentPlans = async () => {
       })),
     );
 
-    return { success: true, data };
+    return { success: true, locked: false, data };
   } catch (error) {
     console.error("getMyInstallmentPlans error:", error);
     return { success: false, message: "কিস্তি তথ্য আনা যায়নি" };
@@ -616,13 +655,17 @@ export const getMyInstallmentDashboard = async () => {
     }
 
     const customer = session.customer;
+    // Banned by admin → locked profile: the page shows only the locked notice,
+    // so no plan/application data is sent.
+    const locked = plans.some((p) => isInstallmentPlanLocked(p.status));
     return {
       success: true,
       data: {
         customer: { name: customer.name, phone: customer.phone, address: customer.address, customerId: customer.customerId },
         photoUrl,
-        plans: plansData,
-        applications: apps,
+        locked,
+        plans: locked ? [] : plansData,
+        applications: locked ? [] : apps,
         overdueCount,
         totalPaid,
         totalRemaining,
@@ -645,6 +688,15 @@ export const getMyInstallmentPlanByCode = async (code: string) => {
     // Never leak another customer's plan.
     if (!plan || plan.customerId !== session.customer.customerId) {
       return { success: false, message: "প্ল্যান পাওয়া যায়নি" };
+    }
+
+    // Banned by admin → locked profile. Return only what the locked notice
+    // needs; schedule, documents and tracking are withheld.
+    if (isInstallmentPlanLocked(plan.status) || (await isInstallmentProfileLocked(plan.customerId))) {
+      return {
+        success: true,
+        data: { locked: true as const, plan: { planCode: plan.planCode, status: plan.status } },
+      };
     }
 
     const schedule = await db
@@ -726,6 +778,7 @@ export const getMyInstallmentPlanByCode = async (code: string) => {
     return {
       success: true,
       data: {
+        locked: false as const,
         plan,
         schedule,
         nextDue,
@@ -757,6 +810,9 @@ export const submitInstallmentApplication = async (formData: FormData) => {
     if (!session.isAuth || !session.customer) return UNAUTHORIZED;
 
     const customerId = session.customer.customerId;
+    if (await isInstallmentProfileLocked(customerId)) {
+      return { success: false, message: INSTALLMENT_LOCKED_MESSAGE };
+    }
     const productModel = formData.get("productModel") as string;
     const productType = (formData.get("productType") as string) || undefined;
     const productTypeOther = (formData.get("productTypeOther") as string) || undefined;
@@ -1397,6 +1453,8 @@ export const claimInstallmentPayment = async (input: {
     });
     if (!plan || plan.customerId !== session.customer.customerId)
       return { success: false, message: "প্ল্যান পাওয়া যায়নি" };
+    if (isInstallmentPlanLocked(plan.status) || (await isInstallmentProfileLocked(plan.customerId)))
+      return { success: false, message: INSTALLMENT_LOCKED_MESSAGE };
 
     const row = await db.query.installmentSchedule.findFirst({
       where: and(
@@ -1447,6 +1505,7 @@ export const claimInstallmentPayment = async (input: {
 
     revalidatePath("/installments");
     revalidatePath(`/customer/installments/${input.planCode}`);
+    revalidatePath(`/customer/installments/${input.planCode}/payment`);
     return { success: true, message: "পেমেন্ট তথ্য সফলভাবে জমা হয়েছে। যাচাই করে নিশ্চিত করা হবে।" };
   } catch (error) {
     console.error("claimInstallmentPayment error:", error);

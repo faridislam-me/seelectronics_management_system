@@ -2,14 +2,14 @@
 
 import { contactDetails } from "@/constants";
 import { supplierProductLabel } from "@/lib/supplierProduct";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, Printer, ZoomIn, ZoomOut } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 /**
  * Shared print-friendly building blocks for the three supplier documents:
  *  - one clean transaction receipt (`SupplierReceiptBody`)
- *  - a full account statement (`SupplierStatementBody`)
+ *  - a full account statement (`SupplierStatementBody`, paginated into A4 sheets)
  *  - all receipts, one per page (many `SupplierReceiptBody` in one frame)
  * `SupplierDocFrame` provides the A4 fit-to-screen scaling, the print toolbar
  * and the shared @media print rules (page breaks between stacked sheets).
@@ -170,7 +170,7 @@ function SupplierInfoSection({ n, supplier }: { n: string; supplier: SupplierLit
 
 function Signatures({ n, isPayment }: { n: string; isPayment: boolean }) {
   return (
-    <div className="border border-[#c9d4e6]">
+    <div className="sr-keep border border-[#c9d4e6]">
       <SectionTitle n={n} bnTitle="স্বাক্ষর" enTitle="Signatures" />
       <div className="px-3 pt-10 pb-3 grid grid-cols-2 gap-10 text-center text-[10.5px] font-semibold">
         <div className="border-t border-[#16213a] pt-1">
@@ -286,7 +286,51 @@ export function SupplierReceiptBody({
   );
 }
 
-/** Full A-to-Z account statement for a supplier. */
+/*
+ * Statement pagination. The statement is printed with window.print(), so the
+ * ledger is split into A4-sized sheets up front: every sheet carries the
+ * letterhead (company band + QR) and the title bar, and the print rules put a
+ * page break between sheets. Budgets are in CSS px of the printable A4 area
+ * (285mm ~ 1077px tall with the 6mm @page margin) and are deliberately
+ * conservative so a sheet never spills onto a second sheet of paper.
+ */
+const FIRST_PAGE_ROWS_PX = 500; // page 1 also holds the supplier information block
+const NEXT_PAGE_ROWS_PX = 720;
+const STATEMENT_TAIL_PX = 240; // totals + signatures + verify note, kept together
+const DESC_CHARS_PER_LINE = 34;
+
+const ledgerText = (e: LedgerRow) => [supplierProductLabel(e.productType), e.description].filter(Boolean).join(" · ");
+const ledgerRowPx = (e: LedgerRow) => 22 + (Math.max(1, Math.ceil(ledgerText(e).length / DESC_CHARS_PER_LINE)) - 1) * 15;
+
+type StatementPage = { rows: { e: LedgerRow; n: number }[]; tail: boolean };
+
+export function paginateLedger(ledger: LedgerRow[]): StatementPage[] {
+  const pages: StatementPage[] = [];
+  let rows: StatementPage["rows"] = [];
+  let used = 0;
+  let cap = FIRST_PAGE_ROWS_PX;
+  ledger.forEach((e, i) => {
+    const h = ledgerRowPx(e);
+    if (rows.length > 0 && used + h > cap) {
+      pages.push({ rows, tail: false });
+      rows = [];
+      used = 0;
+      cap = NEXT_PAGE_ROWS_PX;
+    }
+    rows.push({ e, n: i + 1 });
+    used += h;
+  });
+  if (used + STATEMENT_TAIL_PX <= cap) {
+    pages.push({ rows, tail: true });
+  } else {
+    // Totals + signatures do not fit under the last rows: give them their own sheet.
+    pages.push({ rows, tail: false });
+    pages.push({ rows: [], tail: true });
+  }
+  return pages;
+}
+
+/** Full A-to-Z account statement for a supplier, one `.sr-sheet` per A4 page. */
 export function SupplierStatementBody({
   supplier,
   ledger,
@@ -301,76 +345,105 @@ export function SupplierStatementBody({
   barcodeSvg: string;
 }) {
   const printedOn = new Date().toLocaleDateString("en-GB");
+  const pages = paginateLedger(ledger);
   return (
-    <div className="sr-sheet w-[21cm] bg-white shadow-xl print:shadow-none">
-      <div className="relative text-[11.5px] leading-snug text-[#16213a]">
-        <HeaderBand qrDataUrl={qrDataUrl} qrLabel="SCAN STATEMENT" />
-        <TitleBar bnTitle="হিসাব বিবরণী (স্টেটমেন্ট)" enTitle="ACCOUNT STATEMENT" barcodeSvg={barcodeSvg} code={supplier.supplierId} />
-        <div className="px-5 pt-3 pb-2 flex flex-col gap-3">
-          <SupplierInfoSection n="১" supplier={supplier} />
+    <>
+      {pages.map((page, p) => (
+        <div key={p} className="sr-sheet sr-page w-[21cm] min-h-[29.7cm] flex flex-col bg-white shadow-xl print:shadow-none">
+          <div className="relative flex-1 flex flex-col text-[11.5px] leading-snug text-[#16213a]">
+            <HeaderBand qrDataUrl={qrDataUrl} qrLabel="SCAN STATEMENT" />
+            <TitleBar bnTitle="হিসাব বিবরণী (স্টেটমেন্ট)" enTitle="ACCOUNT STATEMENT" barcodeSvg={barcodeSvg} code={supplier.supplierId} />
+            <div className="px-5 pt-3 pb-2 flex flex-col gap-3">
+              {p === 0 && <SupplierInfoSection n="১" supplier={supplier} />}
 
-          <div className="border border-[#c9d4e6]">
-            <SectionTitle n="২" bnTitle="সম্পূর্ণ হিসাব (সকল লেনদেন)" enTitle="Full Account Statement" />
-            {ledger.length === 0 ? (
-              <div className="py-6 text-center text-[#5b6784]">কোনো লেনদেন নেই।</div>
-            ) : (
-              <table className="w-full border-collapse text-[10.5px]">
-                <thead>
-                  <tr className="bg-[#eaf0fa] text-[#16213a]">
-                    <th className="border border-[#c9d4e6] px-1.5 py-1 text-left font-bold w-[8%]">ক্রম</th>
-                    <th className="border border-[#c9d4e6] px-1.5 py-1 text-left font-bold">তারিখ</th>
-                    <th className="border border-[#c9d4e6] px-1.5 py-1 text-left font-bold">ধরন</th>
-                    <th className="border border-[#c9d4e6] px-1.5 py-1 text-left font-bold">বিবরণ</th>
-                    <th className="border border-[#c9d4e6] px-1.5 py-1 text-right font-bold">টাকা</th>
-                    <th className="border border-[#c9d4e6] px-1.5 py-1 text-right font-bold">বাকি</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ledger.map((e, i) => (
-                    <tr key={e.transactionId} className={i % 2 ? "bg-[#f4f7fc]" : "bg-white"}>
-                      <td className="border border-[#c9d4e6] px-1.5 py-[3px] text-center">{i + 1}</td>
-                      <td className="border border-[#c9d4e6] px-1.5 py-[3px] whitespace-nowrap">{fmtDate(e.date)}</td>
-                      <td className="border border-[#c9d4e6] px-1.5 py-[3px] whitespace-nowrap font-semibold">{e.type === "purchase" ? "মাল গ্রহণ" : "পরিশোধ"}</td>
-                      <td className="border border-[#c9d4e6] px-1.5 py-[3px]">{[supplierProductLabel(e.productType), e.description].filter(Boolean).join(" · ") || "—"}</td>
-                      <td className={`border border-[#c9d4e6] px-1.5 py-[3px] text-right whitespace-nowrap font-bold ${e.type === "payment" ? "text-[#178a42]" : ""}`}>
-                        {e.type === "payment" ? "−" : "+"}
-                        {taka(e.amount)}
-                      </td>
-                      <td className="border border-[#c9d4e6] px-1.5 py-[3px] text-right whitespace-nowrap font-bold">{taka(e.balance)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-            <div className="grid grid-cols-3 text-center border-t border-[#c9d4e6] bg-[#f4f7fc]">
-              <div className="border-r border-[#c9d4e6] py-1.5">
-                <div className="text-[10px] font-semibold text-[#5b6784]">মোট মাল গ্রহণ</div>
-                <div className="text-[13px] font-extrabold">{taka(overall.purchased)}</div>
+              <div className="border border-[#c9d4e6]">
+                <SectionTitle
+                  n="২"
+                  bnTitle={p === 0 ? "সম্পূর্ণ হিসাব (সকল লেনদেন)" : "সম্পূর্ণ হিসাব (চলমান)"}
+                  enTitle={p === 0 ? "Full Account Statement" : "Statement (continued)"}
+                />
+                {ledger.length === 0 ? (
+                  <div className="py-6 text-center text-[#5b6784]">কোনো লেনদেন নেই।</div>
+                ) : page.rows.length > 0 ? (
+                  <table className="w-full border-collapse text-[10.5px]">
+                    <thead>
+                      <tr className="bg-[#eaf0fa] text-[#16213a]">
+                        <th className="border border-[#c9d4e6] px-1.5 py-1 text-left font-bold w-[8%]">ক্রম</th>
+                        <th className="border border-[#c9d4e6] px-1.5 py-1 text-left font-bold">তারিখ</th>
+                        <th className="border border-[#c9d4e6] px-1.5 py-1 text-left font-bold">ধরন</th>
+                        <th className="border border-[#c9d4e6] px-1.5 py-1 text-left font-bold">বিবরণ</th>
+                        <th className="border border-[#c9d4e6] px-1.5 py-1 text-right font-bold">টাকা</th>
+                        <th className="border border-[#c9d4e6] px-1.5 py-1 text-right font-bold">বাকি</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {page.rows.map(({ e, n }) => (
+                        <tr key={e.transactionId} className={n % 2 ? "bg-white" : "bg-[#f4f7fc]"}>
+                          <td className="border border-[#c9d4e6] px-1.5 py-[3px] text-center">{n}</td>
+                          <td className="border border-[#c9d4e6] px-1.5 py-[3px] whitespace-nowrap">{fmtDate(e.date)}</td>
+                          <td className="border border-[#c9d4e6] px-1.5 py-[3px] whitespace-nowrap font-semibold">{e.type === "purchase" ? "মাল গ্রহণ" : "পরিশোধ"}</td>
+                          <td className="border border-[#c9d4e6] px-1.5 py-[3px] break-words">{ledgerText(e) || "—"}</td>
+                          <td className={`border border-[#c9d4e6] px-1.5 py-[3px] text-right whitespace-nowrap font-bold ${e.type === "payment" ? "text-[#178a42]" : ""}`}>
+                            {e.type === "payment" ? "−" : "+"}
+                            {taka(e.amount)}
+                          </td>
+                          <td className="border border-[#c9d4e6] px-1.5 py-[3px] text-right whitespace-nowrap font-bold">{taka(e.balance)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : null}
+                {page.tail && (
+                  <div className="sr-keep grid grid-cols-3 text-center border-t border-[#c9d4e6] bg-[#f4f7fc]">
+                    <div className="border-r border-[#c9d4e6] py-1.5">
+                      <div className="text-[10px] font-semibold text-[#5b6784]">মোট মাল গ্রহণ</div>
+                      <div className="text-[13px] font-extrabold">{taka(overall.purchased)}</div>
+                    </div>
+                    <div className="border-r border-[#c9d4e6] py-1.5">
+                      <div className="text-[10px] font-semibold text-[#5b6784]">মোট পরিশোধ</div>
+                      <div className="text-[13px] font-extrabold text-[#178a42]">{taka(overall.paid)}</div>
+                    </div>
+                    <div className="py-1.5">
+                      <div className="text-[10px] font-semibold text-[#5b6784]">বর্তমান বাকি</div>
+                      <div className={`text-[13px] font-extrabold ${overall.due > 0 ? "text-[#c81f38]" : "text-[#178a42]"}`}>{taka(overall.due)}</div>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="border-r border-[#c9d4e6] py-1.5">
-                <div className="text-[10px] font-semibold text-[#5b6784]">মোট পরিশোধ</div>
-                <div className="text-[13px] font-extrabold text-[#178a42]">{taka(overall.paid)}</div>
-              </div>
-              <div className="py-1.5">
-                <div className="text-[10px] font-semibold text-[#5b6784]">বর্তমান বাকি</div>
-                <div className={`text-[13px] font-extrabold ${overall.due > 0 ? "text-[#c81f38]" : "text-[#178a42]"}`}>{taka(overall.due)}</div>
-              </div>
+
+              {page.tail && (
+                <div className="sr-keep flex flex-col gap-3">
+                  <Signatures n="৩" isPayment={false} />
+                  <VerifyNote />
+                </div>
+              )}
+            </div>
+            <div className="mt-auto">
+              <FooterBand
+                left="SE ELECTRONICS · Sales and Service Center"
+                right={`Statement · ${supplier.supplierId} · Page ${p + 1}/${pages.length} · Printed: ${printedOn}`}
+              />
             </div>
           </div>
-
-          <Signatures n="৩" isPayment={false} />
-          <VerifyNote />
         </div>
-        <FooterBand left="SE ELECTRONICS · Sales and Service Center" right={`Statement · ${supplier.supplierId} · Printed: ${printedOn}`} />
-      </div>
-    </div>
+      ))}
+    </>
   );
 }
+
+const MAX_ZOOM = 4;
+const clampZoom = (z: number) => Math.min(MAX_ZOOM, Math.max(1, z));
 
 /**
  * A4 fit-to-screen frame + print toolbar shared by all supplier documents.
  * Children are one or more `.sr-sheet` blocks; print inserts a page break
  * before each sheet after the first, so stacked receipts print one-per-page.
+ *
+ * On screen the fixed-width sheets are scaled down to the viewport width and
+ * can be zoomed (toolbar buttons or two-finger pinch) and panned by scrolling
+ * the page. The pinch is handled here rather than left to the browser because
+ * the in-app webview does not reliably offer native pinch-zoom. Printing
+ * ignores the scale and always outputs the full-size document.
  */
 export function SupplierDocFrame({
   backHref,
@@ -381,27 +454,101 @@ export function SupplierDocFrame({
   printLabel: string;
   children: React.ReactNode;
 }) {
-  const [scale, setScale] = useState(1);
+  const [fit, setFit] = useState(1);
+  const [zoom, setZoom] = useState(1);
   const [h, setH] = useState<number | null>(null);
+  const [vw, setVw] = useState<number | null>(null);
   const colRef = useRef<HTMLDivElement>(null);
+  const zoomRef = useRef(1);
+  // Document point (unscaled px) that must stay under a screen point after a zoom change.
+  const anchorRef = useRef<{ px: number; py: number; cx: number; cy: number } | null>(null);
+  const scale = fit * zoom;
+  const scaleRef = useRef(scale);
+  scaleRef.current = scale;
+  zoomRef.current = zoom;
 
   const measure = () => {
-    setScale(Math.min(1, window.innerWidth / A4_PX));
+    const w = document.documentElement.clientWidth;
+    setVw(w);
+    setFit(Math.min(1, w / A4_PX));
     if (colRef.current) setH(colRef.current.offsetHeight);
   };
   useLayoutEffect(measure, []);
   useEffect(() => {
     window.addEventListener("resize", measure);
     const t = setTimeout(measure, 300);
+    // Re-measure when images (logo, QR, goods photo) change the sheet height.
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    if (ro && colRef.current) ro.observe(colRef.current);
     return () => {
       window.removeEventListener("resize", measure);
       clearTimeout(t);
+      ro?.disconnect();
     };
   }, []);
 
+  /** Change zoom keeping the document point under (cx, cy) in place. */
+  const zoomTo = (next: number, cx: number, cy: number) => {
+    const el = colRef.current;
+    const z = clampZoom(next);
+    if (!el || z === zoomRef.current) return;
+    const r = el.getBoundingClientRect();
+    anchorRef.current = { px: (cx - r.left) / scaleRef.current, py: (cy - r.top) / scaleRef.current, cx, cy };
+    zoomRef.current = z;
+    setZoom(z);
+  };
+  const zoomStep = (factor: number) => zoomTo(zoomRef.current * factor, window.innerWidth / 2, window.innerHeight / 2);
+
+  useLayoutEffect(() => {
+    const a = anchorRef.current;
+    const el = colRef.current;
+    if (!a || !el) return;
+    anchorRef.current = null;
+    const r = el.getBoundingClientRect();
+    window.scrollBy(r.left + a.px * scale - a.cx, r.top + a.py * scale - a.cy);
+  }, [scale]);
+
+  // Two-finger pinch zoom on the document.
+  useEffect(() => {
+    const el = colRef.current;
+    if (!el) return;
+    let startDist = 0;
+    let startZoom = 1;
+    const dist = (t: TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        startDist = dist(e.touches);
+        startZoom = zoomRef.current;
+      }
+    };
+    const onMove = (e: TouchEvent) => {
+      if (e.touches.length !== 2 || !startDist) return;
+      if (e.cancelable) e.preventDefault();
+      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      zoomTo(startZoom * (dist(e.touches) / startDist), cx, cy);
+    };
+    const onEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) startDist = 0;
+    };
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd);
+    el.addEventListener("touchcancel", onEnd);
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+    };
+  }, []);
+
+  const zoomBtn = "size-9 inline-flex items-center justify-center bg-white text-gray-700 disabled:opacity-40";
+
   return (
-    <div className="min-h-screen bg-gray-100 py-0 sm:py-8 print:bg-white print:py-0 font-sans text-black overflow-x-hidden">
-      <div className="sr-noprint sticky top-0 z-10 px-4 py-2 flex flex-wrap gap-2 items-center justify-between bg-white border-b border-gray-200 shadow-sm">
+    // w-max + min-w-full: the page grows with the zoomed sheet, so the window itself pans in both directions.
+    <div className="sr-root w-max min-w-full min-h-screen bg-gray-100 py-0 sm:py-8 print:bg-white print:py-0 font-sans text-black">
+      <div style={{ width: vw ?? undefined }} className="sr-noprint sticky top-0 left-0 z-10 max-w-full px-3 py-2 flex flex-wrap gap-2 items-center justify-between bg-white border-b border-gray-200 shadow-sm">
         {backHref ? (
           <Link href={backHref} className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md shadow-sm text-sm font-medium">
             <ArrowLeft className="w-4 h-4" />
@@ -410,6 +557,17 @@ export function SupplierDocFrame({
         ) : (
           <span />
         )}
+        <div className="inline-flex items-center border border-gray-300 rounded-md overflow-hidden shadow-sm divide-x divide-gray-300">
+          <button type="button" aria-label="Zoom out" onClick={() => zoomStep(1 / 1.4)} disabled={zoom <= 1} className={zoomBtn}>
+            <ZoomOut className="w-4 h-4" />
+          </button>
+          <button type="button" aria-label="Fit to screen" onClick={() => zoomTo(1, 0, 0)} disabled={zoom <= 1} className={`${zoomBtn} !w-12 text-[11px] font-bold`}>
+            {Math.round(zoom * 100)}%
+          </button>
+          <button type="button" aria-label="Zoom in" onClick={() => zoomStep(1.4)} disabled={zoom >= MAX_ZOOM} className={zoomBtn}>
+            <ZoomIn className="w-4 h-4" />
+          </button>
+        </div>
         <button onClick={() => window.print()} className="inline-flex items-center gap-2 px-6 py-2 text-white rounded-md shadow-sm text-sm font-medium" style={{ background: NAVY }}>
           <Printer className="w-4 h-4" />
           {printLabel}
@@ -417,7 +575,13 @@ export function SupplierDocFrame({
       </div>
 
       <div className="sr-fit mx-auto" style={{ width: A4_PX * scale, height: h ? h * scale : undefined }}>
-        <div ref={colRef} className="sr-scale origin-top-left flex flex-col items-center gap-6 py-4 print:py-0 print:gap-0" style={{ transform: `scale(${scale})` }}>
+        {/* Explicit A4 width: without it the column takes the (narrow) scaled width and the
+            centred 21cm sheet overflows to the left, where it cannot be scrolled into view. */}
+        <div
+          ref={colRef}
+          className="sr-scale origin-top-left flex flex-col items-center gap-6 py-4 print:py-0 print:gap-0"
+          style={{ width: A4_PX, transform: `scale(${scale})`, touchAction: "pan-x pan-y" }}
+        >
           {children}
         </div>
       </div>
@@ -428,10 +592,14 @@ export function SupplierDocFrame({
         @media print {
           @page { size: A4 portrait; margin: 6mm; }
           .sr-noprint { display: none !important; }
+          .sr-root { width: auto !important; min-width: 0 !important; min-height: 0 !important; }
           .sr-fit { width: auto !important; height: auto !important; }
           .sr-scale { transform: none !important; width: 100% !important; gap: 0 !important; }
           .sr-sheet { width: 100% !important; box-shadow: none !important; }
+          .sr-page { min-height: 0 !important; }
           .sr-sheet + .sr-sheet { break-before: page; page-break-before: always; }
+          .sr-sheet thead { display: table-header-group; }
+          .sr-sheet tr, .sr-keep { break-inside: avoid; page-break-inside: avoid; }
           body { background-color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
       `,

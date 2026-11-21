@@ -97,9 +97,9 @@ export default async function StaffInvoiceDetailsPage({ params }: { params: Prom
           <Head icon={User} title="Recipient Information" tone="bg-[#8b3fe8]" />
           {(() => {
             const isVirtual = st === "credited";
-            const key = isVirtual ? "virtual" : themes[method] ? method : "bank";
+            // The SE virtual account uses the light (pale blue) theme so it matches the other method cards.
+            const key = isVirtual ? "virtualLight" : themes[method] ? method : "bank";
             const t = themes[key];
-            const dark = key === "virtual";
             const idLine = isVirtual ? String(payment.staffId) : payment.receiverWalletNumber || payment.receiverBankInfo?.accountNumber || String(session.username);
             return (
               <div className={clsx("relative overflow-hidden rounded-md border p-3 flex items-start gap-3", t.card, t.border)}>
@@ -107,20 +107,20 @@ export default async function StaffInvoiceDetailsPage({ params }: { params: Prom
                 <span className={clsx("absolute -right-4 -bottom-6 opacity-[0.08] pointer-events-none", t.mark)}>
                   {logos[key] ? <Image src={logos[key]} alt="" width={140} height={140} className="size-32 object-contain" /> : <Wallet size={120} />}
                 </span>
-                <span className={clsx("relative flex flex-col gap-1 min-w-0 flex-1 text-[12px] font-semibold uppercase tracking-wide", dark ? "text-white/80" : "text-[#5b6784]")}>
-                  <span className={clsx("text-[18px] font-extrabold normal-case tracking-normal inline-flex items-center gap-1.5", dark ? "text-white" : "text-[#16213a]")}>{idLine}<Copy size={14} className={dark ? "text-[#7fb4ff]" : "text-[#1f7cf0]"} /></span>
+                <span className={clsx("relative flex flex-col gap-1 min-w-0 flex-1 text-[12px] font-semibold uppercase tracking-wide", "text-[#5b6784]")}>
+                  <span className={"text-[18px] font-extrabold normal-case tracking-normal inline-flex items-center gap-1.5 text-[#16213a]"}>{idLine}<Copy size={14} className="text-[#1f7cf0]" /></span>
                   <span>Staff-member <span className="opacity-50">•</span> {isVirtual ? "Virtual Balance" : method || "N/A"}</span>
                   {isVirtual ? (
-                    <><span>Account <b className="text-white">SE Virtual Account</b></span><span>Credited for <b className="text-white">{jobId ? `Job #${jobId}` : "Completed service"}</b></span></>
+                    <><span>Account <b className="text-[#0b3d91]">SE Virtual Account</b></span><span>Credited for <b className="text-[#0b3d91]">{jobId ? `Job #${jobId}` : "Completed service"}</b></span></>
                   ) : (
                     <span>{key === "bank" ? "Account number" : "Wallet number"} <b className="text-[#16213a]">{payment.receiverWalletNumber || payment.receiverBankInfo?.accountNumber || "N/A"}</b></span>
                   )}
-                  <span>Amount <b className={dark ? "text-white" : "text-[#16213a]"}>৳{amount.toLocaleString()}</b></span>
-                  <span>Trx ID <b className={dark ? "text-white" : "text-[#16213a]"}>{payment.transactionId || "N/A"}</b></span>
+                  <span>Amount <b className="text-[#16213a]">৳{amount.toLocaleString()}</b></span>
+                  <span>Trx ID <b className="text-[#16213a]">{payment.transactionId || "N/A"}</b></span>
                 </span>
                 <span className="relative flex flex-col items-center gap-1.5 shrink-0">
                   {isVirtual ? (
-                    <span className="size-16 rounded-md bg-white/15 border border-white/25 text-white flex flex-col items-center justify-center"><Wallet size={28} /></span>
+                    <span className="size-16 rounded-md bg-white border border-[#c5d8fa] text-[#0b3d91] flex flex-col items-center justify-center shadow-sm"><Wallet size={28} /></span>
                   ) : logos[key] ? (
                     <span className="size-16 rounded-md bg-white border border-white flex items-center justify-center shadow-sm"><Image src={logos[key]} alt={key} width={56} height={56} className="size-12 object-contain" /></span>
                   ) : (

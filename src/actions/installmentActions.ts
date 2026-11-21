@@ -1435,8 +1435,10 @@ export const claimInstallmentPayment = async (input: {
     // Both are best-effort: wrapped so a failed send never breaks the claim.
     try {
       const { notifyAdminSms, notifyAdminVoice } = await import("@/lib/adminVoiceNotify");
+      // Keep the admin SMS short — unicode SMS bills per 70 chars, so a long
+      // message costs several segments. Essentials only: ID, name, amount.
       await notifyAdminSms(
-        `SE Electronics: কিস্তি পেমেন্ট জমা হয়েছে। কিস্তি আইডি ${plan.planCode}, কিস্তি #${row.installmentNo}। গ্রাহক ${plan.customerName || "গ্রাহক"} (${plan.customerPhone || ""}) ${methodBn}-এ ৳${row.amount} দিয়েছে। এই আইডি দিয়ে সার্চ করে যাচাই ও অ্যাপ্রুভ করুন।`,
+        `SE Electronics: কিস্তি পেমেন্ট জমা — আইডি ${plan.planCode}, ${plan.customerName || "গ্রাহক"}, ৳${row.amount}। ড্যাশবোর্ড চেক করুন।`,
       );
       await notifyAdminVoice("installment_payment_claim");
     } catch (e) {

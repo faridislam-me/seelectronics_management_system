@@ -384,25 +384,32 @@ export const invoiceRelations = relations(invoices, ({ one, many }) => ({
   products: many(products),
 }));
 
-export const products = pgTable("products", {
-  id: uuid().defaultRandom().primaryKey(),
-  invoiceId: uuid()
-    .references(() => invoices.id, { onDelete: "cascade" })
-    .notNull(),
-  type: productTypeEnum().notNull(),
-  model: varchar({ length: 255 }).notNull(),
-  serialNumber: varchar({ length: 255 }),
-  quantity: integer().default(1).notNull(),
-  unitPrice: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
-  warrantyStartDate: timestamp({ withTimezone: true }).notNull(),
-  warrantyDurationMonths: integer().notNull(),
-  warrantyEndDate: timestamp({ withTimezone: true }).defaultNow().notNull(),
-  createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp({ withTimezone: true })
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
+export const products = pgTable(
+  "products",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    invoiceId: uuid()
+      .references(() => invoices.id, { onDelete: "cascade" })
+      .notNull(),
+    type: productTypeEnum().notNull(),
+    model: varchar({ length: 255 }).notNull(),
+    serialNumber: varchar({ length: 255 }),
+    quantity: integer().default(1).notNull(),
+    unitPrice: numeric({ precision: 12, scale: 2, mode: "number" }).notNull(),
+    warrantyStartDate: timestamp({ withTimezone: true }).notNull(),
+    warrantyDurationMonths: integer().notNull(),
+    warrantyEndDate: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp({ withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  // products are always loaded by their parent invoice (invoice detail, and the
+  // referral page's "what the referred customer bought" lookup). Without this
+  // index that join is a full sequential scan of the whole products table.
+  (table) => [index("products_invoice_id_idx").on(table.invoiceId)],
+);
 
 export const productsRelations = relations(products, ({ one }) => ({
   invoice: one(invoices, {
@@ -1041,17 +1048,29 @@ export const staffNotifications = pgTable("staffNotifications", {
   createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
 });
 
-export const customerNotifications = pgTable("customerNotifications", {
-  id: uuid().defaultRandom().primaryKey(),
-  customerId: varchar({ length: 255 })
-    .references(() => customers.customerId, { onDelete: "cascade" })
-    .notNull(),
-  type: varchar({ length: 50 }).notNull(),
-  message: text().notNull(),
-  link: varchar({ length: 255 }),
-  isRead: boolean().default(false).notNull(),
-  createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
-});
+export const customerNotifications = pgTable(
+  "customerNotifications",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    customerId: varchar({ length: 255 })
+      .references(() => customers.customerId, { onDelete: "cascade" })
+      .notNull(),
+    type: varchar({ length: 50 }).notNull(),
+    message: text().notNull(),
+    link: varchar({ length: 255 }),
+    isRead: boolean().default(false).notNull(),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+  // The customer notifications page queries WHERE customerId = ? ORDER BY
+  // createdAt DESC. This composite index serves both the filter and the sort;
+  // without it every load was a full seq scan + sort of the whole table.
+  (table) => [
+    index("customer_notifications_customer_created_idx").on(
+      table.customerId,
+      table.createdAt,
+    ),
+  ],
+);
 
 export const sellerNotifications = pgTable(
   "sellerNotifications",
@@ -1139,23 +1158,39 @@ export const notices = pgTable("notices", {
     .notNull(),
 });
 
-export const noticeRecipients = pgTable("noticeRecipients", {
-  id: uuid().defaultRandom().primaryKey(),
-  noticeId: uuid()
-    .references(() => notices.id, { onDelete: "cascade" })
-    .notNull(),
-  staffId: varchar({ length: 255 }).references(() => staffs.staffId, {
-    onDelete: "cascade",
-  }),
-  customerId: varchar({ length: 255 }).references(() => customers.customerId, {
-    onDelete: "cascade",
-  }),
-  isRead: boolean().default(false).notNull(),
-  readAt: timestamp({ withTimezone: true }),
-  isAcknowledged: boolean().default(false).notNull(),
-  acknowledgedAt: timestamp({ withTimezone: true }),
-  createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
-});
+export const noticeRecipients = pgTable(
+  "noticeRecipients",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    noticeId: uuid()
+      .references(() => notices.id, { onDelete: "cascade" })
+      .notNull(),
+    staffId: varchar({ length: 255 }).references(() => staffs.staffId, {
+      onDelete: "cascade",
+    }),
+    customerId: varchar({ length: 255 }).references(() => customers.customerId, {
+      onDelete: "cascade",
+    }),
+    isRead: boolean().default(false).notNull(),
+    readAt: timestamp({ withTimezone: true }),
+    isAcknowledged: boolean().default(false).notNull(),
+    acknowledgedAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+  // Notices are listed per recipient: customers query WHERE customerId = ?
+  // ORDER BY createdAt DESC, staff WHERE staffId = ? ORDER BY createdAt DESC.
+  // Without these the notifications feed did a full seq scan + sort every load.
+  (table) => [
+    index("notice_recipients_customer_created_idx").on(
+      table.customerId,
+      table.createdAt,
+    ),
+    index("notice_recipients_staff_created_idx").on(
+      table.staffId,
+      table.createdAt,
+    ),
+  ],
+);
 
 export const noticesRelations = relations(notices, ({ many, one }) => ({
   recipients: many(noticeRecipients),

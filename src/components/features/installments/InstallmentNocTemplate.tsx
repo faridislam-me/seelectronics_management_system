@@ -186,7 +186,7 @@ export default function InstallmentNocTemplate({
           <div className="text-center">
             {data.managerSign ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={data.managerSign} alt="manager sign" className="h-[58px] mx-auto object-contain" />
+              <img src={data.managerSign} alt="manager sign" className="h-[66px] mx-auto object-contain" />
             ) : <div className="h-[58px]" />}
             <div className="border-t-2 mx-auto w-[86%] pt-1" style={{ borderColor: NAVY }}>
               <div className="text-[11.5px] font-extrabold text-slate-800">প্রতিষ্ঠানের ম্যানেজার</div>

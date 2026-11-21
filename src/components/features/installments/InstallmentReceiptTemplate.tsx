@@ -143,7 +143,7 @@ export default function InstallmentReceiptTemplate({
                 <img
                   src={data.chairmanSign}
                   alt="চেয়ারম্যান স্বাক্ষর"
-                  className="h-[72px] w-[200px] object-contain"
+                  className="h-[40px] w-[120px] object-contain"
                 />
               ) : null}
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -151,7 +151,7 @@ export default function InstallmentReceiptTemplate({
                 <img
                   src={data.chairmanSeal}
                   alt="চেয়ারম্যান সিল"
-                  className="-mt-3 h-[70px] w-[230px] object-contain"
+                  className="-mt-2 h-[48px] w-[144px] object-contain"
                 />
               ) : null}
             </div>

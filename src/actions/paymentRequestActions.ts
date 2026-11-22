@@ -16,10 +16,11 @@ const PaymentRequestSchema = z.object({
 });
 
 /**
- * Get staff's available (virtual) balance.
- * Balance = total added by admin (status='pending','processing','approved','requested')
- *          minus total completed/rejected.
- * Simplified: sum of amounts where status is NOT 'completed' and NOT 'rejected'.
+ * Get staff's available (virtual) balance. MUST stay consistent with
+ * getStaffAvailableBalance (staffActions): credited earnings minus only the
+ * staff's OWN withdrawals/spends — payout requests (`REQ-…`) and recharge
+ * spends (`RCH-…`). Owner-given advances / salary (status "completed" but not
+ * `REQ-`/`RCH-`, e.g. `OB_…`) are EXCLUDED so they never reduce earned balance.
  */
 export async function getStaffBalance(staffId: string) {
   try {
@@ -41,6 +42,7 @@ export async function getStaffBalance(staffId: string) {
         and(
           eq(payments.staffId, staffId),
           sql`${payments.status} IN ('requested', 'pending', 'processing', 'approved', 'completed')`,
+          sql`(${payments.invoiceNumber} LIKE 'REQ-%' OR ${payments.invoiceNumber} LIKE 'RCH-%')`,
         ),
       )
       .limit(1);

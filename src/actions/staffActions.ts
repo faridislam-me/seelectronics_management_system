@@ -1129,17 +1129,25 @@ export async function setStaffCredentials(
 /**
  * Staff's spendable balance — the SAME value shown across the staff app as
  * `availableBalance` (see getStaffProfileStats): total credited earnings minus
- * everything already requested / paid out. This is the balance staff spend from
+ * only the staff's OWN withdrawals/spends. This is the balance staff spend from
  * when buying mobile recharges / regular packs; there is no separate wallet or
  * drive balance. getStaffProfileStats delegates to this so the number is
  * computed in exactly one place.
+ *
+ * Balance = SUM(credited earnings) − SUM(genuine staff withdrawals).
+ * A "genuine staff withdrawal" is only what the staff themselves cashed out:
+ * payout requests (invoiceNumber `REQ-…`, from requestPayment) and mobile
+ * recharge spends (`RCH-…`, from requestStaffMobileRecharge). Owner-given
+ * advances / salary entered on the admin Payments page (status "completed" but
+ * NOT `REQ-`/`RCH-`, e.g. `OB_…`) are explicitly EXCLUDED — they must never
+ * eat into the staff's earned balance.
  */
 export async function getStaffAvailableBalance(staffId: string) {
   try {
     const [sums] = await db
       .select({
         added: sql<number>`COALESCE(SUM(${payments.amount}) FILTER (WHERE status = 'credited'), 0)`,
-        requested: sql<number>`COALESCE(SUM(${payments.amount}) FILTER (WHERE status IN ('requested', 'pending', 'approved', 'completed')), 0)`,
+        requested: sql<number>`COALESCE(SUM(${payments.amount}) FILTER (WHERE status IN ('requested', 'pending', 'processing', 'approved', 'completed') AND (${payments.invoiceNumber} LIKE 'REQ-%' OR ${payments.invoiceNumber} LIKE 'RCH-%')), 0)`,
       })
       .from(payments)
       .where(eq(payments.staffId, staffId));
@@ -1149,7 +1157,10 @@ export async function getStaffAvailableBalance(staffId: string) {
       success: true as const,
       totalEarnings,
       pendingPayments,
-      // Never negative: payouts recorded without a matching earnings credit must not show as debt.
+      // Defensive non-negative floor. Now that only balance-gated staff
+      // withdrawals (REQ-/RCH-) subtract — and those can never exceed the
+      // credited earnings that gated them — this should never actually clamp;
+      // it only guards against transient/legacy data anomalies.
       balance: Math.max(0, totalEarnings - pendingPayments),
     };
   } catch (error) {

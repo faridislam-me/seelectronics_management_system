@@ -62,7 +62,7 @@ export default function RechargeLandingPage() {
   return (
     <>
       {/* Header */}
-      <div className="flex items-center gap-2.5">
+      <div className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
         <Link href="/customer/referral" className="size-9 rounded-md bg-white border border-[#dfe6f2] flex items-center justify-center shrink-0"><ArrowLeft size={18} /></Link>
         <span className="flex flex-col leading-tight flex-1">
           <span className="text-[16px] font-extrabold">মোবাইল রিচার্জ</span>

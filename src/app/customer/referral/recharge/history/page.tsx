@@ -54,7 +54,7 @@ export default function RechargeHistoryPage() {
 
   return (
     <>
-      <div className="flex items-center gap-2.5 pt-1">
+      <div className="rounded-md bg-white border border-[#dfe6f2] p-2.5 flex items-center gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">
         <Link href="/customer/referral/recharge" className="size-9 rounded-md bg-white border border-[#dfe6f2] flex items-center justify-center shrink-0">
           <ArrowLeft size={18} />
         </Link>

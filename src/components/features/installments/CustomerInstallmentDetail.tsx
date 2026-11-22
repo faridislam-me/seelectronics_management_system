@@ -6,7 +6,7 @@ import clsx from "clsx";
 import { CheckCircle2, ChevronRight, CreditCard, History, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { bdt, PlanHeader, PlanHeroCard } from "./CustomerInstallmentShared";
+import { bdt, isPlanComplete, PlanHeader, PlanHeroCard } from "./CustomerInstallmentShared";
 
 // Application approval-journey steps (same order as the apply tracking page),
 // shown as the plan's "ট্র্যাকিং" — NOT the payment schedule.
@@ -31,6 +31,7 @@ const APP_STEPS: { key: string; label: string }[] = [
 export default function CustomerInstallmentDetail({ data }: { data: any }) {
   const { plan, nextDue, productImageUrl, documents } = data;
   const [zoomImg, setZoomImg] = useState<{ url: string; label: string } | null>(null);
+  const completed = isPlanComplete(plan);
   const hasDue = plan.status === "active" && !!nextDue;
 
   // Submitted KYC images for THIS installment (customer + guarantor), signed URLs
@@ -67,27 +68,36 @@ export default function CustomerInstallmentDetail({ data }: { data: any }) {
       {/* Call to action — opens the payment page (figures, Pay Now, schedule, receipts) */}
       <Link
         href={`/customer/installments/${plan.planCode}/payment`}
-        className="group relative overflow-hidden rounded-xl bg-[linear-gradient(110deg,#0a2f70_0%,#1259c9_55%,#1f7cf0_100%)] text-white p-3.5 flex flex-col gap-3 shadow-[0_10px_26px_rgba(11,61,145,0.3)] active:scale-[0.99] transition"
+        className={clsx(
+          "group relative overflow-hidden rounded-xl text-white p-3.5 flex flex-col gap-3 active:scale-[0.99] transition",
+          completed
+            ? "bg-[linear-gradient(110deg,#0d7a39_0%,#1a9c4b_55%,#34c76a_100%)] shadow-[0_10px_26px_rgba(23,138,66,0.3)]"
+            : "bg-[linear-gradient(110deg,#0a2f70_0%,#1259c9_55%,#1f7cf0_100%)] shadow-[0_10px_26px_rgba(11,61,145,0.3)]",
+        )}
       >
         <span className="pointer-events-none absolute -right-8 -top-10 size-32 rounded-full bg-white/10" />
         <span className="pointer-events-none absolute -right-2 top-10 size-16 rounded-full bg-white/10" />
         <span className="relative flex items-center gap-3">
           <span className="size-12 rounded-xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0">
-            <Wallet size={24} />
+            {completed ? <CheckCircle2 size={24} /> : <Wallet size={24} />}
           </span>
           <span className="flex flex-col min-w-0 flex-1 leading-tight gap-1">
-            <span className="text-[16px] font-black leading-snug">মাসিক কিস্তির টাকা পরিশোধ করুন</span>
+            <span className="text-[16px] font-black leading-snug">
+              {completed ? "কিস্তি সম্পূর্ণ পরিশোধিত" : "মাসিক কিস্তির টাকা পরিশোধ করুন"}
+            </span>
             <span className="text-[11.5px] font-semibold text-white/85">
-              {hasDue
-                ? `পরবর্তী কিস্তি (#${nextDue.installmentNo}) — ${formatDate(nextDue.dueDate)}`
-                : "কিস্তির হিসাব, সময়সূচি ও রসিদ দেখুন"}
+              {completed
+                ? "সব কিস্তি পরিশোধ হয়েছে — রসিদ ও সময়সূচি দেখুন"
+                : hasDue
+                  ? `পরবর্তী কিস্তি (#${nextDue.installmentNo}) — ${formatDate(nextDue.dueDate)}`
+                  : "কিস্তির হিসাব, সময়সূচি ও রসিদ দেখুন"}
             </span>
           </span>
         </span>
         <span className="relative flex items-center justify-between gap-3 pt-3 border-t border-white/20">
           <span className="flex flex-col leading-tight">
-            <span className="text-[10.5px] font-semibold text-white/75">{hasDue ? "এই কিস্তির পরিমাণ" : "মাসিক কিস্তি"}</span>
-            <span className="text-[22px] font-black leading-tight">{bdt(hasDue ? nextDue.amount : plan.monthlyAmount)}</span>
+            <span className="text-[10.5px] font-semibold text-white/75">{completed ? "অবস্থা" : hasDue ? "এই কিস্তির পরিমাণ" : "মাসিক কিস্তি"}</span>
+            <span className="text-[22px] font-black leading-tight">{completed ? "পরিশোধিত ✓" : bdt(hasDue ? nextDue.amount : plan.monthlyAmount)}</span>
           </span>
           <span className="shrink-0 h-10 px-4 rounded-lg bg-white text-[#0b3d91] text-[13px] font-extrabold inline-flex items-center gap-1 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
             {hasDue ? "পরিশোধ করুন" : "বিস্তারিত দেখুন"}

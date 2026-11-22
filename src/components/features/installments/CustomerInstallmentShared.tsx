@@ -10,11 +10,15 @@ export const bdt = (n: number) => `৳${Number(n).toLocaleString("en-US", { maxi
 
 export const PLAN_STATUS: Record<string, { label: string; cls: string }> = {
   active: { label: "চলমান", cls: "bg-[#e8f1ff] text-[#1b6fd6]" },
-  completed: { label: "সম্পন্ন", cls: "bg-[#e9f9ef] text-[#178a42]" },
+  completed: { label: "শেষ হয়েছে", cls: "bg-[#e9f9ef] text-[#178a42]" },
   defaulted: { label: "খেলাপি", cls: "bg-[#fff6e3] text-[#b8620b]" },
   banned: { label: "ব্যান", cls: "bg-[#ffe9ec] text-[#c81f38]" },
   cancelled: { label: "বাতিল", cls: "bg-gray-100 text-gray-500" },
 };
+
+/** True once the plan is fully paid off (server marks it "completed"). */
+export const isPlanComplete = (plan: any): boolean =>
+  plan?.status === "completed" || (plan?.remainingCount != null && plan.remainingCount <= 0 && plan?.status === "active");
 
 // Human-readable product category labels for the stored productType codes.
 const PRODUCT_TYPE_LABELS: Record<string, string> = {

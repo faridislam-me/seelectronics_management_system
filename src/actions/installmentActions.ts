@@ -553,6 +553,16 @@ const planProgress = (
   };
 };
 
+/**
+ * Effective plan status for the customer views. An "active" plan whose every
+ * installment is paid off (no dues left) is shown as "completed" even if the
+ * stored status was never flipped — so the badge reads "শেষ হয়েছে", the plan
+ * drops out of the "চলমান" count, and the NOC/pay UI treat it as done. Terminal
+ * statuses (banned/cancelled/defaulted/already-completed) are left untouched.
+ */
+const effectivePlanStatus = (status: string, remainingCount: number): string =>
+  status === "active" && remainingCount <= 0 ? "completed" : status;
+
 /** Customer: is my installment profile locked (banned by admin)? */
 export const getMyInstallmentLockStatus = async () => {
   const session = await verifyCustomerSession();
@@ -601,12 +611,17 @@ export const getMyInstallmentPlans = async () => {
     }
 
     const data = await Promise.all(
-      plans.map(async (p) => ({
-        ...p,
-        // Admin-set product photo (shown on the list card); null when unset.
-        productImageUrl: p.productImageKey ? await getObjectUrl(p.productImageKey).catch(() => null) : null,
-        ...planProgress(p.financedAmount, p.months, byPlan.get(p.id) || []),
-      })),
+      plans.map(async (p) => {
+        const prog = planProgress(p.financedAmount, p.months, byPlan.get(p.id) || []);
+        return {
+          ...p,
+          // Fully-paid plans read as "completed" even if the stored status lagged.
+          status: effectivePlanStatus(p.status, prog.remainingCount),
+          // Admin-set product photo (shown on the list card); null when unset.
+          productImageUrl: p.productImageKey ? await getObjectUrl(p.productImageKey).catch(() => null) : null,
+          ...prog,
+        };
+      }),
     );
 
     return { success: true, locked: false, data };
@@ -639,7 +654,11 @@ export const getMyInstallmentDashboard = async () => {
       byPlan.set(r.planId, arr);
     }
 
-    const plansData = plans.map((p) => ({ ...p, ...planProgress(p.financedAmount, p.months, byPlan.get(p.id) || []) }));
+    const plansData = plans.map((p) => {
+      const prog = planProgress(p.financedAmount, p.months, byPlan.get(p.id) || []);
+      // A fully-paid plan shows as "completed" (drops out of the "চলমান" count).
+      return { ...p, status: effectivePlanStatus(p.status, prog.remainingCount), ...prog };
+    });
 
     const overdueCount = scheduleRows.filter((r) => r.status === "overdue").length;
     const totalPaid = round2(scheduleRows.filter((r) => r.status === "paid").reduce((s, r) => s + r.paidAmount, 0));
@@ -775,11 +794,14 @@ export const getMyInstallmentPlanByCode = async (code: string) => {
       };
     }
 
+    const prog = planProgress(plan.financedAmount, plan.months, schedule);
     return {
       success: true,
       data: {
         locked: false as const,
-        plan,
+        // Show a fully-paid plan as "completed" (badge "শেষ হয়েছে", NOC unlocked,
+        // no "Pay Now") even if the stored status was never flipped.
+        plan: { ...plan, status: effectivePlanStatus(plan.status, prog.remainingCount) },
         schedule,
         nextDue,
         productImageUrl,
@@ -788,7 +810,7 @@ export const getMyInstallmentPlanByCode = async (code: string) => {
           ? { applicationCode: application.applicationCode, trackingStep: application.trackingStep, status: application.status, createdAt: application.createdAt }
           : null,
         appTracking,
-        ...planProgress(plan.financedAmount, plan.months, schedule),
+        ...prog,
       },
     };
   } catch (error) {

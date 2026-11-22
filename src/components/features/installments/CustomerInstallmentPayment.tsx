@@ -22,7 +22,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { bdt, PlanHeader, PlanHeroCard } from "./CustomerInstallmentShared";
+import { bdt, isPlanComplete, PlanHeader, PlanHeroCard } from "./CustomerInstallmentShared";
 
 const PAY_METHODS = [
   { key: "bkash" as const, label: "bKash", color: "text-[#d1137b]", bg: "bg-[#e2136e]", logo: "/payment-methods/bkash.jpg", number: paymentDetails.bkash.number },
@@ -59,6 +59,7 @@ export default function CustomerInstallmentPayment({ data }: { data: any }) {
   const [payNum, setPayNum] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const completed = isPlanComplete(plan);
   const paidSchedules = schedule.filter((r: any) => r.status === "paid");
   // The installment product (brand + model) — shown on each payment-history card
   // next to the method so the customer sees which product the কিস্তি is for.
@@ -150,6 +151,17 @@ export default function CustomerInstallmentPayment({ data }: { data: any }) {
         >
           <Award size={16} /> NOC সার্টিফিকেট ডাউনলোড
         </Link>
+      )}
+
+      {/* Fully paid → success banner (no Pay Now, since there is nothing due) */}
+      {completed && (
+        <div className="rounded-xl bg-[linear-gradient(105deg,#0d7a39,#34c76a)] text-white p-3.5 flex items-center gap-3 shadow-[0_8px_22px_rgba(23,138,66,0.25)]">
+          <span className="size-11 rounded-lg bg-white/15 border border-white/25 flex items-center justify-center shrink-0"><CheckCircle2 size={24} /></span>
+          <span className="flex flex-col min-w-0 flex-1 leading-tight">
+            <span className="text-[15px] font-black">কিস্তি সম্পূর্ণ পরিশোধিত</span>
+            <span className="text-[11.5px] font-semibold text-white/85">সব কিস্তি পরিশোধ হয়েছে — NOC সার্টিফিকেট ডাউনলোড করতে পারেন।</span>
+          </span>
+        </div>
       )}
 
       {/* Next due / Pay Now */}

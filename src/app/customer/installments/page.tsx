@@ -23,7 +23,7 @@ const bdt = (n: number) => `৳${Number(n).toLocaleString("en-US", { maximumFrac
 
 const PLAN_STATUS: Record<string, { label: string; cls: string }> = {
   active: { label: "চলমান", cls: "bg-[#e8f1ff] text-[#1b6fd6] border-[#cfe0fb]" },
-  completed: { label: "সম্পন্ন", cls: "bg-[#e9f9ef] text-[#178a42] border-[#bfe8cd]" },
+  completed: { label: "শেষ হয়েছে", cls: "bg-[#e9f9ef] text-[#178a42] border-[#bfe8cd]" },
   defaulted: { label: "খেলাপি", cls: "bg-[#fff6e3] text-[#b8620b] border-[#f5dfa0]" },
   banned: { label: "ব্যান", cls: "bg-[#ffe9ec] text-[#c81f38] border-[#f7c3ca]" },
   cancelled: { label: "বাতিল", cls: "bg-gray-100 text-gray-500 border-gray-200" },

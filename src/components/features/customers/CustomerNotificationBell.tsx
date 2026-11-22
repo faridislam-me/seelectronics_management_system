@@ -3,10 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell, Check, ExternalLink } from "lucide-react";
 import Link from "next/link";
-import {
-  getCustomerNotifications,
-  markCustomerNotificationAsRead,
-} from "@/actions/customerActions";
+import { getCustomerUnreadNotificationCount } from "@/actions/customerActions";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
 
@@ -18,9 +15,9 @@ export default function CustomerNotificationBell({
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchNotifications = async () => {
-    const res = await getCustomerNotifications();
-    if (res.success && res.data) {
-      setUnreadCount(res.data.filter((n: any) => !n.isRead).length);
+    const res = await getCustomerUnreadNotificationCount();
+    if (res.success) {
+      setUnreadCount(res.count);
     }
   };
 

@@ -126,6 +126,35 @@ export async function getCustomerNotifications() {
 }
 
 /**
+ * Returns ONLY the unread notification count for the logged-in customer.
+ *
+ * The header notification bell renders on every customer page and polls every
+ * 60s. It used to call getCustomerNotifications() (fetching every row, with
+ * full message text, over neon-http) just to compute `.filter(!isRead).length`
+ * in JS. This pushes that down to a single COUNT(*) so the bell transfers one
+ * integer instead of the whole — unbounded and growing — notifications table.
+ */
+export async function getCustomerUnreadNotificationCount() {
+    try {
+        const session = await verifySession(false, 'customer');
+        if (!session || !session.isAuth) return { success: false, count: 0 };
+
+        const [row] = await db
+            .select({ value: count() })
+            .from(customerNotifications)
+            .where(and(
+                eq(customerNotifications.customerId, session.userId as string),
+                eq(customerNotifications.isRead, false)
+            ));
+
+        return { success: true, count: row?.value ?? 0 };
+    } catch (error) {
+        console.error("Error counting unread notifications:", error);
+        return { success: false, count: 0 };
+    }
+}
+
+/**
  * Marks a specific notification as read for a customer
  */
 export async function markCustomerNotificationAsRead(id: string) {
@@ -434,8 +463,11 @@ export async function getCustomerDashboardStatus() {
         const session = await verifySession(false, 'customer');
         if (!session || !session.isAuth) return { success: false };
 
+        // Only two fields are needed; avoid SELECT * of the wide customers row.
+        // This runs on every customer page (bottom-nav warranty banner).
         const customer = await db.query.customers.findFirst({
-            where: eq(customers.customerId, session.userId as string)
+            where: eq(customers.customerId, session.userId as string),
+            columns: { isWarrantyStopped: true, warrantyStopReason: true }
         });
 
         if (!customer) return { success: false };

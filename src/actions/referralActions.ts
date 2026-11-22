@@ -3,7 +3,7 @@
 import { db } from "@/db/drizzle";
 import { customers, referralBonuses, referralPaymentRequests } from "@/db/schema";
 import { verifySession } from "@/lib";
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -17,7 +17,10 @@ export const getCustomerReferralData = async () => {
     const customerId = session.userId as string;
 
     // These three reads are independent, so run them as one batch instead of
-    // three sequential neon-http round-trips.
+    // sequential neon-http round-trips. The bonuses read also pulls each
+    // referred customer's invoice + products inline (via the `referred`
+    // relation), which removes the extra dependent round-trip that previously
+    // ran AFTER this batch (fetch bonuses -> collect ids -> fetch customers).
     const [customer, rawBonuses, requests] = await Promise.all([
       db.query.customers.findFirst({
         where: eq(customers.customerId, customerId),
@@ -31,6 +34,17 @@ export const getCustomerReferralData = async () => {
       db.query.referralBonuses.findMany({
         where: eq(referralBonuses.referrerCustomerId, customerId),
         orderBy: [desc(referralBonuses.createdAt)],
+        with: {
+          referred: {
+            columns: { invoiceNumber: true },
+            with: {
+              invoice: {
+                columns: { invoiceNumber: true },
+                with: { products: { columns: { type: true, model: true, quantity: true } } },
+              },
+            },
+          },
+        },
       }),
       db.query.referralPaymentRequests.findMany({
         where: eq(referralPaymentRequests.customerId, customerId),
@@ -41,24 +55,13 @@ export const getCustomerReferralData = async () => {
     if (!customer) return { success: false, message: "Customer not found" };
 
     // Attach what each referred customer bought (from their invoice) so the
-    // referrer can see name, products and amount.
-    const referredIds = [...new Set(rawBonuses.map((b) => b.referredCustomerId).filter(Boolean))] as string[];
-    const referred = referredIds.length
-      ? await db.query.customers.findMany({
-          where: inArray(customers.customerId, referredIds),
-          columns: { customerId: true, invoiceNumber: true },
-          with: { invoice: { columns: { invoiceNumber: true }, with: { products: { columns: { type: true, model: true, quantity: true } } } } },
-        })
-      : [];
-    const byId = new Map(referred.map((c) => [c.customerId, c]));
-    const bonuses = rawBonuses.map((b) => {
-      const c = b.referredCustomerId ? byId.get(b.referredCustomerId) : undefined;
-      return {
-        ...b,
-        invoiceNumber: c?.invoice?.invoiceNumber ?? c?.invoiceNumber ?? null,
-        products: (c?.invoice?.products ?? []).map((p) => ({ type: p.type, model: p.model, quantity: p.quantity })),
-      };
-    });
+    // referrer can see name, products and amount. `referred` is already loaded
+    // above, so this is pure in-memory shaping (no extra query).
+    const bonuses = rawBonuses.map(({ referred, ...b }) => ({
+      ...b,
+      invoiceNumber: referred?.invoice?.invoiceNumber ?? referred?.invoiceNumber ?? null,
+      products: (referred?.invoice?.products ?? []).map((p) => ({ type: p.type, model: p.model, quantity: p.quantity })),
+    }));
 
     return {
       success: true,

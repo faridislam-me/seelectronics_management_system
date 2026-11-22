@@ -270,6 +270,24 @@ export async function addVirtualBalance(
 
     if (!staffData) return { success: false, message: "Staff not found" };
 
+    // Idempotency guard: a completed job's staff payment must credit the wallet
+    // exactly once. The admin UI hides the "$" button after the first credit, but
+    // a double-click, retry, or two admins acting at once could otherwise insert a
+    // second "credited" row AND re-fire the SMS/voice. If this service was already
+    // credited, stop here — do not insert again and do not notify again.
+    if (serviceId) {
+      const alreadyCredited = await db.query.payments.findFirst({
+        where: and(
+          eq(payments.serviceId, serviceId),
+          eq(payments.status, "credited"),
+        ),
+        columns: { paymentId: true },
+      });
+      if (alreadyCredited) {
+        return { success: false, message: "This job's staff payment has already been credited" };
+      }
+    }
+
     const paymentId = generateRandomId();
     const invoiceNumber = `BAL-${Date.now()}-${generateRandomId().slice(0, 8)}`;
 

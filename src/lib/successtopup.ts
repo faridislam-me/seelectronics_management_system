@@ -44,6 +44,45 @@ export const recharge = async (input: {
 export const checkStatus = async (trxid: string) =>
   post("/api/status", { trxid });
 
+/**
+ * Final outcome of a recharge, resolved from a /api/status response (or a
+ * webhook payload). SuccessTopup's /api/recharge returns `result:true` only when
+ * the recharge is ACCEPTED (queued) — NOT when it is delivered — so the money a
+ * customer/staff paid can still be lost if the operator later cancels it. The
+ * status endpoint is the source of truth for the final outcome.
+ *   - "success": delivered, keep the debit.
+ *   - "failed":  cancelled/failed/refunded by the provider → RETURN the money.
+ *   - "pending": still processing, OR the status could not be determined
+ *                (lookup failed / unknown value) → do nothing, re-check later.
+ *                Money is NEVER returned on "pending" so a transient lookup
+ *                error can never cause a wrong refund.
+ */
+export type RechargeOutcome = "success" | "pending" | "failed";
+
+/**
+ * Classify a /api/status response (or webhook payload) into a final outcome.
+ * Per the SuccessTopup docs the statuses sent are `Success`, `Cancel` and
+ * `Processing`; we also map other explicit failure words (failed/rejected/
+ * refunded/cancelled) to "failed", treat success/completed as "success", and
+ * fall back to "pending" for `Processing`, unknown values, and any response
+ * whose own `result` is false (the status lookup itself failed).
+ */
+export const classifyRechargeStatus = (
+  res: Record<string, any> | null | undefined,
+): RechargeOutcome => {
+  if (!res) return "pending";
+  const status = String(res.status ?? "").trim().toLowerCase();
+  if (!status) return "pending"; // no status yet / lookup failed → do not act
+  if (["success", "successful", "completed", "complete"].includes(status)) return "success";
+  if (
+    ["cancel", "cancelled", "canceled", "failed", "fail", "failure", "rejected", "reject", "refund", "refunded", "returned"].includes(
+      status,
+    )
+  )
+    return "failed";
+  return "pending"; // processing / unknown
+};
+
 export const getDrives = async (
   operator?: string,
   type?: "regular" | "drive",

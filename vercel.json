@@ -1,6 +1,7 @@
 {
   "crons": [
     { "path": "/api/notifications/warranty-expiry", "schedule": "0 4 * * *" },
-    { "path": "/api/notifications/installment-due", "schedule": "0 4 * * *" }
+    { "path": "/api/notifications/installment-due", "schedule": "0 4 * * *" },
+    { "path": "/api/recharge/reconcile", "schedule": "*/15 * * * *" }
   ]
 }

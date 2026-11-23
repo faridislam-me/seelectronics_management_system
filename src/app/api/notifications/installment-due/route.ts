@@ -58,7 +58,17 @@ export async function GET(request: Request) {
   }
   try {
     const counts = await notifyInstallmentDue();
-    return NextResponse.json({ success: true, ...counts });
+    // Daily backstop for recharge auto-refund (Hobby plan allows no extra cron
+    // slot): re-check recharges stuck "completed" and refund any the provider
+    // failed. Best-effort — never let it break the installment reminders.
+    let rechargeReconcile: unknown = null;
+    try {
+      const { reconcileRecharges } = await import("@/lib/rechargeReconcile");
+      rechargeReconcile = await reconcileRecharges();
+    } catch (e) {
+      console.error("installment-due cron: recharge reconcile failed:", e);
+    }
+    return NextResponse.json({ success: true, ...counts, rechargeReconcile });
   } catch (error) {
     console.error("Installment due cron error:", error);
     return NextResponse.json(

@@ -16,8 +16,28 @@ import { getRechargePacksWithCache } from "@/lib/rechargePackCache";
 import { operatorMatchesNumber, OPERATOR_MISMATCH_MESSAGE } from "@/lib/operatorDetect";
 import { and, desc, eq, gte, ilike, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { after as afterResponse } from "next/server";
 
 const UNAUTHORIZED = { success: false as const, message: "Unauthorized" };
+
+/**
+ * Opportunistic recharge reconciliation scheduled to run AFTER the response is
+ * sent (so it never slows the recharge). A recharge is only "accepted" when it
+ * returns result:true — the operator can still fail it minutes later. On a Hobby
+ * plan we can't add a frequent cron, so every recharge sweeps the recent backlog
+ * of still-"completed" recharges and auto-refunds any the provider has since
+ * failed. Best-effort; errors are swallowed.
+ */
+const sweepRechargesAfterResponse = () => {
+  afterResponse(async () => {
+    try {
+      const { reconcileRecharges } = await import("@/lib/rechargeReconcile");
+      await reconcileRecharges();
+    } catch (e) {
+      console.error("post-recharge reconcile sweep failed:", e);
+    }
+  });
+};
 
 const requireAdmin = async () => {
   const s = await verifySession(false, "admin");
@@ -195,6 +215,9 @@ export const requestMobileRecharge = async (input: {
     revalidatePath("/recharge-requests");
 
     if (isSuccess) {
+      // Sweep the recent recharge backlog after responding, so a previously
+      // accepted-then-failed recharge gets auto-refunded promptly.
+      sweepRechargesAfterResponse();
       const updatedCustomer = await db.query.customers.findFirst({
         where: eq(customers.customerId, customer.customerId),
         columns: { referralBalance: true, driveBalance: true },

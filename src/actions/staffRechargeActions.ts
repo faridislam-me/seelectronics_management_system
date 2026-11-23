@@ -11,6 +11,26 @@ import { operatorMatchesNumber, OPERATOR_MISMATCH_MESSAGE } from "@/lib/operator
 import { generateRandomId } from "@/utils";
 import { and, desc, eq, ilike } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { after as afterResponse } from "next/server";
+
+/**
+ * Opportunistic recharge reconciliation, scheduled to run AFTER the response is
+ * sent (so it never slows the recharge). A recharge is only "accepted" when it
+ * returns result:true — the operator can still fail it minutes later. On a Hobby
+ * plan we can't add a frequent cron, so every recharge sweeps the recent backlog
+ * of still-"completed" recharges and auto-refunds any the provider has since
+ * failed. Best-effort; errors are swallowed.
+ */
+const sweepRechargesAfterResponse = () => {
+  afterResponse(async () => {
+    try {
+      const { reconcileRecharges } = await import("@/lib/rechargeReconcile");
+      await reconcileRecharges();
+    } catch (e) {
+      console.error("post-recharge reconcile sweep failed:", e);
+    }
+  });
+};
 
 const OPERATORS: Record<string, string> = {
   grameenphone: "Grameenphone",
@@ -153,6 +173,10 @@ export const requestStaffMobileRecharge = async (input: {
     revalidatePath("/staff/payment");
     revalidatePath("/staff/payment/recharge");
     revalidatePath("/staff/payment/payment-history");
+
+    // Sweep the recent recharge backlog after responding, so a previously
+    // accepted-then-failed recharge gets auto-refunded promptly.
+    sweepRechargesAfterResponse();
 
     const after = await getStaffAvailableBalance(staffId);
     return {

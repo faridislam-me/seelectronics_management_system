@@ -20,17 +20,22 @@ export default async function ComplaintDocPage({ params }: { params: Promise<{ c
   const eleclogo = "/elecLogo.png";
   const elecSign = "/elecSign.png";
   const evidencePhotoUrl = complaint.evidencePhotoKey ? await getObjectUrl(complaint.evidencePhotoKey) : null;
-  const isProcessing = ["processing", "hearing", "completed"].includes(complaint.status);
-  const isHearing = ["hearing", "completed"].includes(complaint.status);
+  // "customer_absent" is only reachable from a hearing, so every step up to and
+  // including the hearing has happened for an absent (ex-parte) complaint.
+  const isAbsent = complaint.status === "customer_absent";
+  const isProcessing = ["processing", "hearing", "completed", "customer_absent"].includes(complaint.status);
+  const isHearing = ["hearing", "completed", "customer_absent"].includes(complaint.status);
   const isCompleted = complaint.status === "completed";
 
-  const steps = [
+  const steps: { title: string; label: string; value: string; on: boolean; warn?: boolean }[] = [
     { title: "দাখিল", label: "আবেদনের তারিখ", value: formatDate(complaint.createdAt), on: isProcessing || complaint.status === "under_trial" },
     { title: "প্রক্রিয়াধীন", label: "গ্রহণের তারিখ", value: isProcessing ? formatDate(complaint.updatedAt) : "অপেক্ষমান...", on: isProcessing },
     { title: "শুনানি", label: "শুনানির তারিখ", value: isHearing ? formatDate(complaint.updatedAt) : "পরিকল্পিত", on: isHearing },
-    { title: "নিষ্পত্তি", label: "চূড়ান্ত পর্যালোচনার তারিখ", value: isCompleted ? formatDate(complaint.updatedAt) : "প্রক্রিয়াধীন...", on: isCompleted },
+    // An absent customer gets its own closing step instead of the normal settlement.
+    isAbsent
+      ? { title: "গ্রাহক অনুপস্থিত", label: "একতরফা নিষ্পত্তির তারিখ", value: formatDate(complaint.updatedAt), on: true, warn: true }
+      : { title: "নিষ্পত্তি", label: "চূড়ান্ত পর্যালোচনার তারিখ", value: isCompleted ? formatDate(complaint.updatedAt) : "প্রক্রিয়াধীন...", on: isCompleted },
   ];
-  const isAbsent = complaint.status === "customer_absent";
   const currentWord = isAbsent ? "গ্রাহক উপস্থিত না থাকায় একতরফা নিষ্পত্তি" : isCompleted ? "নিষ্পত্তি" : isHearing ? "শুনানি" : isProcessing ? "প্রক্রিয়াধীন" : complaint.status === "under_trial" ? "দাখিল" : "অপেক্ষমান";
   const currentCls = isAbsent ? "text-[#b8560b]" : isCompleted ? "text-[#178a42]" : isHearing ? "text-[#b8620b]" : isProcessing ? "text-[#1b6fd6]" : "text-[#1a9c4b]";
 
@@ -67,9 +72,9 @@ export default async function ComplaintDocPage({ params }: { params: Promise<{ c
             <span className="absolute left-[19px] top-5 bottom-5 w-0.5 bg-[#e3e8f1]" />
             {steps.map((s) => (
               <div key={s.title} className="relative flex items-center gap-3">
-                <span className={clsx("size-10 rounded-full border-2 bg-white flex items-center justify-center shrink-0 z-10", s.on ? "border-[#1a9c4b] text-[#1a9c4b] shadow-[0_0_12px_rgba(26,156,75,0.2)]" : "border-[#d7deea] text-[#d7deea]")}><CheckCircle size={18} /></span>
-                <span className={clsx("flex-1 rounded-md border px-3 py-2 flex items-center justify-between gap-2", s.on ? "bg-[#e9f9ef] border-[#bfe8cd]" : "bg-[#f5f7fb] border-[#eef1f6]")}>
-                  <span className={clsx("text-[14px] font-extrabold", s.on ? "text-[#178a42]" : "text-[#9aa4b8]")}>{s.title}</span>
+                <span className={clsx("size-10 rounded-full border-2 bg-white flex items-center justify-center shrink-0 z-10", s.warn ? "border-[#b8560b] text-[#b8560b] shadow-[0_0_12px_rgba(184,86,11,0.2)]" : s.on ? "border-[#1a9c4b] text-[#1a9c4b] shadow-[0_0_12px_rgba(26,156,75,0.2)]" : "border-[#d7deea] text-[#d7deea]")}><CheckCircle size={18} /></span>
+                <span className={clsx("flex-1 rounded-md border px-3 py-2 flex items-center justify-between gap-2", s.warn ? "bg-[#fff6ec] border-[#f3d3b0]" : s.on ? "bg-[#e9f9ef] border-[#bfe8cd]" : "bg-[#f5f7fb] border-[#eef1f6]")}>
+                  <span className={clsx("text-[14px] font-extrabold", s.warn ? "text-[#b8560b]" : s.on ? "text-[#178a42]" : "text-[#9aa4b8]")}>{s.title}</span>
                   <span className="flex flex-col items-end leading-tight"><span className="text-[10px] font-bold text-[#5b6784]">{s.label}</span><span className={clsx("text-[12px] font-extrabold", s.on ? "text-[#16213a]" : "text-[#9aa4b8]")}>{s.value}</span></span>
                 </span>
               </div>

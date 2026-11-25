@@ -44,11 +44,9 @@ export const ADMIN_VOICE_IDS = {
   customer_subscription: 4650,
   staff_payment_request: 4651,
   customer_complaint: 4652,
-  hearing_order_staff: 4637,
-  hearing_settlement_customer: 4636,
-  hearing_absent_customer: 4635,
-  complaint_hearing_customer: 4620,
-  complaint_hearing_staff: 4619,
+  // Recordings 4619 / 4620 / 4635 / 4636 / 4637 are customer- and staff-facing
+  // hearing calls. They must never be listed here: everything in this map is
+  // played to the ADMIN phones.
   customer_chat: 4653,
   service_completed: 4654,
   installment_application: 4655,

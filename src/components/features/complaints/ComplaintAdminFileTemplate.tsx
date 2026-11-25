@@ -42,16 +42,16 @@ function Field({ label, value, mono, wide }: { label: string; value?: string; mo
 export default function ComplaintAdminFileTemplate({ data }: ComplaintAdminFileTemplateProps) {
   // Long descriptions shrink a little so the copy stays on a single A4 page.
   const len = data.description.length;
-  const descSize = len > 1500 ? "10.5px" : len > 900 ? "11.5px" : "13px";
+  const descSize = len > 1200 ? "9px" : len > 700 ? "10px" : len > 350 ? "11.5px" : "13px";
 
   return (
     <div
-      className="relative w-[210mm] h-[297mm] mx-auto bg-white p-[9mm] text-[#111] overflow-hidden box-border"
+      className="relative w-[210mm] h-[297mm] mx-auto bg-white p-[0.75in] text-[#111] overflow-hidden box-border"
       style={{ fontFamily: "'SolaimanLipi', 'Tiro Bangla', sans-serif", lineHeight: 1.4, fontSize: "13px" }}
     >
       {/* Double frame */}
       <div className="h-full p-[1.2mm] box-border border-[2.5px]" style={{ borderColor: INK }}>
-        <div className="relative h-full border box-border px-[6mm] py-[5mm] flex flex-col gap-[2.6mm] overflow-hidden" style={{ borderColor: INK }}>
+        <div className="relative h-full border box-border px-[4mm] py-[3mm] flex flex-col gap-[1.8mm] overflow-hidden" style={{ borderColor: INK }}>
           {/* Watermark */}
           {data.logo && (
             <img src={data.logo} alt="" className="absolute left-1/2 top-1/2 w-[95mm] -translate-x-1/2 -translate-y-1/2 opacity-[0.05] pointer-events-none" />

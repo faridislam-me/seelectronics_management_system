@@ -11,11 +11,11 @@ export default function StaffNotGuiltyTemplate({
 
   return (
     <div
-      className="relative w-[210mm] h-[297mm] mx-auto bg-white pt-[0.75in] pr-[0.75in] pb-[0.5in] pl-[1.5in] text-[#111] overflow-hidden box-border flex flex-col"
+      className="relative w-[210mm] h-[297mm] mx-auto bg-white pt-[1in] pr-[0.75in] pb-[0.5in] pl-[1.5in] text-[#111] overflow-hidden box-border flex flex-col"
       style={{
         fontFamily: "'SolaimanLipi', sans-serif",
-        lineHeight: "1.6",
-        fontSize: "15px",
+        lineHeight: "1.5",
+        fontSize: "13.5px",
       }}
     >
       <div className="mb-4 text-center">

@@ -11,7 +11,7 @@ export default function HearingNoticeTemplate({
 
   return (
     <div
-      className="relative w-[210mm] h-[297mm] mx-auto bg-white pt-[0.75in] pr-[0.75in] pb-[0.5in] pl-[1.5in] text-[#111] overflow-hidden box-border flex flex-col"
+      className="relative w-[210mm] h-[297mm] mx-auto bg-white pt-[1in] pr-[1in] pb-[0.5in] pl-[1in] text-[#111] overflow-hidden box-border flex flex-col"
       style={{
         fontFamily: "'SolaimanLipi', sans-serif",
         lineHeight: "1.5",

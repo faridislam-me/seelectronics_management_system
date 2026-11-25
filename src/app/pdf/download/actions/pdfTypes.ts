@@ -131,6 +131,8 @@ export interface ComplaintGdCopyTemplateData {
   };
   subject: string;
   description: string;
+  /** "আপনার প্রতিষ্ঠানের একজন … গ্রাহক" — warranty-covered only while the warranty is active. */
+  customerStandingBn: string;
   statusBn: string;
   officer: {
     name: string;

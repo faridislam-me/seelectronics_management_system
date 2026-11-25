@@ -1,5 +1,5 @@
 import { db } from "@/db/drizzle";
-import { invoices, products, services } from "@/db/schema";
+import { customers, invoices, products, services } from "@/db/schema";
 import type { ServiceChargeInfo } from "@/constants/serviceCharges";
 import { desc, eq } from "drizzle-orm";
 
@@ -207,6 +207,50 @@ export function attachServicesToProducts(
   }
 
   return { products: owned.map((p) => byId.get(p.id)!), unmatched };
+}
+
+/**
+ * Whether the customer behind a complaint is under warranty RIGHT NOW — decides
+ * the "warranty-covered customer" wording of the complaint letter.
+ *
+ * Same rule the customer portal / check-warranty page use: a unit is covered
+ * while warrantyDurationMonths > 0 and warrantyStartDate + duration is still in
+ * the future, and a blocked account (isWarrantyStopped) is never covered.
+ * When the complaint is linked to a service, the serviced unit decides (matched
+ * by type + model like everywhere else); otherwise, or when no owned unit
+ * matches, any unit still in warranty counts. Anything unknown => false.
+ */
+export async function isComplaintWarrantyActive(c: {
+  customerId: string | null | undefined;
+  service?: { serviceId: string; type: string | null; status: string; createdAt: Date | string; productType: string; productModel: string } | null;
+}): Promise<boolean> {
+  try {
+    if (!c.customerId) return false;
+    const [owner, owned] = await Promise.all([
+      db.query.customers.findFirst({ where: eq(customers.customerId, c.customerId), columns: { isWarrantyStopped: true } }),
+      getCustomerOwnedProducts(c.customerId),
+    ]);
+    if (!owner || owner.isWarrantyStopped) return false;
+    if (c.service) {
+      const { products: matched } = attachServicesToProducts(owned, [
+        {
+          serviceId: c.service.serviceId,
+          type: c.service.type === "install" ? "install" : "repair",
+          status: c.service.status,
+          createdAt: new Date(c.service.createdAt),
+          staffName: null,
+          productType: c.service.productType,
+          productModel: c.service.productModel,
+        },
+      ]);
+      const unit = matched.find((p) => p.services.length > 0);
+      if (unit) return unit.warrantyActive;
+    }
+    return owned.some((p) => p.warrantyActive);
+  } catch (error) {
+    console.error("isComplaintWarrantyActive:", error);
+    return false;
+  }
 }
 
 /** Sum of a numeric field across a customer's invoices. */

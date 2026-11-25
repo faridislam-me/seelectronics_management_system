@@ -417,7 +417,10 @@ export async function getComplaintById(complaintId: string) {
       (user.role === "staff" && data.staffId === user.userId) ||
       (user.role === "customer" && data.customerId === user.userId);
     if (!allowed) return { success: false, message: "Complaint not found" };
-    return { success: true, data };
+    // Decides the "warranty-covered customer" wording of the complaint letter.
+    const { isComplaintWarrantyActive } = await import("@/lib/customerPurchases");
+    const warrantyActive = await isComplaintWarrantyActive(data);
+    return { success: true, data: { ...data, warrantyActive } };
   } catch (error) {
     console.error(error);
     return { success: false, message: "Could not fetch complaint" };

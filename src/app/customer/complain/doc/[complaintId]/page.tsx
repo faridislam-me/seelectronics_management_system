@@ -1,6 +1,7 @@
 import { getComplaintById } from "@/actions/complaintActions";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { CustomerLayout } from "@/components/layout/CustomerLayout";
+import { complaintCustomerStandingBn, complaintIncidentDateBn } from "@/constants/complaintData";
 import { getObjectUrl } from "@/lib/s3";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
@@ -155,7 +156,7 @@ export default async function ComplaintDocPage({ params }: { params: Promise<{ c
           </div>
           <p><span className="font-bold">বিষয়ঃ-অভিযোগ ।</span></p>
           <p><span className="font-bold">মহোদয়,</span></p>
-          <p>আমি অভিযোগকারী {complaint.customer?.name} কাস্টমার আইডিঃ {complaint.customer?.customerId} আপনার প্রতিষ্ঠানের একজন ওয়ারেন্টি ভুক্ত গ্রাহক অত্যন্ত দুঃখের সাথে জানাচ্ছি যে, গত ০৩/০৩/২০২৬ ইং তারিখে আমার প্রডাক্ট সমস্যা দেখা দিলে আমি আপনাদের কাষ্টমার কেয়ারে বিষয়টি জানালে আমার সার্ভিস অনুরোধটি গ্রহন করে আমার বাসায় সার্ভিস প্রদানের সময় আপনাদের কোম্পানীর একজন টেকনিশিয়ান আমার সাথে অত্যন্ত আপত্তিকর ও অপেশাদার আচরণ করেছেন।</p>
+          <p>আমি অভিযোগকারী {complaint.customer?.name} কাস্টমার আইডিঃ {complaint.customer?.customerId} {complaintCustomerStandingBn(complaint.warrantyActive)} অত্যন্ত দুঃখের সাথে জানাচ্ছি যে, গত {complaintIncidentDateBn(complaint)} ইং তারিখে আমার প্রডাক্ট সমস্যা দেখা দিলে আমি আপনাদের কাষ্টমার কেয়ারে বিষয়টি জানালে আমার সার্ভিস অনুরোধটি গ্রহন করে আমার বাসায় সার্ভিস প্রদানের সময় আপনাদের কোম্পানীর একজন টেকনিশিয়ান আমার সাথে অত্যন্ত আপত্তিকর ও অপেশাদার আচরণ করেছেন।</p>
           <div className="rounded-md bg-[#f5f7fb] border border-[#eef1f6] p-3">
             <p className="font-bold mb-1">ঘটনার বিস্তারিত বিবরণঃ</p>
             <p className="text-justify whitespace-pre-wrap">

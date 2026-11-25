@@ -80,6 +80,14 @@ export default async function ComplaintDocPage({ params }: { params: Promise<{ c
               </div>
             ))}
           </div>
+          {isAbsent && (
+            <div className="rounded-md bg-[#fff6ec] border border-[#f3d3b0] p-3 flex flex-col gap-1">
+              <span className="text-[13px] font-extrabold text-[#b8560b]">নোটিশ</span>
+              <span className="text-[12.5px] leading-relaxed text-[#3d4a63]">
+                সম্মানিত গ্রাহক, আপনাকে বারবার নোটিশ, কল ও এসএমএস দেওয়ার পরও আপনি শুনানিতে উপস্থিত না থাকায় অভিযোগটি সামনে এগিয়ে নেওয়া সম্ভব হয়নি। এ কারণে অভিযোগটি একতরফাভাবে নিষ্পত্তি করা হয়েছে। আপনি চাইলে পুনরায় আমাদের অফিসে যোগাযোগ করতে পারবেন — ০৯৬৪৯৩৫৫৫৫৫।
+              </span>
+            </div>
+          )}
         </section>
 
         {/* Officer + disciplinary */}

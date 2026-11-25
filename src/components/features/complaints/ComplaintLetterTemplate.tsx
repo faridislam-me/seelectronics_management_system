@@ -8,7 +8,7 @@ type ComplaintLetterTemplateProps = {
 /**
  * Complaint letter laid out like a filed case / GD paper: a plain white A4
  * sheet with a wide binding margin on the left (1.5in), 0.75in on the top and
- * right, 1in at the bottom, running letter text, and nothing decorative except
+ * right, 0.5in at the bottom, running letter text, and nothing decorative except
  * the verification QR code at the top. Rendered both by the PDF generator and
  * by the on-screen view/print page, so it must stay a plain (hook-free)
  * component.
@@ -26,15 +26,15 @@ export default function ComplaintLetterTemplate({ data }: ComplaintLetterTemplat
         fontFamily: "'SolaimanLipi', 'Tiro Bangla', sans-serif",
         lineHeight: 1.6,
         fontSize,
-        padding: "0.75in 0.75in 1in 1.5in",
+        padding: "0.75in 0.75in 0.5in 1.5in",
       }}
     >
       {/* Addressee (left) + verification QR (right) */}
       <div className="flex items-start justify-between gap-4 mb-3">
         <div>
-          <p>বরাবর,</p>
-          <p className="font-bold">এস ই ইলেকট্রনিক্স,</p>
-          <p>মহাপরিচালক, চেয়ারম্যান,</p>
+          <p className="font-bold">বরাবর,</p>
+          <p>মহাপরিচালক / চেয়ারম্যান,</p>
+          <p>এস ই ইলেকট্রনিক্স,</p>
           <p>বাদাম বাগিচা সিলেট সদর ৩১০০।</p>
         </div>
         <div className="shrink-0 flex flex-col items-center text-[10px] leading-tight">
@@ -44,8 +44,8 @@ export default function ComplaintLetterTemplate({ data }: ComplaintLetterTemplat
         </div>
       </div>
 
-      <p className="font-bold underline underline-offset-2">বিষয়: {data.subject || "অভিযোগ"}</p>
-      <p className="mt-2 mb-1">মহোদয়,</p>
+      <p className="font-bold text-justify mt-2">বিষয় ঃ {data.subject || "অভিযোগ"}</p>
+      <p className="font-bold mt-5">জনাব,</p>
 
       <p className="text-justify mb-3">
         আমি অভিযোগকারী <span className="font-bold">{data.customer.name}</span>, কাস্টমার আইডিঃ{" "}
@@ -55,8 +55,10 @@ export default function ComplaintLetterTemplate({ data }: ComplaintLetterTemplat
         আমার সাথে অত্যন্ত আপত্তিকর ও অপেশাদার আচরণ করেছে।
       </p>
 
-      <p className="font-bold underline mb-1">ঘটনার বিস্তারিত বিবরণঃ</p>
-      <p className="text-justify whitespace-pre-wrap break-words mb-3">{data.description}</p>
+      <p className="text-justify whitespace-pre-wrap break-words mt-5 mb-3">
+        <span className="font-bold">ঘটনার বিস্তারিত বিবরণ: </span>
+        {data.description}
+      </p>
 
       <p className="text-justify mb-2">
         একজন গ্রাহক হিসেবে আমি এই ধরনের আচরণ আপনাদের মতো একটি স্বনামধন্য প্রতিষ্ঠানের কাছ থেকে প্রত্যাশা করি নাই। এই

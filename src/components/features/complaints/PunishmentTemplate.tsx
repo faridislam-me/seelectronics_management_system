@@ -10,7 +10,7 @@ export default function ComplaintTemplate({ data }: ComplaintTemplateProps) {
 
   return (
     <div
-      className="relative w-[210mm] mx-auto bg-white p-[20mm] text-[#111] overflow-hidden box-border"
+      className="relative w-[210mm] mx-auto bg-white pt-[0.75in] pr-[0.75in] pb-[0.5in] pl-[1.5in] text-[#111] overflow-hidden box-border"
       style={{
         fontFamily: "'SolaimanLipi', sans-serif",
         lineHeight: "1.6",

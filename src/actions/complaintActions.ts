@@ -25,6 +25,44 @@ const ComplaintSchema = z.object({
   description: z.string().min(1),
 });
 
+/**
+ * Staff who handled a service, for the new-complaint form: typing the service
+ * ID fills in the accused technician (repair) / electrician (installation).
+ */
+export async function lookupComplaintServiceStaff(serviceId: string) {
+  try {
+    const session = await verifyCustomerSession();
+    if (!session.isAuth || !session.customer) return UNAUTHORIZED;
+    const id = String(serviceId || "").trim();
+    if (id.length < 4 || id.length > 64) return { success: false as const, message: "সার্ভিস আইডি সঠিক নয়" };
+
+    const service = await db.query.services.findFirst({
+      where: (s, { eq }) => eq(s.serviceId, id),
+      columns: { serviceId: true, type: true, staffId: true, staffName: true, staffRole: true },
+      with: { appointedStaff: { columns: { staffId: true, name: true, role: true } } },
+    });
+    if (!service) return { success: false as const, message: "এই সার্ভিস আইডি পাওয়া যায়নি" };
+
+    const staffId = service.appointedStaff?.staffId || service.staffId;
+    if (!staffId) {
+      return { success: false as const, message: "এই সার্ভিসে এখনও কোনো টেকনিশিয়ান / ইলেকট্রিশিয়ান নিযুক্ত হয়নি" };
+    }
+    return {
+      success: true as const,
+      data: {
+        serviceId: service.serviceId,
+        serviceType: service.type,
+        staffId,
+        name: service.appointedStaff?.name || service.staffName || "",
+        role: (service.appointedStaff?.role || service.staffRole || (service.type === "install" ? "electrician" : "technician")) as string,
+      },
+    };
+  } catch (error) {
+    console.error("lookupComplaintServiceStaff failed", error);
+    return { success: false as const, message: "সার্ভিস আইডি যাচাই করা যায়নি" };
+  }
+}
+
 export async function submitComplaint(_prevState: any, formData: FormData) {
   try {
     const session = await verifyCustomerSession();

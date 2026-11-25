@@ -26,6 +26,7 @@ export type DocType =
   | "certificate"
   | "complaint"
   | "complaint_customer"
+  | "complaint_admin_file"
   | "hearing-notice"
   | "completion-notice"
   | "ex-parte-notice"

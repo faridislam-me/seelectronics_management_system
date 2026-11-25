@@ -1,0 +1,91 @@
+/* eslint-disable @next/next/no-img-element */
+import { ComplaintGdCopyTemplateData } from "@/app/pdf/download/actions/pdfTypes";
+
+type ComplaintLetterTemplateProps = {
+  data: ComplaintGdCopyTemplateData;
+};
+
+/**
+ * Complaint letter laid out like a filed case / GD paper: a plain white A4
+ * sheet with a wide binding margin on the left (1.5in), 0.75in on the top and
+ * right, 1in at the bottom, running letter text, and nothing decorative except
+ * the verification QR code at the top. Rendered both by the PDF generator and
+ * by the on-screen view/print page, so it must stay a plain (hook-free)
+ * component.
+ */
+export default function ComplaintLetterTemplate({ data }: ComplaintLetterTemplateProps) {
+  // Long descriptions shrink a little so the letter stays on a single A4 page.
+  const len = data.description.length;
+  const fontSize = len > 1600 ? "11.5px" : len > 1000 ? "12.5px" : len > 600 ? "13.5px" : "14.5px";
+  const role = data.staff.role || "টেকনিশিয়ান";
+
+  return (
+    <div
+      className="relative w-[210mm] h-[297mm] mx-auto bg-white text-black overflow-hidden box-border flex flex-col"
+      style={{
+        fontFamily: "'SolaimanLipi', 'Tiro Bangla', sans-serif",
+        lineHeight: 1.6,
+        fontSize,
+        padding: "0.75in 0.75in 1in 1.5in",
+      }}
+    >
+      {/* Addressee (left) + verification QR (right) */}
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div>
+          <p>বরাবর,</p>
+          <p className="font-bold">এস ই ইলেকট্রনিক্স,</p>
+          <p>মহাপরিচালক, চেয়ারম্যান,</p>
+          <p>বাদাম বাগিচা সিলেট সদর ৩১০০।</p>
+        </div>
+        <div className="shrink-0 flex flex-col items-center text-[10px] leading-tight">
+          {data.qrcode && <img src={data.qrcode} alt="Verification QR" className="w-[26mm] h-[26mm]" />}
+          <span className="mt-[2px]">অভিযোগ নং: <span className="font-mono font-bold">{data.complaintId}</span></span>
+          <span>তারিখ: {data.filedAtBn}</span>
+        </div>
+      </div>
+
+      <p className="font-bold underline underline-offset-2">বিষয়: {data.subject || "অভিযোগ"}</p>
+      <p className="mt-2 mb-1">মহোদয়,</p>
+
+      <p className="text-justify mb-3">
+        আমি অভিযোগকারী <span className="font-bold">{data.customer.name}</span>, কাস্টমার আইডিঃ{" "}
+        <span className="font-bold">{data.customer.customerId}</span> {data.customerStandingBn} অত্যন্ত দুঃখের সাথে
+        জানাচ্ছি যে, গত {data.incidentDateBn} ইং তারিখে আমার প্রডাক্ট সমস্যা দেখা দিলে আমি আপনাদের কাষ্টমার কেয়ারে
+        বিষয়টি জানালে আমার সার্ভিস অনুরোধটি গ্রহন করে আমার বাসায় সার্ভিস প্রদানের সময় আপনাদের কোম্পানীর একজন {role}{" "}
+        আমার সাথে অত্যন্ত আপত্তিকর ও অপেশাদার আচরণ করেছে।
+      </p>
+
+      <p className="font-bold underline mb-1">ঘটনার বিস্তারিত বিবরণঃ</p>
+      <p className="text-justify whitespace-pre-wrap break-words mb-3">{data.description}</p>
+
+      <p className="text-justify mb-2">
+        একজন গ্রাহক হিসেবে আমি এই ধরনের আচরণ আপনাদের মতো একটি স্বনামধন্য প্রতিষ্ঠানের কাছ থেকে প্রত্যাশা করি নাই। এই
+        ঘটনাটি আমার জন্য অত্যন্ত বিব্রতকর ছিল।
+      </p>
+      <p className="text-justify mb-3">
+        এমতবস্থায় {role} {data.staff.name}
+        {data.staff.staffId ? ` (আইডিঃ ${data.staff.staffId})` : ""}, সার্ভিস আইডিঃ {data.service.serviceId || "N/A"} এর
+        জন্য আপনাদের স্বনামধন্য কোম্পানী এস ই ইলেকট্রনিক্স এর সম্মান ক্ষুন্ন হয়েছে। ও আমি তাহার এই আচরণের জন্য এস ই
+        ইলেকট্রনিক্স এর মহাপরিচালক / চেয়ারম্যান, এর কাছে এই বিষয়ে সঠিক যাচাই বাছাই করে বিচারের জন্য জোর আবেদন করছি।
+      </p>
+
+      <p className="text-justify">
+        <span className="font-bold">অতএব, </span>বিষয়টি গুরুত্বের সাথে বিবেচনা করে উক্ত {role}ের বিরুদ্ধে প্রয়োজনীয়
+        ব্যবস্থা গ্রহণ করার জন্য বিনীত অনুরোধ জানাচ্ছি। আশা করি, ভবিষ্যতে আপনাদের সেবার মান বজায় রাখতে আপনারা যথাযথ
+        পদক্ষেপ নেবেন।
+      </p>
+
+      {/* Signature block */}
+      <div className="flex justify-end mt-auto pt-4">
+        <div>
+          <p className="font-bold">বিনীত নিবেদন</p>
+          <div className="mt-10 border-t border-black min-w-[45mm] pt-1 leading-snug">
+            <p className="font-bold">{data.customer.name}</p>
+            <p className="font-mono">{data.customer.phone}</p>
+            {data.customer.address && <p className="max-w-[60mm]">{data.customer.address}</p>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

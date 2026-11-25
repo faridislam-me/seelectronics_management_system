@@ -1,6 +1,7 @@
 import { getComplaintById } from "@/actions/complaintActions";
 import ComplaintDocViewer from "@/components/features/complaints/ComplaintDocViewer";
-import ComplaintGdCopyTemplate from "@/components/features/complaints/ComplaintGdCopyTemplate";
+import ComplaintAdminFileTemplate from "@/components/features/complaints/ComplaintAdminFileTemplate";
+import ComplaintLetterTemplate from "@/components/features/complaints/ComplaintLetterTemplate";
 import ExParteNoticeTemplate from "@/components/features/complaints/ExParteNoticeTemplate";
 import { verifySession } from "@/lib";
 import { buildComplaintGdCopyData, buildExParteNoticeData } from "@/lib/complaintDocs";
@@ -14,7 +15,8 @@ export const metadata: Metadata = {
 
 /**
  * View / print / download page for a complaint's formal documents:
- *   ?doc=gd             complaint letter as a GD-style copy with QR (default)
+ *   ?doc=gd             complaint letter: plain case-paper sheet with QR (default)
+ *   ?doc=admin-file     boxed GD-style office copy with status + officer (admin only)
  *   ?doc=absent-notice  customer-absent (ex-parte) notice
  * Open to the admin and to the customer who filed the complaint.
  */
@@ -60,15 +62,32 @@ export default async function ComplaintDocumentPage({
   }
 
   const data = await buildComplaintGdCopyData(complaint);
+
+  if (doc === "admin-file") {
+    if (!isAdmin) notFound();
+    return (
+      <>
+        {fontCss}
+        <ComplaintDocViewer
+          title="অ্যাডমিন অভিযোগ ফাইল"
+          downloadHref={`/pdf/download?type=complaint_admin_file&id=${complaint.complaintId}`}
+          backHref={backHref}
+        >
+          <ComplaintAdminFileTemplate data={data} />
+        </ComplaintDocViewer>
+      </>
+    );
+  }
+
   return (
     <>
       {fontCss}
       <ComplaintDocViewer
-        title="অভিযোগ পত্র (জিডি কপি)"
+        title="অভিযোগ পত্র"
         downloadHref={`/pdf/download?type=complaint_customer&id=${complaint.complaintId}`}
         backHref={backHref}
       >
-        <ComplaintGdCopyTemplate data={data} />
+        <ComplaintLetterTemplate data={data} />
       </ComplaintDocViewer>
     </>
   );

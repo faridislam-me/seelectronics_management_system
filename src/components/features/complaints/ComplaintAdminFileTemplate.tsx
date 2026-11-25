@@ -2,7 +2,7 @@
 import { ComplaintGdCopyTemplateData } from "@/app/pdf/download/actions/pdfTypes";
 import type { ReactNode } from "react";
 
-type ComplaintGdCopyTemplateProps = {
+type ComplaintAdminFileTemplateProps = {
   data: ComplaintGdCopyTemplateData;
 };
 
@@ -33,13 +33,13 @@ function Field({ label, value, mono, wide }: { label: string; value?: string; mo
 }
 
 /**
- * Complaint letter laid out like a General Diary (GD) copy: bordered A4 sheet,
+ * Admin complaint file (office copy), laid out like a General Diary (GD) copy: bordered A4 sheet,
  * company header, a prominent complaint number + filing date-time, numbered
  * sections, signature/seal block and a QR code that opens the public
  * verification page. Rendered both by the PDF generator and by the on-screen
  * view/print page, so it must stay a plain (hook-free) component.
  */
-export default function ComplaintGdCopyTemplate({ data }: ComplaintGdCopyTemplateProps) {
+export default function ComplaintAdminFileTemplate({ data }: ComplaintAdminFileTemplateProps) {
   // Long descriptions shrink a little so the copy stays on a single A4 page.
   const len = data.description.length;
   const descSize = len > 1500 ? "10.5px" : len > 900 ? "11.5px" : "13px";
@@ -77,9 +77,9 @@ export default function ComplaintGdCopyTemplate({ data }: ComplaintGdCopyTemplat
           {/* Title */}
           <div className="relative text-center">
             <span className="inline-block px-6 py-[3px] text-[16px] font-black text-white rounded-sm" style={{ background: INK }}>
-              অভিযোগ পত্র — সাধারণ ডায়েরি (জিডি) কপি
+              অ্যাডমিন অভিযোগ ফাইল — সাধারণ ডায়েরি (জিডি) কপি
             </span>
-            <p className="text-[10.5px] mt-[2px] text-[#444]">গ্রাহক কপি · অনলাইনে দাখিলকৃত অভিযোগের নথিভুক্ত অনুলিপি</p>
+            <p className="text-[10.5px] mt-[2px] text-[#444]">অফিস কপি · অনলাইনে দাখিলকৃত অভিযোগের নথিভুক্ত অনুলিপি</p>
           </div>
 
           {/* Number / date strip */}
@@ -171,8 +171,9 @@ export default function ComplaintGdCopyTemplate({ data }: ComplaintGdCopyTemplat
             </div>
 
             <div className="w-[55mm] text-center">
-              <div className="h-[17mm] flex items-end justify-center">
-                {data.officerSign && <img src={data.officerSign} alt="গ্রহণকারী কর্মকর্তা" className="max-h-[17mm] object-contain" />}
+              <div className="h-[20mm] flex items-end justify-center">
+                {/* Name seal prints at 1.5in wide (the image is 2:1). */}
+                {data.officerSign && <img src={data.officerSign} alt="গ্রহণকারী কর্মকর্তা" className="w-[1.5in] h-[0.75in] max-w-none object-contain" />}
               </div>
               <div className="border-t border-black pt-[2px] text-[11.5px] font-bold">গ্রহণকারী কর্মকর্তার স্বাক্ষর</div>
             </div>

@@ -162,15 +162,30 @@ export default function ComplaintDetailsPage() {
             className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-[11px] font-black uppercase tracking-wider text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
             target="_blank"
           >
-            <Download size={14} /> GD Copy (PDF)
+            <Download size={14} /> অভিযোগ পত্র (PDF)
           </Link>
-          {/* Same GD-style complaint copy on screen, with Print + Download. */}
+          {/* Same complaint letter on screen, with Print + Download. */}
           <Link
             href={`/complaint-doc/${complaint.complaintId}?doc=gd`}
             className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-[11px] font-black uppercase tracking-wider text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
             target="_blank"
           >
-            <Printer size={14} /> GD Copy (Print)
+            <Printer size={14} /> অভিযোগ পত্র (Print)
+          </Link>
+
+          <Link
+            href={`/pdf/download?type=complaint_admin_file&id=${complaint.complaintId}`}
+            className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-[11px] font-black uppercase tracking-wider text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
+            target="_blank"
+          >
+            <Download size={14} /> অ্যাডমিন অভিযোগ ফাইল (PDF)
+          </Link>
+                    <Link
+            href={`/complaint-doc/${complaint.complaintId}?doc=admin-file`}
+            className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-[11px] font-black uppercase tracking-wider text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
+            target="_blank"
+          >
+            <Printer size={14} /> অ্যাডমিন অভিযোগ ফাইল (Print)
           </Link>
 
           {complaint.status === "customer_absent" && (

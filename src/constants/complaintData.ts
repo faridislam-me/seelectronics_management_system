@@ -66,3 +66,14 @@ export const complaintIncidentDateBn = (c: {
     .format(date)
     .replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);
 };
+
+/**
+ * Name-seal image (src/assets/images) of the officer a complaint is assigned
+ * to. Falls back to Atikur's seal while no officer is assigned.
+ */
+export const complaintOfficerSealFile = (officerName?: string | null) => {
+  const n = officerName || "";
+  if (n.includes("আজিম")) return "ajomSign.jpeg";
+  if (n.includes("সাহাব")) return "chairmanSeal.jpeg";
+  return "atikurSign.jpeg";
+};

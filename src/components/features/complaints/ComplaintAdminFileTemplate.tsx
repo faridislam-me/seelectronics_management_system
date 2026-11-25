@@ -166,7 +166,7 @@ export default function ComplaintAdminFileTemplate({ data }: ComplaintAdminFileT
             </div>
 
             <div className="w-[30mm] flex flex-col items-center">
-              {data.documentSeal && <img src={data.documentSeal} alt="সিল" className="w-[25mm] h-[25mm] object-contain opacity-90" />}
+              {data.documentSeal && <img src={data.documentSeal} alt="সিল" className="w-[1in] h-[1in] object-contain opacity-90" />}
               <span className="text-[9px] font-bold">অফিস সিল</span>
             </div>
 

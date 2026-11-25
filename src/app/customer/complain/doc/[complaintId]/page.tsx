@@ -1,7 +1,11 @@
 import { getComplaintById } from "@/actions/complaintActions";
 import { verifyCustomerSession } from "@/actions/customerActions";
 import { CustomerLayout } from "@/components/layout/CustomerLayout";
-import { complaintCustomerStandingBn, complaintIncidentDateBn } from "@/constants/complaintData";
+import { complaintCustomerStandingBn, complaintIncidentDateBn, complaintOfficerSealFile } from "@/constants/complaintData";
+import ajomSeal from "@/assets/images/ajomSign.jpeg";
+import atikurSeal from "@/assets/images/atikurSign.jpeg";
+import chairmanSeal from "@/assets/images/chairmanSeal.jpeg";
+import roundSeal from "@/assets/images/documentSeal.jpeg";
 import { getObjectUrl } from "@/lib/s3";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
@@ -18,8 +22,14 @@ export default async function ComplaintDocPage({ params }: { params: Promise<{ c
   const complaint = res.data as any;
   if (complaint.customerId !== session.customer.customerId) notFound();
 
-  const eleclogo = "/elecLogo.png";
-  const elecSign = "/elecSign.png";
+  const eleclogo = roundSeal.src; // sharper than the small public/elecLogo.png when printed
+  // Name seals: the officer the complaint is assigned to, then the chairman
+  // (only once when the chairman is the assigned officer).
+  const officerSealFile = complaintOfficerSealFile(complaint.hearingOfficerName);
+  const nameSeals = [
+    ...(officerSealFile === "chairmanSeal.jpeg" ? [] : [officerSealFile === "ajomSign.jpeg" ? ajomSeal.src : atikurSeal.src]),
+    chairmanSeal.src,
+  ];
   const evidencePhotoUrl = complaint.evidencePhotoKey ? await getObjectUrl(complaint.evidencePhotoKey) : null;
   // "customer_absent" is only reachable from a hearing, so every step up to and
   // including the hearing has happened for an absent (ex-parte) complaint.
@@ -187,7 +197,7 @@ export default async function ComplaintDocPage({ params }: { params: Promise<{ c
           <div className="flex items-end justify-between gap-3 pt-2 border-t border-[#eef1f6]">
             <div className="flex flex-col gap-1 text-[12.5px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={eleclogo} alt="" className="w-16" />
+              <img src={eleclogo} alt="" className="w-[1in] h-[1in] object-contain" />
               <p><span className="font-semibold">তারিখঃ</span> <span className="font-mono">{new Date(complaint.createdAt).toLocaleDateString("bn-BD")}</span></p>
               <p><span className="font-semibold">অভিযোগ ট্র্যাকিং নাম্বার:</span> <span className="font-mono">{complaint.complaintId}</span></p>
               <p><span className="font-semibold">অভিযোগ গ্রহন নাম্বার:</span> <span className="font-mono">SE {complaint.complaintId.replace(/\D/g, "").slice(0, 5) || "14285"}</span></p>
@@ -196,9 +206,14 @@ export default async function ComplaintDocPage({ params }: { params: Promise<{ c
               <p className="font-bold">বিনীত নিবেদন</p>
               <p>{complaint.customer?.name}</p>
               <p>মোবাইল {complaint.customer?.phone}</p>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={elecSign} alt="" className="w-40 max-w-[48vw]" />
             </div>
+          </div>
+          {/* Name seals at print size: 1.5in wide each. */}
+          <div className="flex flex-wrap items-end justify-end gap-x-4 gap-y-2">
+            {nameSeals.map((src) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={src} src={src} alt="" className="w-[1.5in] h-[0.75in] object-contain" />
+            ))}
           </div>
         </section>
 

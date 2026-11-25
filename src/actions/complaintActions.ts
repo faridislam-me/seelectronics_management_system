@@ -283,7 +283,7 @@ export async function getAllComplaints() {
           },
         },
       },
-      limit: 100, // Safety limit to prevent ETIMEDOUT on large datasets
+      limit: 1000, // Enough for the admin list search to reach older complaints
       orderBy: (complaints, { desc }) => [desc(complaints.createdAt)],
     });
     return { success: true, data };

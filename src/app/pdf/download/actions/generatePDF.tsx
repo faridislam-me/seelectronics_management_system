@@ -429,6 +429,8 @@ export default async function generatePDF({
         if (!response.success || !response.data)
           throw new AppError("অভিযোগটি পাওয়া যায়নি।");
         const c = response.data!;
+        const { complaintOfficerSealFile } = await import("@/constants/complaintData");
+        const officerSealFile = complaintOfficerSealFile(c.hearingOfficerName);
 
         // Map data for PunishmentTemplate
         const complaintDate = new Date(c.createdAt).toLocaleDateString("bn-BD");
@@ -450,7 +452,7 @@ export default async function generatePDF({
             "src",
             "assets",
             "images",
-            "atikurSign.jpeg",
+            officerSealFile,
           ),
         ).catch(() => undefined);
         const chairmanSignBase64 = await convertToBase64(
@@ -508,7 +510,7 @@ export default async function generatePDF({
             c.hearingOfficerDesignation || "চেয়ারম্যান, এস ই ইলেকট্রনিক্স",
           companyName: "SE Electronics / SE Power IPS",
           documentSeal: documentSealBase64,
-          atikurSign: atikurSignBase64,
+          atikurSign: officerSealFile === "chairmanSeal.jpeg" ? undefined : atikurSignBase64,
           chairmanSign: chairmanSignBase64,
         };
 
@@ -525,6 +527,8 @@ export default async function generatePDF({
         if (!response.success || !response.data)
           throw new AppError("অভিযোগটি পাওয়া যায়নি।");
         const c = response.data!;
+        const { complaintOfficerSealFile } = await import("@/constants/complaintData");
+        const officerSealFile = complaintOfficerSealFile(c.hearingOfficerName);
 
         const logoBase64 = await convertToBase64(
           path.join(process.cwd(), "src", "assets", "images", "logo.jpg"),
@@ -550,7 +554,7 @@ export default async function generatePDF({
             "src",
             "assets",
             "images",
-            "atikurSign.jpeg",
+            officerSealFile,
           ),
         ).catch(() => undefined);
 
@@ -580,7 +584,7 @@ export default async function generatePDF({
           orderNum: receiptNum, // Use receiptNum as orderNum if mapping required
           documentSeal: documentSealBase64,
           atikurSign: atikurSignBase64,
-          ajomSign: ajomSignBase64,
+          ajomSign: officerSealFile === "ajomSign.jpeg" ? undefined : ajomSignBase64,
           officerName: c.hearingOfficerName || "",
           officerDesignation: c.hearingOfficerDesignation || "",
         };
@@ -689,6 +693,8 @@ export default async function generatePDF({
         if (!response.success || !response.data)
           throw new AppError("অভিযোগটি পাওয়া যায়নি।");
         const c = response.data!;
+        const { complaintOfficerSealFile } = await import("@/constants/complaintData");
+        const officerSealFile = complaintOfficerSealFile(c.hearingOfficerName);
 
         const logoBase64 = await convertToBase64(
           path.join(process.cwd(), "src", "assets", "images", "logo.jpg"),
@@ -713,7 +719,7 @@ export default async function generatePDF({
             "src",
             "assets",
             "images",
-            "atikurSign.jpeg",
+            officerSealFile,
           ),
         ).catch(() => undefined);
 
@@ -747,7 +753,7 @@ export default async function generatePDF({
           receiptNo,
           logo: logoBase64,
           documentSeal: documentSealBase64,
-          atikurSign: atikurSignBase64,
+          atikurSign: officerSealFile === "chairmanSeal.jpeg" ? undefined : atikurSignBase64,
           chairmanSign: chairmanSignBase64,
           officerName: c.hearingOfficerName || "",
           officerDesignation: c.hearingOfficerDesignation || "",

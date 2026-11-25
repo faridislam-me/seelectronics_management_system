@@ -113,16 +113,25 @@ export default function ExParteNoticeTemplate({ data }: ExParteNoticeTemplatePro
       </div>
 
       {/* Signature Block — two signatories: the investigating officer (left) and
-          the resolution officer / chairman (right), with the round office seal between them.
+          the resolution officer / chairman (right).
           Each signature image already carries its signatory's printed name and
           designation, so only a short role caption sits under the line. */}
-      <div className="flex justify-between items-end mt-auto pt-8">
-        {/* LEFT — investigating officer (Atikur Rahman) */}
+      {/* Round office seal: centred in the free space above the signature row,
+          so the two wide name seals never squeeze it. */}
+      {data.documentSeal && (
+        <div className="flex justify-center mt-auto pt-6">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={data.documentSeal} alt="সিল" className="w-[1in] h-[1in] object-contain opacity-90" />
+        </div>
+      )}
+
+      <div className={`flex justify-between items-end pt-4 ${data.documentSeal ? "" : "mt-auto"}`}>
+        {/* LEFT — investigating officer (whoever the complaint is assigned to) */}
         <div className="text-center w-64">
           <div className="h-[22mm] flex items-end justify-center">
             {data.officerSign && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={data.officerSign} alt="তদন্ত কর্মকর্তা" className="max-h-[22mm] object-contain" />
+              <img src={data.officerSign} alt="তদন্ত কর্মকর্তা" className="w-[1.5in] h-[0.75in] object-contain" />
             )}
           </div>
           <div className="border-t border-black/70 mt-1 pt-1 text-[12px] font-bold">
@@ -130,21 +139,12 @@ export default function ExParteNoticeTemplate({ data }: ExParteNoticeTemplatePro
           </div>
         </div>
 
-        {/* MIDDLE — round office seal, centred between the two signatories so it
-            never sits on top of either signature / name stamp. */}
-        <div className="flex-1 flex items-end justify-center pb-1">
-          {data.documentSeal && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={data.documentSeal} alt="সিল" className="w-[26mm] h-[26mm] object-contain opacity-90" />
-          )}
-        </div>
-
         {/* RIGHT — resolution officer / chairman */}
         <div className="text-center w-64">
           <div className="h-[22mm] flex items-end justify-center">
             {data.chairmanSeal && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={data.chairmanSeal} alt="নিষ্পত্তি কর্মকর্তা" className="max-h-[22mm] object-contain" />
+              <img src={data.chairmanSeal} alt="নিষ্পত্তি কর্মকর্তা" className="w-[1.5in] h-[0.75in] object-contain" />
             )}
           </div>
           <div className="border-t border-black/70 mt-1 pt-1 text-[12px] font-bold">

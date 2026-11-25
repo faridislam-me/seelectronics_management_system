@@ -4,7 +4,7 @@ import {
   ComplaintGdCopyTemplateData,
   CompletionNoticeTemplateData,
 } from "@/app/pdf/download/actions/pdfTypes";
-import { COMPLAINT_STATUS_BN, complaintCustomerStandingBn, complaintIncidentDateBn } from "@/constants/complaintData";
+import { COMPLAINT_STATUS_BN, complaintCustomerStandingBn, complaintIncidentDateBn, complaintOfficerSealFile } from "@/constants/complaintData";
 import { brandUrl } from "@/constants/domains";
 import { getBaseUrl } from "@/utils";
 import fs from "fs";
@@ -107,7 +107,7 @@ export async function buildComplaintGdCopyData(c: ComplaintDocSource): Promise<C
   const [logo, documentSeal, officerSign, qr] = await Promise.all([
     imageDataUri("logo.jpg"),
     imageDataUri("documentSeal.jpeg"),
-    imageDataUri("atikurSign.jpeg"),
+    imageDataUri(complaintOfficerSealFile(c.hearingOfficerName)),
     qrcode(verifyUrl, 1),
   ]);
 
@@ -157,8 +157,8 @@ export async function buildExParteNoticeData(c: ComplaintDocSource): Promise<Com
     imageDataUri("logo.jpg"),
     imageDataUri("documentSeal.jpeg"),
     imageDataUri("chairmanSeal.jpeg"),
-    // Second signatory on the ex-parte notice: investigating officer Atikur.
-    imageDataUri("atikurSign.jpeg"),
+    // Investigating officer = whoever the complaint is assigned to.
+    imageDataUri(complaintOfficerSealFile(c.hearingOfficerName)),
   ]);
 
   return {

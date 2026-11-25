@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { ComplaintGdCopyTemplateData } from "@/app/pdf/download/actions/pdfTypes";
 
-type ComplaintGdCopyTemplateProps = {
+type ComplaintLetterTemplateProps = {
   data: ComplaintGdCopyTemplateData;
 };
 
@@ -13,7 +13,7 @@ type ComplaintGdCopyTemplateProps = {
  * by the on-screen view/print page, so it must stay a plain (hook-free)
  * component.
  */
-export default function ComplaintGdCopyTemplate({ data }: ComplaintGdCopyTemplateProps) {
+export default function ComplaintLetterTemplate({ data }: ComplaintLetterTemplateProps) {
   // Long descriptions shrink a little so the letter stays on a single A4 page.
   const len = data.description.length;
   const fontSize = len > 1600 ? "11.5px" : len > 1000 ? "12.5px" : len > 600 ? "13.5px" : "14.5px";

@@ -758,9 +758,9 @@ export default async function generatePDF({
       }
 
       case "complaint_customer": {
-        // Complaint letter as a GD-style copy with a verification QR code.
-        const ComplaintGdCopyTemplate = (
-          await import("@/components/features/complaints/ComplaintGdCopyTemplate")
+        // Complaint letter: plain case-paper sheet with a verification QR code.
+        const ComplaintLetterTemplate = (
+          await import("@/components/features/complaints/ComplaintLetterTemplate")
         ).default;
         const { getComplaintById } = await import("@/actions/complaintActions");
         const response = await getComplaintById(finalId);
@@ -769,7 +769,30 @@ export default async function generatePDF({
         const { buildComplaintGdCopyData } = await import("@/lib/complaintDocs");
         const data = await buildComplaintGdCopyData(response.data!);
 
-        html = renderToStaticMarkup(<ComplaintGdCopyTemplate data={data} />);
+        html = renderToStaticMarkup(<ComplaintLetterTemplate data={data} />);
+        options = {
+          format: "A4",
+          printBackground: true,
+          margin: { top: 0, right: 0, bottom: 0, left: 0 },
+        };
+        break;
+      }
+
+      case "complaint_admin_file": {
+        // Boxed GD-style office copy with status + officer details. Admin only.
+        if ((await (await import("@/lib")).verifySession(false))?.role !== "admin")
+          throw new AppError("অভিযোগটি পাওয়া যায়নি।");
+        const ComplaintAdminFileTemplate = (
+          await import("@/components/features/complaints/ComplaintAdminFileTemplate")
+        ).default;
+        const { getComplaintById } = await import("@/actions/complaintActions");
+        const response = await getComplaintById(finalId);
+        if (!response.success || !response.data)
+          throw new AppError("অভিযোগটি পাওয়া যায়নি।");
+        const { buildComplaintGdCopyData } = await import("@/lib/complaintDocs");
+        const data = await buildComplaintGdCopyData(response.data!);
+
+        html = renderToStaticMarkup(<ComplaintAdminFileTemplate data={data} />);
         options = {
           format: "A4",
           printBackground: true,

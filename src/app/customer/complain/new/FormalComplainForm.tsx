@@ -288,7 +288,7 @@ export default function FormalComplainForm({
             </select>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex flex-col">
             <div className="flex flex-col gap-1">
               <label className="text-sm font-bold text-gray-700">
                 অভিযোগের বিষয় <span className="text-rose-500">*</span>

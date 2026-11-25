@@ -50,8 +50,8 @@ export default async function ComplaintDocPage({ params }: { params: Promise<{ c
         </div>
         <div className="flex flex-wrap gap-2">
           {/* Complaint letter as a GD-style copy with QR: view/print page + direct PDF download. */}
-          <Link href={`/complaint-doc/${complaint.complaintId}?doc=gd`} className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-white border border-[#0b3d91] text-[#0b3d91] text-[12px] font-extrabold"><Printer size={14} />জিডি কপি দেখুন / প্রিন্ট</Link>
-          <a href={`/pdf/download?type=complaint_customer&id=${complaint.complaintId}`} target="_blank" className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-[#0b3d91] text-white text-[12px] font-extrabold"><Download size={14} />জিডি কপি ডাউনলোড</a>
+          <Link href={`/complaint-doc/${complaint.complaintId}?doc=gd`} className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-white border border-[#0b3d91] text-[#0b3d91] text-[12px] font-extrabold"><Printer size={14} />অভিযোগ পত্র দেখুন / প্রিন্ট</Link>
+          <a href={`/pdf/download?type=complaint_customer&id=${complaint.complaintId}`} target="_blank" className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-[#0b3d91] text-white text-[12px] font-extrabold"><Download size={14} />অভিযোগ পত্র ডাউনলোড</a>
           {isHearing && <a href={`/pdf/download?type=hearing-notice&id=${complaint.complaintId}`} target="_blank" className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-[#e0a11b] text-white text-[12px] font-extrabold"><Download size={14} />শুনানি নোটিশ</a>}
           {isCompleted && <a href={`/pdf/download?type=completion-notice&id=${complaint.complaintId}`} target="_blank" className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-[#1a9c4b] text-white text-[12px] font-extrabold"><Download size={14} />নিষ্পত্তি পত্র</a>}
           {isAbsent && <a href={`/pdf/download?type=ex-parte-notice&id=${complaint.complaintId}`} target="_blank" className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-[#c0392b] text-white text-[12px] font-extrabold"><Download size={14} />একতরফা নিষ্পত্তি পত্র</a>}

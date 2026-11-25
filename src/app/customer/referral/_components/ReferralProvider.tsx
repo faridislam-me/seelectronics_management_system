@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, Suspense, use, useContext, useEffect, useState } from "react";
 import { getCustomerReferralData } from "@/actions";
 import { toast } from "react-toastify";
 import { AlertCircle } from "lucide-react";
@@ -13,28 +13,12 @@ type ReferralContextType = {
 
 const ReferralContext = createContext<ReferralContextType | undefined>(undefined);
 
-export function ReferralProvider({ children }: { children: React.ReactNode }) {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+export type ReferralResult = Awaited<ReturnType<typeof getCustomerReferralData>>;
 
-  const fetchData = async () => {
-    const res = await getCustomerReferralData();
-    if (res.success) {
-      setData(res.data);
-    } else {
-      toast.error(res.message);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  // Skeleton shaped like the referral screen so the footer doesn't float
-  // mid-page while data loads.
-  if (loading)
-    return (
+// Skeleton shaped like the referral screen so the footer doesn't float
+// mid-page while data loads.
+function ReferralSkeleton() {
+  return (
       <div className="flex flex-col gap-2.5 animate-pulse" aria-busy="true" aria-label="লোডিং হচ্ছে...">
         <div className="h-[170px] rounded-md bg-[#c9d8f0]" />
         <div className="grid grid-cols-2 gap-2">
@@ -46,7 +30,33 @@ export function ReferralProvider({ children }: { children: React.ReactNode }) {
           <div key={i} className="h-[92px] rounded-md bg-white border border-[#dfe6f2]" />
         ))}
       </div>
-    );
+  );
+}
+
+/** `initial` is started on the server (see layout.tsx) and streamed in. */
+export function ReferralProvider({ children, initial }: { children: React.ReactNode; initial: Promise<ReferralResult> }) {
+  return (
+    <Suspense fallback={<ReferralSkeleton />}>
+      <ReferralData initial={initial}>{children}</ReferralData>
+    </Suspense>
+  );
+}
+
+function ReferralData({ children, initial }: { children: React.ReactNode; initial: Promise<ReferralResult> }) {
+  const res = use(initial);
+  const [data, setData] = useState<any>(res.success ? res.data : null);
+
+  // Keep in sync when the server sends a fresh copy (e.g. after revalidation).
+  useEffect(() => {
+    if (res.success) setData(res.data);
+    else toast.error(res.message);
+  }, [res]);
+
+  const fetchData = async () => {
+    const fresh = await getCustomerReferralData();
+    if (fresh.success) setData(fresh.data);
+    else toast.error(fresh.message);
+  };
 
   if (!data?.vipCardNumber) {
     return (

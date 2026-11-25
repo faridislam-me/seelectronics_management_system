@@ -162,7 +162,7 @@ export default function ComplaintDetailsPage() {
             className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-[11px] font-black uppercase tracking-wider text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
             target="_blank"
           >
-            <Download size={14} /> অভিযোগ পত্র (PDF)
+            <Download size={14} /> অভিযোগপত্র PDF
           </Link>
           {/* Same complaint letter on screen, with Print + Download. */}
           <Link
@@ -170,7 +170,7 @@ export default function ComplaintDetailsPage() {
             className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-[11px] font-black uppercase tracking-wider text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
             target="_blank"
           >
-            <Printer size={14} /> অভিযোগ পত্র (Print)
+            <Printer size={14} /> অভিযোগপত্র প্রিন্ট
           </Link>
 
           <Link
@@ -178,14 +178,14 @@ export default function ComplaintDetailsPage() {
             className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-[11px] font-black uppercase tracking-wider text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
             target="_blank"
           >
-            <Download size={14} /> অ্যাডমিন অভিযোগ ফাইল (PDF)
+            <Download size={14} /> অ্যাডমিন অভিযোগ ফাইল PDF
           </Link>
                     <Link
             href={`/complaint-doc/${complaint.complaintId}?doc=admin-file`}
             className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-[11px] font-black uppercase tracking-wider text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
             target="_blank"
           >
-            <Printer size={14} /> অ্যাডমিন অভিযোগ ফাইল (Print)
+            <Printer size={14} /> অ্যাডমিন অভিযোগ ফাইল প্রিন্ট
           </Link>
 
           {complaint.status === "customer_absent" && (
@@ -195,14 +195,14 @@ export default function ComplaintDetailsPage() {
                 className="flex items-center justify-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-lg text-[11px] font-black uppercase tracking-wider text-orange-700 hover:bg-orange-100 transition-all shadow-sm"
                 target="_blank"
               >
-                <Printer size={14} /> Absent Notice (Print)
+                <Printer size={14} /> অনুপস্থিতি নোটিশ প্রিন্ট
               </Link>
               <Link
                 href={`/pdf/download?type=ex-parte-notice&id=${complaint.complaintId}`}
                 className="flex items-center justify-center gap-2 px-3 py-2 bg-orange-600 text-white rounded-lg text-[11px] font-black uppercase tracking-wider hover:bg-orange-700 transition-all shadow-md"
                 target="_blank"
               >
-                <Download size={14} /> Absent Notice (PDF)
+                <Download size={14} /> অনুপস্থিতি নোটিশ PDF
               </Link>
             </>
           )}
@@ -213,7 +213,7 @@ export default function ComplaintDetailsPage() {
               className="flex items-center justify-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-[11px] font-black uppercase tracking-wider text-amber-700 hover:bg-amber-100 transition-all shadow-sm"
               target="_blank"
             >
-              <Download size={14} /> Hearing Notice
+              <Download size={14} /> শুনানি প্রিন্ট
             </Link>
           )}
 
@@ -225,7 +225,7 @@ export default function ComplaintDetailsPage() {
                   className="flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600 text-white rounded-lg text-[11px] font-black uppercase tracking-wider hover:bg-emerald-700 transition-all shadow-md"
                   target="_blank"
                 >
-                  <Download size={14} /> Resolution Notice
+                  <Download size={14} /> নিষ্পত্তি প্রিন্ট
                 </Link>
               ) : (
                 <>
@@ -234,14 +234,14 @@ export default function ComplaintDetailsPage() {
                     className="flex items-center justify-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-[11px] font-black uppercase tracking-wider text-red-700 hover:bg-red-100 transition-all shadow-sm"
                     target="_blank"
                   >
-                    <Download size={14} /> Punishment Order
+                    <Download size={14} /> স্টাফ নোটিশ প্রিন্ট
                   </Link>
                   <Link
                     href={`/pdf/download?type=completion-notice&id=${complaint.complaintId}`}
                     className="flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600 text-white rounded-lg text-[11px] font-black uppercase tracking-wider hover:bg-emerald-700 transition-all shadow-md"
                     target="_blank"
                   >
-                    <Download size={14} /> Completion Notice
+                    <Download size={14} /> গ্রাহক অবহিতকরণ প্রিন্ট
                   </Link>
                 </>
               )}

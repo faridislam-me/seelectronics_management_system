@@ -91,6 +91,16 @@ export default function ComplaintLetterTemplate({ data }: ComplaintLetterTemplat
       <div className="flex items-end justify-between gap-3 mt-auto pt-4">
         {/* Receiving officer's name seal */}
         <div className="text-center leading-snug">
+          <div className="text-left text-[12px] mb-2">
+            <p>
+              <span className="font-bold">ট্র্যাকিং নম্বর ঃ</span> <span className="font-mono font-bold">{data.complaintId}</span>
+            </p>
+            {data.service.serviceId && (
+              <p>
+                <span className="font-bold">সার্ভিস আইডি ঃ</span> <span className="font-mono font-bold">{data.service.serviceId}</span>
+              </p>
+            )}
+          </div>
           {data.officerSign && (
             <img src={data.officerSign} alt="গ্রহণকারী কর্মকর্তার সিল" className="w-[1.5in] h-[0.75in] max-w-none object-contain mx-auto" />
           )}

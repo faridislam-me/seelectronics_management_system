@@ -94,10 +94,21 @@ export default function ComplaintsPage() {
 
   const filteredComplaints = complaints.filter((c) => {
     const matchesStatus = filter === "all" || c.status === filter;
+    // Complaint number, service ID, customer / staff name, ID or phone.
+    const q = searchQuery.trim().toLowerCase();
     const matchesSearch =
-      c.complaintId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.staff.name.toLowerCase().includes(searchQuery.toLowerCase());
+      !q ||
+      [
+        c.complaintId,
+        c.serviceId,
+        c.customerId,
+        c.staffId,
+        c.customer?.name,
+        c.customer?.phone,
+        c.staff?.name,
+        c.staff?.phone,
+        c.subject,
+      ].some((v) => String(v || "").toLowerCase().includes(q));
     return matchesStatus && matchesSearch;
   });
 
@@ -156,7 +167,7 @@ export default function ComplaintsPage() {
         />
         <input
           type="text"
-          placeholder="Search by ID, Customer or Staff..."
+          placeholder="অভিযোগ নম্বর, সার্ভিস আইডি, গ্রাহক বা স্টাফের নাম / মোবাইল দিয়ে খুঁজুন..."
           className="w-full pl-12 pr-4 py-4 bg-white rounded-md border border-gray-100 shadow-sm outline-none focus:ring-2 focus:ring-red-500 transition-all font-medium"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}

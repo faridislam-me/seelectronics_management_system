@@ -7,7 +7,7 @@ type ComplaintLetterTemplateProps = {
 
 /**
  * Complaint letter laid out like a filed case / GD paper: a plain white A4
- * sheet with a wide binding margin on the left (1.5in), 0.75in on the top and
+ * sheet with a wide binding margin on the left (1.5in), 1in on the top, 0.75in on the
  * right, 0.5in at the bottom, running letter text, and nothing decorative except
  * the verification QR code at the top. Rendered both by the PDF generator and
  * by the on-screen view/print page, so it must stay a plain (hook-free)
@@ -26,7 +26,7 @@ export default function ComplaintLetterTemplate({ data }: ComplaintLetterTemplat
         fontFamily: "'SolaimanLipi', 'Tiro Bangla', sans-serif",
         lineHeight: 1.6,
         fontSize,
-        padding: "0.75in 0.75in 0.5in 1.5in",
+        padding: "1in 0.75in 0.5in 1.5in",
       }}
     >
       {/* Addressee (left) + verification QR (right) */}

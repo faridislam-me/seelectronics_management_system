@@ -14,11 +14,12 @@ type FeedData = [
 // Known notification types get a friendly Bangla title; everything else falls
 // back to a prettified version of the raw type key.
 const TITLE_MAP: Record<string, string> = {
-  complaint_customer_absent: "অভিযোগ নিষ্পত্তি",
+  complaint_customer_absent: "অভিযোগ নোটিশ",
+  guarantor_notice: "জামিনদার নোটিশ",
 };
 const kindOf = (type: string): FeedItem["kind"] => {
   const t = (type || "").toLowerCase();
-  if (t.includes("complaint")) return "notice";
+  if (t.includes("complaint") || t.includes("guarantor")) return "notice";
   if (t.includes("payment") || t.includes("referral") || t.includes("bonus") || t.includes("invoice")) return "payment";
   if (t.includes("approv") || t.includes("complete") || t.includes("service")) return "approval";
   return "system";

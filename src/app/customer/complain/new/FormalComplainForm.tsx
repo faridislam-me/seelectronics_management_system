@@ -1,6 +1,6 @@
 "use client";
 
-import { submitComplaint } from "@/actions/complaintActions";
+import { lookupComplaintServiceStaff, submitComplaint } from "@/actions/complaintActions";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import {
@@ -27,6 +27,44 @@ export default function FormalComplainForm({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [serviceId, setServiceId] = useState("");
   const [error, setError] = useState("");
+  const [staffId, setStaffId] = useState("");
+  const [found, setFound] = useState<{ staffId: string; name: string; role: string; serviceType: string | null } | null>(null);
+  const [lookup, setLookup] = useState<"idle" | "loading" | "notfound">("idle");
+  const [lookupMsg, setLookupMsg] = useState("");
+
+  // Typing the service ID fills in whoever handled that job: the electrician
+  // for an installation, the technician for a repair/service.
+  useEffect(() => {
+    const id = serviceId.trim();
+    if (id.length < 6) {
+      setFound(null);
+      setLookup("idle");
+      return;
+    }
+    let cancelled = false;
+    setLookup("loading");
+    const timer = setTimeout(async () => {
+      const res = await lookupComplaintServiceStaff(id);
+      if (cancelled) return;
+      if (res.success) {
+        setFound(res.data);
+        setStaffId(res.data.staffId);
+        setLookup("idle");
+        setError("");
+      } else {
+        setFound(null);
+        setLookup("notfound");
+        setLookupMsg(res.message);
+      }
+    }, 500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [serviceId]);
+
+  const roleBn = (role?: string | null) =>
+    role === "electrician" ? "ইলেকট্রিশিয়ান" : role === "technician" ? "টেকনিশিয়ান" : (role || "").toUpperCase();
 
   useEffect(() => {
     if (state) {
@@ -185,6 +223,44 @@ export default function FormalComplainForm({
         </legend>
 
         <div className="space-y-6 pt-2">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-bold text-gray-700">
+              সার্ভিস আইডি <span className="text-red-500">(আবশ্যক)</span>
+            </label>
+            <input
+              type="text"
+              name="serviceId"
+              value={serviceId}
+              onChange={(e) => setServiceId(e.target.value)}
+              onBlur={handleBlur}
+              placeholder="e.g. SE45LMQ8SF"
+              autoCapitalize="characters"
+              autoComplete="off"
+              className={`w-full p-2.5 bg-white border rounded-md outline-none transition-all text-gray-900 shadow-sm font-mono ${
+                error
+                  ? "border-red-500 focus:ring-2 focus:ring-red-400"
+                  : "border-gray-300 focus:ring-2 focus:ring-emerald-500"
+              }`}
+              required
+            />
+            <p className="text-xs text-gray-500">
+              সার্ভিস আইডি দিলে যে টেকনিশিয়ান / ইলেকট্রিশিয়ান কাজে গিয়েছিলেন তার নাম ও আইডি নিচে স্বয়ংক্রিয়ভাবে চলে আসবে।
+            </p>
+            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+            {lookup === "loading" && <p className="text-sm text-gray-500 mt-1">সার্ভিস আইডি যাচাই করা হচ্ছে...</p>}
+            {lookup === "notfound" && <p className="text-sm text-amber-700 mt-1">{lookupMsg} — নিচের তালিকা থেকে স্টাফ বেছে নিন।</p>}
+            {found && (
+              <div className="mt-1 flex items-center gap-2 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+                <CheckCircle2 size={18} className="shrink-0 text-emerald-600" />
+                <span>
+                  {found.serviceType === "install" ? "ইনস্টলেশন" : "সার্ভিস"} · {roleBn(found.role)}:{" "}
+                  <span className="font-bold">{found.name || "—"}</span> · আইডি:{" "}
+                  <span className="font-mono font-bold">{found.staffId}</span>
+                </span>
+              </div>
+            )}
+          </div>
+
           <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-md">
             <p className="text-sm font-semibold text-emerald-800 mb-3">
               নিচের অপশন থেকে অভিযুক্ত স্টাফ / সদস্য নির্বাচন করুন{" "}
@@ -193,9 +269,16 @@ export default function FormalComplainForm({
             <select
               name="staffId"
               required
+              value={staffId}
+              onChange={(e) => setStaffId(e.target.value)}
               className="w-full p-3 bg-white border border-emerald-200 rounded-md outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-medium text-gray-800 shadow-sm"
             >
               <option value="">-- অভিযুক্ত স্টাফ বেছে নিন --</option>
+              {found && !staffs.some((st) => st.staffId === found.staffId) && (
+                <option value={found.staffId}>
+                  {found.name} - {found.role.toUpperCase()} (ID: {found.staffId})
+                </option>
+              )}
               {staffs.map((staff) => (
                 <option key={staff.staffId} value={staff.staffId}>
                   {staff.name} - {staff.role.toUpperCase()} (ID: {staff.staffId}
@@ -206,35 +289,6 @@ export default function FormalComplainForm({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex flex-col gap-1">
-              
-      <label className="text-sm font-bold text-gray-700">
-        সার্ভিস আইডি 
-          <span className="text-red-500">(আবশ্যক)</span> 
-      </label>
-
-      <input
-        type="text"
-        name="serviceId"
-        value={serviceId}
-        onChange={(e) => setServiceId(e.target.value)}
-        onBlur={handleBlur}
-        placeholder="e.g. SRV-1234..."
-        className={`w-full p-2.5 bg-white border rounded-md outline-none transition-all text-gray-900 shadow-sm ${
-          error
-            ? "border-red-500 focus:ring-2 focus:ring-red-400"
-            : "border-gray-300 focus:ring-2 focus:ring-emerald-500"
-        }`}
-        required
-      />
-
-      {error && (
-        <p className="text-red-500 text-sm mt-1">
-          {error}
-        </p>
-      )}
-          </div>
-
             <div className="flex flex-col gap-1">
               <label className="text-sm font-bold text-gray-700">
                 অভিযোগের বিষয় <span className="text-rose-500">*</span>

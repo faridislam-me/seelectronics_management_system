@@ -133,6 +133,8 @@ export interface ComplaintGdCopyTemplateData {
   description: string;
   /** "আপনার প্রতিষ্ঠানের একজন … গ্রাহক" — warranty-covered only while the warranty is active. */
   customerStandingBn: string;
+  /** Date the letter refers to (service date, else filing date), dd/mm/yyyy in Bangla digits. */
+  incidentDateBn: string;
   statusBn: string;
   officer: {
     name: string;

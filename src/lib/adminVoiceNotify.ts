@@ -48,7 +48,10 @@ export const ADMIN_VOICE_IDS = {
   // hearing calls. They must never be listed here: everything in this map is
   // played to the ADMIN phones.
   customer_chat: 4653,
-  service_completed: 4654,
+  // Technician / electrician submitted the work report with "হ্যাঁ, সম্পন্ন হয়েছে":
+  // tells the admins the job is done and the staff payment is due (voice 4738,
+  // replaces the older generic 4654 so the admins get one call, not two).
+  service_completed: 4738,
   installment_application: 4655,
   referral_withdraw: 4656,
   // Customer submitted an installment payment from the app (needs admin verify).

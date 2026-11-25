@@ -1764,6 +1764,55 @@ export const installmentApplicationTrackingRelations = relations(
   }),
 );
 
+// ─── Guarantor notices (জামিনদারকে নোটিশ) ──────────────────────────────────
+// One row per notice the admin sends to an installment plan's guarantor. The
+// escalation stage is `level`: reminder → legal → final. Names / phone / dues
+// are snapshotted so the printed notice never changes after it was issued.
+// `token` is the random, unguessable key of the public notice document.
+// SQL: scripts/manual-sql/2026-11-25_guarantor_notices.sql
+export const guarantorNotices = pgTable(
+  "guarantor_notices",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    token: varchar({ length: 64 }).unique().notNull(),
+    noticeNo: varchar({ length: 50 }).unique().notNull(),
+    planId: uuid()
+      .references(() => installmentPlans.id, { onDelete: "cascade" })
+      .notNull(),
+    planCode: varchar({ length: 255 }).notNull(),
+    /** "reminder" | "legal" | "final" */
+    level: varchar({ length: 20 }).notNull(),
+    guarantorName: varchar({ length: 255 }),
+    guarantorPhone: varchar({ length: 255 }).notNull(),
+    guarantorAddress: text(),
+    customerName: varchar({ length: 255 }).notNull(),
+    customerPhone: varchar({ length: 255 }).notNull(),
+    productModel: varchar({ length: 255 }).notNull(),
+    /** Notice text exactly as the admin sent it. */
+    body: text().notNull(),
+    /** Overdue amount / number of overdue installments when the notice was sent. */
+    dueAmount: numeric({ precision: 12, scale: 2, mode: "number" })
+      .default(0)
+      .notNull(),
+    dueCount: integer().default(0).notNull(),
+    /** Whole unpaid balance of the plan when the notice was sent. */
+    remainingAmount: numeric({ precision: 12, scale: 2, mode: "number" })
+      .default(0)
+      .notNull(),
+    deadlineDate: timestamp({ withTimezone: true }),
+    smsSent: boolean().default(false).notNull(),
+    smsError: text(),
+    /** Set when the guarantor's phone matched a customer account (in-app notification sent). */
+    guarantorCustomerId: varchar({ length: 255 }),
+    createdBy: varchar({ length: 255 }),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("guarantor_notices_plan_idx").on(table.planId),
+    index("guarantor_notices_plan_code_idx").on(table.planCode),
+  ],
+);
+
 // ─── Mobile Recharge Requests (from referral balance) ─────────────────────
 
 export const mobileOperatorEnum = pgEnum("mobileOperator", [

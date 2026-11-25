@@ -37,7 +37,8 @@ export type DocType =
   | "installment-noc"
   | "installment-sticker"
   | "installment-documents"
-  | "installment-receipt";
+  | "installment-receipt"
+  | "guarantor-notice";
 
 export type CertificateData = {
   staffId?: string;

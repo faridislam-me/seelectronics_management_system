@@ -32,6 +32,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { STATUS_META } from "./InstallmentsClient";
+import GuarantorNoticePanel from "./GuarantorNoticePanel";
 
 const bdt = (n: number) => `৳${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 
@@ -342,6 +343,9 @@ export default function InstallmentPlanDetail({ data }: { data: any }) {
           {plan.notes && <p className="mt-2 text-xs text-gray-500 border-t border-gray-100 dark:border-gray-700 pt-2">{plan.notes}</p>}
         </div>
       </div>
+
+      {/* Guarantor notices (reminder → legal → final) */}
+      <GuarantorNoticePanel plan={plan} schedule={schedule} notices={data.guarantorNotices || []} />
 
       {/* Schedule */}
       <div className="rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden">

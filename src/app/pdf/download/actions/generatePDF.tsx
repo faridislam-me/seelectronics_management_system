@@ -1292,6 +1292,30 @@ export default async function generatePDF({
         break;
       }
 
+      // Notice letter to an installment guarantor. `finalId` is the notice's
+      // random public token (never a sequential id), so the link is unguessable.
+      case "guarantor-notice": {
+        const { default: GuarantorNoticeTemplate, toGuarantorNoticeTemplateData } =
+          await import("@/components/features/installments/GuarantorNoticeTemplate");
+        const { getGuarantorNoticeByToken } = await import("@/lib/guarantorNoticeData");
+
+        const found = await getGuarantorNoticeByToken(finalId);
+        if (!found) throw new AppError("নোটিশটি পাওয়া যায়নি।");
+
+        const img = (f: string) =>
+          convertToBase64(path.join(process.cwd(), "src", "assets", "images", f)).catch(() => undefined);
+
+        const data = toGuarantorNoticeTemplateData(found.notice, found.plan, {
+          logo: (await img("logoTransparent.png")) ?? (await img("logo.jpg")),
+          seal: await img("documentSeal.jpeg"),
+          chairmanSign: await img("chairmanSign.png"),
+          chairmanSeal: await img("chairmanNameSeal.png"),
+        });
+
+        html = renderToStaticMarkup(<GuarantorNoticeTemplate data={data} />);
+        break;
+      }
+
       default:
         throw new AppError("অকার্যকর ডকুমেন্ট টাইপ।");
     }

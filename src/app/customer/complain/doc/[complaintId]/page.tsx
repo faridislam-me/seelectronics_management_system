@@ -31,7 +31,7 @@ export default async function ComplaintDocPage({ params }: { params: Promise<{ c
     { title: "নিষ্পত্তি", label: "চূড়ান্ত পর্যালোচনার তারিখ", value: isCompleted ? formatDate(complaint.updatedAt) : "প্রক্রিয়াধীন...", on: isCompleted },
   ];
   const isAbsent = complaint.status === "customer_absent";
-  const currentWord = isAbsent ? "গ্রাহক উপস্থিত ছিলেন না" : isCompleted ? "নিষ্পত্তি" : isHearing ? "শুনানি" : isProcessing ? "প্রক্রিয়াধীন" : complaint.status === "under_trial" ? "দাখিল" : "অপেক্ষমান";
+  const currentWord = isAbsent ? "গ্রাহক উপস্থিত না থাকায় একতরফা নিষ্পত্তি" : isCompleted ? "নিষ্পত্তি" : isHearing ? "শুনানি" : isProcessing ? "প্রক্রিয়াধীন" : complaint.status === "under_trial" ? "দাখিল" : "অপেক্ষমান";
   const currentCls = isAbsent ? "text-[#b8560b]" : isCompleted ? "text-[#178a42]" : isHearing ? "text-[#b8620b]" : isProcessing ? "text-[#1b6fd6]" : "text-[#1a9c4b]";
 
   return (

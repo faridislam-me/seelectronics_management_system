@@ -113,7 +113,7 @@ export default function ExParteNoticeTemplate({ data }: ExParteNoticeTemplatePro
       </div>
 
       {/* Signature Block — two signatories: the investigating officer (left) and
-          the resolution officer / chairman (right), with the round office seal.
+          the resolution officer / chairman (right), with the round office seal between them.
           Each signature image already carries its signatory's printed name and
           designation, so only a short role caption sits under the line. */}
       <div className="flex justify-between items-end mt-auto pt-8">
@@ -130,12 +130,17 @@ export default function ExParteNoticeTemplate({ data }: ExParteNoticeTemplatePro
           </div>
         </div>
 
-        {/* RIGHT — resolution officer / chairman, with the round office seal behind */}
-        <div className="relative text-center w-64">
+        {/* MIDDLE — round office seal, centred between the two signatories so it
+            never sits on top of either signature / name stamp. */}
+        <div className="flex-1 flex items-end justify-center pb-1">
           {data.documentSeal && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={data.documentSeal} alt="সিল" className="absolute left-1 bottom-8 w-[24mm] opacity-90" />
+            <img src={data.documentSeal} alt="সিল" className="w-[26mm] h-[26mm] object-contain opacity-90" />
           )}
+        </div>
+
+        {/* RIGHT — resolution officer / chairman */}
+        <div className="text-center w-64">
           <div className="h-[22mm] flex items-end justify-center">
             {data.chairmanSeal && (
               // eslint-disable-next-line @next/next/no-img-element

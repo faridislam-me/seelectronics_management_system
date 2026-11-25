@@ -18,7 +18,7 @@ const FILE_NAMES: Record<string, string> = {
     'hearing-notice': 'SE_ELECTRONICS_HEARING_NOTICE.pdf',
     'completion-notice': 'SE_ELECTRONICS_RESOLUTION_LETTER.pdf',
     'ex-parte-notice': 'SE_ELECTRONICS_EX_PARTE_NOTICE.pdf',
-    'complaint_customer': 'SE_ELECTRONICS_CUSTOMER_COMPLAINT_COPY.pdf',
+    'complaint_customer': 'SE_ELECTRONICS_COMPLAINT_GD_COPY.pdf',
     'staff-not-guilty': 'SE_ELECTRONICS_RESOLUTION_NOTICE.pdf',
     'installment-invoice': 'SE_ELECTRONICS_INSTALLMENT_INVOICE.pdf',
     'installment-sticker': 'SE_ELECTRONICS_INSTALLMENT_STICKER.pdf',

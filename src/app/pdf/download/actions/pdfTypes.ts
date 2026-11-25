@@ -103,9 +103,13 @@ export interface ComplaintTemplateData {
   logo?: string;
 }
 
-export interface CustomerComplaintTemplateData {
+/** GD-style (General Diary) complaint copy with a verification QR code. */
+export interface ComplaintGdCopyTemplateData {
   complaintId: string;
-  serviceId: string;
+  /** Filing date-time, already formatted in Bangla (Asia/Dhaka). */
+  filedAtBn: string;
+  /** Last status change, already formatted in Bangla (Asia/Dhaka). */
+  updatedAtBn: string;
   customer: {
     name: string;
     customerId: string;
@@ -115,13 +119,31 @@ export interface CustomerComplaintTemplateData {
   staff: {
     name: string;
     staffId: string;
+    role: string;
+  };
+  /** The service / product / memo the complaint concerns (all optional). */
+  service: {
+    serviceId: string;
+    type: string;
+    product: string;
+    model: string;
+    memoNumber: string;
   };
   subject: string;
   description: string;
-  createdAt: Date;
+  statusBn: string;
+  officer: {
+    name: string;
+    designation: string;
+    phone: string;
+  };
+  /** Public verification URL encoded in the QR code. */
+  verifyUrl: string;
+  /** QR code as a PNG data URI. */
+  qrcode: string;
   logo?: string;
   documentSeal?: string;
-  atikurSign?: string;
+  officerSign?: string;
 }
 
 export interface HearingNoticeTemplateData {

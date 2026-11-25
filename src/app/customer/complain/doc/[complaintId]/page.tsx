@@ -4,7 +4,7 @@ import { CustomerLayout } from "@/components/layout/CustomerLayout";
 import { getObjectUrl } from "@/lib/s3";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
-import { ArrowLeft, Camera, CheckCircle, Download, FileText, MessageSquare, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BellRing, Camera, CheckCircle, Download, FileText, MessageSquare, Printer, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -43,11 +43,22 @@ export default async function ComplaintDocPage({ params }: { params: Promise<{ c
           <span className="flex flex-col leading-tight"><span className="text-[clamp(17px,5vw,21px)] font-extrabold">অভিযোগ পত্র (Complaint Document)</span><span className="text-[12px] font-semibold text-[#5b6784]">ড্যাশবোর্ডে ফিরুন</span></span>
         </div>
         <div className="flex flex-wrap gap-2">
-          <a href={`/pdf/download?type=complaint_customer&id=${complaint.complaintId}`} target="_blank" className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-[#0b3d91] text-white text-[12px] font-extrabold"><Download size={14} />অভিযোগ নথি</a>
+          {/* Complaint letter as a GD-style copy with QR: view/print page + direct PDF download. */}
+          <Link href={`/complaint-doc/${complaint.complaintId}?doc=gd`} className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-white border border-[#0b3d91] text-[#0b3d91] text-[12px] font-extrabold"><Printer size={14} />জিডি কপি দেখুন / প্রিন্ট</Link>
+          <a href={`/pdf/download?type=complaint_customer&id=${complaint.complaintId}`} target="_blank" className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-[#0b3d91] text-white text-[12px] font-extrabold"><Download size={14} />জিডি কপি ডাউনলোড</a>
           {isHearing && <a href={`/pdf/download?type=hearing-notice&id=${complaint.complaintId}`} target="_blank" className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-[#e0a11b] text-white text-[12px] font-extrabold"><Download size={14} />শুনানি নোটিশ</a>}
           {isCompleted && <a href={`/pdf/download?type=completion-notice&id=${complaint.complaintId}`} target="_blank" className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-[#1a9c4b] text-white text-[12px] font-extrabold"><Download size={14} />নিষ্পত্তি পত্র</a>}
           {isAbsent && <a href={`/pdf/download?type=ex-parte-notice&id=${complaint.complaintId}`} target="_blank" className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-[#c0392b] text-white text-[12px] font-extrabold"><Download size={14} />একতরফা নিষ্পত্তি পত্র</a>}
         </div>
+
+        {/* Customer-absent notice */}
+        {isAbsent && (
+          <section className="rounded-md bg-[#fff0e3] border border-[#f5cfa0] p-3 flex flex-col gap-2">
+            <span className="flex items-center gap-2 text-[14px] font-extrabold text-[#b8560b]"><BellRing size={17} />নোটিশ: গ্রাহক উপস্থিত ছিলেন না</span>
+            <p className="text-[12.5px] font-semibold text-[#5a3b00] leading-relaxed">শুনানিতে আপনি উপস্থিত না থাকায় অভিযোগটি একতরফাভাবে নিষ্পত্তি করে নথিভুক্ত করা হয়েছে। পুনরায় শুনানির প্রয়োজন হলে হটলাইনে যোগাযোগ করুন — ০৯৬৪৯৩৫৫৫৫৫।</p>
+            <Link href={`/complaint-doc/${complaint.complaintId}?doc=absent-notice`} className="self-start inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-[#b8560b] text-white text-[12px] font-extrabold"><FileText size={14} />নোটিশ দেখুন / প্রিন্ট / ডাউনলোড</Link>
+          </section>
+        )}
 
         {/* Status tracker */}
         <section className="rounded-md bg-white border border-[#dfe6f2] p-3 flex flex-col gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)]">

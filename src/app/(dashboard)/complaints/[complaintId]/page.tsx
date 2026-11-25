@@ -23,6 +23,7 @@ import {
   MapPin,
   AlertTriangle,
   UserX,
+  Printer,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -161,8 +162,35 @@ export default function ComplaintDetailsPage() {
             className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-[11px] font-black uppercase tracking-wider text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
             target="_blank"
           >
-            <Download size={14} /> Complaint Copy
+            <Download size={14} /> GD Copy (PDF)
           </Link>
+          {/* Same GD-style complaint copy on screen, with Print + Download. */}
+          <Link
+            href={`/complaint-doc/${complaint.complaintId}?doc=gd`}
+            className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-[11px] font-black uppercase tracking-wider text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
+            target="_blank"
+          >
+            <Printer size={14} /> GD Copy (Print)
+          </Link>
+
+          {complaint.status === "customer_absent" && (
+            <>
+              <Link
+                href={`/complaint-doc/${complaint.complaintId}?doc=absent-notice`}
+                className="flex items-center justify-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-lg text-[11px] font-black uppercase tracking-wider text-orange-700 hover:bg-orange-100 transition-all shadow-sm"
+                target="_blank"
+              >
+                <Printer size={14} /> Absent Notice (Print)
+              </Link>
+              <Link
+                href={`/pdf/download?type=ex-parte-notice&id=${complaint.complaintId}`}
+                className="flex items-center justify-center gap-2 px-3 py-2 bg-orange-600 text-white rounded-lg text-[11px] font-black uppercase tracking-wider hover:bg-orange-700 transition-all shadow-md"
+                target="_blank"
+              >
+                <Download size={14} /> Absent Notice (PDF)
+              </Link>
+            </>
+          )}
 
           {(complaint.status === "hearing" || complaint.status === "completed") && (
             <Link
@@ -548,7 +576,15 @@ export default function ComplaintDetailsPage() {
                     <UserX size={32} />
                   </div>
                   <h4 className="text-lg font-black text-white">গ্রাহক উপস্থিত ছিলেন না</h4>
-                  <p className="text-white/40 text-sm">যাচাইয়ের সময় গ্রাহককে পাওয়া যায়নি। গ্রাহককে SMS ও ভয়েস কলে জানানো হয়েছে।</p>
+                  <p className="text-white/40 text-sm">শুনানিতে গ্রাহক উপস্থিত ছিলেন না। গ্রাহককে অ্যাপ নোটিফিকেশন, SMS ও ভয়েস কলে অনুপস্থিতি নোটিশ পাঠানো হয়েছে।</p>
+                  <Link
+                    href={`/complaint-doc/${complaint.complaintId}?doc=absent-notice`}
+                    target="_blank"
+                    className="w-full py-3 bg-orange-500 hover:bg-orange-600 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                  >
+                    <FileText size={16} />
+                    অনুপস্থিতি নোটিশ দেখুন / প্রিন্ট
+                  </Link>
                   <button
                     onClick={() => handleStatusUpdate("processing")}
                     disabled={isUpdating}

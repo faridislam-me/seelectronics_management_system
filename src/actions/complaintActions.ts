@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db/drizzle";
-import { customerNotifications, services, staffComplaints, staffs } from "@/db/schema";
+import { services, staffComplaints, staffs } from "@/db/schema";
 import { generateRandomId } from "@/utils";
 import { desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -339,25 +339,33 @@ export async function updateComplaintStatus(
       import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("complaint_hearing_staff")).catch(() => {});
     } else if (newStatus === "customer_absent") {
       import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("hearing_absent_customer")).catch(() => {});
-      // Durable in-account notice: the customer sees, in their notifications
-      // feed, that the complaint was settled because they were not present.
-      // SMS + voice already go out via notifyComplaintStatusSMS, so this is a
-      // DB record only (no extra SMS). Must never block the status update.
+      // Customer-absent NOTICE: in-app notification + push + SMS in one go via
+      // notifyCustomer (the voice call goes out from notifyComplaintStatusSMS,
+      // which therefore sends no SMS of its own for this status). The
+      // notification opens the formal notice document, which the customer can
+      // view, print and download. Must never block the status update.
       try {
         const c = await db.query.staffComplaints.findFirst({
           where: eq(staffComplaints.complaintId, complaintId),
           columns: { customerId: true },
+          with: { customer: { columns: { phone: true } } },
         });
         if (c?.customerId) {
-          await db.insert(customerNotifications).values({
+          const { notifyCustomer } = await import("@/actions/notificationActions");
+          const { complaintAbsentNoticeUrl } = await import("@/lib/complaintDocs");
+          const noticePath = `/complaint-doc/${complaintId}?doc=absent-notice`;
+          await notifyCustomer({
             customerId: c.customerId,
+            phoneNumber: c.customer?.phone ? toAsciiDigits(c.customer.phone) : "",
             type: "complaint_customer_absent",
-            message: `শুনানিতে আপনি উপস্থিত না থাকায় আপনার অভিযোগ (${complaintId}) একতরফাভাবে নিষ্পত্তি করে নথিভুক্ত করা হয়েছে। নথিপত্র আপনার অ্যাকাউন্ট থেকে ডাউনলোড করতে পারবেন। প্রয়োজনে যোগাযোগ করুন — ০৯৬৪৯৩৫৫৫৫৫।`,
-            link: `/customer/complain/doc/${complaintId}`,
+            message: `নোটিশ: শুনানিতে আপনি উপস্থিত না থাকায় আপনার অভিযোগ (${complaintId}) একতরফাভাবে নিষ্পত্তি করে নথিভুক্ত করা হয়েছে। নোটিশটি দেখতে, প্রিন্ট বা ডাউনলোড করতে এখানে চাপুন। প্রয়োজনে যোগাযোগ করুন — ০৯৬৪৯৩৫৫৫৫৫।`,
+            shortMessage: `SE Electronics নোটিশ: শুনানিতে আপনি উপস্থিত না থাকায় আপনার অভিযোগ (${complaintId}) একতরফাভাবে নিষ্পত্তি করা হয়েছে। নোটিশ দেখুন: ${complaintAbsentNoticeUrl(complaintId)} যোগাযোগ: 09649355555`,
+            link: noticePath,
+            sendSms: Boolean(c.customer?.phone),
           });
         }
       } catch (noticeErr) {
-        console.error("customer_absent in-app notice failed:", noticeErr);
+        console.error("customer_absent notice failed:", noticeErr);
       }
     } else if (newStatus === "completed") {
       import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("hearing_settlement_customer")).catch(() => {});
@@ -531,7 +539,9 @@ async function notifyComplaintStatusSMS(
     voice(customerPhone, 4636, "Hearing Settlement Customer");
     voice(staffPhone, 4637, "Hearing Order Staff");
   } else if (newStatus === "customer_absent") {
-    send(customerPhone, `SE Electronics: আপনার অভিযোগ (${complaintId}) যাচাইয়ের সময় আপনাকে উপস্থিত/যোগাযোগযোগ্য পাওয়া যায়নি। অনুগ্রহ করে দ্রুত যোগাযোগ করুন — 09649355555।`);
+    // The absent-notice SMS (with the notice link) is sent together with the
+    // in-app notification + push by notifyCustomer in updateComplaintStatus,
+    // so only the voice call goes out here.
     // Single absent voice (legacy broadcast 3787 dropped to avoid double-calling).
     voice(customerPhone, 4635, "Hearing Absent Customer");
   } else if (newStatus === "under_trial") {

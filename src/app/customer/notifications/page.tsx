@@ -1,54 +1,17 @@
-"use client";
+import { getCustomerNotifications } from "@/actions/customerActions";
+import { getCustomerNotices } from "@/actions/noticeActions";
+import NotificationsClient from "./NotificationsClient";
 
-import { getCustomerNotifications, markCustomerNotificationAsRead } from "@/actions/customerActions";
-import { getCustomerNotices, markNoticeAsRead } from "@/actions/noticeActions";
-import NotificationFeed, { FeedItem } from "@/components/features/notifications/NotificationFeed";
-import { CustomerLayout } from "@/components/layout/CustomerLayout";
-import { useEffect, useState } from "react";
+// Reads the session cookie, so it must never be prerendered.
+export const dynamic = "force-dynamic";
 
-// Known notification types get a friendly Bangla title; everything else falls
-// back to a prettified version of the raw type key.
-const TITLE_MAP: Record<string, string> = {
-  complaint_customer_absent: "অভিযোগ নিষ্পত্তি",
-};
-const kindOf = (type: string): FeedItem["kind"] => {
-  const t = (type || "").toLowerCase();
-  if (t.includes("complaint")) return "notice";
-  if (t.includes("payment") || t.includes("referral") || t.includes("bonus") || t.includes("invoice")) return "payment";
-  if (t.includes("approv") || t.includes("complete") || t.includes("service")) return "approval";
-  return "system";
-};
-const titleOf = (type: string) =>
-  TITLE_MAP[type] || (type ? type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Notification");
-
+/**
+ * Both lists are fetched here on the server, in parallel, and streamed with the
+ * page. Before, the browser requested them after hydration as server actions,
+ * which run one at a time and queued behind the header/bottom-nav requests, so
+ * the feed waited for 4-5 sequential round-trips.
+ */
 export default function CustomerNotificationsPage() {
-  const [items, setItems] = useState<FeedItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      const [a, n] = await Promise.all([getCustomerNotifications(), getCustomerNotices()]);
-      const list: FeedItem[] = [];
-      if (a.success && a.data) {
-        for (const x of a.data as any[]) {
-          list.push({ id: x.id, isRead: x.isRead, createdAt: x.createdAt, title: titleOf(x.type), message: x.message, link: x.link, kind: kindOf(x.type),
-            onOpen: async () => { await markCustomerNotificationAsRead(x.id); setItems((p) => p.map((i) => (i.id === x.id ? { ...i, isRead: true } : i))); } });
-        }
-      }
-      if (n.success && n.data) {
-        for (const x of n.data as any[]) {
-          list.push({ id: x.id, isRead: x.isRead, createdAt: x.createdAt, title: x.notice?.title || "New Notice", message: x.notice?.content || "", kind: "notice", priority: x.notice?.priority,
-            onOpen: async () => { await markNoticeAsRead(x.id); setItems((p) => p.map((i) => (i.id === x.id ? { ...i, isRead: true } : i))); } });
-        }
-      }
-      list.sort((p, q) => new Date(q.createdAt).getTime() - new Date(p.createdAt).getTime());
-      setItems(list); setIsLoading(false);
-    })();
-  }, []);
-
-  return (
-    <CustomerLayout>
-      <NotificationFeed items={items} isLoading={isLoading} />
-    </CustomerLayout>
-  );
+  const data = Promise.all([getCustomerNotifications(), getCustomerNotices()]);
+  return <NotificationsClient data={data} />;
 }

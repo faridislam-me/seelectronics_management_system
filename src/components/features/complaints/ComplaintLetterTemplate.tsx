@@ -110,7 +110,7 @@ export default function ComplaintLetterTemplate({ data }: ComplaintLetterTemplat
 
         {/* Office seal */}
         <div className="shrink-0 pb-1">
-          {data.documentSeal && <img src={data.documentSeal} alt="অফিস সিল" className="w-[26mm] h-[26mm] object-contain opacity-90" />}
+          {data.documentSeal && <img src={data.documentSeal} alt="অফিস সিল" className="w-[1in] h-[1in] object-contain opacity-90" />}
         </div>
 
         <div>

@@ -121,7 +121,7 @@ export default function ExParteNoticeTemplate({ data }: ExParteNoticeTemplatePro
       {data.documentSeal && (
         <div className="flex justify-center mt-auto pt-6">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={data.documentSeal} alt="সিল" className="w-[34mm] h-[34mm] object-contain opacity-90" />
+          <img src={data.documentSeal} alt="সিল" className="w-[1in] h-[1in] object-contain opacity-90" />
         </div>
       )}
 
@@ -131,7 +131,7 @@ export default function ExParteNoticeTemplate({ data }: ExParteNoticeTemplatePro
           <div className="h-[22mm] flex items-end justify-center">
             {data.officerSign && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={data.officerSign} alt="তদন্ত কর্মকর্তা" className="max-h-[22mm] object-contain" />
+              <img src={data.officerSign} alt="তদন্ত কর্মকর্তা" className="w-[1.5in] h-[0.75in] object-contain" />
             )}
           </div>
           <div className="border-t border-black/70 mt-1 pt-1 text-[12px] font-bold">
@@ -144,7 +144,7 @@ export default function ExParteNoticeTemplate({ data }: ExParteNoticeTemplatePro
           <div className="h-[22mm] flex items-end justify-center">
             {data.chairmanSeal && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={data.chairmanSeal} alt="নিষ্পত্তি কর্মকর্তা" className="max-h-[22mm] object-contain" />
+              <img src={data.chairmanSeal} alt="নিষ্পত্তি কর্মকর্তা" className="w-[1.5in] h-[0.75in] object-contain" />
             )}
           </div>
           <div className="border-t border-black/70 mt-1 pt-1 text-[12px] font-bold">

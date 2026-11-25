@@ -112,6 +112,16 @@ export default function ComplaintsPage() {
     return matchesStatus && matchesSearch;
   });
 
+  const STATUS_LABEL_BN: Record<string, string> = {
+    all: "সব",
+    under_trial: "দাখিলকৃত (পেন্ডিং)",
+    processing: "প্রক্রিয়াধীন",
+    hearing: "শুনানি চলমান",
+    completed: "নিষ্পত্তিকৃত (কমপ্লিট)",
+    customer_absent: "গ্রাহক অনুপস্থিত",
+  };
+  const countFor = (f: string) => (f === "all" ? complaints.length : complaints.filter((c) => c.status === f).length);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "under_trial":
@@ -143,7 +153,7 @@ export default function ComplaintsPage() {
         </div>
 
         <div className="flex flex-wrap gap-2 bg-white p-1.5 rounded-md border border-gray-100 shadow-sm">
-          {["all", "under_trial", "processing", "hearing", "completed"].map(
+          {["all", "under_trial", "processing", "hearing", "completed", "customer_absent"].map(
             (f) => (
               <button
                 key={f}
@@ -153,7 +163,7 @@ export default function ComplaintsPage() {
                   : "text-gray-500 hover:bg-gray-50"
                   }`}
               >
-                {f.replace("_", " ")}
+                {STATUS_LABEL_BN[f] || f} ({countFor(f)})
               </button>
             ),
           )}
@@ -199,14 +209,12 @@ export default function ComplaintsPage() {
                       { id: "under_trial", label: "UT" },
                       { id: "processing", label: "P" },
                       { id: "hearing", label: "H" },
-                      { id: "completed", label: "C" },
+                      // A customer-absent complaint ends in "A" (absent) instead of "C" (completed).
+                      complaint.status === "customer_absent"
+                        ? { id: "customer_absent", label: "A" }
+                        : { id: "completed", label: "C" },
                     ].map((step, index, array) => {
-                      const statuses = [
-                        "under_trial",
-                        "processing",
-                        "hearing",
-                        "completed",
-                      ];
+                      const statuses = array.map((x) => x.id);
                       const currentIdx = statuses.indexOf(complaint.status);
                       const stepIdx = statuses.indexOf(step.id);
                       const isCompleted = currentIdx >= stepIdx;
@@ -220,7 +228,9 @@ export default function ComplaintsPage() {
                           <div
                             title={step.id.replace("_", " ")}
                             className={`w-6 h-6 rounded-md flex items-center justify-center text-[8px] font-black transition-all ${isActive
-                              ? "bg-black text-white scale-110 shadow-sm"
+                              ? step.id === "customer_absent"
+                                ? "bg-orange-500 text-white scale-110 shadow-sm"
+                                : "bg-black text-white scale-110 shadow-sm"
                               : isCompleted
                                 ? "bg-emerald-500 text-white"
                                 : "bg-gray-100 text-gray-400"
@@ -242,6 +252,9 @@ export default function ComplaintsPage() {
                   </span>
                 </div>
 
+                <span className={`inline-block mb-3 px-2.5 py-1 rounded-full border text-[12px] font-bold ${getStatusColor(complaint.status)}`}>
+                  {STATUS_LABEL_BN[complaint.status] || complaint.status}
+                </span>
                 <h3 className="text-lg font-bold text-gray-900 mb-2 leading-tight group-hover:text-red-600 transition-colors">
                   {complaint.subject}
                 </h3>

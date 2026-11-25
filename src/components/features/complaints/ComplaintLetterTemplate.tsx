@@ -39,12 +39,22 @@ export default function ComplaintLetterTemplate({ data }: ComplaintLetterTemplat
         </div>
         <div className="shrink-0 flex flex-col items-center text-[10px] leading-tight">
           {data.qrcode && <img src={data.qrcode} alt="Verification QR" className="w-[26mm] h-[26mm]" />}
-          <span className="mt-[2px]">অভিযোগ নং: <span className="font-mono font-bold">{data.complaintId}</span></span>
-          <span>তারিখ: {data.filedAtBn}</span>
+          <span className="mt-[2px]">স্ক্যান করে যাচাই করুন</span>
         </div>
       </div>
 
-      <p className="font-bold text-justify mt-2">বিষয় ঃ {data.subject || "অভিযোগ"}</p>
+      <p>
+        <span className="font-bold">অভিযোগ নং ঃ</span> <span className="font-mono font-bold">{data.complaintId}</span>
+        <span className="mx-2">|</span>
+        <span className="font-bold">তারিখ ঃ</span> {data.filedAtBn}
+      </p>
+      {data.service.serviceId && (
+        <p>
+          <span className="font-bold">সার্ভিস আইডি ঃ</span> <span className="font-mono">{data.service.serviceId}</span>
+        </p>
+      )}
+
+      <p className="font-bold text-justify mt-3">বিষয় ঃ {data.subject || "অভিযোগ"}</p>
       <p className="font-bold mt-5">জনাব,</p>
 
       <p className="text-justify mb-3">
@@ -78,7 +88,21 @@ export default function ComplaintLetterTemplate({ data }: ComplaintLetterTemplat
       </p>
 
       {/* Signature block */}
-      <div className="flex justify-end mt-auto pt-4">
+      <div className="flex items-end justify-between gap-3 mt-auto pt-4">
+        {/* Receiving officer's name seal */}
+        <div className="text-center leading-snug">
+          {data.officerSign && (
+            <img src={data.officerSign} alt="গ্রহণকারী কর্মকর্তার সিল" className="w-[1.5in] h-[0.75in] max-w-none object-contain mx-auto" />
+          )}
+          <p className="text-[10px]">অনলাইনে যাচাইকৃত</p>
+          <p className="font-bold border-t border-black pt-1 text-[12px]">প্রশাসনিক শাখা, এস ই ইলেকট্রনিক্স</p>
+        </div>
+
+        {/* Office seal */}
+        <div className="shrink-0 pb-1">
+          {data.documentSeal && <img src={data.documentSeal} alt="অফিস সিল" className="w-[26mm] h-[26mm] object-contain opacity-90" />}
+        </div>
+
         <div>
           <p className="font-bold">বিনীত নিবেদন</p>
           <div className="mt-10 border-t border-black min-w-[45mm] pt-1 leading-snug">

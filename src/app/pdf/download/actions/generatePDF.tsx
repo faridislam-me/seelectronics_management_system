@@ -8,7 +8,6 @@ import {
   CertificatePayload,
   CertificateTemplateData,
   CompletionNoticeTemplateData,
-  CustomerComplaintTemplateData,
   HearingNoticeTemplateData,
   IdCardTemplateData,
   InstallmentDocumentsTemplateData,
@@ -674,50 +673,8 @@ export default async function generatePDF({
         const response = await getComplaintById(finalId);
         if (!response.success || !response.data)
           throw new AppError("অভিযোগটি পাওয়া যায়নি।");
-        const c = response.data!;
-
-        const logoBase64 = await convertToBase64(
-          path.join(process.cwd(), "src", "assets", "images", "logo.jpg"),
-        ).catch(() => undefined);
-        const documentSealBase64 = await convertToBase64(
-          path.join(process.cwd(), "src", "assets", "images", "documentSeal.jpeg"),
-        ).catch(() => undefined);
-        const chairmanSignBase64 = await convertToBase64(
-          path.join(process.cwd(), "src", "assets", "images", "chairmanSeal.jpeg"),
-        ).catch(() => undefined);
-        // Second signatory on the ex-parte notice: investigating officer Atikur.
-        const officerSignBase64 = await convertToBase64(
-          path.join(process.cwd(), "src", "assets", "images", "atikurSign.jpeg"),
-        ).catch(() => undefined);
-
-        const data: CompletionNoticeTemplateData = {
-          complaintId: c.complaintId,
-          customer: {
-            name: c.customer?.name || "",
-            customerId: c.customer?.customerId || "",
-            phone: c.customer?.phone || "",
-            address: c.customer?.address || "",
-          },
-          staff: {
-            name: c.staff?.name || "",
-            phone: c.staff?.phone || "",
-            role: c.staff?.role || "",
-            staffId: c.staffId,
-          },
-          subject: c.subject,
-          adminNote: c.customerNote || c.adminNote || "",
-          punishmentType: "",
-          punishmentStartDate: "",
-          punishmentEndDate: "",
-          resolvedDateBn: new Date().toLocaleDateString("bn-BD"),
-          receiptNo: c.complaintId.replace(/\D/g, "").slice(0, 5) || "14285",
-          logo: logoBase64,
-          documentSeal: documentSealBase64,
-          chairmanSeal: chairmanSignBase64,
-          officerSign: officerSignBase64,
-          officerName: c.hearingOfficerName || "",
-          officerDesignation: c.hearingOfficerDesignation || "",
-        };
+        const { buildExParteNoticeData } = await import("@/lib/complaintDocs");
+        const data = await buildExParteNoticeData(response.data!);
 
         html = renderToStaticMarkup(<ExParteNoticeTemplate data={data} />);
         break;
@@ -801,61 +758,18 @@ export default async function generatePDF({
       }
 
       case "complaint_customer": {
-        const CustomerComplaintTemplate = (
-          await import("@/components/features/complaints/CustomerComplaintTemplate")
+        // Complaint letter as a GD-style copy with a verification QR code.
+        const ComplaintGdCopyTemplate = (
+          await import("@/components/features/complaints/ComplaintGdCopyTemplate")
         ).default;
         const { getComplaintById } = await import("@/actions/complaintActions");
         const response = await getComplaintById(finalId);
         if (!response.success || !response.data)
           throw new AppError("অভিযোগটি পাওয়া যায়নি।");
-        const c = response.data!;
+        const { buildComplaintGdCopyData } = await import("@/lib/complaintDocs");
+        const data = await buildComplaintGdCopyData(response.data!);
 
-        const logoBase64 = await convertToBase64(
-          path.join(process.cwd(), "src", "assets", "images", "logo.jpg"),
-        ).catch(() => undefined);
-
-        const documentSealBase64 = await convertToBase64(
-          path.join(
-            process.cwd(),
-            "src",
-            "assets",
-            "images",
-            "documentSeal.jpeg",
-          ),
-        ).catch(() => undefined);
-
-        const atikurSignBase64 = await convertToBase64(
-          path.join(
-            process.cwd(),
-            "src",
-            "assets",
-            "images",
-            "atikurSign.jpeg",
-          ),
-        ).catch(() => undefined);
-
-        const data: CustomerComplaintTemplateData = {
-          complaintId: c.complaintId,
-          serviceId: c.serviceId || "",
-          customer: {
-            name: c.customer?.name || "",
-            customerId: c.customer?.customerId || "",
-            phone: c.customer?.phone || "",
-            address: c.customer?.address || "",
-          },
-          staff: {
-            name: c.staff?.name || "",
-            staffId: c.staffId || "",
-          },
-          subject: c.subject,
-          description: c.description,
-          createdAt: c.createdAt,
-          logo: logoBase64,
-          documentSeal: documentSealBase64,
-          atikurSign: atikurSignBase64,
-        };
-
-        html = renderToStaticMarkup(<CustomerComplaintTemplate data={data} />);
+        html = renderToStaticMarkup(<ComplaintGdCopyTemplate data={data} />);
         options = {
           format: "A4",
           printBackground: true,

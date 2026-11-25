@@ -332,13 +332,12 @@ export async function updateComplaintStatus(
       console.error("complaint status SMS failed:", smsError);
     }
 
-    // Admin office voice alerts for the hearing / judicial stages (separate from
-    // the party SMS/voice above). Fire-and-forget; must never block the update.
-    if (newStatus === "hearing") {
-      import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("complaint_hearing_customer")).catch(() => {});
-      import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("complaint_hearing_staff")).catch(() => {});
-    } else if (newStatus === "customer_absent") {
-      import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("hearing_absent_customer")).catch(() => {});
+    // NOTE: the hearing / absent / settlement voice recordings are addressed to
+    // the customer and the staff member and are placed by notifyComplaintStatusSMS.
+    // They used to be played to the admin office phones as well, so the admins
+    // received calls meant for the customer. The admin triggers these status
+    // changes themselves, so no admin call is made here.
+    if (newStatus === "customer_absent") {
       // Customer-absent NOTICE: in-app notification + push + SMS in one go via
       // notifyCustomer (the voice call goes out from notifyComplaintStatusSMS,
       // which therefore sends no SMS of its own for this status). The
@@ -367,9 +366,6 @@ export async function updateComplaintStatus(
       } catch (noticeErr) {
         console.error("customer_absent notice failed:", noticeErr);
       }
-    } else if (newStatus === "completed") {
-      import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("hearing_settlement_customer")).catch(() => {});
-      import("@/lib/adminVoiceNotify").then(m => m.notifyAdminVoice("hearing_order_staff")).catch(() => {});
     }
 
     revalidatePath("/complaints");
@@ -417,7 +413,10 @@ export async function getComplaintById(complaintId: string) {
       (user.role === "staff" && data.staffId === user.userId) ||
       (user.role === "customer" && data.customerId === user.userId);
     if (!allowed) return { success: false, message: "Complaint not found" };
-    return { success: true, data };
+    // Decides the "warranty-covered customer" wording of the complaint letter.
+    const { isComplaintWarrantyActive } = await import("@/lib/customerPurchases");
+    const warrantyActive = await isComplaintWarrantyActive(data);
+    return { success: true, data: { ...data, warrantyActive } };
   } catch (error) {
     console.error(error);
     return { success: false, message: "Could not fetch complaint" };

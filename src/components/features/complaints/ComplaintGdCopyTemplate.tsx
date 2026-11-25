@@ -136,8 +136,8 @@ export default function ComplaintGdCopyTemplate({ data }: ComplaintGdCopyTemplat
             </div>
             <div className="flex-1 min-h-0 overflow-hidden px-2.5 py-1.5 text-justify whitespace-pre-wrap break-words" style={{ fontSize: descSize }}>
               <p>
-                মহোদয়, আমি নিম্নস্বাক্ষরকারী <span className="font-bold">{data.customer.name}</span> আপনার
-                প্রতিষ্ঠানের একজন গ্রাহক। উপরোক্ত কর্মীর বিরুদ্ধে আমার অভিযোগের বিবরণ নিম্নরূপঃ
+                মহোদয়, আমি নিম্নস্বাক্ষরকারী <span className="font-bold">{data.customer.name}</span>{" "}
+                {data.customerStandingBn}। উপরোক্ত কর্মীর বিরুদ্ধে আমার অভিযোগের বিবরণ নিম্নরূপঃ
               </p>
               <p className="mt-1">{data.description}</p>
               <p className="mt-1">

@@ -4,7 +4,7 @@ import {
   ComplaintGdCopyTemplateData,
   CompletionNoticeTemplateData,
 } from "@/app/pdf/download/actions/pdfTypes";
-import { COMPLAINT_STATUS_BN } from "@/constants/complaintData";
+import { COMPLAINT_STATUS_BN, complaintCustomerStandingBn } from "@/constants/complaintData";
 import { brandUrl } from "@/constants/domains";
 import { getBaseUrl } from "@/utils";
 import fs from "fs";
@@ -31,6 +31,8 @@ export type ComplaintDocSource = {
   hearingOfficerDesignation: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
+  /** From getComplaintById: is the customer's warranty active right now. */
+  warrantyActive?: boolean;
   customer?: { name: string | null; phone: string | null; address: string | null; customerId: string | null } | null;
   staff?: { name: string | null; phone: string | null; role: string | null } | null;
   service?: {
@@ -132,6 +134,7 @@ export async function buildComplaintGdCopyData(c: ComplaintDocSource): Promise<C
     },
     subject: c.subject,
     description: c.description,
+    customerStandingBn: complaintCustomerStandingBn(c.warrantyActive),
     statusBn: COMPLAINT_STATUS_BN[c.status] || c.status,
     officer: {
       name: c.hearingOfficerName || "",

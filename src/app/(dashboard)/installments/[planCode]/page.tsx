@@ -1,3 +1,4 @@
+import { getGuarantorNotices } from "@/actions/guarantorNoticeActions";
 import { getInstallmentPlanByCode } from "@/actions/installmentActions";
 import InstallmentPlanDetail from "@/components/features/installments/InstallmentPlanDetail";
 import Link from "next/link";
@@ -24,5 +25,8 @@ export default async function InstallmentPlanPage({
     notFound();
   }
 
-  return <InstallmentPlanDetail data={res.data} />;
+  // Notices already sent to this plan's guarantor (empty when none / table not created yet).
+  const notices = await getGuarantorNotices(planCode);
+
+  return <InstallmentPlanDetail data={{ ...res.data, guarantorNotices: notices.data }} />;
 }

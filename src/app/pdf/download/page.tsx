@@ -25,6 +25,7 @@ const FILE_NAMES: Record<string, string> = {
     'installment-documents': 'SE_ELECTRONICS_INSTALLMENT_FILE.pdf',
     'installment-receipt': 'SE_ELECTRONICS_INSTALLMENT_RECEIPT.pdf',
     'installment-noc': 'SE_ELECTRONICS_NOC.pdf',
+    'guarantor-notice': 'SE_ELECTRONICS_GUARANTOR_NOTICE.pdf',
 }
 
 export default function DocDownloadPage() {

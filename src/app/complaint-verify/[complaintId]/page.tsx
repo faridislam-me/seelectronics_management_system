@@ -26,8 +26,9 @@ const bnDateTime = (d: Date) =>
 /**
  * PUBLIC page the QR code on a complaint (GD) copy opens. It confirms the
  * document is genuine and shows the complaint's current status. No session is
- * required, so it deliberately exposes status only: no names, phone numbers,
- * addresses, subject or description.
+ * required, so it exposes the status and the assigned officer's office contact
+ * only: nothing about the complainant or the accused (no names, phone numbers,
+ * addresses, subject or description).
  */
 export default async function ComplaintVerifyPage({ params }: { params: Promise<{ complaintId: string }> }) {
   const { complaintId: raw } = await params;
@@ -37,7 +38,15 @@ export default async function ComplaintVerifyPage({ params }: { params: Promise<
   const row = /^[A-Z0-9]{4,32}$/.test(complaintId)
     ? await db.query.staffComplaints.findFirst({
         where: eq(staffComplaints.complaintId, complaintId),
-        columns: { complaintId: true, status: true, createdAt: true, updatedAt: true },
+        columns: {
+          complaintId: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          hearingOfficerName: true,
+          hearingOfficerDesignation: true,
+          hearingOfficerPhone: true,
+        },
       })
     : undefined;
 
@@ -75,6 +84,22 @@ export default async function ComplaintVerifyPage({ params }: { params: Promise<
                 <dt className="font-bold text-[#5b6784]">সর্বশেষ হালনাগাদ</dt>
                 <dd className="font-bold text-right">{bnDateTime(row.updatedAt)}</dd>
               </div>
+              <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                <dt className="font-bold text-[#5b6784]">দায়িত্বপ্রাপ্ত কর্মকর্তা</dt>
+                <dd className="font-bold text-right">{row.hearingOfficerName || "এখনও নিযুক্ত হয়নি"}</dd>
+              </div>
+              {(row.hearingOfficerDesignation || row.hearingOfficerPhone) && (
+                <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                  <dt className="font-bold text-[#5b6784]">পদবি / মোবাইল</dt>
+                  <dd className="font-bold text-right">
+                    {row.hearingOfficerDesignation}
+                    {row.hearingOfficerDesignation && row.hearingOfficerPhone ? <br /> : null}
+                    {row.hearingOfficerPhone && (
+                      <a href={`tel:${row.hearingOfficerPhone}`} className="font-mono text-[#0b3d91]">{row.hearingOfficerPhone}</a>
+                    )}
+                  </dd>
+                </div>
+              )}
             </dl>
 
             <p className="text-[11.5px] text-[#5b6784] leading-relaxed">

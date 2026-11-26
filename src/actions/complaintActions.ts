@@ -37,25 +37,71 @@ export async function lookupComplaintServiceStaff(serviceId: string) {
     if (id.length < 4 || id.length > 64) return { success: false as const, message: "সার্ভিস আইডি সঠিক নয়" };
 
     const service = await db.query.services.findFirst({
-      where: (s, { eq }) => eq(s.serviceId, id),
-      columns: { serviceId: true, type: true, staffId: true, staffName: true, staffRole: true },
+      where: (s, { eq, or }) => or(eq(s.serviceId, id), eq(s.serviceId, id.toUpperCase())),
+      columns: { serviceId: true, type: true, staffId: true, staffName: true, staffRole: true, staffPhone: true },
       with: { appointedStaff: { columns: { staffId: true, name: true, role: true } } },
     });
     if (!service) return { success: false as const, message: "এই সার্ভিস আইডি পাওয়া যায়নি" };
 
-    const staffId = service.appointedStaff?.staffId || service.staffId;
-    if (!staffId) {
-      return { success: false as const, message: "এই সার্ভিসে এখনও কোনো টেকনিশিয়ান / ইলেকট্রিশিয়ান নিযুক্ত হয়নি" };
+    const expectedRole = service.type === "install" ? "electrician" : "technician";
+    const linkedId = service.appointedStaff?.staffId || service.staffId;
+    if (linkedId) {
+      return {
+        success: true as const,
+        data: {
+          serviceId: service.serviceId,
+          serviceType: service.type,
+          staffId: linkedId,
+          name: service.appointedStaff?.name || service.staffName || "",
+          role: (service.appointedStaff?.role || service.staffRole || expectedRole) as string,
+        },
+      };
     }
+
+    // Older services (created from the dashboard) only stored the staff's
+    // name/phone as text, with no staffId link. Resolve the staff record from
+    // that text so the complaint form can still auto-fill.
+    const digits = (v?: string | null) => String(v || "").replace(/\D/g, "").slice(-10);
+    const tokens = (v?: string | null) =>
+      String(v || "")
+        .toLowerCase()
+        .replace(/[^\p{L}\p{M}\s]/gu, " ")
+        .split(/\s+/)
+        .filter((t) => t.length > 2 && !["md", "mohammad", "mohammed", "মোঃ", "মো"].includes(t));
+    const phone = digits(service.staffPhone);
+    const nameTokens = tokens(service.staffName);
+    if (phone.length === 10 || nameTokens.length) {
+      const allStaff = await db.query.staffs.findMany({
+        columns: { staffId: true, name: true, phone: true, role: true },
+      });
+      const overlap = (n: string) => tokens(n).filter((t) => nameTokens.includes(t)).length;
+      let candidates = phone.length === 10 ? allStaff.filter((s) => digits(s.phone) === phone) : [];
+      if (!candidates.length && nameTokens.length) {
+        // No phone match: require the whole recorded name to match.
+        candidates = allStaff.filter((s) => overlap(s.name) === nameTokens.length && tokens(s.name).length === nameTokens.length);
+      }
+      if (candidates.length > 1) {
+        const best = Math.max(...candidates.map((s) => overlap(s.name)));
+        if (best > 0) candidates = candidates.filter((s) => overlap(s.name) === best);
+      }
+      if (candidates.length > 1) {
+        const byRole = candidates.filter((s) => s.role === expectedRole);
+        if (byRole.length) candidates = byRole;
+      }
+      if (candidates.length === 1) {
+        const s = candidates[0];
+        return {
+          success: true as const,
+          data: { serviceId: service.serviceId, serviceType: service.type, staffId: s.staffId, name: s.name, role: s.role as string },
+        };
+      }
+    }
+
     return {
-      success: true as const,
-      data: {
-        serviceId: service.serviceId,
-        serviceType: service.type,
-        staffId,
-        name: service.appointedStaff?.name || service.staffName || "",
-        role: (service.appointedStaff?.role || service.staffRole || (service.type === "install" ? "electrician" : "technician")) as string,
-      },
+      success: false as const,
+      message: service.staffName
+        ? `এই সার্ভিসে কাজ করেছেন: ${service.staffName} — তবে তার আইডি স্বয়ংক্রিয়ভাবে মেলানো যায়নি`
+        : "এই সার্ভিসে এখনও কোনো টেকনিশিয়ান / ইলেকট্রিশিয়ান নিযুক্ত হয়নি",
     };
   } catch (error) {
     console.error("lookupComplaintServiceStaff failed", error);

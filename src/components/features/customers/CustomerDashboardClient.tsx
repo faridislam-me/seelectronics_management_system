@@ -190,13 +190,6 @@ export default function CustomerDashboardClient({
       bg: "bg-blue-50",
     },
     {
-      label: "Team Members",
-      icon: User,
-      href: "/team-members",
-      color: "text-blue-500",
-      bg: "bg-blue-50",
-    },
-    {
       label: "Shop",
       icon: ShoppingCart,
       isSeIpsModal: true,

@@ -1,6 +1,5 @@
 import { getComplaintsByStaff } from "@/actions/complaintActions";
 import { verifyStaffSession } from "@/actions";
-import { getStaffProfileStats } from "@/actions/staffActions";
 import { StaffLayout } from "@/components/layout/StaffLayout";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
@@ -33,16 +32,12 @@ export default async function StaffComplaintsPage() {
   if (!session.isAuth) return null;
 
   const staffId = session.userId as string;
-  const [complaintsRes, statsRes] = await Promise.all([
-    getComplaintsByStaff(staffId, true), // fetch all complaints
-    getStaffProfileStats(staffId),
-  ]);
+  const complaintsRes = await getComplaintsByStaff(staffId, true); // fetch all complaints
 
   const complaints = complaintsRes.success && complaintsRes.data ? complaintsRes.data : [];
-  const stats = statsRes.success ? statsRes.data : null;
 
   return (
-    <StaffLayout balance={stats?.availableBalance || 0}>
+    <StaffLayout>
       <div className="px-2 pt-2 pb-2 flex flex-col gap-2 text-[#16213a]">
         {/* Title */}
         <section className="relative overflow-hidden rounded-md bg-[linear-gradient(115deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(11,61,145,0.25)]">

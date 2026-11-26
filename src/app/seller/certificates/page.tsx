@@ -5,12 +5,16 @@ import { SellerLayout } from "@/components/layout";
 import { BlueCard } from "@/components/ui";
 import { SELLER_CERTIFICATE_TYPES } from "@/constants/sellerCertificates";
 import { buildSellerCertificateData } from "@/lib/sellerCertificate";
-import { loadSellerPortal } from "@/lib/sellerPortal";
+import { verifySellerSession } from "@/actions/sellerActions";
 import { formatDate } from "@/utils";
 import { Award, Download } from "lucide-react";
+import { redirect } from "next/navigation";
 
 export default async function SellerCertificatesPage() {
-  await loadSellerPortal();
+  // Auth gate only. This used to load the whole seller portal (customers,
+  // services, invoices) just to check the login, and none of it was shown here.
+  const session = await verifySellerSession();
+  if (!session.isAuth) redirect("isBlocked" in session && session.isBlocked ? "/seller/blocked" : "/seller/login");
   const certificates = await getMySellerCertificates();
   const withData = await Promise.all(certificates.map(async (c) => ({ ...c, data: await buildSellerCertificateData(c) })));
 

@@ -17,6 +17,8 @@ export type FeedItem = {
   /** used for filtering and colouring */
   kind: "payment" | "approval" | "system" | "notice";
   priority?: string | null;
+  /** Overrides the tag derived from `kind` (e.g. a rejected payment must not read "Success"). */
+  tag?: { label: string; tone: "success" | "info" | "danger" };
   onOpen?: () => Promise<void> | void;
 };
 
@@ -25,6 +27,12 @@ const kindMeta: Record<FeedItem["kind"], { icon: LucideIcon; tile: string; strip
   approval: { icon: Settings, tile: "bg-[#1a9c4b]", stripe: "border-l-[#1a9c4b]", tag: "Approved", tagCls: "bg-[#e9f9ef] text-[#178a42]" },
   system: { icon: User, tile: "bg-[#2f3b52]", stripe: "border-l-[#2f3b52]", tag: "Info", tagCls: "bg-[#e8f1ff] text-[#1b6fd6]" },
   notice: { icon: Bell, tile: "bg-[#e0243f]", stripe: "border-l-[#e0243f]", tag: "Important", tagCls: "bg-[#ffe9ec] text-[#c81f38]" },
+};
+
+const toneCls: Record<NonNullable<FeedItem["tag"]>["tone"], string> = {
+  success: "bg-[#e9f9ef] text-[#178a42]",
+  info: "bg-[#e8f1ff] text-[#1b6fd6]",
+  danger: "bg-[#ffe9ec] text-[#c81f38]",
 };
 
 /** Tabbed notification feed used by customer and staff. */
@@ -78,7 +86,7 @@ export default function NotificationFeed({ items, isLoading, heroImage }: { item
       ) : (
         list.map((item) => {
           const m = kindMeta[item.kind];
-          const tag = item.kind === "notice" ? (item.priority === "urgent" || item.priority === "high" ? "Important" : "Notice") : m.tag;
+          const tag = item.tag?.label ?? (item.kind === "notice" ? (item.priority === "urgent" || item.priority === "high" ? "Important" : "Notice") : m.tag);
           return (
             <button key={item.id} type="button" onClick={async () => { if (!item.isRead && item.onOpen) await item.onOpen(); setSelected({ ...item, isRead: true }); }}
               className={clsx("text-left rounded-md bg-white border border-[#dfe6f2] border-l-4 p-2.5 flex items-start gap-2.5 shadow-[0_4px_14px_rgba(11,61,145,0.06)] active:scale-[0.99] transition-all", m.stripe, item.isRead && "opacity-80")}>
@@ -89,7 +97,7 @@ export default function NotificationFeed({ items, isLoading, heroImage }: { item
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#5b6784] uppercase"><Calendar size={12} />{formatDate(item.createdAt as Date, true)}</span>
               </span>
               <span className="flex flex-col items-end gap-2 shrink-0 self-stretch justify-between">
-                <span className={clsx("px-2 h-6 rounded-md text-[10.5px] font-extrabold inline-flex items-center", item.kind === "notice" ? (tag === "Important" ? "bg-[#ffe9ec] text-[#c81f38]" : "bg-[#e8f1ff] text-[#1b6fd6]") : m.tagCls)}>{tag}</span>
+                <span className={clsx("px-2 h-6 rounded-md text-[10.5px] font-extrabold inline-flex items-center", item.tag ? toneCls[item.tag.tone] : item.kind === "notice" ? (tag === "Important" ? "bg-[#ffe9ec] text-[#c81f38]" : "bg-[#e8f1ff] text-[#1b6fd6]") : m.tagCls)}>{tag}</span>
                 <ChevronRight size={16} className="text-[#9aa4b8]" />
               </span>
             </button>

@@ -1,5 +1,5 @@
 import { verifyStaffSession } from "@/actions";
-import { getMyServices, getStaffProfileStats } from "@/actions/staffActions";
+import { getMyServices } from "@/actions/staffActions";
 import StaffDashboardActions from "@/components/features/staff/StaffDashboardActions";
 import { StaffLayout } from "@/components/layout/StaffLayout";
 import clsx from "clsx";
@@ -19,12 +19,8 @@ export default async function StaffServicesPage() {
   if (!session.isAuth) return null;
 
   const userId = session.userId as string;
-  const [statsRes, servicesRes] = await Promise.all([
-    getStaffProfileStats(userId),
-    getMyServices(userId),
-  ]);
+  const servicesRes = await getMyServices(userId);
 
-  const stats = statsRes.success ? statsRes.data : null;
   const services = servicesRes.success ? (servicesRes.data ?? []) : [];
 
   const getStatusColor = (status: string) => {
@@ -45,7 +41,7 @@ export default async function StaffServicesPage() {
     status === "completed" ? CheckCircle2 : status === "canceled" ? XCircle : Clock;
 
   return (
-    <StaffLayout balance={stats?.availableBalance || 0}>
+    <StaffLayout>
       <div className="px-2 pt-2 pb-2 flex flex-col gap-2.5 text-[#16213a]">
         {/* Title */}
         <section className="rounded-md bg-[linear-gradient(110deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-3 flex items-center gap-3 shadow-[0_8px_22px_rgba(10,47,112,0.28)]">

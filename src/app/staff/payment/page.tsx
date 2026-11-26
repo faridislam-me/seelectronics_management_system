@@ -1,6 +1,5 @@
 import { verifyStaffSession } from "@/actions";
 import { getStaffPaymentHistory } from "@/actions/paymentRequestActions";
-import { getStaffProfileStats } from "@/actions/staffActions";
 import { PaymentCompactList } from "@/components/features/payments/StaffPaymentCards";
 import { StaffLayout } from "@/components/layout/StaffLayout";
 import { PaymentDataType } from "@/types";
@@ -12,12 +11,11 @@ export default async function StaffPaymentHubPage() {
   if (!session.isAuth) return null;
 
   const userId = session.userId as string;
-  const [statsRes, paymentsRes] = await Promise.all([getStaffProfileStats(userId), getStaffPaymentHistory(userId)]);
-  const stats = statsRes.success ? statsRes.data : null;
+  const paymentsRes = await getStaffPaymentHistory(userId);
   const paymentsList = (paymentsRes.success ? (paymentsRes.data ?? []) : []) as PaymentDataType[];
 
   return (
-    <StaffLayout balance={stats?.availableBalance || 0}>
+    <StaffLayout>
       <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-2 flex flex-col gap-2.5">
         {/* Hero */}
         <section className="relative overflow-hidden rounded-md bg-[#0b3d91] bg-[linear-gradient(105deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-3.5 shadow-[0_10px_30px_rgba(10,47,112,0.35)]">

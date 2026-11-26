@@ -23,6 +23,7 @@ import {
   verifySession,
 } from "@/lib";
 import { deleteObject, getObjectUrl, putObject } from "@/lib/s3";
+import { getSellerAuthRow } from "@/lib/session";
 import type { OwnedProductWithServices } from "@/lib/customerPurchases";
 import { sellerCustomerFilter } from "@/lib/sellerScope";
 import { serviceChargeDue } from "@/constants/serviceCharges";
@@ -696,11 +697,8 @@ export async function verifySellerSession() {
   const session = await decrypt(cookie);
   if (!session?.userId || session.role !== "seller") return { isAuth: false as const };
 
-  const [seller] = await db
-    .select({ id: sellers.id, sellerId: sellers.sellerId, shopName: sellers.shopName, ownerName: sellers.ownerName, isActiveSeller: sellers.isActiveSeller })
-    .from(sellers)
-    .where(eq(sellers.sellerId, session.userId as string))
-    .limit(1);
+  // Deduplicated per render: pages call this and so do the loaders they use.
+  const seller = await getSellerAuthRow(session.userId as string);
   if (!seller) return { isAuth: false as const };
   // Blocked while logged in: tell the caller so it can show the "Account Blocked"
   // notice instead of bouncing to /seller/login (which the middleware would send
@@ -751,50 +749,52 @@ export async function getSellerPortalData(sellerId: string) {
       return { success: false, message: "Unauthorized" };
     }
 
-    const seller = await db.query.sellers.findFirst({
+    // Independent reads: run them in one round-trip wave instead of back to back.
+    const [seller, sellerCustomers] = await Promise.all([
+     db.query.sellers.findFirst({
       where: eq(sellers.sellerId, sellerId),
       with: { purchases: { orderBy: (p, { desc }) => [desc(p.date)] } },
-    });
-    if (!seller) return { success: false, message: "Seller not found" };
-
-    const sellerCustomers = await db.query.customers.findMany({
+     }),
+     db.query.customers.findMany({
       where: sellerCustomerFilter(sellerId),
       columns: { customerId: true, name: true, phone: true, address: true, invoiceNumber: true, isWarrantyStopped: true, warrantyStopReason: true, createdAt: true, referredByVipCard: true, sellerId: true },
       with: {
         services: { columns: { serviceId: true, status: true, type: true, productType: true, productModel: true, staffName: true, staffPhone: true, reportedIssue: true, createdAt: true }, orderBy: (s, { desc }) => [desc(s.createdAt)], with: { statusHistory: { columns: { status: true, createdAt: true }, orderBy: (h, { asc }) => [asc(h.createdAt)] }, charge: { columns: { amount: true, paidAmount: true, status: true, reason: true, note: true, paidAt: true, paymentMethod: true, sellerId: true } } } },
       },
       orderBy: (c, { desc }) => [desc(c.createdAt)],
-    });
+     }),
+    ]);
+    if (!seller) return { success: false, message: "Seller not found" };
 
     // Only the purchases sold through THIS seller. A customer account can also
     // hold purchases from SE Electronics directly or from another shop; those
     // are never shown here, so sellers' records never mix.
     const customerIds = sellerCustomers.map((c) => c.customerId);
     const invoicesByCustomer = new Map<string, any[]>();
-    const allInvoices = customerIds.length
-      ? await db.query.invoices.findMany({
+    // Both queries only need customerIds, so they run in parallel.
+    const [allInvoices, otherInvoiceRows] = await Promise.all([
+     customerIds.length
+      ? db.query.invoices.findMany({
           where: and(inArray(invoices.customerId, customerIds), eq(invoices.sellerId, sellerId)),
           columns: { id: true, invoiceNumber: true, customerId: true, originalCustomerId: true, total: true, subtotal: true, dueAmount: true, dueType: true, notes: true, paymentType: true, date: true },
           orderBy: (inv, { desc }) => [desc(inv.date)],
           with: { products: true },
         })
-      : [];
+      : [],
+     // Does the customer also have purchases NOT from this seller?
+     customerIds.length
+      ? db
+          .selectDistinct({ customerId: invoices.customerId })
+          .from(invoices)
+          .where(and(inArray(invoices.customerId, customerIds), or(isNull(invoices.sellerId), sql`${invoices.sellerId} <> ${sellerId}`)))
+      : [],
+    ]);
     for (const inv of allInvoices) {
       const arr = invoicesByCustomer.get(inv.customerId) ?? [];
       arr.push(inv);
       invoicesByCustomer.set(inv.customerId, arr);
     }
-    // Does the customer also have purchases NOT from this seller?
-    const otherInvoiceCustomers = new Set(
-      customerIds.length
-        ? (
-            await db
-              .selectDistinct({ customerId: invoices.customerId })
-              .from(invoices)
-              .where(and(inArray(invoices.customerId, customerIds), or(isNull(invoices.sellerId), sql`${invoices.sellerId} <> ${sellerId}`)))
-          ).map((r) => r.customerId)
-        : [],
-    );
+    const otherInvoiceCustomers = new Set(otherInvoiceRows.map((r) => r.customerId));
 
     const now = new Date();
     const { attachServicesToProducts, chargeInfo } = await import("@/lib/customerPurchases");

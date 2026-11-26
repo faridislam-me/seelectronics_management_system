@@ -45,11 +45,14 @@ export default async function CustomerProfilePage() {
   }
 
   const userId = session.userId as string;
-  const statsRes = await getCustomerProfileStats(userId);
+  // Independent reads: fetch together instead of one after the other.
+  const [statsRes, bannersRes] = await Promise.all([
+    getCustomerProfileStats(userId),
+    getActiveBanners("customer"),
+  ]);
   const stats = statsRes.success ? statsRes.data : null;
   const adminPhone = process.env.ADMIN_PHONE_NUMBER || "017XXXXXXXX";
-  
-  const bannersRes = await getActiveBanners("customer");
+
   const activeBanners = bannersRes.banners?.map((b: any) => ({ img: b.url })) || [];
 
   if (!session.customer) {

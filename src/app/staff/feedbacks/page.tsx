@@ -1,6 +1,5 @@
 import { verifyStaffSession } from "@/actions";
 import { getStaffFeedbacks } from "@/actions/feedbackActions";
-import { getStaffProfileStats } from "@/actions/staffActions";
 import { StaffLayout, MobilePageHeader } from "@/components/layout";
 import { 
   MessageSquare, 
@@ -25,16 +24,12 @@ export default async function StaffFeedbacksPage() {
   if (!session.isAuth) return null;
 
   const userId = session.userId as string;
-  const [feedbacksRes, statsRes] = await Promise.all([
-    getStaffFeedbacks(userId),
-    getStaffProfileStats(userId),
-  ]);
+  const feedbacksRes = await getStaffFeedbacks(userId);
 
   const feedbacksList = feedbacksRes.success ? (feedbacksRes.data ?? []) : [];
-  const stats = statsRes.success ? statsRes.data : null;
 
   return (
-    <StaffLayout balance={stats?.availableBalance || 0}>
+    <StaffLayout>
       {/* <MobilePageHeader 
         title="Feedbacks" 
         backHref="/staff/profile" 

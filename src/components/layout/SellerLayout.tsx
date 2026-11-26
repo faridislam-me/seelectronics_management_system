@@ -41,16 +41,27 @@ export function SELogo({ size = "md" }: { size?: "sm" | "md" }) {
   );
 }
 
-export function SellerLayout({ children }: { children: React.ReactNode }) {
+export function SellerLayout({ children, unreadCount }: {
+  children: React.ReactNode;
+  /**
+   * Set by a page that already knows the unread count (the notifications page):
+   * the bell then shows this number, so it drops as items are opened, and the
+   * layout skips its own count request. `null` = the page is still loading it.
+   */
+  unreadCount?: number | null;
+}) {
   const pathname = usePathname();
   const [loggingOut, setLoggingOut] = useState(false);
   // Bell badge = unread seller notifications (refreshed on every page change).
-  const [badge, setBadge] = useState(0);
+  const [fetchedBadge, setBadge] = useState(0);
+  const pageSuppliesCount = unreadCount !== undefined;
+  const badge = pageSuppliesCount ? (unreadCount ?? 0) : fetchedBadge;
   useEffect(() => {
+    if (pageSuppliesCount) return;
     let alive = true;
     getSellerUnreadNotificationCount().then((n) => alive && setBadge(n)).catch(() => {});
     return () => { alive = false; };
-  }, [pathname]);
+  }, [pathname, pageSuppliesCount]);
   const isHome = pathname === "/seller/profile";
   const title = routeTitles[pathname] || (pathname.startsWith("/seller/products/") ? "Product Details" : "Seller Portal");
 

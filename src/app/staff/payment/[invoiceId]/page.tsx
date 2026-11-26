@@ -1,6 +1,6 @@
 import { getPaymentByNumber } from "@/actions/paymentActions";
 import { getServiceById } from "@/actions";
-import { getStaffProfileStats, verifyStaffSession } from "@/actions/staffActions";
+import { verifyStaffSession } from "@/actions/staffActions";
 import { InvoicePreviewButton } from "@/components/features/invoices";
 import { methodLogos, methodThemes } from "@/components/features/payments/paymentThemes";
 import { StaffLayout } from "@/components/layout/StaffLayout";
@@ -19,7 +19,7 @@ export default async function StaffInvoiceDetailsPage({ params }: { params: Prom
   const session = await verifyStaffSession();
   if (!session.isAuth) return null;
   const { invoiceId } = await params;
-  const [paymentRes, statsRes] = await Promise.all([getPaymentByNumber(invoiceId), getStaffProfileStats(session.userId as string)]);
+  const paymentRes = await getPaymentByNumber(invoiceId);
   if (!paymentRes.success || !paymentRes.data) notFound();
   const payment = paymentRes.data as PaymentDataType;
   // Credited payments often carry the job id only in the note ("Service charge added for job #SEXXXX").
@@ -40,7 +40,6 @@ export default async function StaffInvoiceDetailsPage({ params }: { params: Prom
   const svcAddress = (service ? [service.customerAddress, service.customerAddressPoliceStation, service.customerAddressDistrict].filter(Boolean).join(", ") : "") || snap.customerAddress || "";
   const custName = service?.customerName || snap.customerName || "";
   const custPhone = service?.customerPhone || snap.customerPhone || "";
-  const stats = statsRes.success ? statsRes.data : null;
   if (payment.staffId !== session.userId) notFound();
 
   const st = payment.status as string;
@@ -58,7 +57,7 @@ export default async function StaffInvoiceDetailsPage({ params }: { params: Prom
   );
 
   return (
-    <StaffLayout balance={stats?.availableBalance || 0}>
+    <StaffLayout>
       <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-2 flex flex-col gap-2.5">
         <div className="flex items-center gap-3">
           <Link href="/staff/payment" aria-label="Back" className="size-11 rounded-full bg-white border border-[#dfe6f2] flex items-center justify-center shrink-0"><ArrowLeft size={20} /></Link>

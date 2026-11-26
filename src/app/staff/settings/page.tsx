@@ -1,5 +1,4 @@
 import { verifyStaffSession } from "@/actions";
-import { getStaffProfileStats } from "@/actions/staffActions";
 import SMSSettingsForm from "@/components/features/staff/SMSSettingsForm";
 import { StaffLayout } from "@/components/layout/StaffLayout";
 import { db } from "@/db/drizzle";
@@ -18,11 +17,8 @@ export default async function StaffSettingsPage() {
 
   if (!staffData) redirect("/staff/login");
 
-  const statsRes = await getStaffProfileStats(userId);
-  const stats = statsRes.success ? statsRes.data : null;
-
   return (
-    <StaffLayout balance={stats?.availableBalance || 0}>
+    <StaffLayout>
       <div className="px-2 pt-2 pb-2">
         <SMSSettingsForm
           initialData={{

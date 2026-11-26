@@ -933,7 +933,7 @@ export default async function generatePDF({
           .catch(() => convertToBase64(nocImgDir("elecLogo.png")).catch(() => undefined));
         // Manager (left) = Atikur signature+name block; Chairman (right) =
         // signature + chairman name seal. No complaint seal anywhere.
-        const nocManagerSign = await convertToBase64(nocImgDir("atikurManagerSeal.jpeg")).catch(() => undefined);
+        const nocManagerSign = await convertToBase64(nocImgDir("atikurManagerSeal.png")).catch(() => undefined);
         const nocChairmanSign = await convertToBase64(nocImgDir("chairmanSign.png")).catch(() => undefined);
         const nocChairmanSeal = await convertToBase64(nocImgDir("chairmanNameSeal.png")).catch(() => undefined);
         const { qrcode: nocQr } = await import("@/lib/id-gen");

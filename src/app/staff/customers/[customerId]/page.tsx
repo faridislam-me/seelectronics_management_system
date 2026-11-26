@@ -1,5 +1,5 @@
 import { getCustomerById } from "@/actions";
-import { getMyServices, getStaffProfileStats } from "@/actions/staffActions";
+import { getMyServices } from "@/actions/staffActions";
 import { StaffLayout } from "@/components/layout/StaffLayout";
 import {
   ChevronLeft,
@@ -24,20 +24,16 @@ export default async function StaffCustomerProfilePage({
   if (!session.isAuth) return null;
 
   const { customerId } = await params;
-  const [customerRes, statsRes] = await Promise.all([
-    getCustomerById(customerId),
-    getStaffProfileStats(session.userId as string),
-  ]);
+  const customerRes = await getCustomerById(customerId);
 
   if (!customerRes.success || !customerRes.data) {
     notFound();
   }
 
   const customer = customerRes.data;
-  const stats = statsRes.success ? statsRes.data : null;
 
   return (
-    <StaffLayout balance={stats?.availableBalance || 0}>
+    <StaffLayout>
       <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto pb-2">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">

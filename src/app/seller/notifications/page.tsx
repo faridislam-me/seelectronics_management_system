@@ -1,41 +1,22 @@
-"use client";
+import { getSellerNotifications, verifySellerSession } from "@/actions/sellerActions";
+import { redirect } from "next/navigation";
+import SellerNotificationsClient from "./SellerNotificationsClient";
 
-import { getSellerNotifications, markSellerNotificationAsRead } from "@/actions/sellerActions";
-import NotificationFeed, { FeedItem } from "@/components/features/notifications/NotificationFeed";
-import { SellerLayout } from "@/components/layout/SellerLayout";
-import { useEffect, useState } from "react";
+// Reads the session cookie, so it must never be prerendered.
+export const dynamic = "force-dynamic";
 
-const kindOf = (type: string): FeedItem["kind"] => {
-  const t = (type || "").toLowerCase();
-  if (t.includes("purchase") || t.includes("payment") || t.includes("due")) return "payment";
-  if (t.includes("approv") || t.includes("complete") || t.includes("service") || t.includes("customer")) return "approval";
-  return "system";
-};
-const titleOf = (type: string) => (type ? type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Notification");
+/**
+ * The list is fetched on the server and streamed with the page. Before, the
+ * browser requested it after hydration as a server action, queued behind the
+ * header's unread-count request, so the feed sat on its skeleton for several
+ * sequential round-trips. A blocked / logged-out seller is now sent to the
+ * blocked / login screen like every other seller page, instead of seeing an
+ * empty "All Caught Up" feed.
+ */
+export default async function SellerNotificationsPage() {
+  const session = await verifySellerSession();
+  if (!session.isAuth) redirect("isBlocked" in session && session.isBlocked ? "/seller/blocked" : "/seller/login");
 
-export default function SellerNotificationsPage() {
-  const [items, setItems] = useState<FeedItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      const res = await getSellerNotifications();
-      const list: FeedItem[] = [];
-      if (res.success && res.data) {
-        for (const x of res.data) {
-          list.push({
-            id: x.id, isRead: x.isRead, createdAt: x.createdAt as any, title: titleOf(x.type), message: x.message, link: x.link ?? undefined, kind: kindOf(x.type),
-            onOpen: async () => { await markSellerNotificationAsRead(x.id); setItems((p) => p.map((i) => (i.id === x.id ? { ...i, isRead: true } : i))); },
-          });
-        }
-      }
-      setItems(list); setIsLoading(false);
-    })();
-  }, []);
-
-  return (
-    <SellerLayout>
-      <NotificationFeed items={items} isLoading={isLoading} />
-    </SellerLayout>
-  );
+  const data = getSellerNotifications();
+  return <SellerNotificationsClient data={data} />;
 }

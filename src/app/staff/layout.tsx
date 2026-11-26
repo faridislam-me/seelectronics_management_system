@@ -1,8 +1,6 @@
 import { StaffBlockedAppView } from "@/components/features/staff/StaffBlockedScreen";
-import { db } from "@/db/drizzle";
-import { staffs } from "@/db/schema";
 import { decrypt } from "@/lib/session-core";
-import { eq } from "drizzle-orm";
+import { getStaffAuthRow } from "@/lib/session";
 import { cookies } from "next/headers";
 
 /**
@@ -16,11 +14,8 @@ export default async function StaffRouteLayout({ children }: { children: React.R
 
   if (session?.userId && session.role === "staff") {
     try {
-      const [staff] = await db
-        .select({ staffId: staffs.staffId, name: staffs.name, isActiveStaff: staffs.isActiveStaff })
-        .from(staffs)
-        .where(eq(staffs.staffId, session.userId as string))
-        .limit(1);
+      // Shared with verifyStaffSession() in the page: one staff lookup per render.
+      const staff = await getStaffAuthRow(session.userId as string);
 
       if (staff && !staff.isActiveStaff) {
         return <StaffBlockedAppView name={staff.name} staffId={staff.staffId} />;

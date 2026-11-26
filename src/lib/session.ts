@@ -24,6 +24,43 @@ export async function createSession({ username, userId, role = 'admin' }: { user
     })
 }
 
+/**
+ * Per-request readers for the logged-in staff / seller row. A single page
+ * render used to run the same lookup up to three times (route layout, the
+ * verify*Session helper, and verifySession inside nested data loaders); React
+ * cache() collapses them into one query per render. Outside a render (server
+ * actions, route handlers) cache() does not memoize, so every action still
+ * reads the live row.
+ */
+export const getStaffAuthRow = cache(async (staffId: string) => {
+    const [staff] = await db.select({
+        id: staffs.id,
+        staffId: staffs.staffId,
+        name: staffs.name,
+        username: staffs.username,
+        role: staffs.role,
+        isActiveStaff: staffs.isActiveStaff,
+    })
+        .from(staffs)
+        .where(eq(staffs.staffId, staffId))
+        .limit(1);
+    return staff;
+})
+
+export const getSellerAuthRow = cache(async (sellerId: string) => {
+    const [seller] = await db.select({
+        id: sellers.id,
+        sellerId: sellers.sellerId,
+        shopName: sellers.shopName,
+        ownerName: sellers.ownerName,
+        isActiveSeller: sellers.isActiveSeller,
+    })
+        .from(sellers)
+        .where(eq(sellers.sellerId, sellerId))
+        .limit(1);
+    return seller;
+})
+
 export const verifySession = cache(async (shouldRedirect = true, expectedRole?: 'admin' | 'staff' | 'customer' | 'seller' | 'supplier') => {
     const cookie = (await cookies()).get('session')?.value
     const session = await decrypt(cookie)
@@ -48,11 +85,7 @@ export const verifySession = cache(async (shouldRedirect = true, expectedRole?: 
 
     // Active check for blocked staff
     if (session.role === 'staff') {
-        const [staff] = await db.select({ isActiveStaff: staffs.isActiveStaff })
-            .from(staffs)
-            .where(eq(staffs.staffId, session.userId as string))
-            .limit(1);
-
+        const staff = await getStaffAuthRow(session.userId as string);
 
         if (!staff || !staff.isActiveStaff) {
             // Cookies can only be changed in server actions / route handlers; in a
@@ -71,10 +104,7 @@ export const verifySession = cache(async (shouldRedirect = true, expectedRole?: 
 
     // Active check for blocked sellers
     if (session.role === 'seller') {
-        const [seller] = await db.select({ isActiveSeller: sellers.isActiveSeller })
-            .from(sellers)
-            .where(eq(sellers.sellerId, session.userId as string))
-            .limit(1);
+        const seller = await getSellerAuthRow(session.userId as string);
 
         if (!seller || !seller.isActiveSeller) {
             // Cookies can only be changed in server actions / route handlers; in a

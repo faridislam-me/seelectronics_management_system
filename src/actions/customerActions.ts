@@ -6,6 +6,7 @@ import { createSession, deleteSession, verifySession } from "@/lib";
 import { eq, and, count, or, ilike, isNull } from "drizzle-orm";
 
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -177,13 +178,19 @@ export async function markCustomerNotificationAsRead(id: string) {
     }
 }
 
-export async function verifyCustomerSession(): Promise<{
+type CustomerSessionResult = {
     isAuth: boolean;
     userId?: string;
     username?: string;
     role?: string;
     customer?: any;
-}> {
+};
+
+// Memoized per render with React cache(): a page and the data loaders it calls
+// each ask for the session, and every call re-read the full customers row.
+// Outside a render (server actions) cache() does not memoize, so actions always
+// read the live row.
+const loadCustomerSession = cache(async (): Promise<CustomerSessionResult> => {
     const session = await verifySession(false, 'customer');
     if (!session || !session.isAuth) {
         return { isAuth: false };
@@ -228,6 +235,10 @@ export async function verifyCustomerSession(): Promise<{
         role: session.role as string,
         customer 
     };
+});
+
+export async function verifyCustomerSession(): Promise<CustomerSessionResult> {
+    return loadCustomerSession();
 }
 
 /**

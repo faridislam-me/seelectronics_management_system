@@ -27,6 +27,7 @@ import {
   verifySession,
 } from "@/lib";
 import { deleteObject, getObjectUrl, putObject } from "@/lib/s3";
+import { getStaffAuthRow } from "@/lib/session";
 import { compressImage } from "@/lib/sharp";
 import { CertificateData, SearchParams } from "@/types";
 import { generateRandomId, generateUrl, getBaseUrl, renderText } from "@/utils";
@@ -938,20 +939,8 @@ export async function verifyStaffSession() {
   }
 
   try {
-    const result = await db
-      .select({
-        id: staffs.id,
-        staffId: staffs.staffId,
-        name: staffs.name,
-        username: staffs.username,
-        role: staffs.role,
-        isActiveStaff: staffs.isActiveStaff,
-      })
-      .from(staffs)
-      .where(eq(staffs.staffId, session.userId as string))
-      .limit(1);
-
-    const staff = result[0];
+    // Deduplicated per render with the /staff route layout (see getStaffAuthRow).
+    const staff = await getStaffAuthRow(session.userId as string);
 
     if (!staff || !staff.isActiveStaff) {
       return { isAuth: false };

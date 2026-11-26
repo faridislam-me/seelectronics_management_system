@@ -1,5 +1,5 @@
 import { verifyStaffSession } from "@/actions";
-import { getStaffById, getStaffProfileStats } from "@/actions/staffActions";
+import { getStaffById } from "@/actions/staffActions";
 import { StaffPaymentSettingsForm } from "@/components/features/staff/StaffPaymentSettingsForm";
 import { StaffLayout } from "@/components/layout";
 import { ArrowLeft, Info, Wallet } from "lucide-react";
@@ -10,13 +10,9 @@ export default async function StaffPaymentSettingsPage() {
   if (!session.isAuth) return null;
 
   const userId = session.userId as string;
-  const [profileRes, statsRes] = await Promise.all([
-    getStaffById(userId),
-    getStaffProfileStats(userId),
-  ]);
+  const profileRes = await getStaffById(userId);
 
   const staffData = profileRes.success ? profileRes.data : null;
-  const stats = statsRes.success ? statsRes.data : null;
 
   if (!staffData) {
     return (
@@ -29,7 +25,7 @@ export default async function StaffPaymentSettingsPage() {
   }
 
   return (
-    <StaffLayout balance={stats?.availableBalance || 0}>
+    <StaffLayout>
       <div className="min-h-screen bg-[#eef3fb] text-[#16213a] px-2 pt-2 pb-2 flex flex-col gap-2.5 overflow-x-hidden">
         {/* Title */}
         <div className="flex items-center gap-2.5">

@@ -7,9 +7,10 @@ import { Award, Banknote, CheckCircle2, ChevronRight, FileText, MapPin, Package,
 import Link from "next/link";
 
 export default async function SellerProfilePage() {
-  const { seller, stats, due, services } = await loadSellerPortal();
+  // Fetched together; getMySellerCertificates() returns [] when not logged in
+  // and loadSellerPortal() does the redirect.
+  const [{ seller, stats, due, services }, certificates] = await Promise.all([loadSellerPortal(), getMySellerCertificates()]);
   const recent = services.slice(0, 3);
-  const certificates = await getMySellerCertificates();
 
   return (
     <SellerLayout>

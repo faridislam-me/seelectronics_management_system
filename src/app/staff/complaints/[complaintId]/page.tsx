@@ -1,6 +1,5 @@
 import { verifyStaffSession } from "@/actions";
 import { getComplaintById } from "@/actions/complaintActions";
-import { getStaffProfileStats } from "@/actions/staffActions";
 import { StaffLayout } from "@/components/layout/StaffLayout";
 import { formatDate } from "@/utils";
 import clsx from "clsx";
@@ -26,15 +25,11 @@ export default async function StaffComplaintDetailsPage({
   if (!session.isAuth) return null;
 
   const { complaintId } = await params;
-  const [res, statsRes] = await Promise.all([
-    getComplaintById(complaintId),
-    getStaffProfileStats(session.userId as string),
-  ]);
+  const res = await getComplaintById(complaintId);
 
   if (!res.success || !res.data) notFound();
 
   const complaint = res.data;
-  const stats = statsRes.success ? statsRes.data : null;
 
   // Security check: only the accused staff can see their complaint
   if (complaint.staffId !== session.userId) {
@@ -65,7 +60,7 @@ export default async function StaffComplaintDetailsPage({
   const stepDate = (i: number) => (i === 0 ? bnDay(complaint.createdAt) : steps[i].done ? bnDay(complaint.updatedAt) : null);
 
   return (
-    <StaffLayout balance={stats?.availableBalance || 0}>
+    <StaffLayout>
       <div className="px-2 pt-2 pb-2 flex flex-col gap-2 text-[#16213a]">
         {/* Header */}
         <section className="rounded-md bg-[linear-gradient(115deg,#0a2f70_0%,#1259c9_60%,#1f7cf0_100%)] text-white p-3 flex items-center gap-2.5 shadow-[0_8px_22px_rgba(11,61,145,0.25)]">

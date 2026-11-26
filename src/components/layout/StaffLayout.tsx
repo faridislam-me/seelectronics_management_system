@@ -11,13 +11,14 @@ import { NoticeRecipientType } from "@/types";
 
 interface StaffLayoutProps {
   children: React.ReactNode;
-  balance: number;
+  /** Only shown by the header on /staff/profile; other pages can omit it. */
+  balance?: number;
   /** Header blends into a hero right below it (staff profile page). */
   seamlessHeader?: boolean;
   roundedHeader?: boolean;
 }
 
-export function StaffLayout({ children, balance, seamlessHeader = false, roundedHeader = false }: StaffLayoutProps) {
+export function StaffLayout({ children, balance = 0, seamlessHeader = false, roundedHeader = false }: StaffLayoutProps) {
   const pathname = usePathname();
   const [notifications, setNotifications] = useState<NoticeRecipientType[]>([]);
 

@@ -117,12 +117,38 @@ async function reconcileStaffRecharges(since: Date, settledBefore: Date): Promis
     }
 
     if (outcome === "success") {
-      // Confirmed delivered — tag so it is not re-checked next sweep.
-      await db
+      // Confirmed delivered — tag so it is not re-checked next sweep. Atomic
+      // claim (only the sweep that actually adds the tag notifies), so
+      // overlapping sweeps can never send the "delivered" notification twice.
+      const tagged = await db
         .update(payments)
         .set({ description: `${row.description ?? ""} ${VERIFIED}`.trim() })
-        .where(and(eq(payments.id, row.id), eq(payments.status, "completed")));
+        .where(
+          and(
+            eq(payments.id, row.id),
+            eq(payments.status, "completed"),
+            not(ilike(payments.description, `%${VERIFIED}%`)),
+          ),
+        )
+        .returning({ id: payments.id });
+      if (tagged.length === 0) continue; // another sweep already verified it
       out.verified++;
+      try {
+        const amt = Number(row.amount);
+        const phone = (row.description?.match(/01\d{9}/) || [""])[0];
+        await notifyStaff({
+          staffId: row.staffId,
+          phoneNumber: "",
+          type: "recharge_delivered",
+          message: `আপনার ${bdt(amt)} মোবাইল রিচার্জটি${phone ? ` (${phone})` : ""} সফলভাবে সম্পন্ন হয়েছে। TrxID: ${row.transactionId}`,
+          shortMessage: `রিচার্জ সফল: ${bdt(amt)}${phone ? ` → ${phone}` : ""}`,
+          link: "/staff/payment/recharge",
+          sendSms: false,
+        });
+      } catch (e) {
+        console.error(`reconcile: notifyStaff (delivered) failed for ${row.staffId}:`, e);
+        out.errors++;
+      }
       continue;
     }
 
@@ -195,11 +221,35 @@ async function reconcileCustomerRecharges(since: Date, settledBefore: Date): Pro
     }
 
     if (outcome === "success") {
-      await db
+      // Atomic claim, so overlapping sweeps never send "delivered" twice.
+      const tagged = await db
         .update(mobileRechargeRequests)
         .set({ apiStatus: VERIFIED })
-        .where(and(eq(mobileRechargeRequests.id, row.id), eq(mobileRechargeRequests.status, "completed")));
+        .where(
+          and(
+            eq(mobileRechargeRequests.id, row.id),
+            eq(mobileRechargeRequests.status, "completed"),
+            not(eq(mobileRechargeRequests.apiStatus, VERIFIED)),
+          ),
+        )
+        .returning({ id: mobileRechargeRequests.id });
+      if (tagged.length === 0) continue; // another sweep already verified it
       out.verified++;
+      try {
+        const amt = Number(row.amount);
+        await notifyCustomer({
+          customerId: row.customerId,
+          phoneNumber: row.customerPhone,
+          type: "recharge_delivered",
+          message: `আপনার ${bdt(amt)} রিচার্জটি (${row.rechargePhone}) সফলভাবে সম্পন্ন হয়েছে। TrxID: ${row.apiTrxId}`,
+          shortMessage: `রিচার্জ সফল: ${bdt(amt)} → ${row.rechargePhone}`,
+          link: "/customer/referral/recharge/history",
+          sendSms: false,
+        });
+      } catch (e) {
+        console.error(`reconcile: notifyCustomer (delivered) failed for ${row.customerId}:`, e);
+        out.errors++;
+      }
       continue;
     }
 

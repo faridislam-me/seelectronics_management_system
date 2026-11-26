@@ -8,12 +8,12 @@ import NotificationFeed, { FeedItem } from "./NotificationFeed";
 
 const kindOf = (type: string): FeedItem["kind"] => {
   const t = (type || "").toLowerCase();
-  if (t.includes("balance") || t.includes("payment") || t.includes("credit")) return "payment";
+  if (t.includes("recharge") || t.includes("balance") || t.includes("payment") || t.includes("credit")) return "payment";
   if (t.includes("approv") || t.includes("complete") || t.includes("status")) return "approval";
   return "system";
 };
 const titleOf = (type: string) => {
-  const map: Record<string, string> = { balance_added: "Balance Added", payment_request: "Payment Request", payment_completed: "Payment Completed", account_status: "Account Status", certificate: "Certificate", id_card: "ID Card", staff_application: "Application" };
+  const map: Record<string, string> = { balance_added: "Balance Added", payment_request: "Payment Request", payment_completed: "Payment Completed", account_status: "Account Status", certificate: "Certificate", id_card: "ID Card", staff_application: "Application", recharge_accepted: "রিচার্জ গৃহীত", recharge_delivered: "রিচার্জ সফল", recharge_refund: "রিচার্জ ব্যর্থ — টাকা ফেরত" };
   return map[type] || (type ? type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Notification");
 };
 

@@ -16,11 +16,14 @@ type FeedData = [
 const TITLE_MAP: Record<string, string> = {
   complaint_customer_absent: "অভিযোগ নোটিশ",
   guarantor_notice: "জামিনদার নোটিশ",
+  recharge_accepted: "রিচার্জ গৃহীত",
+  recharge_delivered: "রিচার্জ সফল",
+  recharge_refund: "রিচার্জ ব্যর্থ — টাকা ফেরত",
 };
 const kindOf = (type: string): FeedItem["kind"] => {
   const t = (type || "").toLowerCase();
   if (t.includes("complaint") || t.includes("guarantor")) return "notice";
-  if (t.includes("payment") || t.includes("referral") || t.includes("bonus") || t.includes("invoice")) return "payment";
+  if (t.includes("recharge") || t.includes("payment") || t.includes("referral") || t.includes("bonus") || t.includes("invoice")) return "payment";
   if (t.includes("approv") || t.includes("complete") || t.includes("service")) return "approval";
   return "system";
 };

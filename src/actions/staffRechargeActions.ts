@@ -174,6 +174,28 @@ export const requestStaffMobileRecharge = async (input: {
     revalidatePath("/staff/payment/recharge");
     revalidatePath("/staff/payment/payment-history");
 
+    // Tell the staff member (technician / electrician) the recharge was accepted:
+    // in-app notification + push, no SMS. Runs after the response so it never
+    // slows the recharge. The provider has only ACCEPTED it at this point — the
+    // reconcile sweep later sends "delivered" or "failed + refunded".
+    const packLabel = input.packName ? `প্যাক: ${input.packName}, ` : "";
+    afterResponse(async () => {
+      try {
+        const { notifyStaff } = await import("@/actions/notificationActions");
+        await notifyStaff({
+          staffId,
+          phoneNumber: "",
+          type: "recharge_accepted",
+          message: `আপনার ৳${amount.toLocaleString("en-US")} মোবাইল রিচার্জের অনুরোধ (${packLabel}${OPERATORS[operator]}, ${rechargePhone}) গ্রহণ করা হয়েছে এবং প্রক্রিয়াধীন আছে। TrxID: ${trxid}`,
+          shortMessage: `রিচার্জ গৃহীত: ৳${amount.toLocaleString("en-US")} → ${rechargePhone} (${OPERATORS[operator]})`,
+          link: "/staff/payment/recharge",
+          sendSms: false,
+        });
+      } catch (e) {
+        console.error("notifyStaff (recharge accepted) failed:", e);
+      }
+    });
+
     // Sweep the recent recharge backlog after responding, so a previously
     // accepted-then-failed recharge gets auto-refunded promptly.
     sweepRechargesAfterResponse();

@@ -215,6 +215,28 @@ export const requestMobileRecharge = async (input: {
     revalidatePath("/recharge-requests");
 
     if (isSuccess) {
+      // Tell the customer the recharge was accepted: in-app notification + push,
+      // no SMS. Runs after the response so it never slows the recharge. The
+      // provider has only ACCEPTED it at this point — the reconcile sweep later
+      // sends "delivered" or "failed + refunded".
+      const phone = rechargePhone.trim();
+      afterResponse(async () => {
+        try {
+          const { notifyCustomer } = await import("@/actions/notificationActions");
+          await notifyCustomer({
+            customerId: customer.customerId,
+            phoneNumber: customer.phone,
+            type: "recharge_accepted",
+            message: `আপনার ৳${amount.toLocaleString("en-US")} ${RECHARGE_TYPE_LABELS[rechargeType] || "রিচার্জ"} অনুরোধ (${OPERATORS[operator]}, ${phone}) গ্রহণ করা হয়েছে এবং প্রক্রিয়াধীন আছে। TrxID: ${trxid}`,
+            shortMessage: `রিচার্জ গৃহীত: ৳${amount.toLocaleString("en-US")} → ${phone} (${OPERATORS[operator]})`,
+            link: "/customer/referral/recharge/history",
+            sendSms: false,
+          });
+        } catch (e) {
+          console.error("notifyCustomer (recharge accepted) failed:", e);
+        }
+      });
+
       // Sweep the recent recharge backlog after responding, so a previously
       // accepted-then-failed recharge gets auto-refunded promptly.
       sweepRechargesAfterResponse();

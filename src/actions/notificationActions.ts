@@ -94,6 +94,7 @@ export async function notifyStaff({
   message,
   shortMessage,
   link,
+  sendSms = true,
 }: {
   staffId: string;
   phoneNumber: string;
@@ -101,6 +102,8 @@ export async function notifyStaff({
   message: string;
   shortMessage?: string;
   link?: string;
+  /** When false, create the in-app notification + push only (no SMS). Defaults to true. */
+  sendSms?: boolean;
 }) {
   try {
     // Check if a similar notification was sent in the last 30 seconds to prevent duplicates
@@ -138,7 +141,7 @@ export async function notifyStaff({
     // 2. Send SMS
     const smsContent = shortMessage || message || `Dear Staff, you have a new notification. Check your portal for details.`;
     
-    await sendSMS(phoneNumber, smsContent);
+    if (sendSms) await sendSMS(phoneNumber, smsContent);
 
     revalidatePath("/staff/profile");
     return { success: true };

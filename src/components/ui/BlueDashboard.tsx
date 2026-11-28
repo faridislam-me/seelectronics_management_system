@@ -207,15 +207,20 @@ export function BlueStatGrid({ cards, compact = false, cols = 3, iconStyle = "so
       {cards.map((c) => {
         const t = tones[c.tone];
         return (
-          <Link key={c.label} href={c.href} className={clsx(R.tile, "border p-2.5 sm:p-3 flex flex-col items-center text-center gap-1.5 sm:gap-2 relative min-h-[104px]", t.bg, t.border)}>
-            <span className="absolute right-2 top-2.5 text-[#9aa4b8]"><ChevronRight size={15} strokeWidth={2.5} /></span>
+          <Link key={c.label} href={c.href} className={clsx(R.tile, "border px-1.5 py-2.5 sm:px-2 flex flex-col items-center justify-center text-center gap-1.5 relative min-h-[112px]", t.bg, t.border)}>
+            {/* Chevron: same size/position on every card, out of the content flow */}
+            <span className="absolute right-1.5 top-1.5 text-[#9aa4b8]"><ChevronRight size={14} strokeWidth={2.5} /></span>
+            {/* Round icon: one fixed size across all six cards */}
             {iconStyle === "soft" ? (
-              <span className={clsx("size-9 sm:size-10 rounded-md flex items-center justify-center", softTiles[c.tone])}><c.icon size={20} strokeWidth={2.2} /></span>
+              <span className={clsx("size-10 rounded-md flex items-center justify-center shrink-0", softTiles[c.tone])}><c.icon size={20} strokeWidth={2.2} /></span>
             ) : (
-              <span className={clsx("size-9 sm:size-10 rounded-full text-white flex items-center justify-center shadow-[0_4px_10px_rgba(0,0,0,0.12)]", t.iconBg)}><c.icon size={17} strokeWidth={2.4} /></span>
+              <span className={clsx("size-10 rounded-full text-white flex items-center justify-center shrink-0 shadow-[0_4px_10px_rgba(0,0,0,0.12)]", t.iconBg)}><c.icon size={18} strokeWidth={2.4} /></span>
             )}
             <span className="text-[clamp(15px,4.6vw,24px)] font-extrabold text-[#16213a] leading-none truncate max-w-full">{c.value}</span>
-            <span className={clsx("text-[clamp(11px,3.2vw,13px)] font-bold leading-tight", t.text)}>{c.label}</span>
+            {/* Label: reserve two lines so 1- and 2-line labels keep every card the
+                same height; clamp at 2 lines so long labels (e.g. সার্ভিস সেন্টার)
+                never overflow the card. */}
+            <span className={clsx("w-full px-0.5 text-[clamp(10.5px,3vw,12.5px)] font-bold leading-[1.2] min-h-[2.4em] flex items-center justify-center text-center break-words line-clamp-2", t.text)}>{c.label}</span>
           </Link>
         );
       })}

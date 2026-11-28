@@ -1036,17 +1036,30 @@ export const adminNotifications = pgTable(
   (table) => [index("admin_notifications_created_at_idx").on(table.createdAt)],
 );
 
-export const staffNotifications = pgTable("staffNotifications", {
-  id: uuid().defaultRandom().primaryKey(),
-  staffId: varchar({ length: 255 })
-    .references(() => staffs.staffId, { onDelete: "cascade" })
-    .notNull(),
-  type: varchar({ length: 50 }).notNull(),
-  message: text().notNull(),
-  link: varchar({ length: 255 }),
-  isRead: boolean().default(false).notNull(),
-  createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
-});
+export const staffNotifications = pgTable(
+  "staffNotifications",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    staffId: varchar({ length: 255 })
+      .references(() => staffs.staffId, { onDelete: "cascade" })
+      .notNull(),
+    type: varchar({ length: 50 }).notNull(),
+    message: text().notNull(),
+    link: varchar({ length: 255 }),
+    isRead: boolean().default(false).notNull(),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+  },
+  // The staff notifications feed queries WHERE staffId = ? ORDER BY createdAt
+  // DESC LIMIT 10. This composite index serves both the filter and the sort;
+  // without it every load was a full seq scan + sort of the whole table (the
+  // sibling customer/seller notification tables already have this index).
+  (table) => [
+    index("staff_notifications_staff_created_idx").on(
+      table.staffId,
+      table.createdAt,
+    ),
+  ],
+);
 
 export const customerNotifications = pgTable(
   "customerNotifications",

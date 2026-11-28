@@ -165,7 +165,11 @@ export const getStaffNotices = async () => {
       .from(noticeRecipients)
       .leftJoin(notices, eq(noticeRecipients.noticeId, notices.id))
       .where(eq(noticeRecipients.staffId, session.userId as string))
-      .orderBy(desc(noticeRecipients.createdAt));
+      .orderBy(desc(noticeRecipients.createdAt))
+      // Bound the feed: this runs on every staff page (StaffLayout) and polls
+      // every 60s. Without a limit it pulled every recipient row + full notice
+      // (rich-text content) each time, which grew unbounded per staff member.
+      .limit(50);
 
 
     return { success: true, data };
